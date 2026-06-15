@@ -1,6 +1,7 @@
 package com.inia.soportedesk.impresoras;
 
 import com.inia.soportedesk.common.FileStorageService;
+import com.inia.soportedesk.exception.ResourceNotFoundException;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.FileSystemResource;
@@ -65,6 +66,9 @@ public class ImpresoraController {
     @GetMapping("/{id}/driver")
     public ResponseEntity<Resource> downloadDriver(@PathVariable Long id) {
         Impresora impresora = service.findById(id);
+        if (impresora.getDriverArchivoPath() == null) {
+            throw new ResourceNotFoundException("La impresora no tiene un driver cargado: " + id);
+        }
         Path filePath = fileStorageService.load(impresora.getDriverArchivoPath());
         Resource resource = new FileSystemResource(filePath);
         return ResponseEntity.ok()
