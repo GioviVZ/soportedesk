@@ -1,0 +1,16 @@
+<div class="login-page">
+  <form class="login-card" [formGroup]="form" (ngSubmit)="submit()">
+    <h1>SoporteDesk INIA</h1>
+    <p class="subtitle">Ingreso al panel de soporte técnico</p>
+
+    <label for="username">Usuario</label>
+    <input id="username" type="text" formControlName="username" />
+
+    <label for="password">Contraseña</label>
+    <input id="password" type="password" formControlName="password" />
+
+    <p class="error" *ngIf="errorMessage">{{ errorMessage }}</p>
+
+    <button type="submit" [disabled]="form.invalid">Ingresar</button>
+  </form>
+</div>

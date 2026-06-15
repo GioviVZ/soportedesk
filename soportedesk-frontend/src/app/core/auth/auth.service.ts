@@ -1,0 +1,49 @@
+import { Injectable, inject } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { Observable, tap } from 'rxjs';
+import { environment } from '../../../environments/environment';
+import { AuthResponse, LoginRequest, Rol } from '../models/auth.model';
+
+@Injectable({ providedIn: 'root' })
+export class AuthService {
+  private http = inject(HttpClient);
+  private readonly apiUrl = `${environment.apiUrl}/auth`;
+
+  login(request: LoginRequest): Observable<AuthResponse> {
+    return this.http.post<AuthResponse>(`${this.apiUrl}/login`, request).pipe(
+      tap((response) => {
+        localStorage.setItem('token', response.token);
+        localStorage.setItem('rol', response.rol);
+        localStorage.setItem('username', response.username);
+        localStorage.setItem('nombre', response.nombre);
+      })
+    );
+  }
+
+  logout(): void {
+    localStorage.removeItem('token');
+    localStorage.removeItem('rol');
+    localStorage.removeItem('username');
+    localStorage.removeItem('nombre');
+  }
+
+  getToken(): string | null {
+    return localStorage.getItem('token');
+  }
+
+  getRole(): Rol | null {
+    return localStorage.getItem('rol') as Rol | null;
+  }
+
+  getNombre(): string | null {
+    return localStorage.getItem('nombre');
+  }
+
+  isLoggedIn(): boolean {
+    return this.getToken() !== null;
+  }
+
+  isAdmin(): boolean {
+    return this.getRole() === 'ADMIN';
+  }
+}
