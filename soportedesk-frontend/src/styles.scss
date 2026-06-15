@@ -1,0 +1,36 @@
+@import './app/core/styles/variables';
+
+* {
+  box-sizing: border-box;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  font-family: 'Segoe UI', Roboto, Arial, sans-serif;
+  color: var(--color-text);
+  background-color: var(--color-gray-light);
+}
+
+button {
+  cursor: pointer;
+  font-family: inherit;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th, td {
+  border-bottom: 1px solid var(--color-border);
+  padding: 8px 12px;
+  text-align: left;
+  font-size: 14px;
+}
+
+th {
+  background-color: var(--color-green-light);
+  color: var(--color-green-dark);
+  font-weight: 600;
+}
