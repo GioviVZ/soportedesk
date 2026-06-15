@@ -1,5 +1,6 @@
 package com.inia.soportedesk.auth;
 
+import com.inia.soportedesk.exception.ResourceNotFoundException;
 import com.inia.soportedesk.security.JwtService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -44,7 +45,7 @@ public class AuthController {
     public ResponseEntity<AuthResponse> me() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         Usuario usuario = usuarioRepository.findByUsername(authentication.getName())
-                .orElseThrow(() -> new IllegalStateException("Usuario autenticado no encontrado en BD"));
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario autenticado no encontrado en BD"));
 
         return ResponseEntity.ok(new AuthResponse(null, usuario.getUsername(), usuario.getNombre(), usuario.getRol().name()));
     }

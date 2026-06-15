@@ -4,6 +4,7 @@ import com.inia.soportedesk.catalogo.*;
 import com.inia.soportedesk.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -29,12 +30,14 @@ public class CorreoService {
                 .orElseThrow(() -> new ResourceNotFoundException("Correo no encontrado: " + id));
     }
 
+    @Transactional
     public Correo create(CorreoRequest request) {
         Correo correo = new Correo();
         copyFields(correo, request);
         return repository.save(correo);
     }
 
+    @Transactional
     public Correo update(Long id, CorreoRequest request) {
         Correo correo = findById(id);
         copyFields(correo, request);

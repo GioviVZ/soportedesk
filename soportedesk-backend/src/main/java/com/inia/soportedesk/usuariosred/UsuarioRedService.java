@@ -4,6 +4,7 @@ import com.inia.soportedesk.catalogo.*;
 import com.inia.soportedesk.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -29,12 +30,14 @@ public class UsuarioRedService {
                 .orElseThrow(() -> new ResourceNotFoundException("Usuario de red no encontrado: " + id));
     }
 
+    @Transactional
     public UsuarioRed create(UsuarioRedRequest request) {
         UsuarioRed usuario = new UsuarioRed();
         copyFields(usuario, request);
         return repository.save(usuario);
     }
 
+    @Transactional
     public UsuarioRed update(Long id, UsuarioRedRequest request) {
         UsuarioRed usuario = findById(id);
         copyFields(usuario, request);
