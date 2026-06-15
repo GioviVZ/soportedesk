@@ -1,0 +1,47 @@
+package com.inia.soportedesk.equipos;
+
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+
+@RestController
+@RequestMapping("/api/equipos")
+@RequiredArgsConstructor
+public class EquipoController {
+
+    private final EquipoService service;
+
+    @GetMapping
+    public List<Equipo> findAll(@RequestParam(required = false) String search) {
+        return service.findAll(search);
+    }
+
+    @GetMapping("/{id}")
+    public Equipo findById(@PathVariable Long id) {
+        return service.findById(id);
+    }
+
+    @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Equipo> create(@Valid @RequestBody EquipoRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(service.create(request));
+    }
+
+    @PutMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public Equipo update(@PathVariable Long id, @Valid @RequestBody EquipoRequest request) {
+        return service.update(id, request);
+    }
+
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Void> delete(@PathVariable Long id) {
+        service.delete(id);
+        return ResponseEntity.noContent().build();
+    }
+}
