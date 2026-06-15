@@ -36,6 +36,15 @@ public class ImpresoraService {
         return repository.save(impresora);
     }
 
+    public Impresora updateDriver(Long id, String driverNombre, String driverVersion, String driverSo, String driverArchivoPath) {
+        Impresora impresora = findById(id);
+        impresora.setDriverNombre(driverNombre);
+        impresora.setDriverVersion(driverVersion);
+        impresora.setDriverSo(driverSo);
+        impresora.setDriverArchivoPath(driverArchivoPath);
+        return repository.save(impresora);
+    }
+
     public void delete(Long id) {
         repository.delete(findById(id));
     }
