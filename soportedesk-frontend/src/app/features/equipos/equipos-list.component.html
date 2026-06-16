@@ -1,0 +1,33 @@
+<h2>Equipos Asignados</h2>
+
+<app-generic-table
+  [columns]="columns"
+  [data]="items"
+  [canEdit]="isAdmin"
+  (searchChange)="onSearch($event)"
+  (add)="onAdd()"
+  (view)="onView($event)"
+  (edit)="onEdit($event)"
+  (delete)="onDelete($event)"
+/>
+
+<app-modal title="Detalle de equipo" [open]="viewing !== null" (closed)="closeView()">
+  <ng-container *ngIf="viewing">
+    <app-field label="Código">{{ viewing.codigo }}</app-field>
+    <app-field label="Tipo">{{ viewing.tipo }}</app-field>
+    <app-field label="Marca">{{ viewing.marca }}</app-field>
+    <app-field label="Modelo">{{ viewing.modelo }}</app-field>
+    <app-field label="Usuario">{{ viewing.usuario }}</app-field>
+    <app-field label="Área">{{ viewing.area }}</app-field>
+    <app-field label="Fecha de asignación">{{ viewing.asignado }}</app-field>
+    <app-field label="Estado">{{ viewing.estado }}</app-field>
+  </ng-container>
+</app-modal>
+
+<app-modal
+  [title]="editing ? 'Editar equipo' : 'Agregar equipo'"
+  [open]="formOpen"
+  (closed)="closeForm()"
+>
+  <app-equipo-form [equipo]="editing" (saved)="onSaved()" (cancelled)="closeForm()" />
+</app-modal>

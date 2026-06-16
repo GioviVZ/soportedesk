@@ -1,0 +1,43 @@
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 12px;
+
+  label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--color-gray);
+  }
+
+  input, select {
+    padding: 8px;
+    border: 1px solid var(--color-border);
+    border-radius: 4px;
+  }
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 16px;
+
+  button {
+    border: none;
+    border-radius: 4px;
+    padding: 8px 16px;
+    font-weight: 600;
+    background-color: var(--color-green);
+    color: var(--color-white);
+
+    &:disabled {
+      background-color: var(--color-gray);
+    }
+
+    &.secondary {
+      background-color: var(--color-gray-light);
+      color: var(--color-text);
+    }
+  }
+}

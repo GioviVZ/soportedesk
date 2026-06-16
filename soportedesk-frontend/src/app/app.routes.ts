@@ -33,6 +33,11 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./features/wifi/wifi-list.component').then((m) => m.WifiListComponent),
       },
+      {
+        path: 'equipos',
+        loadComponent: () =>
+          import('./features/equipos/equipos-list.component').then((m) => m.EquiposListComponent),
+      },
     ],
   },
 ];
