@@ -1,0 +1,28 @@
+<h2>Impresoras</h2>
+
+<app-generic-table
+  [columns]="columns"
+  [data]="items"
+  [canEdit]="isAdmin"
+  (searchChange)="onSearch($event)"
+  (add)="onAdd()"
+  (view)="onView($event)"
+  (edit)="onEdit($event)"
+  (delete)="onDelete($event)"
+/>
+
+<app-modal title="Ficha técnica" [open]="viewing !== null" (closed)="closeView()">
+  <app-impresora-ficha
+    *ngIf="viewing"
+    [impresora]="viewing"
+    (driverUpdated)="onDriverUpdated($event)"
+  />
+</app-modal>
+
+<app-modal
+  [title]="editing ? 'Editar impresora' : 'Agregar impresora'"
+  [open]="formOpen"
+  (closed)="closeForm()"
+>
+  <app-impresora-form [impresora]="editing" (saved)="onSaved()" (cancelled)="closeForm()" />
+</app-modal>

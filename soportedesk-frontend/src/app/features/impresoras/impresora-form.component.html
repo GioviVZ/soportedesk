@@ -1,0 +1,73 @@
+<form [formGroup]="form" (ngSubmit)="submit()">
+  <div class="two-col">
+    <div class="field">
+      <label>Nombre</label>
+      <input type="text" formControlName="nombre" />
+    </div>
+    <div class="field">
+      <label>Marca</label>
+      <input type="text" formControlName="marca" />
+    </div>
+    <div class="field">
+      <label>Modelo</label>
+      <input type="text" formControlName="modelo" />
+    </div>
+    <div class="field">
+      <label>IP</label>
+      <input type="text" formControlName="ip" />
+    </div>
+    <div class="field">
+      <label>Piso</label>
+      <input type="text" formControlName="piso" />
+    </div>
+    <div class="field">
+      <label>Área</label>
+      <input type="text" formControlName="area" />
+    </div>
+    <div class="field">
+      <label>Estado</label>
+      <select formControlName="estado">
+        <option value="Activa">Activa</option>
+        <option value="En mantenimiento">En mantenimiento</option>
+        <option value="De baja">De baja</option>
+      </select>
+    </div>
+  </div>
+
+  <h4>Consumibles (%)</h4>
+  <div class="two-col">
+    <div class="field">
+      <label>Tóner Negro</label>
+      <input type="number" formControlName="tonerNegro" min="0" max="100" />
+    </div>
+    <div class="field">
+      <label>Tóner Cyan</label>
+      <input type="number" formControlName="tonerC" min="0" max="100" />
+    </div>
+    <div class="field">
+      <label>Tóner Magenta</label>
+      <input type="number" formControlName="tonerM" min="0" max="100" />
+    </div>
+    <div class="field">
+      <label>Tóner Amarillo</label>
+      <input type="number" formControlName="tonerY" min="0" max="100" />
+    </div>
+    <div class="field">
+      <label>Cartucho</label>
+      <input type="number" formControlName="cartucho" min="0" max="100" />
+    </div>
+    <div class="field">
+      <label>Drum</label>
+      <input type="number" formControlName="drum" min="0" max="100" />
+    </div>
+    <div class="field">
+      <label>Fusor</label>
+      <input type="number" formControlName="fusor" min="0" max="100" />
+    </div>
+  </div>
+
+  <div class="actions">
+    <button type="button" class="secondary" (click)="cancelled.emit()">Cancelar</button>
+    <button type="submit" [disabled]="form.invalid">Guardar</button>
+  </div>
+</form>

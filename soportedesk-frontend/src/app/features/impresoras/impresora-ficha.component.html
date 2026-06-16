@@ -1,0 +1,44 @@
+<div class="ficha">
+  <div class="tabs">
+    <button [class.active]="activeTab === 'instalacion'" (click)="setTab('instalacion')">Instalación</button>
+    <button [class.active]="activeTab === 'consumibles'" (click)="setTab('consumibles')">Consumibles</button>
+    <button [class.active]="activeTab === 'driver'" (click)="setTab('driver')">Driver</button>
+  </div>
+
+  <div class="content" *ngIf="activeTab === 'instalacion'">
+    <div class="row"><span>Nombre</span><span>{{ impresora.nombre }}</span></div>
+    <div class="row"><span>Marca</span><span>{{ impresora.marca }}</span></div>
+    <div class="row"><span>Modelo</span><span>{{ impresora.modelo }}</span></div>
+    <div class="row"><span>IP</span><span>{{ impresora.ip }}</span></div>
+    <div class="row"><span>Piso</span><span>{{ impresora.piso }}</span></div>
+    <div class="row"><span>Área</span><span>{{ impresora.area }}</span></div>
+    <div class="row"><span>Estado</span><span>{{ impresora.estado }}</span></div>
+  </div>
+
+  <div class="content" *ngIf="activeTab === 'consumibles'">
+    <div class="row"><span>Tóner Negro</span><span>{{ impresora.tonerNegro }}%</span></div>
+    <div class="row"><span>Tóner Cyan</span><span>{{ impresora.tonerC }}%</span></div>
+    <div class="row"><span>Tóner Magenta</span><span>{{ impresora.tonerM }}%</span></div>
+    <div class="row"><span>Tóner Amarillo</span><span>{{ impresora.tonerY }}%</span></div>
+    <div class="row"><span>Cartucho</span><span>{{ impresora.cartucho }}%</span></div>
+    <div class="row"><span>Drum</span><span>{{ impresora.drum }}%</span></div>
+    <div class="row"><span>Fusor</span><span>{{ impresora.fusor }}%</span></div>
+  </div>
+
+  <div class="content" *ngIf="activeTab === 'driver'">
+    <ng-container *ngIf="impresora.driverNombre; else noDriver">
+      <div class="row"><span>Nombre</span><span>{{ impresora.driverNombre }}</span></div>
+      <div class="row"><span>Versión</span><span>{{ impresora.driverVersion }}</span></div>
+      <div class="row"><span>S.O.</span><span>{{ impresora.driverSo }}</span></div>
+      <button class="download-btn" (click)="downloadDriver()">Descargar driver</button>
+    </ng-container>
+    <ng-template #noDriver>
+      <p class="no-driver">No hay driver cargado.</p>
+    </ng-template>
+
+    <ng-container *ngIf="isAdmin">
+      <h4>Subir nuevo driver</h4>
+      <input type="file" (change)="onFileSelected($event)" />
+    </ng-container>
+  </div>
+</div>
