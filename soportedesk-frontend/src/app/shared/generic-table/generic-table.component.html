@@ -1,0 +1,32 @@
+<div class="table-toolbar">
+  <input type="text" placeholder="Buscar..." (input)="onSearch($any($event.target).value)" />
+  <button *ngIf="canEdit" class="add-btn" (click)="add.emit()">Agregar</button>
+</div>
+
+<table>
+  <thead>
+    <tr>
+      <th *ngFor="let col of columns">{{ col.label }}</th>
+      <th *ngIf="extraColumnLabel">{{ extraColumnLabel }}</th>
+      <th>Acciones</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr *ngFor="let row of data">
+      <td *ngFor="let col of columns">{{ getValue(row, col.key) }}</td>
+      <td *ngIf="extraColumnLabel">
+        <ng-container *ngTemplateOutlet="extraCellTemplate ?? null; context: { $implicit: row }" />
+      </td>
+      <td class="actions">
+        <button (click)="view.emit(row)">Ver</button>
+        <button *ngIf="canEdit" (click)="edit.emit(row)">Editar</button>
+        <button *ngIf="canEdit" (click)="delete.emit(row)">Eliminar</button>
+      </td>
+    </tr>
+    <tr *ngIf="data.length === 0">
+      <td [attr.colspan]="columns.length + (extraColumnLabel ? 2 : 1)" class="empty">
+        Sin registros
+      </td>
+    </tr>
+  </tbody>
+</table>
