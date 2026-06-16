@@ -1,0 +1,40 @@
+<h2>Usuarios de Red/AD</h2>
+
+<app-generic-table
+  [columns]="columns"
+  [data]="items"
+  [canEdit]="isAdmin"
+  extraColumnLabel="Vencimiento"
+  (searchChange)="onSearch($event)"
+  (add)="onAdd()"
+  (view)="onView($event)"
+  (edit)="onEdit($event)"
+  (delete)="onDelete($event)"
+>
+  <ng-template #extraCell let-row>
+    <app-vencimiento-badge [fecha]="row.fechaFinContrato" />
+  </ng-template>
+</app-generic-table>
+
+<app-modal title="Detalle de usuario de red" [open]="viewing !== null" (closed)="closeView()">
+  <ng-container *ngIf="viewing">
+    <app-field label="Usuario">{{ viewing.usuario }}</app-field>
+    <app-field label="Nombre">{{ viewing.nombre }}</app-field>
+    <app-field label="Grupo">{{ viewing.grupo }}</app-field>
+    <app-field label="Último Login">{{ viewing.ultimoLogin }}</app-field>
+    <app-field label="Sede">{{ viewing.sede?.nombre }}</app-field>
+    <app-field label="Dependencia">{{ viewing.dependencia?.nombre }}</app-field>
+    <app-field label="Subdependencia">{{ viewing.subdependencia?.nombre }}</app-field>
+    <app-field label="Tipo de Contrato">{{ viewing.tipoContrato?.nombre }}</app-field>
+    <app-field label="Fin de Contrato">{{ viewing.fechaFinContrato }}</app-field>
+    <app-field label="Estado">{{ viewing.estado }}</app-field>
+  </ng-container>
+</app-modal>
+
+<app-modal
+  [title]="editing ? 'Editar usuario de red' : 'Agregar usuario de red'"
+  [open]="formOpen"
+  (closed)="closeForm()"
+>
+  <app-usuario-red-form [usuarioRed]="editing" (saved)="onSaved()" (cancelled)="closeForm()" />
+</app-modal>
