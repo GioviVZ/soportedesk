@@ -1,0 +1,15 @@
+.info-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--color-border);
+  font-size: 14px;
+
+  .label {
+    color: var(--color-gray);
+  }
+
+  .value {
+    font-weight: 600;
+  }
+}

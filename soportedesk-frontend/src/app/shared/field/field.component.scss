@@ -1,0 +1,17 @@
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 12px;
+
+  label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--color-gray);
+    text-transform: uppercase;
+  }
+
+  .control {
+    font-size: 14px;
+  }
+}
