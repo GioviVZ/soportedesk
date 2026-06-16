@@ -1,0 +1,23 @@
+.ubicacion-select {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+
+  label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--color-gray);
+  }
+
+  select {
+    padding: 8px;
+    border: 1px solid var(--color-border);
+    border-radius: 4px;
+  }
+}
