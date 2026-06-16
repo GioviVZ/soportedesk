@@ -28,6 +28,11 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./features/licencias/licencias-list.component').then((m) => m.LicenciasListComponent),
       },
+      {
+        path: 'wifi',
+        loadComponent: () =>
+          import('./features/wifi/wifi-list.component').then((m) => m.WifiListComponent),
+      },
     ],
   },
 ];
