@@ -43,6 +43,31 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./features/vpn/vpn-list.component').then((m) => m.VpnListComponent),
       },
+      {
+        path: 'correos',
+        loadComponent: () =>
+          import('./features/correos/correos-list.component').then((m) => m.CorreosListComponent),
+      },
+      {
+        path: 'usuarios-red',
+        loadComponent: () =>
+          import('./features/usuarios-red/usuarios-red-list.component').then(
+            (m) => m.UsuariosRedListComponent,
+          ),
+      },
+      {
+        path: 'impresoras',
+        loadComponent: () =>
+          import('./features/impresoras/impresoras-list.component').then(
+            (m) => m.ImpresorasListComponent,
+          ),
+      },
+      {
+        path: 'catalogos',
+        loadComponent: () =>
+          import('./features/catalogos/catalogos.component').then((m) => m.CatalogosComponent),
+      },
+      { path: '**', redirectTo: 'dashboard' },
     ],
   },
 ];
