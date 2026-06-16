@@ -1,4 +1,5 @@
 import { Routes } from '@angular/router';
+import { adminGuard } from './core/auth/admin.guard';
 import { authGuard } from './core/auth/auth.guard';
 import { ShellComponent } from './layout/shell/shell.component';
 
@@ -64,6 +65,7 @@ export const routes: Routes = [
       },
       {
         path: 'catalogos',
+        canActivate: [adminGuard],
         loadComponent: () =>
           import('./features/catalogos/catalogos.component').then((m) => m.CatalogosComponent),
       },
