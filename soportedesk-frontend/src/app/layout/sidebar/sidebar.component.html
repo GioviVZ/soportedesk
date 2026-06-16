@@ -3,14 +3,27 @@
     {{ collapsed ? '»' : '«' }}
   </button>
   <nav>
-    <a
-      *ngFor="let item of visibleItems"
-      [routerLink]="item.path"
-      routerLinkActive="active"
-      class="nav-item"
-    >
-      <span class="icon">{{ item.icon }}</span>
-      <span class="label" *ngIf="!collapsed">{{ item.label }}</span>
-    </a>
+    <ng-container *ngFor="let item of navItems">
+      <a
+        *ngIf="!item.adminOnly"
+        [routerLink]="item.path"
+        routerLinkActive="active"
+        class="nav-item"
+      >
+        <span class="icon">{{ item.icon }}</span>
+        <span class="label" *ngIf="!collapsed">{{ item.label }}</span>
+      </a>
+      <ng-container *ifAdmin>
+        <a
+          *ngIf="item.adminOnly"
+          [routerLink]="item.path"
+          routerLinkActive="active"
+          class="nav-item"
+        >
+          <span class="icon">{{ item.icon }}</span>
+          <span class="label" *ngIf="!collapsed">{{ item.label }}</span>
+        </a>
+      </ng-container>
+    </ng-container>
   </nav>
 </aside>

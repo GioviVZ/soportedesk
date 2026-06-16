@@ -1,7 +1,7 @@
-import { Component, inject } from '@angular/core';
+import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink, RouterLinkActive } from '@angular/router';
-import { AuthService } from '../../core/auth/auth.service';
+import { IfAdminDirective } from '../../shared/directives/if-admin.directive';
 
 interface NavItem {
   path: string;
@@ -13,13 +13,11 @@ interface NavItem {
 @Component({
   selector: 'app-sidebar',
   standalone: true,
-  imports: [CommonModule, RouterLink, RouterLinkActive],
+  imports: [CommonModule, RouterLink, RouterLinkActive, IfAdminDirective],
   templateUrl: './sidebar.component.html',
   styleUrl: './sidebar.component.scss',
 })
 export class SidebarComponent {
-  private authService = inject(AuthService);
-
   collapsed = false;
 
   readonly navItems: NavItem[] = [
@@ -33,10 +31,6 @@ export class SidebarComponent {
     { path: '/equipos', label: 'Equipos Asignados', icon: '💻' },
     { path: '/catalogos', label: 'Catálogos', icon: '🗂️', adminOnly: true },
   ];
-
-  get visibleItems(): NavItem[] {
-    return this.navItems.filter((item) => !item.adminOnly || this.authService.isAdmin());
-  }
 
   toggleCollapsed(): void {
     this.collapsed = !this.collapsed;
