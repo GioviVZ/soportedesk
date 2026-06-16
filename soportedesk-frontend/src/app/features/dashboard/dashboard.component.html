@@ -1,0 +1,7 @@
+<h2>Panel de control</h2>
+<div class="cards">
+  <a class="card" *ngFor="let card of cards" [routerLink]="card.path">
+    <span class="value">{{ card.value }}</span>
+    <span class="label">{{ card.label }}</span>
+  </a>
+</div>

@@ -1,0 +1,37 @@
+h2 {
+  color: var(--color-green-dark);
+  margin-top: 0;
+}
+
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 16px;
+}
+
+.card {
+  background-color: var(--color-white);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  text-decoration: none;
+  color: var(--color-text);
+
+  &:hover {
+    border-color: var(--color-green);
+  }
+
+  .value {
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--color-green-dark);
+  }
+
+  .label {
+    font-size: 13px;
+    color: var(--color-gray);
+  }
+}
