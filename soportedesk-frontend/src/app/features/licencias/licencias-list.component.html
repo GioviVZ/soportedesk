@@ -1,0 +1,31 @@
+<h2>Licencias Office</h2>
+
+<app-generic-table
+  [columns]="columns"
+  [data]="licencias"
+  [canEdit]="isAdmin"
+  (searchChange)="onSearch($event)"
+  (add)="onAdd()"
+  (view)="onView($event)"
+  (edit)="onEdit($event)"
+  (delete)="onDelete($event)"
+/>
+
+<app-modal title="Detalle de licencia" [open]="viewing !== null" (closed)="closeView()">
+  <ng-container *ngIf="viewing">
+    <app-field label="Cantidad">{{ viewing.cantidad }}</app-field>
+    <app-field label="Licencia">{{ viewing.licencia }}</app-field>
+    <app-field label="Correo">{{ viewing.correo }}</app-field>
+    <app-field label="Clave">{{ viewing.clave }}</app-field>
+    <app-field label="Orden de Compra">{{ viewing.ordenCompra }}</app-field>
+    <app-field label="Año">{{ viewing.anio }}</app-field>
+  </ng-container>
+</app-modal>
+
+<app-modal
+  [title]="editing ? 'Editar licencia' : 'Agregar licencia'"
+  [open]="formOpen"
+  (closed)="closeForm()"
+>
+  <app-licencia-form [licencia]="editing" (saved)="onSaved()" (cancelled)="closeForm()" />
+</app-modal>

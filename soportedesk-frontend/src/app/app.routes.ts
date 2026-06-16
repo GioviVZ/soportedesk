@@ -23,6 +23,11 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./features/dashboard/dashboard.component').then((m) => m.DashboardComponent),
       },
+      {
+        path: 'licencias',
+        loadComponent: () =>
+          import('./features/licencias/licencias-list.component').then((m) => m.LicenciasListComponent),
+      },
     ],
   },
 ];
