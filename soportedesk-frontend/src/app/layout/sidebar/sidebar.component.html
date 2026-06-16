@@ -1,0 +1,16 @@
+<aside class="sidebar" [class.collapsed]="collapsed">
+  <button class="toggle" (click)="toggleCollapsed()">
+    {{ collapsed ? '»' : '«' }}
+  </button>
+  <nav>
+    <a
+      *ngFor="let item of visibleItems"
+      [routerLink]="item.path"
+      routerLinkActive="active"
+      class="nav-item"
+    >
+      <span class="icon">{{ item.icon }}</span>
+      <span class="label" *ngIf="!collapsed">{{ item.label }}</span>
+    </a>
+  </nav>
+</aside>
