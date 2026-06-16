@@ -1,0 +1,33 @@
+<form [formGroup]="form" (ngSubmit)="submit()">
+  <div class="field">
+    <label>Usuario</label>
+    <input type="text" formControlName="usuario" />
+  </div>
+  <div class="field">
+    <label>Nombre</label>
+    <input type="text" formControlName="nombre" />
+  </div>
+  <div class="field">
+    <label>Tipo</label>
+    <input type="text" formControlName="tipo" />
+  </div>
+  <div class="field">
+    <label>IP asignada</label>
+    <input type="text" formControlName="ipAsignada" />
+  </div>
+  <div class="field">
+    <label>Vence</label>
+    <input type="date" formControlName="vence" />
+  </div>
+  <div class="field">
+    <label>Estado</label>
+    <select formControlName="estado">
+      <option value="Activo">Activo</option>
+      <option value="Inactivo">Inactivo</option>
+    </select>
+  </div>
+  <div class="actions">
+    <button type="button" class="secondary" (click)="cancelled.emit()">Cancelar</button>
+    <button type="submit" [disabled]="form.invalid">Guardar</button>
+  </div>
+</form>

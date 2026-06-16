@@ -38,6 +38,11 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./features/equipos/equipos-list.component').then((m) => m.EquiposListComponent),
       },
+      {
+        path: 'vpn',
+        loadComponent: () =>
+          import('./features/vpn/vpn-list.component').then((m) => m.VpnListComponent),
+      },
     ],
   },
 ];

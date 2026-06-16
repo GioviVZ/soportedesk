@@ -1,0 +1,36 @@
+<h2>VPN</h2>
+
+<app-generic-table
+  [columns]="columns"
+  [data]="items"
+  [canEdit]="isAdmin"
+  extraColumnLabel="Vencimiento"
+  (searchChange)="onSearch($event)"
+  (add)="onAdd()"
+  (view)="onView($event)"
+  (edit)="onEdit($event)"
+  (delete)="onDelete($event)"
+>
+  <ng-template #extraCell let-row>
+    <app-vencimiento-badge [fecha]="row.vence" />
+  </ng-template>
+</app-generic-table>
+
+<app-modal title="Detalle VPN" [open]="viewing !== null" (closed)="closeView()">
+  <ng-container *ngIf="viewing">
+    <app-field label="Usuario">{{ viewing.usuario }}</app-field>
+    <app-field label="Nombre">{{ viewing.nombre }}</app-field>
+    <app-field label="Tipo">{{ viewing.tipo }}</app-field>
+    <app-field label="IP asignada">{{ viewing.ipAsignada }}</app-field>
+    <app-field label="Vence">{{ viewing.vence }}</app-field>
+    <app-field label="Estado">{{ viewing.estado }}</app-field>
+  </ng-container>
+</app-modal>
+
+<app-modal
+  [title]="editing ? 'Editar VPN' : 'Agregar VPN'"
+  [open]="formOpen"
+  (closed)="closeForm()"
+>
+  <app-vpn-form [vpn]="editing" (saved)="onSaved()" (cancelled)="closeForm()" />
+</app-modal>
