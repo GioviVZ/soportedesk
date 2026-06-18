@@ -11,11 +11,15 @@
   </div>
 
   <div class="header-right">
-    <div class="user-chip">
+    <div class="user-chip" (click)="toggleMenu()">
       <div class="avatar">{{ initials }}</div>
       <div class="user-info">
         <span class="nombre">{{ nombre }}</span>
         <span class="rol-badge" [class.admin]="rol === 'ADMIN'">{{ rol }}</span>
+      </div>
+
+      <div class="user-menu" *ngIf="menuOpen" (click)="$event.stopPropagation()">
+        <button type="button" (click)="openCambiarPassword()">Cambiar contraseña</button>
       </div>
     </div>
 
@@ -29,3 +33,7 @@
     </button>
   </div>
 </header>
+
+<app-modal title="Cambiar contraseña" [open]="cambiarPasswordOpen" (closed)="closeCambiarPassword()">
+  <app-cambiar-password-modal (saved)="onPasswordChanged()" (cancelled)="closeCambiarPassword()" />
+</app-modal>
