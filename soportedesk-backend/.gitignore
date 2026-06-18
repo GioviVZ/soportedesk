@@ -1,0 +1,6 @@
+# Maven build output
+/target/
+/build/
+
+# Datos reales con informacion de usuarios (no debe ir a git)
+src/main/resources/AD_Usuarios.xlsx
