@@ -60,4 +60,14 @@ describe('CambiarPasswordModalComponent', () => {
     expect(component.errorMessage).toBe('La contraseña actual es incorrecta');
     expect(savedSpy).not.toHaveBeenCalled();
   });
+
+  it('displays inline error when passwords do not match and confirmarPassword is touched', () => {
+    component.form.patchValue({ passwordActual: 'old123', passwordNueva: 'newpass1', confirmarPassword: 'different' });
+    component.form.get('confirmarPassword')?.markAsTouched();
+    fixture.detectChanges();
+
+    const errorElement = fixture.nativeElement.querySelector('.error-msg');
+    expect(errorElement).toBeTruthy();
+    expect(errorElement.textContent).toContain('Las contraseñas no coinciden');
+  });
 });
