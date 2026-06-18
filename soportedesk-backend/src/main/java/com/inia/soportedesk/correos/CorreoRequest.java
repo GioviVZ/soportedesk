@@ -19,6 +19,9 @@ public class CorreoRequest {
     private String nombre;
 
     @NotBlank
+    private String apellidos;
+
+    @NotBlank
     @Email
     private String correo;
 

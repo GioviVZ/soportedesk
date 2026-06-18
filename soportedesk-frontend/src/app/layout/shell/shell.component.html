@@ -1,4 +1,5 @@
 <div class="shell">
+  <div class="backdrop" [class.visible]="layout.sidebarOpen()" (click)="layout.close()"></div>
   <app-sidebar />
   <div class="content">
     <app-header />

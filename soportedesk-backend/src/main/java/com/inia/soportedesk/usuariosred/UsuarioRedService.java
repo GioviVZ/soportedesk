@@ -51,10 +51,14 @@ public class UsuarioRedService {
     private void copyFields(UsuarioRed usuario, UsuarioRedRequest request) {
         usuario.setUsuario(request.getUsuario());
         usuario.setNombre(request.getNombre());
+        usuario.setApellidos(request.getApellidos());
         usuario.setGrupo(request.getGrupo());
+        usuario.setUnidadOrganizativa(request.getUnidadOrganizativa());
         usuario.setUltimoLogin(request.getUltimoLogin());
         usuario.setEstado(request.getEstado());
         usuario.setFechaFinContrato(request.getFechaFinContrato());
+        usuario.setFechaCreacion(request.getFechaCreacion());
+        usuario.setNumeroContrato(request.getNumeroContrato());
         usuario.setSede(sedeRepository.findById(request.getSedeId())
                 .orElseThrow(() -> new ResourceNotFoundException("Sede no encontrada: " + request.getSedeId())));
         usuario.setDependencia(dependenciaRepository.findById(request.getDependenciaId())

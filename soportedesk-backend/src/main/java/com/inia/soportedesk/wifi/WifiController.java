@@ -27,19 +27,19 @@ public class WifiController {
     }
 
     @PostMapping
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN') || hasAuthority('WRITE_wifi')")
     public ResponseEntity<Wifi> create(@Valid @RequestBody WifiRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(service.create(request));
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN') || hasAuthority('WRITE_wifi')")
     public Wifi update(@PathVariable Long id, @Valid @RequestBody WifiRequest request) {
         return service.update(id, request);
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN') || hasAuthority('WRITE_wifi')")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
         service.delete(id);
         return ResponseEntity.noContent().build();

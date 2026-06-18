@@ -4,23 +4,37 @@ export interface Impresora {
   marca: string;
   modelo: string;
   ip: string;
-  piso: string;
-  area: string;
+  sede: { id: number; nombre: string } | null;
+  dependencia: { id: number; nombre: string } | null;
+  subdependencia: { id: number; nombre: string } | null;
   estado: string;
-  tonerNegro: number;
-  tonerC: number;
-  tonerM: number;
-  tonerY: number;
-  cartucho: number;
-  drum: number;
-  fusor: number;
+  modeloTonerNegro: string | null;
+  modeloTonerC: string | null;
+  modeloTonerM: string | null;
+  modeloTonerY: string | null;
+  modeloCartucho: string | null;
+  modeloDrum: string | null;
+  modeloFusor: string | null;
   driverNombre: string | null;
   driverVersion: string | null;
   driverSo: string | null;
   driverArchivoPath: string | null;
 }
 
-export type ImpresoraRequest = Omit<
-  Impresora,
-  'id' | 'driverNombre' | 'driverVersion' | 'driverSo' | 'driverArchivoPath'
->;
+export interface ImpresoraRequest {
+  nombre: string;
+  marca: string;
+  modelo: string;
+  ip: string;
+  sedeId: number | null;
+  dependenciaId: number | null;
+  subdependenciaId: number | null;
+  estado: string;
+  modeloTonerNegro: string;
+  modeloTonerC: string;
+  modeloTonerM: string;
+  modeloTonerY: string;
+  modeloCartucho: string;
+  modeloDrum: string;
+  modeloFusor: string;
+}

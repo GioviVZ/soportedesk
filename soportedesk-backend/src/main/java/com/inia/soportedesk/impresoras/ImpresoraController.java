@@ -35,30 +35,30 @@ public class ImpresoraController {
     }
 
     @PostMapping
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN') || hasAuthority('WRITE_impresoras')")
     public ResponseEntity<Impresora> create(@Valid @RequestBody ImpresoraRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(service.create(request));
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN') || hasAuthority('WRITE_impresoras')")
     public Impresora update(@PathVariable Long id, @Valid @RequestBody ImpresoraRequest request) {
         return service.update(id, request);
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN') || hasAuthority('WRITE_impresoras')")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
         service.delete(id);
         return ResponseEntity.noContent().build();
     }
 
     @PostMapping("/{id}/driver")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN') || hasAuthority('WRITE_impresoras')")
     public Impresora uploadDriver(@PathVariable Long id,
                                    @RequestParam("file") MultipartFile file,
-                                   @RequestParam("version") String version,
-                                   @RequestParam("so") String so) {
+                                   @RequestParam(value = "version", required = false, defaultValue = "") String version,
+                                   @RequestParam(value = "so", required = false, defaultValue = "") String so) {
         String relativePath = fileStorageService.store(id, file);
         return service.updateDriver(id, file.getOriginalFilename(), version, so, relativePath);
     }

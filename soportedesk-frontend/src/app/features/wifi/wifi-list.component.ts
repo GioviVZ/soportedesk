@@ -32,8 +32,8 @@ export class WifiListComponent implements OnInit {
   editing: Wifi | null = null;
   formOpen = false;
 
-  get isAdmin(): boolean {
-    return this.authService.isAdmin();
+  get canWrite(): boolean {
+    return this.authService.canWrite('wifi');
   }
 
   ngOnInit(): void {

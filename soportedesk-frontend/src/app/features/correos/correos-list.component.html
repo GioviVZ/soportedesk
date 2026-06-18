@@ -3,7 +3,7 @@
 <app-generic-table
   [columns]="columns"
   [data]="items"
-  [canEdit]="isAdmin"
+  [canEdit]="canWrite"
   extraColumnLabel="Vencimiento"
   (searchChange)="onSearch($event)"
   (add)="onAdd()"
@@ -20,6 +20,7 @@
   <ng-container *ngIf="viewing">
     <app-field label="Usuario">{{ viewing.usuario }}</app-field>
     <app-field label="Nombre">{{ viewing.nombre }}</app-field>
+    <app-field label="Apellidos">{{ viewing.apellidos }}</app-field>
     <app-field label="Correo">{{ viewing.correo }}</app-field>
     <app-field label="Sede">{{ viewing.sede?.nombre }}</app-field>
     <app-field label="Dependencia">{{ viewing.dependencia?.nombre }}</app-field>

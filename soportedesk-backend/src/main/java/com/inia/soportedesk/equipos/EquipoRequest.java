@@ -10,8 +10,9 @@ import java.time.LocalDate;
 @Setter
 public class EquipoRequest {
 
-    @NotBlank
-    private String codigo;
+    private String numeroSerie;
+    private String codigoPatrimonial;
+    private String codigoInventario;
 
     @NotBlank
     private String tipo;
@@ -22,11 +23,13 @@ public class EquipoRequest {
     @NotBlank
     private String modelo;
 
-    @NotBlank
-    private String usuario;
+    private String host;
+    private String ip;
 
-    @NotBlank
-    private String area;
+    private Long usuarioRedId;
+    private Long sedeId;
+    private Long dependenciaId;
+    private Long subdependenciaId;
 
     private LocalDate asignado;
 

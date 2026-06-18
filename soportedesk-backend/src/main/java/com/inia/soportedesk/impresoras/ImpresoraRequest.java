@@ -1,8 +1,7 @@
 package com.inia.soportedesk.impresoras;
 
-import jakarta.validation.constraints.Max;
-import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -20,32 +19,31 @@ public class ImpresoraRequest {
     private String modelo;
 
     private String ip;
-
-    private String piso;
-
-    private String area;
+    private Long sedeId;
+    private Long dependenciaId;
+    private Long subdependenciaId;
 
     @NotBlank
     private String estado;
 
-    @Min(0) @Max(100)
-    private Integer tonerNegro;
+    @Size(max = 100)
+    private String modeloTonerNegro;
 
-    @Min(0) @Max(100)
-    private Integer tonerC;
+    @Size(max = 100)
+    private String modeloTonerC;
 
-    @Min(0) @Max(100)
-    private Integer tonerM;
+    @Size(max = 100)
+    private String modeloTonerM;
 
-    @Min(0) @Max(100)
-    private Integer tonerY;
+    @Size(max = 100)
+    private String modeloTonerY;
 
-    @Min(0) @Max(100)
-    private Integer cartucho;
+    @Size(max = 100)
+    private String modeloCartucho;
 
-    @Min(0) @Max(100)
-    private Integer drum;
+    @Size(max = 100)
+    private String modeloDrum;
 
-    @Min(0) @Max(100)
-    private Integer fusor;
+    @Size(max = 100)
+    private String modeloFusor;
 }

@@ -5,6 +5,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -27,15 +28,20 @@ public class VpnController {
     }
 
     @PostMapping
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<Vpn> create(@Valid @RequestBody VpnRequest request) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(service.create(request));
+    @PreAuthorize("hasRole('ADMIN') || hasAuthority('WRITE_vpn')")
+    public ResponseEntity<Vpn> create(@Valid @RequestBody VpnRequest request, Authentication auth) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(service.create(request, auth));
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
-    public Vpn update(@PathVariable Long id, @Valid @RequestBody VpnRequest request) {
-        return service.update(id, request);
+    @PreAuthorize("hasRole('ADMIN') || hasAuthority('WRITE_vpn')")
+    public Vpn update(@PathVariable Long id, @Valid @RequestBody VpnRequest request, Authentication auth) {
+        return service.update(id, request, auth);
+    }
+
+    @PatchMapping("/{id}/antivirus")
+    public Vpn updateAntivirus(@PathVariable Long id, @RequestBody VpnAntivirusRequest request) {
+        return service.updateAntivirus(id, request);
     }
 
     @DeleteMapping("/{id}")

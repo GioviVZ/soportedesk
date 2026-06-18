@@ -13,13 +13,13 @@ const mockImpresora: Impresora = {
   piso: '1',
   area: 'Oficina',
   estado: 'Activa',
-  tonerNegro: 80,
-  tonerC: 70,
-  tonerM: 60,
-  tonerY: 50,
-  cartucho: 90,
-  drum: 85,
-  fusor: 75,
+  modeloTonerNegro: 'TN-2380',
+  modeloTonerC: null,
+  modeloTonerM: null,
+  modeloTonerY: null,
+  modeloCartucho: null,
+  modeloDrum: 'DR-2365',
+  modeloFusor: null,
   driverNombre: null,
   driverVersion: null,
   driverSo: null,
@@ -33,9 +33,7 @@ describe('ImpresoraFichaComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [ImpresoraFichaComponent, HttpClientTestingModule],
-      providers: [
-        { provide: AuthService, useValue: { isAdmin: () => false } },
-      ],
+      providers: [{ provide: AuthService, useValue: { isAdmin: () => false } }],
     }).compileComponents();
 
     fixture = TestBed.createComponent(ImpresoraFichaComponent);
@@ -53,25 +51,33 @@ describe('ImpresoraFichaComponent', () => {
     expect(component.activeTab).toBe('consumibles');
   });
 
-  it('should switch to driver tab and show upload section for admin', () => {
-    const adminAuthService = { isAdmin: () => true };
+  it('hasConsumibles returns true when any model is set', () => {
+    expect(component.hasConsumibles()).toBeTrue();
+  });
+
+  it('hasConsumibles returns false when all models are null', () => {
+    component.impresora = {
+      ...mockImpresora,
+      modeloTonerNegro: null, modeloTonerC: null, modeloTonerM: null,
+      modeloTonerY: null, modeloCartucho: null, modeloDrum: null, modeloFusor: null,
+    };
+    expect(component.hasConsumibles()).toBeFalse();
+  });
+
+  it('should show upload section for admin', async () => {
     TestBed.resetTestingModule();
-    TestBed.configureTestingModule({
+    await TestBed.configureTestingModule({
       imports: [ImpresoraFichaComponent, HttpClientTestingModule],
-      providers: [
-        { provide: AuthService, useValue: adminAuthService },
-      ],
+      providers: [{ provide: AuthService, useValue: { isAdmin: () => true } }],
     }).compileComponents();
 
     const adminFixture = TestBed.createComponent(ImpresoraFichaComponent);
     const adminComponent = adminFixture.componentInstance;
     adminComponent.impresora = mockImpresora;
     adminFixture.detectChanges();
-
     adminComponent.setTab('driver');
     adminFixture.detectChanges();
 
-    expect(adminComponent.activeTab).toBe('driver');
-    expect(adminComponent.isAdmin).toBe(true);
+    expect(adminComponent.isAdmin).toBeTrue();
   });
 });

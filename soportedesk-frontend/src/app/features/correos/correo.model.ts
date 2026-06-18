@@ -4,6 +4,7 @@ export interface Correo {
   id: number;
   usuario: string;
   nombre: string;
+  apellidos: string;
   correo: string;
   estado: string;
   sede: Sede;
@@ -17,6 +18,7 @@ export interface Correo {
 export interface CorreoRequest {
   usuario: string;
   nombre: string;
+  apellidos: string;
   correo: string;
   estado: string;
   sedeId: number;

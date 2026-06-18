@@ -17,6 +17,17 @@
   }
 }
 
+.ad-selector select {
+  background-color: var(--color-green-light);
+  border-color: var(--color-green);
+}
+
+.divider {
+  border: none;
+  border-top: 1px solid var(--color-border);
+  margin: 4px 0 16px;
+}
+
 .actions {
   display: flex;
   justify-content: flex-end;

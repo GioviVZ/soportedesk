@@ -1,0 +1,212 @@
+.toolbar {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 16px;
+}
+
+.add-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  background-color: var(--color-green);
+  color: var(--color-white);
+  border: none;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.table-wrap {
+  overflow-x: auto;
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+
+    th {
+      text-align: left;
+      padding: 10px 12px;
+      background: var(--color-bg-alt, #f9fafb);
+      color: var(--color-gray);
+      font-weight: 600;
+      border-bottom: 2px solid var(--color-border);
+    }
+
+    td {
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--color-border);
+      vertical-align: middle;
+    }
+
+    .empty {
+      text-align: center;
+      color: var(--color-gray);
+      font-style: italic;
+      padding: 24px;
+    }
+  }
+}
+
+.username {
+  font-family: monospace;
+  font-size: 13px;
+  color: var(--color-primary, #1d4ed8);
+}
+
+.badge {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+
+  &.activo {
+    background: var(--color-green-light);
+    color: var(--color-green-dark);
+  }
+
+  &.inactivo {
+    background: #fee2e2;
+    color: #991b1b;
+  }
+}
+
+.permisos-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.tag {
+  background: var(--color-green-light);
+  color: var(--color-green-dark);
+  border-radius: 10px;
+  padding: 2px 8px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.sin-permisos {
+  color: var(--color-gray);
+  font-style: italic;
+  font-size: 12px;
+}
+
+.actions {
+  display: flex;
+  gap: 6px;
+
+  button {
+    padding: 5px 10px;
+    border: none;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .edit-btn {
+    background: var(--color-green-light);
+    color: var(--color-green-dark);
+  }
+
+  .del-btn {
+    background: #fee2e2;
+    color: #991b1b;
+  }
+}
+
+// Form inside modal
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+
+  label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--color-gray);
+  }
+
+  input, select {
+    padding: 8px;
+    border: 1px solid var(--color-border);
+    border-radius: 4px;
+    font-size: 13px;
+
+    &:disabled {
+      background: var(--color-bg-alt, #f9fafb);
+      color: var(--color-gray);
+    }
+  }
+}
+
+.permisos-section {
+  border-top: 1px solid var(--color-border);
+  padding-top: 14px;
+}
+
+.permisos-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--color-text);
+  margin: 0 0 2px;
+}
+
+.permisos-hint {
+  font-size: 11px;
+  color: var(--color-gray);
+  margin: 0 0 12px;
+}
+
+.permisos-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.permiso-check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  cursor: pointer;
+
+  input[type="checkbox"] {
+    width: 15px;
+    height: 15px;
+    accent-color: var(--color-green);
+    cursor: pointer;
+  }
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding-top: 4px;
+
+  button {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 4px;
+    font-weight: 600;
+    cursor: pointer;
+    background: var(--color-green);
+    color: var(--color-white);
+
+    &.secondary {
+      background: var(--color-gray-light, #e5e7eb);
+      color: var(--color-text);
+    }
+  }
+}

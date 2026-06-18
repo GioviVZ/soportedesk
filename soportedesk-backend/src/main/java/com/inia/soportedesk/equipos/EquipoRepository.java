@@ -8,11 +8,15 @@ import java.util.List;
 
 public interface EquipoRepository extends JpaRepository<Equipo, Long> {
 
-    @Query("SELECT e FROM Equipo e WHERE " +
-           "LOWER(e.codigo) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
+    List<Equipo> findByTipoIn(List<String> tipos);
+
+    @Query("SELECT e FROM Equipo e LEFT JOIN e.usuarioRed u LEFT JOIN e.sede s LEFT JOIN e.dependencia d WHERE " +
+           "LOWER(e.numeroSerie) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
            "LOWER(e.marca) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
            "LOWER(e.modelo) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
-           "LOWER(e.usuario) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
-           "LOWER(e.area) LIKE LOWER(CONCAT('%', :search, '%'))")
+           "LOWER(e.codigoPatrimonial) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
+           "LOWER(u.nombre) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
+           "LOWER(s.nombre) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
+           "LOWER(d.nombre) LIKE LOWER(CONCAT('%', :search, '%'))")
     List<Equipo> search(@Param("search") String search);
 }

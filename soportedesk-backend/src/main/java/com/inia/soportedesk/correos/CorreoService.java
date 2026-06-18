@@ -51,6 +51,7 @@ public class CorreoService {
     private void copyFields(Correo correo, CorreoRequest request) {
         correo.setUsuario(request.getUsuario());
         correo.setNombre(request.getNombre());
+        correo.setApellidos(request.getApellidos());
         correo.setCorreo(request.getCorreo());
         correo.setEstado(request.getEstado());
         correo.setFechaFinContrato(request.getFechaFinContrato());

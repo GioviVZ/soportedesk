@@ -1,0 +1,97 @@
+<h2>Usuarios del Sistema</h2>
+
+<div class="toolbar">
+  <button class="add-btn" (click)="openCreate()">
+    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+      stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+    </svg>
+    Agregar usuario
+  </button>
+</div>
+
+<div class="table-wrap">
+  <table>
+    <thead>
+      <tr>
+        <th>Nombre</th>
+        <th>Usuario</th>
+        <th>Estado</th>
+        <th>Módulos con permiso de edición</th>
+        <th>Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let u of usuarios">
+        <td>{{ u.nombre }}</td>
+        <td class="username">{{ u.username }}</td>
+        <td>
+          <span class="badge" [class.activo]="u.activo" [class.inactivo]="!u.activo">
+            {{ u.activo ? 'Activo' : 'Inactivo' }}
+          </span>
+        </td>
+        <td>
+          <div class="permisos-tags">
+            <ng-container *ngIf="u.permisos.length > 0; else sinPermisos">
+              <span class="tag" *ngFor="let p of u.permisos">{{ moduloLabel(p) }}</span>
+            </ng-container>
+            <ng-template #sinPermisos>
+              <span class="sin-permisos">Solo lectura</span>
+            </ng-template>
+          </div>
+        </td>
+        <td class="actions">
+          <button class="edit-btn" (click)="openEdit(u)">Editar</button>
+          <button class="del-btn" (click)="delete(u)">Eliminar</button>
+        </td>
+      </tr>
+      <tr *ngIf="usuarios.length === 0">
+        <td colspan="5" class="empty">No hay usuarios de soporte registrados</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<app-modal
+  [title]="editingId ? 'Editar usuario' : 'Nuevo usuario de soporte'"
+  [open]="formOpen"
+  (closed)="closeForm()"
+>
+  <div class="form">
+    <div class="field">
+      <label>Nombre completo</label>
+      <input type="text" [(ngModel)]="form.nombre" placeholder="Nombre" />
+    </div>
+    <div class="field">
+      <label>Usuario (login)</label>
+      <input type="text" [(ngModel)]="form.username" [disabled]="!!editingId" placeholder="username" />
+    </div>
+    <div class="field">
+      <label>Contraseña {{ editingId ? '(dejar vacío para no cambiar)' : '' }}</label>
+      <input type="password" [(ngModel)]="form.password" placeholder="Contraseña" />
+    </div>
+    <div class="field">
+      <label>Estado</label>
+      <select [(ngModel)]="form.activo">
+        <option [ngValue]="true">Activo</option>
+        <option [ngValue]="false">Inactivo</option>
+      </select>
+    </div>
+
+    <div class="permisos-section">
+      <p class="permisos-title">Permisos de modificación por módulo</p>
+      <p class="permisos-hint">El usuario siempre puede ver todos los módulos. Marca los que podrá editar.</p>
+      <div class="permisos-grid">
+        <label class="permiso-check" *ngFor="let m of modulos">
+          <input type="checkbox" [checked]="hasPermiso(m.key)" (change)="togglePermiso(m.key)" />
+          <span>{{ m.label }}</span>
+        </label>
+      </div>
+    </div>
+
+    <div class="form-actions">
+      <button type="button" class="secondary" (click)="closeForm()">Cancelar</button>
+      <button type="button" (click)="submit()">Guardar</button>
+    </div>
+  </div>
+</app-modal>

@@ -19,7 +19,12 @@ public class UsuarioRedRequest {
     private String nombre;
 
     @NotBlank
+    private String apellidos;
+
+    @NotBlank
     private String grupo;
+
+    private String unidadOrganizativa;
 
     private LocalDateTime ultimoLogin;
 
@@ -39,4 +44,8 @@ public class UsuarioRedRequest {
     private Long tipoContratoId;
 
     private LocalDate fechaFinContrato;
+
+    private LocalDate fechaCreacion;
+
+    private String numeroContrato;
 }

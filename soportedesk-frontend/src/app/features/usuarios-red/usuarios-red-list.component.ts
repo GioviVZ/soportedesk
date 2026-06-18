@@ -31,7 +31,9 @@ export class UsuariosRedListComponent implements OnInit {
   columns: TableColumn[] = [
     { key: 'usuario', label: 'Usuario' },
     { key: 'nombre', label: 'Nombre' },
+    { key: 'apellidos', label: 'Apellidos' },
     { key: 'grupo', label: 'Grupo' },
+    { key: 'unidadOrganizativa', label: 'Unidad Organizativa' },
     { key: 'ultimoLogin', label: 'Último Login' },
     { key: 'sede.nombre', label: 'Sede' },
     { key: 'dependencia.nombre', label: 'Dependencia' },
@@ -44,8 +46,8 @@ export class UsuariosRedListComponent implements OnInit {
   editing: UsuarioRed | null = null;
   formOpen = false;
 
-  get isAdmin(): boolean {
-    return this.authService.isAdmin();
+  get canWrite(): boolean {
+    return this.authService.canWrite('usuarios-red');
   }
 
   ngOnInit(): void {

@@ -11,21 +11,19 @@ import java.time.LocalDate;
 @Setter
 public class VpnRequest {
 
-    @NotBlank
-    private String usuario;
+    @NotNull
+    private Long usuarioRedId;
 
-    @NotBlank
-    private String nombre;
+    private Long equipoId;
 
-    @NotBlank
-    private String tipo;
-
-    @NotBlank
     private String ipAsignada;
 
-    @NotNull
     private LocalDate vence;
 
     @NotBlank
     private String estado;
+
+    private String usuarioVpn;
+
+    private String credencialVpn;
 }

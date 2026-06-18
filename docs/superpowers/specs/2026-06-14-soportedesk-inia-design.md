@@ -16,14 +16,15 @@ asignados.
   `soportedesk-backend`.
 - **Frontend**: Angular 17+ (standalone components). Carpeta/repo separado:
   `soportedesk-frontend`.
-- **Base de datos**: MySQL local (instalación existente, no Docker).
+- **Base de datos**: SQL Server 2016+ en `172.16.26.16:1433`, base `ssti`. Schema
+  gestionado manualmente con `schema.sql` (Hibernate `ddl-auto: none`).
 - **Autenticación**: login propio (usuario/contraseña) con Spring Security +
   JWT. Roles `ADMIN` y `SOPORTE` almacenados en BD, viajan en el token.
 - **Archivos de drivers de impresoras**: almacenados en el filesystem del
-  servidor backend (`/uploads/drivers/...`); la BD guarda solo la ruta y
+  servidor backend (`uploads/drivers/`); la BD guarda solo la ruta y
   metadatos.
 - **Entorno de desarrollo**: backend con `mvn spring-boot:run`, frontend con
-  `ng serve`, MySQL corriendo localmente.
+  `ng serve`, SQL Server accesible en red.
 
 ## 3. Modelo de datos
 
@@ -50,15 +51,17 @@ licencias
 - id, cantidad, licencia, correo, clave, orden_compra, anio
 
 correos
-- id, usuario, nombre, correo, estado
+- id, usuario, nombre, apellidos, correo (unique), estado
 - sede_id FK, dependencia_id FK, subdependencia_id FK, tipo_contrato_id FK
 - fecha_fin_contrato (date, nullable)
 - creado (date)
 
 usuarios_red
-- id, usuario, nombre, grupo, ultimo_login, estado
+- id, usuario (unique), nombre, apellidos, grupo, ultimo_login, estado
 - sede_id FK, dependencia_id FK, subdependencia_id FK, tipo_contrato_id FK
 - fecha_fin_contrato (date, nullable)
+- fecha_creacion (date, nullable)
+- numero_contrato (varchar 100, nullable)
 
 vpn
 - id, usuario, nombre, tipo, ip_asignada, vence (date), estado

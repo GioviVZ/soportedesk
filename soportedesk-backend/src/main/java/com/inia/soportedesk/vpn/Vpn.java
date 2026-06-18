@@ -1,5 +1,7 @@
 package com.inia.soportedesk.vpn;
 
+import com.inia.soportedesk.equipos.Equipo;
+import com.inia.soportedesk.usuariosred.UsuarioRed;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -20,21 +22,31 @@ public class Vpn {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false)
-    private String usuario;
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "usuario_red_id")
+    private UsuarioRed usuarioRed;
 
-    @Column(nullable = false)
-    private String nombre;
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "equipo_id")
+    private Equipo equipo;
 
-    @Column(nullable = false)
-    private String tipo;
-
-    @Column(name = "ip_asignada", nullable = false)
+    @Column(name = "ip_asignada")
     private String ipAsignada;
 
-    @Column(nullable = false)
     private LocalDate vence;
 
     @Column(nullable = false)
     private String estado;
+
+    @Column(name = "tiene_antivirus")
+    private Boolean tieneAntivirus;
+
+    @Column(name = "vencimiento_antivirus")
+    private LocalDate vencimientoAntivirus;
+
+    @Column(name = "usuario_vpn")
+    private String usuarioVpn;
+
+    @Column(name = "credencial_vpn")
+    private String credencialVpn;
 }

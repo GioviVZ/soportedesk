@@ -21,25 +21,30 @@ public class EquipoController {
         return service.findAll(search);
     }
 
+    @GetMapping("/con-red")
+    public List<Equipo> findConRed() {
+        return service.findConRed();
+    }
+
     @GetMapping("/{id}")
     public Equipo findById(@PathVariable Long id) {
         return service.findById(id);
     }
 
     @PostMapping
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN') || hasAuthority('WRITE_equipos')")
     public ResponseEntity<Equipo> create(@Valid @RequestBody EquipoRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(service.create(request));
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN') || hasAuthority('WRITE_equipos')")
     public Equipo update(@PathVariable Long id, @Valid @RequestBody EquipoRequest request) {
         return service.update(id, request);
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN') || hasAuthority('WRITE_equipos')")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
         service.delete(id);
         return ResponseEntity.noContent().build();

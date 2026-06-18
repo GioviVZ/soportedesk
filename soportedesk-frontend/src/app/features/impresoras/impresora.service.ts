@@ -33,9 +33,11 @@ export class ImpresoraService {
     return this.http.delete<void>(`${this.apiUrl}/${id}`);
   }
 
-  uploadDriver(id: number, file: File): Observable<Impresora> {
+  uploadDriver(id: number, file: File, version = '', so = ''): Observable<Impresora> {
     const formData = new FormData();
     formData.append('file', file);
+    formData.append('version', version);
+    formData.append('so', so);
     return this.http.post<Impresora>(`${this.apiUrl}/${id}/driver`, formData);
   }
 

@@ -6,6 +6,7 @@ import { ModalComponent } from '../../shared/modal/modal.component';
 import { FieldComponent } from '../../shared/field/field.component';
 import { VencimientoBadgeComponent } from '../../shared/vencimiento-badge/vencimiento-badge.component';
 import { VpnFormComponent } from './vpn-form.component';
+import { VpnAntivirusFormComponent } from './vpn-antivirus-form.component';
 import { Vpn } from './vpn.model';
 import { VpnService } from './vpn.service';
 
@@ -19,6 +20,7 @@ import { VpnService } from './vpn.service';
     FieldComponent,
     VencimientoBadgeComponent,
     VpnFormComponent,
+    VpnAntivirusFormComponent,
   ],
   templateUrl: './vpn-list.component.html',
   styleUrl: './vpn-list.component.scss',
@@ -29,11 +31,10 @@ export class VpnListComponent implements OnInit {
 
   items: Vpn[] = [];
   columns: TableColumn[] = [
-    { key: 'usuario', label: 'Usuario' },
-    { key: 'nombre', label: 'Nombre' },
-    { key: 'tipo', label: 'Tipo' },
-    { key: 'ipAsignada', label: 'IP asignada' },
-    { key: 'vence', label: 'Vence' },
+    { key: 'usuarioRed.nombre', label: 'Nombre' },
+    { key: 'usuarioRed.usuario', label: 'Usuario red' },
+    { key: 'equipo.marca', label: 'Equipo' },
+    { key: 'ipAsignada', label: 'IP VPN' },
     { key: 'estado', label: 'Estado' },
   ];
 
@@ -41,8 +42,19 @@ export class VpnListComponent implements OnInit {
   editing: Vpn | null = null;
   formOpen = false;
 
+  antivirusEditing: Vpn | null = null;
+  antivirusOpen = false;
+
   get isAdmin(): boolean {
     return this.authService.isAdmin();
+  }
+
+  get canWriteVpn(): boolean {
+    return this.authService.canWrite('vpn');
+  }
+
+  get canEditCredenciales(): boolean {
+    return this.authService.isAdmin() || this.authService.canWrite('credenciales-vpn');
   }
 
   ngOnInit(): void {
@@ -80,14 +92,33 @@ export class VpnListComponent implements OnInit {
   }
 
   onDelete(item: Vpn): void {
-    if (!confirm(`¿Eliminar el registro VPN de "${item.usuario}"?`)) {
-      return;
-    }
+    const nombre = item.usuarioRed?.nombre ?? item.id;
+    if (!confirm(`¿Eliminar el registro VPN de "${nombre}"?`)) return;
     this.service.delete(item.id).subscribe(() => this.load());
   }
 
   onSaved(): void {
     this.formOpen = false;
     this.load();
+  }
+
+  openAntivirus(item: Vpn): void {
+    this.viewing = null;
+    this.antivirusEditing = item;
+    this.antivirusOpen = true;
+  }
+
+  closeAntivirus(): void {
+    this.antivirusOpen = false;
+  }
+
+  onAntivirusSaved(): void {
+    this.antivirusOpen = false;
+    this.load();
+  }
+
+  antivirusLabel(vpn: Vpn | null): string {
+    if (!vpn || vpn.tieneAntivirus === null || vpn.tieneAntivirus === undefined) return '—';
+    return vpn.tieneAntivirus ? 'Sí' : 'No';
   }
 }

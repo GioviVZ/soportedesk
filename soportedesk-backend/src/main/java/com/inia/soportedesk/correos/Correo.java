@@ -31,6 +31,9 @@ public class Correo {
     private String nombre;
 
     @Column(nullable = false)
+    private String apellidos;
+
+    @Column(nullable = false)
     private String correo;
 
     @Column(nullable = false)

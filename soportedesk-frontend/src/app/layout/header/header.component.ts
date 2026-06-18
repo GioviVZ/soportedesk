@@ -2,6 +2,7 @@ import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { AuthService } from '../../core/auth/auth.service';
+import { LayoutService } from '../../core/services/layout.service';
 
 @Component({
   selector: 'app-header',
@@ -13,13 +14,13 @@ import { AuthService } from '../../core/auth/auth.service';
 export class HeaderComponent {
   private authService = inject(AuthService);
   private router = inject(Router);
+  readonly layout = inject(LayoutService);
 
-  get nombre(): string {
-    return this.authService.getNombre() ?? '';
-  }
+  get nombre(): string { return this.authService.getNombre() ?? ''; }
+  get rol(): string    { return this.authService.getRole()   ?? ''; }
 
-  get rol(): string {
-    return this.authService.getRole() ?? '';
+  get initials(): string {
+    return this.nombre.split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase() || 'U';
   }
 
   logout(): void {

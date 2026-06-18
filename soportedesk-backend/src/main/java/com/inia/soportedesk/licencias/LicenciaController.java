@@ -27,19 +27,19 @@ public class LicenciaController {
     }
 
     @PostMapping
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN') || hasAuthority('WRITE_licencias')")
     public ResponseEntity<Licencia> create(@Valid @RequestBody LicenciaRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(service.create(request));
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN') || hasAuthority('WRITE_licencias')")
     public Licencia update(@PathVariable Long id, @Valid @RequestBody LicenciaRequest request) {
         return service.update(id, request);
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN') || hasAuthority('WRITE_licencias')")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
         service.delete(id);
         return ResponseEntity.noContent().build();

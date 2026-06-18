@@ -33,37 +33,46 @@ class EquipoControllerIT {
 
     private EquipoRequest sampleRequest() {
         EquipoRequest request = new EquipoRequest();
-        request.setCodigo("EQ-2024-001");
+        request.setNumeroSerie("SN-2024-001");
         request.setTipo("Laptop");
         request.setMarca("Dell");
         request.setModelo("Latitude 5540");
-        request.setUsuario("jperez");
-        request.setArea("TI");
-        request.setAsignado(LocalDate.of(2024, 1, 10));
         request.setEstado("En uso");
+        request.setAsignado(LocalDate.of(2024, 1, 10));
         return request;
+    }
+
+    private Equipo sampleEquipo() {
+        Equipo equipo = new Equipo();
+        equipo.setId(1L);
+        equipo.setNumeroSerie("SN-2024-001");
+        equipo.setTipo("Laptop");
+        equipo.setMarca("Dell");
+        equipo.setModelo("Latitude 5540");
+        equipo.setEstado("En uso");
+        return equipo;
     }
 
     @Test
     @WithMockUser(roles = "SOPORTE")
     void findAll_allowsAuthenticatedUser() throws Exception {
-        when(service.findAll(null)).thenReturn(List.of(new Equipo(1L, "EQ-2024-001", "Laptop", "Dell", "Latitude 5540", "jperez", "TI", LocalDate.of(2024, 1, 10), "En uso")));
+        when(service.findAll(null)).thenReturn(List.of(sampleEquipo()));
 
         mockMvc.perform(get("/api/equipos"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].codigo", is("EQ-2024-001")));
+                .andExpect(jsonPath("$[0].numeroSerie", is("SN-2024-001")));
     }
 
     @Test
     @WithMockUser(roles = "ADMIN")
     void create_withAdminRole_returnsCreated() throws Exception {
-        when(service.create(any())).thenReturn(new Equipo(1L, "EQ-2024-001", "Laptop", "Dell", "Latitude 5540", "jperez", "TI", LocalDate.of(2024, 1, 10), "En uso"));
+        when(service.create(any())).thenReturn(sampleEquipo());
 
         mockMvc.perform(post("/api/equipos")
                         .contentType("application/json")
                         .content(objectMapper.writeValueAsString(sampleRequest())))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.codigo", is("EQ-2024-001")));
+                .andExpect(jsonPath("$.numeroSerie", is("SN-2024-001")));
     }
 
     @Test

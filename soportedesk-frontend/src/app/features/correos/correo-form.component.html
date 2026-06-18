@@ -1,4 +1,14 @@
 <form [formGroup]="form" (ngSubmit)="submit()">
+  <div class="field ad-selector">
+    <label>Autocompletar desde AD</label>
+    <select [value]="selectedAdUserId ?? ''" (change)="onAdUserSelected($any($event.target).value)">
+      <option value="">— Seleccione un usuario —</option>
+      <option *ngFor="let u of usuariosRed" [value]="u.id">{{ u.usuario }} — {{ u.nombre }}</option>
+    </select>
+  </div>
+
+  <hr class="divider" />
+
   <div class="field">
     <label>Usuario</label>
     <input type="text" formControlName="usuario" />
@@ -6,6 +16,10 @@
   <div class="field">
     <label>Nombre</label>
     <input type="text" formControlName="nombre" />
+  </div>
+  <div class="field">
+    <label>Apellidos</label>
+    <input type="text" formControlName="apellidos" />
   </div>
   <div class="field">
     <label>Correo</label>

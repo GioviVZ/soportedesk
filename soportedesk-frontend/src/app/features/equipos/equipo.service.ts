@@ -9,6 +9,10 @@ export class EquipoService {
   private http = inject(HttpClient);
   private readonly apiUrl = `${environment.apiUrl}/equipos`;
 
+  getConRed(): Observable<Equipo[]> {
+    return this.http.get<Equipo[]>(`${this.apiUrl}/con-red`);
+  }
+
   getAll(search?: string): Observable<Equipo[]> {
     let params = new HttpParams();
     if (search) {

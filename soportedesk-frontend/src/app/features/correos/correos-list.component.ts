@@ -31,6 +31,7 @@ export class CorreosListComponent implements OnInit {
   columns: TableColumn[] = [
     { key: 'usuario', label: 'Usuario' },
     { key: 'nombre', label: 'Nombre' },
+    { key: 'apellidos', label: 'Apellidos' },
     { key: 'correo', label: 'Correo' },
     { key: 'sede.nombre', label: 'Sede' },
     { key: 'dependencia.nombre', label: 'Dependencia' },
@@ -44,8 +45,8 @@ export class CorreosListComponent implements OnInit {
   editing: Correo | null = null;
   formOpen = false;
 
-  get isAdmin(): boolean {
-    return this.authService.isAdmin();
+  get canWrite(): boolean {
+    return this.authService.canWrite('correos');
   }
 
   ngOnInit(): void {

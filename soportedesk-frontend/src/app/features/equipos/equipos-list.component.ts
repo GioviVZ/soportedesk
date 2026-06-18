@@ -21,13 +21,14 @@ export class EquiposListComponent implements OnInit {
 
   items: Equipo[] = [];
   columns: TableColumn[] = [
-    { key: 'codigo', label: 'Código' },
     { key: 'tipo', label: 'Tipo' },
     { key: 'marca', label: 'Marca' },
     { key: 'modelo', label: 'Modelo' },
-    { key: 'usuario', label: 'Usuario' },
-    { key: 'area', label: 'Área' },
-    { key: 'asignado', label: 'Asignado' },
+    { key: 'numeroSerie', label: 'N° Serie' },
+    { key: 'codigoPatrimonial', label: 'Cód. Patrimonial' },
+    { key: 'usuarioRed.nombre', label: 'Usuario' },
+    { key: 'sede.nombre', label: 'Sede' },
+    { key: 'dependencia.nombre', label: 'Dependencia' },
     { key: 'estado', label: 'Estado' },
   ];
 
@@ -35,8 +36,8 @@ export class EquiposListComponent implements OnInit {
   editing: Equipo | null = null;
   formOpen = false;
 
-  get isAdmin(): boolean {
-    return this.authService.isAdmin();
+  get canWrite(): boolean {
+    return this.authService.canWrite('equipos');
   }
 
   ngOnInit(): void {
@@ -74,7 +75,7 @@ export class EquiposListComponent implements OnInit {
   }
 
   onDelete(item: Equipo): void {
-    if (!confirm(`¿Eliminar el equipo "${item.codigo}"?`)) {
+    if (!confirm(`¿Eliminar el equipo "${item.marca} ${item.modelo}"?`)) {
       return;
     }
     this.service.delete(item.id).subscribe(() => this.load());

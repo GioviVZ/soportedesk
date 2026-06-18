@@ -2,7 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { Vpn, VpnRequest } from './vpn.model';
+import { Vpn, VpnAntivirusRequest, VpnRequest } from './vpn.model';
 
 @Injectable({ providedIn: 'root' })
 export class VpnService {
@@ -27,6 +27,10 @@ export class VpnService {
 
   update(id: number, request: VpnRequest): Observable<Vpn> {
     return this.http.put<Vpn>(`${this.apiUrl}/${id}`, request);
+  }
+
+  patchAntivirus(id: number, request: VpnAntivirusRequest): Observable<Vpn> {
+    return this.http.patch<Vpn>(`${this.apiUrl}/${id}/antivirus`, request);
   }
 
   delete(id: number): Observable<void> {

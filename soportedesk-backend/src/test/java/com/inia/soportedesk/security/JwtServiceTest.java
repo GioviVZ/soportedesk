@@ -20,7 +20,7 @@ class JwtServiceTest {
 
     @Test
     void generateToken_thenExtractUsernameAndRole() {
-        String token = jwtService.generateToken("jperez", "ADMIN");
+        String token = jwtService.generateToken("jperez", "ADMIN", java.util.List.of());
 
         assertThat(jwtService.extractUsername(token)).isEqualTo("jperez");
         assertThat(jwtService.extractRole(token)).isEqualTo("ADMIN");
@@ -29,7 +29,7 @@ class JwtServiceTest {
 
     @Test
     void isTokenValid_returnsFalseForDifferentUsername() {
-        String token = jwtService.generateToken("jperez", "ADMIN");
+        String token = jwtService.generateToken("jperez", "ADMIN", java.util.List.of());
 
         assertThat(jwtService.isTokenValid(token, "otro")).isFalse();
     }

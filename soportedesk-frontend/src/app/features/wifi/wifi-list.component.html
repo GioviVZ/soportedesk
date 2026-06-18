@@ -3,7 +3,7 @@
 <app-generic-table
   [columns]="columns"
   [data]="items"
-  [canEdit]="isAdmin"
+  [canEdit]="canWrite"
   (searchChange)="onSearch($event)"
   (add)="onAdd()"
   (view)="onView($event)"

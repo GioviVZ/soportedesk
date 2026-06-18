@@ -17,14 +17,6 @@
       <input type="text" formControlName="ip" />
     </div>
     <div class="field">
-      <label>Piso</label>
-      <input type="text" formControlName="piso" />
-    </div>
-    <div class="field">
-      <label>Área</label>
-      <input type="text" formControlName="area" />
-    </div>
-    <div class="field">
       <label>Estado</label>
       <select formControlName="estado">
         <option value="Activa">Activa</option>
@@ -34,35 +26,42 @@
     </div>
   </div>
 
-  <h4>Consumibles (%)</h4>
+  <app-ubicacion-select
+    [showTipoContrato]="false"
+    [(sedeId)]="sedeId"
+    [(dependenciaId)]="dependenciaId"
+    [(subdependenciaId)]="subdependenciaId"
+  />
+
+  <h4>Modelos de consumibles</h4>
   <div class="two-col">
     <div class="field">
       <label>Tóner Negro</label>
-      <input type="number" formControlName="tonerNegro" min="0" max="100" />
+      <input type="text" formControlName="modeloTonerNegro" placeholder="ej: TN-2380" />
     </div>
     <div class="field">
       <label>Tóner Cyan</label>
-      <input type="number" formControlName="tonerC" min="0" max="100" />
+      <input type="text" formControlName="modeloTonerC" placeholder="ej: TN-223C" />
     </div>
     <div class="field">
       <label>Tóner Magenta</label>
-      <input type="number" formControlName="tonerM" min="0" max="100" />
+      <input type="text" formControlName="modeloTonerM" placeholder="ej: TN-223M" />
     </div>
     <div class="field">
       <label>Tóner Amarillo</label>
-      <input type="number" formControlName="tonerY" min="0" max="100" />
+      <input type="text" formControlName="modeloTonerY" placeholder="ej: TN-223Y" />
     </div>
     <div class="field">
       <label>Cartucho</label>
-      <input type="number" formControlName="cartucho" min="0" max="100" />
+      <input type="text" formControlName="modeloCartucho" placeholder="ej: CB435A" />
     </div>
     <div class="field">
       <label>Drum</label>
-      <input type="number" formControlName="drum" min="0" max="100" />
+      <input type="text" formControlName="modeloDrum" placeholder="ej: DR-2365" />
     </div>
     <div class="field">
       <label>Fusor</label>
-      <input type="number" formControlName="fusor" min="0" max="100" />
+      <input type="text" formControlName="modeloFusor" placeholder="ej: FK-502H" />
     </div>
   </div>
 

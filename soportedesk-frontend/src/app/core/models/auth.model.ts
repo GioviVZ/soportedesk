@@ -10,4 +10,5 @@ export interface AuthResponse {
   username: string;
   nombre: string;
   rol: Rol;
+  permisos: string[];
 }

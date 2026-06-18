@@ -1,0 +1,47 @@
+<div class="resumen-panel">
+  <div class="resumen-header" (click)="toggle()">
+    <span class="resumen-title">Resumen de consumibles</span>
+    <span class="chevron" [class.collapsed]="collapsed">▾</span>
+  </div>
+
+  <div class="resumen-body" [class.hidden]="collapsed">
+    <div class="resumen-filters">
+      <label>
+        Sede
+        <select [(ngModel)]="selectedSede" (ngModelChange)="onFilterChange()">
+          <option value="">Todas</option>
+          <option *ngFor="let s of sedes" [value]="s">{{ s }}</option>
+        </select>
+      </label>
+      <label>
+        Dependencia
+        <select [(ngModel)]="selectedDependencia" (ngModelChange)="onFilterChange()">
+          <option value="">Todas</option>
+          <option *ngFor="let d of dependencias" [value]="d">{{ d }}</option>
+        </select>
+      </label>
+    </div>
+
+    <ng-container *ngIf="rows.length > 0; else empty">
+      <table class="resumen-table">
+        <thead>
+          <tr>
+            <th>Consumible</th>
+            <th>Modelo</th>
+            <th class="count">Impresoras</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let row of rows">
+            <td>{{ row.tipoLabel }}</td>
+            <td class="modelo">{{ row.modelo }}</td>
+            <td class="count">{{ row.cantidad }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </ng-container>
+    <ng-template #empty>
+      <p class="empty-msg">Sin consumibles registrados para esta selección.</p>
+    </ng-template>
+  </div>
+</div>

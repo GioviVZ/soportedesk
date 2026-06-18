@@ -28,9 +28,13 @@ export class UsuarioRedFormComponent implements OnChanges {
   form = this.fb.nonNullable.group({
     usuario: ['', Validators.required],
     nombre: ['', Validators.required],
+    apellidos: ['', Validators.required],
     grupo: ['', Validators.required],
+    unidadOrganizativa: [''],
     estado: ['Activo', Validators.required],
     fechaFinContrato: [''],
+    fechaCreacion: [''],
+    numeroContrato: [''],
   });
 
   ngOnChanges(): void {
@@ -38,16 +42,20 @@ export class UsuarioRedFormComponent implements OnChanges {
       this.form.patchValue({
         usuario: this.usuarioRed.usuario,
         nombre: this.usuarioRed.nombre,
+        apellidos: this.usuarioRed.apellidos,
         grupo: this.usuarioRed.grupo,
+        unidadOrganizativa: this.usuarioRed.unidadOrganizativa ?? '',
         estado: this.usuarioRed.estado,
         fechaFinContrato: this.usuarioRed.fechaFinContrato ?? '',
+        fechaCreacion: this.usuarioRed.fechaCreacion ?? '',
+        numeroContrato: this.usuarioRed.numeroContrato ?? '',
       });
       this.sedeId = this.usuarioRed.sede?.id ?? null;
       this.dependenciaId = this.usuarioRed.dependencia?.id ?? null;
       this.subdependenciaId = this.usuarioRed.subdependencia?.id ?? null;
       this.tipoContratoId = this.usuarioRed.tipoContrato?.id ?? null;
     } else {
-      this.form.reset({ usuario: '', nombre: '', grupo: '', estado: 'Activo', fechaFinContrato: '' });
+      this.form.reset({ usuario: '', nombre: '', apellidos: '', grupo: '', unidadOrganizativa: '', estado: 'Activo', fechaFinContrato: '', fechaCreacion: '', numeroContrato: '' });
       this.sedeId = null;
       this.dependenciaId = null;
       this.subdependenciaId = null;
@@ -65,13 +73,17 @@ export class UsuarioRedFormComponent implements OnChanges {
     const request = {
       usuario: raw.usuario,
       nombre: raw.nombre,
+      apellidos: raw.apellidos,
       grupo: raw.grupo,
+      unidadOrganizativa: raw.unidadOrganizativa || null,
       estado: raw.estado,
       sedeId: this.sedeId,
       dependenciaId: this.dependenciaId,
       subdependenciaId: this.subdependenciaId,
       tipoContratoId: this.tipoContratoId,
       fechaFinContrato: raw.fechaFinContrato || null,
+      fechaCreacion: raw.fechaCreacion || null,
+      numeroContrato: raw.numeroContrato || null,
     };
     const obs = this.usuarioRed
       ? this.service.update(this.usuarioRed.id, request)

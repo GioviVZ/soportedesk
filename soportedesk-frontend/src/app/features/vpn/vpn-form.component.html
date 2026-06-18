@@ -1,24 +1,75 @@
 <form [formGroup]="form" (ngSubmit)="submit()">
-  <div class="field">
-    <label>Usuario</label>
-    <input type="text" formControlName="usuario" />
+
+  <!-- AD autocomplete selector -->
+  <div class="section-header ad-header">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" width="16" height="16">
+      <path d="M10 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6ZM3.465 14.493a1.23 1.23 0 0 0 .41 1.412A9.957 9.957 0 0 0 10 18c2.31 0 4.438-.784 6.131-2.1.43-.333.604-.903.408-1.41a7.002 7.002 0 0 0-13.074.003Z" />
+    </svg>
+    Seleccionar usuario de red
   </div>
-  <div class="field">
-    <label>Nombre</label>
-    <input type="text" formControlName="nombre" />
+
+  <div class="field ad-field">
+    <label>Usuario AD *</label>
+    <select (change)="onAdUserSelected($event)">
+      <option value="">— Buscar usuario —</option>
+      <option *ngFor="let u of usuariosRed" [value]="u.id" [selected]="u.id === selectedAdUserId">
+        {{ u.nombre }} ({{ u.usuario }})
+      </option>
+    </select>
   </div>
-  <div class="field">
-    <label>Tipo</label>
-    <input type="text" formControlName="tipo" />
+
+  <div class="ad-preview" *ngIf="adUserSelected">
+    <div class="ad-preview-row">
+      <span class="ad-label">Usuario</span>
+      <span>{{ adUserSelected.usuario }}</span>
+    </div>
+    <div class="ad-preview-row">
+      <span class="ad-label">Nombre</span>
+      <span>{{ adUserSelected.nombre }}</span>
+    </div>
+    <div class="ad-preview-row" *ngIf="adUserSelected.sede">
+      <span class="ad-label">Sede</span>
+      <span>{{ adUserSelected.sede.nombre }}</span>
+    </div>
+    <div class="ad-preview-row" *ngIf="adUserSelected.dependencia">
+      <span class="ad-label">Dependencia</span>
+      <span>{{ adUserSelected.dependencia.nombre }}</span>
+    </div>
   </div>
-  <div class="field">
-    <label>IP asignada</label>
-    <input type="text" formControlName="ipAsignada" />
+
+  <hr class="divider" />
+
+  <!-- Datos operativos -->
+  <div class="section-header">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" width="16" height="16">
+      <path fill-rule="evenodd" d="M3.25 3A2.25 2.25 0 0 0 1 5.25v9.5A2.25 2.25 0 0 0 3.25 17h13.5A2.25 2.25 0 0 0 19 14.75v-9.5A2.25 2.25 0 0 0 16.75 3H3.25Zm.943 8.752a.75.75 0 0 1 .75-.75h6.557a.75.75 0 0 1 0 1.5H4.943a.75.75 0 0 1-.75-.75Zm.75-3.75a.75.75 0 0 0 0 1.5h10.128a.75.75 0 0 0 0-1.5H4.943Z" clip-rule="evenodd" />
+    </svg>
+    Datos de conexión
   </div>
+
   <div class="field">
-    <label>Vence</label>
+    <label>Equipo asignado (Laptop / Computadora)</label>
+    <select formControlName="equipoId">
+      <option [ngValue]="null">— Sin equipo —</option>
+      <option *ngFor="let e of equiposConRed" [ngValue]="e.id">
+        {{ e.tipo }} — {{ e.marca }} {{ e.modelo }}<ng-container *ngIf="e.host"> ({{ e.host }})</ng-container>
+      </option>
+    </select>
+    <small *ngIf="equipoSeleccionado?.ip" class="hint">
+      IP: {{ equipoSeleccionado?.ip }}
+    </small>
+  </div>
+
+  <div class="field">
+    <label>IP VPN asignada</label>
+    <input type="text" formControlName="ipAsignada" placeholder="10.0.0.x" />
+  </div>
+
+  <div class="field">
+    <label>Vence (VPN)</label>
     <input type="date" formControlName="vence" />
   </div>
+
   <div class="field">
     <label>Estado</label>
     <select formControlName="estado">
@@ -26,6 +77,35 @@
       <option value="Inactivo">Inactivo</option>
     </select>
   </div>
+
+  <!-- Credenciales VPN — solo admin / credenciales-vpn -->
+  <div class="credential-card" *ngIf="canEditCredenciales">
+    <div class="credential-header">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" width="16" height="16">
+        <path fill-rule="evenodd" d="M8 7a5 5 0 1 1 3.61 4.804l-1.903 1.903A1 1 0 0 1 9 14H8v1a1 1 0 0 1-1 1H6v1a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1v-2a1 1 0 0 1 .293-.707L7.196 10.39A5.002 5.002 0 0 1 8 7Zm5-3a.75.75 0 0 0 0 1.5A1.5 1.5 0 0 1 14.5 7 .75.75 0 0 0 16 7a3 3 0 0 0-3-3Z" clip-rule="evenodd" />
+      </svg>
+      <span>Credenciales VPN</span>
+      <span class="credential-badge">Solo administradores</span>
+    </div>
+
+    <div class="field">
+      <label>Usuario VPN</label>
+      <input type="text" formControlName="usuarioVpn" placeholder="Nombre de usuario VPN" />
+    </div>
+
+    <div class="field">
+      <label>Credencial / Contraseña VPN</label>
+      <input type="text" formControlName="credencialVpn" placeholder="Contraseña o clave de acceso" />
+    </div>
+  </div>
+
+  <div class="credential-locked" *ngIf="!canEditCredenciales">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" width="18" height="18">
+      <path fill-rule="evenodd" d="M10 1a4.5 4.5 0 0 0-4.5 4.5V9H5a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6a2 2 0 0 0-2-2h-.5V5.5A4.5 4.5 0 0 0 10 1Zm3 8V5.5a3 3 0 1 0-6 0V9h6Z" clip-rule="evenodd" />
+    </svg>
+    <span>Credenciales VPN — acceso restringido a administradores</span>
+  </div>
+
   <div class="actions">
     <button type="button" class="secondary" (click)="cancelled.emit()">Cancelar</button>
     <button type="submit" [disabled]="form.invalid">Guardar</button>

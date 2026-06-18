@@ -32,7 +32,13 @@ public class UsuarioRed {
     private String nombre;
 
     @Column(nullable = false)
+    private String apellidos;
+
+    @Column(nullable = false)
     private String grupo;
+
+    @Column(name = "unidad_organizativa")
+    private String unidadOrganizativa;
 
     @Column(name = "ultimo_login")
     private LocalDateTime ultimoLogin;
@@ -58,4 +64,10 @@ public class UsuarioRed {
 
     @Column(name = "fecha_fin_contrato")
     private LocalDate fechaFinContrato;
+
+    @Column(name = "fecha_creacion")
+    private LocalDate fechaCreacion;
+
+    @Column(name = "numero_contrato", length = 100)
+    private String numeroContrato;
 }

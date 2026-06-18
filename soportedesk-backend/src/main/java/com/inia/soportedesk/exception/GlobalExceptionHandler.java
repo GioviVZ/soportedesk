@@ -42,4 +42,10 @@ public class GlobalExceptionHandler {
         ApiError error = new ApiError(LocalDateTime.now(), HttpStatus.BAD_REQUEST.value(), ex.getMessage(), null);
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
     }
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<ApiError> handleIllegalArgument(IllegalArgumentException ex) {
+        ApiError error = new ApiError(LocalDateTime.now(), HttpStatus.CONFLICT.value(), ex.getMessage(), null);
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(error);
+    }
 }

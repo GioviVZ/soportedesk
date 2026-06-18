@@ -18,6 +18,7 @@ export class UbicacionSelectComponent implements OnInit, OnChanges {
   @Input() dependenciaId: number | null = null;
   @Input() subdependenciaId: number | null = null;
   @Input() tipoContratoId: number | null = null;
+  @Input() showTipoContrato = true;
 
   @Output() sedeIdChange = new EventEmitter<number | null>();
   @Output() dependenciaIdChange = new EventEmitter<number | null>();

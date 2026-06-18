@@ -16,6 +16,7 @@ export class AuthService {
         localStorage.setItem('rol', response.rol);
         localStorage.setItem('username', response.username);
         localStorage.setItem('nombre', response.nombre);
+        localStorage.setItem('permisos', JSON.stringify(response.permisos ?? []));
       })
     );
   }
@@ -25,6 +26,7 @@ export class AuthService {
     localStorage.removeItem('rol');
     localStorage.removeItem('username');
     localStorage.removeItem('nombre');
+    localStorage.removeItem('permisos');
   }
 
   getToken(): string | null {
@@ -45,5 +47,18 @@ export class AuthService {
 
   isAdmin(): boolean {
     return this.getRole() === 'ADMIN';
+  }
+
+  getPermisos(): string[] {
+    try {
+      return JSON.parse(localStorage.getItem('permisos') ?? '[]');
+    } catch {
+      return [];
+    }
+  }
+
+  canWrite(modulo: string): boolean {
+    if (this.isAdmin()) return true;
+    return this.getPermisos().includes(modulo);
   }
 }

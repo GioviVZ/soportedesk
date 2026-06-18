@@ -1,17 +1,25 @@
 .field {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  margin-bottom: 12px;
+  gap: 5px;
+  margin-bottom: 14px;
 
   label {
-    font-size: 12px;
-    font-weight: 600;
-    color: var(--color-gray);
-    text-transform: uppercase;
+    font-size: 12.5px;
+    font-weight: 500;
+    color: var(--color-text);
   }
 
   .control {
-    font-size: 14px;
+    font-size: 13.5px;
+    color: var(--color-text);
+    padding: 6px 0;
+    border-bottom: 1px dashed var(--color-border);
+    min-height: 32px;
+
+    &:empty::after {
+      content: '—';
+      color: var(--color-text-muted);
+    }
   }
 }

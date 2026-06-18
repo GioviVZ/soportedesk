@@ -37,7 +37,7 @@
     </select>
   </div>
 
-  <div class="field">
+  <div class="field" *ngIf="showTipoContrato">
     <label>Tipo de Contrato</label>
     <select [ngModel]="tipoContratoId" (change)="onTipoContratoChange($any($event.target).value)" name="tipoContrato">
       <option [ngValue]="null">Seleccione...</option>

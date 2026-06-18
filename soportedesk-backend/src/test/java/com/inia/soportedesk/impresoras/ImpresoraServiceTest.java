@@ -1,5 +1,8 @@
 package com.inia.soportedesk.impresoras;
 
+import com.inia.soportedesk.catalogo.DependenciaRepository;
+import com.inia.soportedesk.catalogo.SedeRepository;
+import com.inia.soportedesk.catalogo.SubdependenciaRepository;
 import com.inia.soportedesk.exception.ResourceNotFoundException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -22,6 +25,15 @@ class ImpresoraServiceTest {
     @Mock
     private ImpresoraRepository repository;
 
+    @Mock
+    private SedeRepository sedeRepository;
+
+    @Mock
+    private DependenciaRepository dependenciaRepository;
+
+    @Mock
+    private SubdependenciaRepository subdependenciaRepository;
+
     @InjectMocks
     private ImpresoraService service;
 
@@ -31,23 +43,29 @@ class ImpresoraServiceTest {
         request.setMarca("HP");
         request.setModelo("M404dn");
         request.setIp("10.0.0.50");
-        request.setPiso("4");
-        request.setArea("Administración");
         request.setEstado("Activa");
-        request.setTonerNegro(80);
-        request.setTonerC(60);
-        request.setTonerM(60);
-        request.setTonerY(60);
-        request.setCartucho(90);
-        request.setDrum(70);
-        request.setFusor(85);
+        request.setModeloTonerNegro("TN-2380");
+        request.setModeloCartucho("CB435A");
+        request.setModeloDrum("DR-2365");
         return request;
+    }
+
+    private Impresora sampleImpresora(Long id) {
+        Impresora imp = new Impresora();
+        imp.setId(id);
+        imp.setNombre("HP LaserJet 4ta planta");
+        imp.setMarca("HP");
+        imp.setModelo("M404dn");
+        imp.setEstado("Activa");
+        imp.setModeloTonerNegro("TN-2380");
+        imp.setModeloCartucho("CB435A");
+        imp.setModeloDrum("DR-2365");
+        return imp;
     }
 
     @Test
     void findAll_withoutSearch_returnsAll() {
-        Impresora impresora = new Impresora(1L, "HP LaserJet 4ta planta", "HP", "M404dn", "10.0.0.50", "4", "Administración", "Activa", 80, 60, 60, 60, 90, 70, 85, null, null, null, null);
-        when(repository.findAll()).thenReturn(List.of(impresora));
+        when(repository.findAll()).thenReturn(List.of(sampleImpresora(1L)));
 
         List<Impresora> result = service.findAll(null);
 
@@ -64,33 +82,49 @@ class ImpresoraServiceTest {
     }
 
     @Test
-    void create_savesImpresora() {
+    void create_savesImpresoraWithModeloConsumibles() {
         when(repository.save(any(Impresora.class))).thenAnswer(inv -> inv.getArgument(0));
 
         Impresora result = service.create(sampleRequest());
 
         assertThat(result.getNombre()).isEqualTo("HP LaserJet 4ta planta");
-        assertThat(result.getTonerNegro()).isEqualTo(80);
+        assertThat(result.getModeloTonerNegro()).isEqualTo("TN-2380");
+        assertThat(result.getModeloDrum()).isEqualTo("DR-2365");
+    }
+
+    @Test
+    void create_blankModelo_storesNull() {
+        ImpresoraRequest request = sampleRequest();
+        request.setModeloTonerNegro("   ");
+        when(repository.save(any(Impresora.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        Impresora result = service.create(request);
+
+        assertThat(result.getModeloTonerNegro()).isNull();
     }
 
     @Test
     void update_preservesDriverFields() {
-        Impresora existing = new Impresora(1L, "HP LaserJet 4ta planta", "HP", "M404dn", "10.0.0.50", "4", "Administración", "Activa", 80, 60, 60, 60, 90, 70, 85, "driver-hp.zip", "1.2", "Windows 10", "drivers/1/driver-hp.zip");
+        Impresora existing = sampleImpresora(1L);
+        existing.setDriverArchivoPath("drivers/1/driver-hp.zip");
+        existing.setDriverNombre("driver-hp.zip");
+        existing.setDriverVersion("1.2");
+        existing.setDriverSo("Windows 10");
         when(repository.findById(1L)).thenReturn(Optional.of(existing));
         when(repository.save(any(Impresora.class))).thenAnswer(inv -> inv.getArgument(0));
 
         ImpresoraRequest request = sampleRequest();
-        request.setTonerNegro(40);
+        request.setModeloTonerNegro("TN-2500");
 
         Impresora result = service.update(1L, request);
 
-        assertThat(result.getTonerNegro()).isEqualTo(40);
+        assertThat(result.getModeloTonerNegro()).isEqualTo("TN-2500");
         assertThat(result.getDriverArchivoPath()).isEqualTo("drivers/1/driver-hp.zip");
     }
 
     @Test
     void delete_removesExistingImpresora() {
-        Impresora impresora = new Impresora(1L, "HP LaserJet 4ta planta", "HP", "M404dn", "10.0.0.50", "4", "Administración", "Activa", 80, 60, 60, 60, 90, 70, 85, null, null, null, null);
+        Impresora impresora = sampleImpresora(1L);
         when(repository.findById(1L)).thenReturn(Optional.of(impresora));
 
         service.delete(1L);

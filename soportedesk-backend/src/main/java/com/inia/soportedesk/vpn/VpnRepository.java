@@ -8,10 +8,12 @@ import java.util.List;
 
 public interface VpnRepository extends JpaRepository<Vpn, Long> {
 
-    @Query("SELECT v FROM Vpn v WHERE " +
-           "LOWER(v.usuario) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
-           "LOWER(v.nombre) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
-           "LOWER(v.tipo) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
-           "LOWER(v.ipAsignada) LIKE LOWER(CONCAT('%', :search, '%'))")
+    @Query("SELECT v FROM Vpn v LEFT JOIN v.usuarioRed u LEFT JOIN v.equipo e WHERE " +
+           "LOWER(u.nombre) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
+           "LOWER(u.usuario) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
+           "LOWER(e.marca) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
+           "LOWER(e.modelo) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
+           "LOWER(v.ipAsignada) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
+           "LOWER(v.usuarioVpn) LIKE LOWER(CONCAT('%', :search, '%'))")
     List<Vpn> search(@Param("search") String search);
 }

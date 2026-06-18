@@ -8,8 +8,16 @@
     <input type="text" formControlName="nombre" />
   </div>
   <div class="field">
+    <label>Apellidos</label>
+    <input type="text" formControlName="apellidos" />
+  </div>
+  <div class="field">
     <label>Grupo</label>
     <input type="text" formControlName="grupo" />
+  </div>
+  <div class="field">
+    <label>Unidad Organizativa</label>
+    <input type="text" formControlName="unidadOrganizativa" placeholder="Ej. OU=Soporte,OU=INIA" />
   </div>
   <div class="field">
     <label>Estado</label>
@@ -18,10 +26,6 @@
       <option value="Inactivo">Inactivo</option>
     </select>
   </div>
-  <div class="field">
-    <label>Fecha fin de contrato</label>
-    <input type="date" formControlName="fechaFinContrato" />
-  </div>
 
   <app-ubicacion-select
     [(sedeId)]="sedeId"
@@ -29,6 +33,19 @@
     [(subdependenciaId)]="subdependenciaId"
     [(tipoContratoId)]="tipoContratoId"
   />
+
+  <div class="field">
+    <label>N° de contrato</label>
+    <input type="text" formControlName="numeroContrato" placeholder="Ej. CAS-001-2024" />
+  </div>
+  <div class="field">
+    <label>Fecha de creación</label>
+    <input type="date" formControlName="fechaCreacion" />
+  </div>
+  <div class="field">
+    <label>Fecha fin de contrato</label>
+    <input type="date" formControlName="fechaFinContrato" />
+  </div>
 
   <div class="actions">
     <button type="button" class="secondary" (click)="cancelled.emit()">Cancelar</button>

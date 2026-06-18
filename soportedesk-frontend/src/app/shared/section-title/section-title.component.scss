@@ -1,9 +1,11 @@
 .section-title {
-  color: var(--color-green-dark);
-  font-size: 14px;
+  font-size: 11.5px;
+  font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
-  border-bottom: 2px solid var(--color-green-light);
-  padding-bottom: 4px;
-  margin: 16px 0 12px;
+  letter-spacing: .07em;
+  color: var(--color-text-secondary);
+  border-bottom: 2px solid var(--color-accent);
+  padding-bottom: 6px;
+  margin: 20px 0 14px;
+  display: inline-block;
 }

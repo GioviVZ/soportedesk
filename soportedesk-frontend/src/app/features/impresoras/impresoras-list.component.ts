@@ -5,13 +5,14 @@ import { GenericTableComponent, TableColumn } from '../../shared/generic-table/g
 import { ModalComponent } from '../../shared/modal/modal.component';
 import { ImpresoraFichaComponent } from './impresora-ficha.component';
 import { ImpresoraFormComponent } from './impresora-form.component';
+import { ImpresoraResumenComponent } from './impresora-resumen.component';
 import { Impresora } from './impresora.model';
 import { ImpresoraService } from './impresora.service';
 
 @Component({
   selector: 'app-impresoras-list',
   standalone: true,
-  imports: [CommonModule, GenericTableComponent, ModalComponent, ImpresoraFichaComponent, ImpresoraFormComponent],
+  imports: [CommonModule, GenericTableComponent, ModalComponent, ImpresoraFichaComponent, ImpresoraFormComponent, ImpresoraResumenComponent],
   templateUrl: './impresoras-list.component.html',
   styleUrl: './impresoras-list.component.scss',
 })
@@ -25,8 +26,9 @@ export class ImpresorasListComponent implements OnInit {
     { key: 'marca', label: 'Marca' },
     { key: 'modelo', label: 'Modelo' },
     { key: 'ip', label: 'IP' },
-    { key: 'piso', label: 'Piso' },
-    { key: 'area', label: 'Área' },
+    { key: 'sede.nombre', label: 'Sede' },
+    { key: 'dependencia.nombre', label: 'Dependencia' },
+    { key: 'subdependencia.nombre', label: 'Subdependencia' },
     { key: 'estado', label: 'Estado' },
   ];
 
@@ -34,8 +36,8 @@ export class ImpresorasListComponent implements OnInit {
   editing: Impresora | null = null;
   formOpen = false;
 
-  get isAdmin(): boolean {
-    return this.authService.isAdmin();
+  get canWrite(): boolean {
+    return this.authService.canWrite('impresoras');
   }
 
   ngOnInit(): void {

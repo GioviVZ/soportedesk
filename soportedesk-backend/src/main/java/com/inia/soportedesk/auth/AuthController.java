@@ -12,6 +12,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import jakarta.validation.Valid;
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -21,6 +22,7 @@ public class AuthController {
 
     private final AuthenticationManager authenticationManager;
     private final UsuarioRepository usuarioRepository;
+    private final PermisoRepository permisoRepository;
     private final JwtService jwtService;
 
     @PostMapping("/login")
@@ -36,9 +38,13 @@ public class AuthController {
         Usuario usuario = usuarioRepository.findByUsername(request.getUsername())
                 .orElseThrow(() -> new IllegalStateException("Usuario autenticado no encontrado en BD"));
 
-        String token = jwtService.generateToken(usuario.getUsername(), usuario.getRol().name());
+        List<String> permisos = permisoRepository.findByUsuario(usuario).stream()
+                .map(Permiso::getModulo)
+                .toList();
 
-        return ResponseEntity.ok(new AuthResponse(token, usuario.getUsername(), usuario.getNombre(), usuario.getRol().name()));
+        String token = jwtService.generateToken(usuario.getUsername(), usuario.getRol().name(), permisos);
+
+        return ResponseEntity.ok(new AuthResponse(token, usuario.getUsername(), usuario.getNombre(), usuario.getRol().name(), permisos));
     }
 
     @GetMapping("/me")
@@ -47,6 +53,10 @@ public class AuthController {
         Usuario usuario = usuarioRepository.findByUsername(authentication.getName())
                 .orElseThrow(() -> new ResourceNotFoundException("Usuario autenticado no encontrado en BD"));
 
-        return ResponseEntity.ok(new AuthResponse(null, usuario.getUsername(), usuario.getNombre(), usuario.getRol().name()));
+        List<String> permisos = permisoRepository.findByUsuario(usuario).stream()
+                .map(Permiso::getModulo)
+                .toList();
+
+        return ResponseEntity.ok(new AuthResponse(null, usuario.getUsername(), usuario.getNombre(), usuario.getRol().name(), permisos));
     }
 }

@@ -1,5 +1,9 @@
 package com.inia.soportedesk.equipos;
 
+import com.inia.soportedesk.catalogo.Dependencia;
+import com.inia.soportedesk.catalogo.Sede;
+import com.inia.soportedesk.catalogo.Subdependencia;
+import com.inia.soportedesk.usuariosred.UsuarioRed;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -20,8 +24,14 @@ public class Equipo {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, unique = true)
-    private String codigo;
+    @Column(name = "numero_serie", unique = true)
+    private String numeroSerie;
+
+    @Column(name = "codigo_patrimonial")
+    private String codigoPatrimonial;
+
+    @Column(name = "codigo_inventario")
+    private String codigoInventario;
 
     @Column(nullable = false)
     private String tipo;
@@ -32,11 +42,24 @@ public class Equipo {
     @Column(nullable = false)
     private String modelo;
 
-    @Column(nullable = false)
-    private String usuario;
+    private String host;
+    private String ip;
 
-    @Column(nullable = false)
-    private String area;
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "usuario_red_id")
+    private UsuarioRed usuarioRed;
+
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "sede_id")
+    private Sede sede;
+
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "dependencia_id")
+    private Dependencia dependencia;
+
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "subdependencia_id")
+    private Subdependencia subdependencia;
 
     private LocalDate asignado;
 

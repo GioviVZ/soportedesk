@@ -3,11 +3,13 @@ spring:
     name: soportedesk-backend
   profiles:
     active: dev
+  sql:
+    init:
+      mode: never
   jpa:
     open-in-view: false
-    defer-datasource-initialization: true
     hibernate:
-      ddl-auto: update
+      ddl-auto: none
     show-sql: false
   servlet:
     multipart:
@@ -30,7 +32,7 @@ spring:
     activate:
       on-profile: dev
   datasource:
-    url: jdbc:mysql://localhost:3306/soportedesk_inia?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
-    username: ${DB_USERNAME:root}
-    password: ${DB_PASSWORD:root}
-    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:sqlserver://172.16.26.16:1433;databaseName=ssti;encrypt=false;trustServerCertificate=true
+    username: sa
+    password: $Lipknot86
+    driver-class-name: com.microsoft.sqlserver.jdbc.SQLServerDriver

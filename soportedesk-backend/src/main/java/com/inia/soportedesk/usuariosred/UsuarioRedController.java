@@ -27,19 +27,19 @@ public class UsuarioRedController {
     }
 
     @PostMapping
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN') || hasAuthority('WRITE_usuarios-red')")
     public ResponseEntity<UsuarioRed> create(@Valid @RequestBody UsuarioRedRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(service.create(request));
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN') || hasAuthority('WRITE_usuarios-red')")
     public UsuarioRed update(@PathVariable Long id, @Valid @RequestBody UsuarioRedRequest request) {
         return service.update(id, request);
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN') || hasAuthority('WRITE_usuarios-red')")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
         service.delete(id);
         return ResponseEntity.noContent().build();

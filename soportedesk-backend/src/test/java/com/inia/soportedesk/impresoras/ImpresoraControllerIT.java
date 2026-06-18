@@ -36,24 +36,28 @@ class ImpresoraControllerIT {
         request.setMarca("HP");
         request.setModelo("M404dn");
         request.setIp("10.0.0.50");
-        request.setPiso("4");
-        request.setArea("Administración");
         request.setEstado("Activa");
-        request.setTonerNegro(80);
-        request.setTonerC(60);
-        request.setTonerM(60);
-        request.setTonerY(60);
-        request.setCartucho(90);
-        request.setDrum(70);
-        request.setFusor(85);
+        request.setModeloTonerNegro("TN-2380");
+        request.setModeloDrum("DR-2365");
         return request;
+    }
+
+    private Impresora sampleImpresora() {
+        Impresora imp = new Impresora();
+        imp.setId(1L);
+        imp.setNombre("HP LaserJet 4ta planta");
+        imp.setMarca("HP");
+        imp.setModelo("M404dn");
+        imp.setEstado("Activa");
+        imp.setModeloTonerNegro("TN-2380");
+        imp.setModeloDrum("DR-2365");
+        return imp;
     }
 
     @Test
     @WithMockUser(roles = "SOPORTE")
     void findAll_allowsAuthenticatedUser() throws Exception {
-        Impresora impresora = new Impresora(1L, "HP LaserJet 4ta planta", "HP", "M404dn", "10.0.0.50", "4", "Administración", "Activa", 80, 60, 60, 60, 90, 70, 85, null, null, null, null);
-        when(service.findAll(null)).thenReturn(List.of(impresora));
+        when(service.findAll(null)).thenReturn(List.of(sampleImpresora()));
 
         mockMvc.perform(get("/api/impresoras"))
                 .andExpect(status().isOk())
@@ -63,8 +67,7 @@ class ImpresoraControllerIT {
     @Test
     @WithMockUser(roles = "ADMIN")
     void create_withAdminRole_returnsCreated() throws Exception {
-        Impresora impresora = new Impresora(1L, "HP LaserJet 4ta planta", "HP", "M404dn", "10.0.0.50", "4", "Administración", "Activa", 80, 60, 60, 60, 90, 70, 85, null, null, null, null);
-        when(service.create(any())).thenReturn(impresora);
+        when(service.create(any())).thenReturn(sampleImpresora());
 
         mockMvc.perform(post("/api/impresoras")
                         .contentType("application/json")

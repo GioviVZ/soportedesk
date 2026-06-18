@@ -55,7 +55,47 @@
   font-style: italic;
 }
 
+.modelo-tag {
+  font-family: monospace;
+  font-weight: 600;
+  color: var(--color-primary);
+  font-size: 13px;
+}
+
+.no-consumibles {
+  color: var(--color-gray);
+  font-style: italic;
+  font-size: 14px;
+  padding: 8px 0;
+}
+
 h4 {
   margin: 16px 0 8px;
   color: var(--color-green-dark);
+}
+
+.upload-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.upload-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+
+  label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--color-gray);
+  }
+
+  input {
+    width: 100%;
+    padding: 7px 10px;
+    border: 1px solid var(--color-border);
+    border-radius: 4px;
+    font-size: 13px;
+  }
 }

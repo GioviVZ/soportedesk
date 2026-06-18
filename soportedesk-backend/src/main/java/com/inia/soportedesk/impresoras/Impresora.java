@@ -1,5 +1,8 @@
 package com.inia.soportedesk.impresoras;
 
+import com.inia.soportedesk.catalogo.Dependencia;
+import com.inia.soportedesk.catalogo.Sede;
+import com.inia.soportedesk.catalogo.Subdependencia;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -8,10 +11,7 @@ import lombok.Setter;
 
 @Entity
 @Table(name = "impresoras")
-@Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
+@Getter @Setter @NoArgsConstructor @AllArgsConstructor
 public class Impresora {
 
     @Id
@@ -29,30 +29,41 @@ public class Impresora {
 
     private String ip;
 
-    private String piso;
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "sede_id")
+    private Sede sede;
 
-    private String area;
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "dependencia_id")
+    private Dependencia dependencia;
+
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "subdependencia_id")
+    private Subdependencia subdependencia;
 
     @Column(nullable = false)
     private String estado;
 
-    @Column(name = "toner_negro")
-    private Integer tonerNegro;
+    @Column(name = "modelo_toner_negro")
+    private String modeloTonerNegro;
 
-    @Column(name = "toner_c")
-    private Integer tonerC;
+    @Column(name = "modelo_toner_c")
+    private String modeloTonerC;
 
-    @Column(name = "toner_m")
-    private Integer tonerM;
+    @Column(name = "modelo_toner_m")
+    private String modeloTonerM;
 
-    @Column(name = "toner_y")
-    private Integer tonerY;
+    @Column(name = "modelo_toner_y")
+    private String modeloTonerY;
 
-    private Integer cartucho;
+    @Column(name = "modelo_cartucho")
+    private String modeloCartucho;
 
-    private Integer drum;
+    @Column(name = "modelo_drum")
+    private String modeloDrum;
 
-    private Integer fusor;
+    @Column(name = "modelo_fusor")
+    private String modeloFusor;
 
     @Column(name = "driver_nombre")
     private String driverNombre;

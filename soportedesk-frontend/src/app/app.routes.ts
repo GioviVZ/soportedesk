@@ -64,6 +64,14 @@ export const routes: Routes = [
           ),
       },
       {
+        path: 'usuarios-sistema',
+        canActivate: [adminGuard],
+        loadComponent: () =>
+          import('./features/usuarios-sistema/usuarios-sistema.component').then(
+            (m) => m.UsuariosSistemaComponent,
+          ),
+      },
+      {
         path: 'catalogos',
         canActivate: [adminGuard],
         loadComponent: () =>

@@ -33,8 +33,8 @@ export class LicenciasListComponent implements OnInit {
   editing: Licencia | null = null;
   formOpen = false;
 
-  get isAdmin(): boolean {
-    return this.authService.isAdmin();
+  get canWrite(): boolean {
+    return this.authService.canWrite('licencias');
   }
 
   ngOnInit(): void {

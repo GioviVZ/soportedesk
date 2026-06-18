@@ -33,35 +33,41 @@ class VpnControllerIT {
 
     private VpnRequest sampleRequest() {
         VpnRequest request = new VpnRequest();
-        request.setUsuario("jperez");
-        request.setNombre("Juan Pérez");
-        request.setTipo("OpenVPN");
+        request.setUsuarioRedId(1L);
         request.setIpAsignada("10.8.0.2");
         request.setVence(LocalDate.of(2025, 12, 31));
         request.setEstado("Activo");
         return request;
     }
 
+    private Vpn sampleVpn() {
+        Vpn vpn = new Vpn();
+        vpn.setId(1L);
+        vpn.setIpAsignada("10.8.0.2");
+        vpn.setEstado("Activo");
+        return vpn;
+    }
+
     @Test
     @WithMockUser(roles = "SOPORTE")
     void findAll_allowsAuthenticatedUser() throws Exception {
-        when(service.findAll(null)).thenReturn(List.of(new Vpn(1L, "jperez", "Juan Pérez", "OpenVPN", "10.8.0.2", LocalDate.of(2025, 12, 31), "Activo")));
+        when(service.findAll(null)).thenReturn(List.of(sampleVpn()));
 
         mockMvc.perform(get("/api/vpn"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].usuario", is("jperez")));
+                .andExpect(jsonPath("$[0].estado", is("Activo")));
     }
 
     @Test
     @WithMockUser(roles = "ADMIN")
     void create_withAdminRole_returnsCreated() throws Exception {
-        when(service.create(any())).thenReturn(new Vpn(1L, "jperez", "Juan Pérez", "OpenVPN", "10.8.0.2", LocalDate.of(2025, 12, 31), "Activo"));
+        when(service.create(any(), any())).thenReturn(sampleVpn());
 
         mockMvc.perform(post("/api/vpn")
                         .contentType("application/json")
                         .content(objectMapper.writeValueAsString(sampleRequest())))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.usuario", is("jperez")));
+                .andExpect(jsonPath("$.estado", is("Activo")));
     }
 
     @Test
@@ -71,5 +77,23 @@ class VpnControllerIT {
                         .contentType("application/json")
                         .content(objectMapper.writeValueAsString(sampleRequest())))
                 .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @WithMockUser(roles = "SOPORTE")
+    void patchAntivirus_withSoporteRole_returnsOk() throws Exception {
+        VpnAntivirusRequest req = new VpnAntivirusRequest();
+        req.setTieneAntivirus(true);
+        req.setVencimientoAntivirus(LocalDate.of(2026, 12, 31));
+
+        Vpn vpn = sampleVpn();
+        vpn.setTieneAntivirus(true);
+        when(service.updateAntivirus(any(), any())).thenReturn(vpn);
+
+        mockMvc.perform(patch("/api/vpn/1/antivirus")
+                        .contentType("application/json")
+                        .content(objectMapper.writeValueAsString(req)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.tieneAntivirus", is(true)));
     }
 }

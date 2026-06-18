@@ -33,11 +33,25 @@ class ImpresoraDriverControllerIT {
     @Autowired
     private FileStorageService fileStorageService;
 
+    private Impresora impresoraConDriver(Long id, String path) {
+        Impresora imp = new Impresora();
+        imp.setId(id);
+        imp.setNombre("HP LaserJet");
+        imp.setMarca("HP");
+        imp.setModelo("M404dn");
+        imp.setEstado("Activa");
+        imp.setDriverNombre("driver-hp.zip");
+        imp.setDriverVersion("1.2");
+        imp.setDriverSo("Windows 10");
+        imp.setDriverArchivoPath(path);
+        return imp;
+    }
+
     @Test
     @WithMockUser(roles = "ADMIN")
     void uploadDriver_withAdminRole_storesFileAndReturnsImpresora() throws Exception {
-        Impresora impresora = new Impresora(1L, "HP LaserJet 4ta planta", "HP", "M404dn", "10.0.0.50", "4", "Administración", "Activa", 80, 60, 60, 60, 90, 70, 85, "driver-hp.zip", "1.2", "Windows 10", "1/driver-hp.zip");
-        when(service.updateDriver(eq(1L), any(), any(), any(), any())).thenReturn(impresora);
+        when(service.updateDriver(eq(1L), any(), any(), any(), any()))
+                .thenReturn(impresoraConDriver(1L, "1/driver-hp.zip"));
 
         MockMultipartFile file = new MockMultipartFile("file", "driver-hp.zip", "application/zip", "contenido".getBytes());
 
@@ -64,10 +78,10 @@ class ImpresoraDriverControllerIT {
     @Test
     @WithMockUser(roles = "SOPORTE")
     void downloadDriver_returnsFileBytes() throws Exception {
-        Path stored = fileStorageService.load(fileStorageService.store(2L, new MockMultipartFile("file", "driver-canon.zip", "application/zip", "contenido".getBytes())));
+        Path stored = fileStorageService.load(
+                fileStorageService.store(2L, new MockMultipartFile("file", "driver-canon.zip", "application/zip", "contenido".getBytes())));
 
-        Impresora impresora = new Impresora(2L, "Canon 2da planta", "Canon", "LBP226dw", "10.0.0.60", "2", "Mesa de Partes", "Activa", 70, 50, 50, 50, 80, 60, 75, "driver-canon.zip", "2.0", "Windows 11", "2/driver-canon.zip");
-        when(service.findById(2L)).thenReturn(impresora);
+        when(service.findById(2L)).thenReturn(impresoraConDriver(2L, "2/driver-canon.zip"));
 
         mockMvc.perform(get("/api/impresoras/2/driver"))
                 .andExpect(status().isOk())

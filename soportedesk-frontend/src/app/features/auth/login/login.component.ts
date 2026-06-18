@@ -17,6 +17,8 @@ export class LoginComponent {
   private router = inject(Router);
 
   errorMessage = '';
+  showPassword = false;
+  loading = false;
 
   form = this.fb.nonNullable.group({
     username: ['', Validators.required],
@@ -24,14 +26,17 @@ export class LoginComponent {
   });
 
   submit(): void {
-    if (this.form.invalid) {
-      return;
-    }
-
+    if (this.form.invalid) return;
     this.errorMessage = '';
+    this.loading = true;
     this.authService.login(this.form.getRawValue()).subscribe({
       next: () => this.router.navigate(['/dashboard']),
-      error: () => (this.errorMessage = 'Usuario o contraseña incorrectos'),
+      error: () => {
+        this.errorMessage = 'Usuario o contraseña incorrectos';
+        this.loading = false;
+      },
     });
   }
+
+  togglePassword(): void { this.showPassword = !this.showPassword; }
 }

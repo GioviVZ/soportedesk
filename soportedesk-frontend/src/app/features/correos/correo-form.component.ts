@@ -1,9 +1,11 @@
-import { Component, EventEmitter, Input, OnChanges, Output, inject } from '@angular/core';
+import { Component, EventEmitter, Input, OnChanges, OnInit, Output, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { UbicacionSelectComponent } from '../../shared/ubicacion-select/ubicacion-select.component';
 import { Correo } from './correo.model';
 import { CorreoService } from './correo.service';
+import { UsuarioRedService } from '../usuarios-red/usuario-red.service';
+import { UsuarioRed } from '../usuarios-red/usuario-red.model';
 
 @Component({
   selector: 'app-correo-form',
@@ -12,13 +14,17 @@ import { CorreoService } from './correo.service';
   templateUrl: './correo-form.component.html',
   styleUrl: './correo-form.component.scss',
 })
-export class CorreoFormComponent implements OnChanges {
+export class CorreoFormComponent implements OnInit, OnChanges {
   private fb = inject(FormBuilder);
   private service = inject(CorreoService);
+  private usuarioRedService = inject(UsuarioRedService);
 
   @Input() correo: Correo | null = null;
   @Output() saved = new EventEmitter<void>();
   @Output() cancelled = new EventEmitter<void>();
+
+  usuariosRed: UsuarioRed[] = [];
+  selectedAdUserId: number | null = null;
 
   sedeId: number | null = null;
   dependenciaId: number | null = null;
@@ -28,16 +34,23 @@ export class CorreoFormComponent implements OnChanges {
   form = this.fb.nonNullable.group({
     usuario: ['', Validators.required],
     nombre: ['', Validators.required],
+    apellidos: ['', Validators.required],
     correo: ['', [Validators.required, Validators.email]],
     estado: ['Activo', Validators.required],
     fechaFinContrato: [''],
   });
 
+  ngOnInit(): void {
+    this.usuarioRedService.getAll().subscribe((users) => (this.usuariosRed = users));
+  }
+
   ngOnChanges(): void {
+    this.selectedAdUserId = null;
     if (this.correo) {
       this.form.patchValue({
         usuario: this.correo.usuario,
         nombre: this.correo.nombre,
+        apellidos: this.correo.apellidos,
         correo: this.correo.correo,
         estado: this.correo.estado,
         fechaFinContrato: this.correo.fechaFinContrato ?? '',
@@ -47,12 +60,30 @@ export class CorreoFormComponent implements OnChanges {
       this.subdependenciaId = this.correo.subdependencia?.id ?? null;
       this.tipoContratoId = this.correo.tipoContrato?.id ?? null;
     } else {
-      this.form.reset({ usuario: '', nombre: '', correo: '', estado: 'Activo', fechaFinContrato: '' });
+      this.form.reset({ usuario: '', nombre: '', apellidos: '', correo: '', estado: 'Activo', fechaFinContrato: '' });
       this.sedeId = null;
       this.dependenciaId = null;
       this.subdependenciaId = null;
       this.tipoContratoId = null;
     }
+  }
+
+  onAdUserSelected(idStr: string): void {
+    const id = idStr ? Number(idStr) : null;
+    this.selectedAdUserId = id;
+    if (!id) return;
+    const user = this.usuariosRed.find((u) => u.id === id);
+    if (!user) return;
+    this.form.patchValue({
+      usuario: user.usuario,
+      nombre: user.nombre,
+      apellidos: user.apellidos,
+      fechaFinContrato: user.fechaFinContrato ?? '',
+    });
+    this.sedeId = user.sede?.id ?? null;
+    this.dependenciaId = user.dependencia?.id ?? null;
+    this.subdependenciaId = user.subdependencia?.id ?? null;
+    this.tipoContratoId = user.tipoContrato?.id ?? null;
   }
 
   submit(): void {
@@ -65,6 +96,7 @@ export class CorreoFormComponent implements OnChanges {
     const request = {
       usuario: raw.usuario,
       nombre: raw.nombre,
+      apellidos: raw.apellidos,
       correo: raw.correo,
       estado: raw.estado,
       sedeId: this.sedeId,

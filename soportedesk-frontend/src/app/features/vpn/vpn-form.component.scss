@@ -15,6 +15,112 @@
     border: 1px solid var(--color-border);
     border-radius: 4px;
   }
+
+  .hint {
+    font-size: 11px;
+    color: var(--color-gray);
+  }
+}
+
+.section-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-gray);
+  margin-bottom: 10px;
+
+  &.ad-header {
+    color: #16a34a;
+    svg { color: #16a34a; }
+  }
+}
+
+.ad-field {
+  select {
+    border-color: #16a34a;
+    background-color: #f0fdf4;
+  }
+}
+
+.ad-preview {
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 6px;
+  padding: 10px 12px;
+  margin-bottom: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.ad-preview-row {
+  display: flex;
+  gap: 8px;
+  font-size: 13px;
+}
+
+.ad-label {
+  font-weight: 600;
+  color: #15803d;
+  min-width: 80px;
+}
+
+.divider {
+  border: none;
+  border-top: 1px solid var(--color-border);
+  margin: 14px 0;
+}
+
+/* Credential section */
+.credential-card {
+  border: 1px solid #a5b4fc;
+  background: #eef2ff;
+  border-radius: 8px;
+  padding: 14px 14px 4px;
+  margin-bottom: 12px;
+}
+
+.credential-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #4338ca;
+  margin-bottom: 12px;
+
+  svg { color: #4338ca; flex-shrink: 0; }
+}
+
+.credential-badge {
+  margin-left: auto;
+  font-size: 10px;
+  font-weight: 600;
+  background: #c7d2fe;
+  color: #3730a3;
+  border-radius: 99px;
+  padding: 2px 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.credential-locked {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #f8fafc;
+  border: 1px dashed var(--color-border);
+  border-radius: 8px;
+  padding: 12px 14px;
+  margin-bottom: 12px;
+  color: var(--color-gray);
+  font-size: 13px;
+
+  svg { flex-shrink: 0; opacity: 0.5; }
 }
 
 .actions {

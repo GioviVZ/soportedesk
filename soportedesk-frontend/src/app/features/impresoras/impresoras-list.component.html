@@ -3,13 +3,15 @@
 <app-generic-table
   [columns]="columns"
   [data]="items"
-  [canEdit]="isAdmin"
+  [canEdit]="canWrite"
   (searchChange)="onSearch($event)"
   (add)="onAdd()"
   (view)="onView($event)"
   (edit)="onEdit($event)"
   (delete)="onDelete($event)"
 />
+
+<app-impresora-resumen [impresoras]="items" />
 
 <app-modal title="Ficha técnica" [open]="viewing !== null" (closed)="closeView()">
   <app-impresora-ficha

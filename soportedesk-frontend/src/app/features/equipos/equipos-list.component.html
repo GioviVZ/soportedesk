@@ -3,7 +3,7 @@
 <app-generic-table
   [columns]="columns"
   [data]="items"
-  [canEdit]="isAdmin"
+  [canEdit]="canWrite"
   (searchChange)="onSearch($event)"
   (add)="onAdd()"
   (view)="onView($event)"
@@ -13,12 +13,18 @@
 
 <app-modal title="Detalle de equipo" [open]="viewing !== null" (closed)="closeView()">
   <ng-container *ngIf="viewing">
-    <app-field label="Código">{{ viewing.codigo }}</app-field>
     <app-field label="Tipo">{{ viewing.tipo }}</app-field>
     <app-field label="Marca">{{ viewing.marca }}</app-field>
     <app-field label="Modelo">{{ viewing.modelo }}</app-field>
-    <app-field label="Usuario">{{ viewing.usuario }}</app-field>
-    <app-field label="Área">{{ viewing.area }}</app-field>
+    <app-field label="N° de serie">{{ viewing.numeroSerie }}</app-field>
+    <app-field label="Cód. patrimonial">{{ viewing.codigoPatrimonial }}</app-field>
+    <app-field label="Cód. inventario">{{ viewing.codigoInventario }}</app-field>
+    <app-field label="Host" *ngIf="viewing.host">{{ viewing.host }}</app-field>
+    <app-field label="IP" *ngIf="viewing.ip">{{ viewing.ip }}</app-field>
+    <app-field label="Usuario">{{ viewing.usuarioRed?.nombre }} ({{ viewing.usuarioRed?.usuario }})</app-field>
+    <app-field label="Sede">{{ viewing.sede?.nombre }}</app-field>
+    <app-field label="Dependencia">{{ viewing.dependencia?.nombre }}</app-field>
+    <app-field label="Subdependencia">{{ viewing.subdependencia?.nombre }}</app-field>
     <app-field label="Fecha de asignación">{{ viewing.asignado }}</app-field>
     <app-field label="Estado">{{ viewing.estado }}</app-field>
   </ng-container>
