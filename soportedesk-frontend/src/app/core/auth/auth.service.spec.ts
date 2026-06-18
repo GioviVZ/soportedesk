@@ -12,6 +12,7 @@ describe('AuthService', () => {
     username: 'admin',
     nombre: 'Administrador',
     rol: 'ADMIN',
+    permisos: [],
   };
 
   beforeEach(() => {
@@ -49,5 +50,14 @@ describe('AuthService', () => {
 
     expect(localStorage.getItem('token')).toBeNull();
     expect(service.isLoggedIn()).toBe(false);
+  });
+
+  it('cambiarPassword posts current and new password', () => {
+    service.cambiarPassword('old123', 'newpass1').subscribe();
+
+    const req = httpMock.expectOne('/api/auth/cambiar-password');
+    expect(req.request.method).toBe('POST');
+    expect(req.request.body).toEqual({ passwordActual: 'old123', passwordNueva: 'newpass1' });
+    req.flush(null);
   });
 });

@@ -29,6 +29,10 @@ export class AuthService {
     localStorage.removeItem('permisos');
   }
 
+  cambiarPassword(passwordActual: string, passwordNueva: string): Observable<void> {
+    return this.http.post<void>(`${this.apiUrl}/cambiar-password`, { passwordActual, passwordNueva });
+  }
+
   getToken(): string | null {
     return localStorage.getItem('token');
   }
