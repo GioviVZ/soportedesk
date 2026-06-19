@@ -2,6 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
 import { provideRouter, RouterLink } from '@angular/router';
 import { By } from '@angular/platform-browser';
+import { provideCharts, withDefaultRegisterables } from 'ng2-charts';
 import { DashboardComponent } from './dashboard.component';
 import { DashboardCounts } from './dashboard-counts.model';
 
@@ -23,13 +24,14 @@ describe('DashboardComponent', () => {
   beforeEach(() => {
     TestBed.configureTestingModule({
       imports: [DashboardComponent, HttpClientTestingModule],
-      providers: [provideRouter([])],
+      providers: [provideRouter([]), provideCharts(withDefaultRegisterables())],
     });
     fixture = TestBed.createComponent(DashboardComponent);
     httpMock = TestBed.inject(HttpTestingController);
     fixture.detectChanges();
     httpMock.expectOne('/api/dashboard/counts').flush(counts);
     fixture.detectChanges();
+    httpMock.expectOne((r) => r.url.endsWith('/usuarios-red-por-ubicacion')).flush([]);
   });
 
   afterEach(() => httpMock.verify());
