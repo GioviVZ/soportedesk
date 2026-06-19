@@ -27,7 +27,7 @@ class DashboardControllerIT {
     @Test
     @WithMockUser(roles = "SOPORTE")
     void getCounts_allowsAuthenticatedUser() throws Exception {
-        when(service.getCounts()).thenReturn(new DashboardCounts(5, 12, 20, 3, 4, 7, 15));
+        when(service.getCounts()).thenReturn(new DashboardCounts(5, 12, 20, 3, 4, 7, 15, 2));
 
         mockMvc.perform(get("/api/dashboard/counts"))
                 .andExpect(status().isOk())
