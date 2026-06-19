@@ -29,4 +29,10 @@ public interface UsuarioRedRepository extends JpaRepository<UsuarioRed, Long> {
 
     @Query("SELECT COUNT(u) FROM UsuarioRed u WHERE u.estado IS NULL OR LOWER(u.estado) <> 'activo'")
     long countDesactivados();
+
+    @Query("SELECT s.nombre, u.estado, COUNT(u) FROM UsuarioRed u JOIN u.sede s GROUP BY s.nombre, u.estado")
+    List<Object[]> countGroupedBySedeAndEstado();
+
+    @Query("SELECT d.nombre, u.estado, COUNT(u) FROM UsuarioRed u JOIN u.dependencia d GROUP BY d.nombre, u.estado")
+    List<Object[]> countGroupedByDependenciaAndEstado();
 }

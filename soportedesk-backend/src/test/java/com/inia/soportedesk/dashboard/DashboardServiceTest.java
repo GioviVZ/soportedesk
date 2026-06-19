@@ -13,7 +13,11 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.util.Arrays;
+import java.util.List;
+
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -64,5 +68,43 @@ class DashboardServiceTest {
         assertThat(counts.impresoras()).isEqualTo(7L);
         assertThat(counts.equipos()).isEqualTo(15L);
         assertThat(counts.usuariosRedInactivos()).isEqualTo(1L);
+    }
+
+    @Test
+    void usuariosRedPorUbicacion_withSede_pivotsRowsIntoActivosInactivos() {
+        List<Object[]> rows = Arrays.<Object[]>asList(
+                new Object[]{"Lima", "Activo", 10L},
+                new Object[]{"Lima", "Inactivo", 2L},
+                new Object[]{"Cusco", "Activo", 5L}
+        );
+        when(usuarioRedRepository.countGroupedBySedeAndEstado()).thenReturn(rows);
+
+        List<UbicacionUsuariosCount> result = service.usuariosRedPorUbicacion("sede");
+
+        assertThat(result).containsExactly(
+                new UbicacionUsuariosCount("Lima", 10L, 2L),
+                new UbicacionUsuariosCount("Cusco", 5L, 0L)
+        );
+    }
+
+    @Test
+    void usuariosRedPorUbicacion_withDependencia_usesGroupedByDependenciaQuery() {
+        List<Object[]> rows = Arrays.<Object[]>asList(new Object[]{"TI", "Activo", 8L});
+        when(usuarioRedRepository.countGroupedByDependenciaAndEstado()).thenReturn(rows);
+
+        List<UbicacionUsuariosCount> result = service.usuariosRedPorUbicacion("dependencia");
+
+        assertThat(result).containsExactly(new UbicacionUsuariosCount("TI", 8L, 0L));
+    }
+
+    @Test
+    void usuariosRedPorUbicacion_withInvalidOrNullNivel_defaultsToSede() {
+        when(usuarioRedRepository.countGroupedBySedeAndEstado()).thenReturn(List.of());
+
+        List<UbicacionUsuariosCount> result = service.usuariosRedPorUbicacion("foo");
+        service.usuariosRedPorUbicacion(null);
+
+        assertThat(result).isEmpty();
+        verify(usuarioRedRepository, org.mockito.Mockito.times(2)).countGroupedBySedeAndEstado();
     }
 }
