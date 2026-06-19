@@ -6,4 +6,5 @@ export interface DashboardCounts {
   wifi: number;
   impresoras: number;
   equipos: number;
+  usuariosRedInactivos: number;
 }

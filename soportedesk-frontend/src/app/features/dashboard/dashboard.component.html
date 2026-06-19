@@ -13,7 +13,7 @@
 
   <!-- KPI Grid -->
   <div class="cards-grid">
-    <a class="kpi-card" *ngFor="let card of cards" [routerLink]="card.path" [style.--card-color]="card.color" [style.--card-bg]="card.bg">
+    <a class="kpi-card" *ngFor="let card of cards" [routerLink]="card.path" [queryParams]="card.queryParams" [style.--card-color]="card.color" [style.--card-bg]="card.bg">
       <div class="kpi-icon" [innerHTML]="card.icon"></div>
       <div class="kpi-body">
         <span class="kpi-value">{{ card.value }}</span>

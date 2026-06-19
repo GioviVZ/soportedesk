@@ -12,6 +12,7 @@ interface DashboardCard {
   color: string;
   bg: string;
   icon: SafeHtml;
+  queryParams?: Record<string, string>;
 }
 
 const ICONS: Record<string, string> = {
@@ -22,6 +23,7 @@ const ICONS: Record<string, string> = {
   wifi:    `<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg>`,
   printer: `<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>`,
   monitor: `<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>`,
+  userX:   `<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="17" y1="8" x2="22" y2="13"/><line x1="22" y1="8" x2="17" y2="13"/></svg>`,
 };
 
 @Component({
@@ -41,7 +43,8 @@ export class DashboardComponent implements OnInit {
   ngOnInit(): void {
     this.dashboardService.getCounts().subscribe(counts => {
       this.cards = this.toCards(counts);
-      this.totalRegistros = Object.values(counts).reduce((a, b) => a + b, 0);
+      this.totalRegistros = counts.licencias + counts.correos + counts.usuariosRed + counts.vpn
+        + counts.wifi + counts.impresoras + counts.equipos;
     });
   }
 
@@ -58,6 +61,7 @@ export class DashboardComponent implements OnInit {
       { label: 'Claves WiFi',            value: counts.wifi,         path: '/wifi',         color: '#06b6d4', bg: '#ecfeff', icon: this.svg('wifi') },
       { label: 'Impresoras',             value: counts.impresoras,   path: '/impresoras',   color: '#64748b', bg: '#f8fafc', icon: this.svg('printer') },
       { label: 'Equipos Asignados',      value: counts.equipos,      path: '/equipos',      color: '#16a34a', bg: '#f0fdf4', icon: this.svg('monitor') },
+      { label: 'Usuarios Desactivados',  value: counts.usuariosRedInactivos, path: '/usuarios-red', color: '#d97706', bg: '#fffbeb', icon: this.svg('userX'), queryParams: { search: 'Inactivo' } },
     ];
   }
 }
