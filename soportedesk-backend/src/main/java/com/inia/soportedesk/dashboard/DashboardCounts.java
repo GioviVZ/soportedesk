@@ -7,6 +7,7 @@ public record DashboardCounts(
         long vpn,
         long wifi,
         long impresoras,
-        long equipos
+        long equipos,
+        long usuariosRedInactivos
 ) {
 }

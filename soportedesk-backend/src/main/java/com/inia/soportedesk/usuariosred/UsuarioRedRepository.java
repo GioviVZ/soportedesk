@@ -26,4 +26,7 @@ public interface UsuarioRedRepository extends JpaRepository<UsuarioRed, Long> {
            "LOWER(sd.nombre) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
            "LOWER(tc.nombre) LIKE LOWER(CONCAT('%', :search, '%'))")
     List<UsuarioRed> search(@Param("search") String search);
+
+    @Query("SELECT COUNT(u) FROM UsuarioRed u WHERE u.estado IS NULL OR LOWER(u.estado) <> 'activo'")
+    long countDesactivados();
 }

@@ -52,6 +52,7 @@ class DashboardServiceTest {
         when(wifiRepository.count()).thenReturn(4L);
         when(impresoraRepository.count()).thenReturn(7L);
         when(equipoRepository.count()).thenReturn(15L);
+        when(usuarioRedRepository.countDesactivados()).thenReturn(1L);
 
         DashboardCounts counts = service.getCounts();
 
@@ -62,5 +63,6 @@ class DashboardServiceTest {
         assertThat(counts.wifi()).isEqualTo(4L);
         assertThat(counts.impresoras()).isEqualTo(7L);
         assertThat(counts.equipos()).isEqualTo(15L);
+        assertThat(counts.usuariosRedInactivos()).isEqualTo(1L);
     }
 }

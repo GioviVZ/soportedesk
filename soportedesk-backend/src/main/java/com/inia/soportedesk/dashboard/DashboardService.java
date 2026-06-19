@@ -30,7 +30,8 @@ public class DashboardService {
                 vpnRepository.count(),
                 wifiRepository.count(),
                 impresoraRepository.count(),
-                equipoRepository.count()
+                equipoRepository.count(),
+                usuarioRedRepository.countDesactivados()
         );
     }
 }
