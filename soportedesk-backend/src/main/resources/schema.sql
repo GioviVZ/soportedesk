@@ -367,10 +367,10 @@ GO
 
 IF NOT EXISTS (SELECT 1 FROM dbo.usuarios WHERE username = N'admin')
     INSERT INTO dbo.usuarios (username, password_hash, nombre, rol, activo)
-    VALUES (N'admin', N'$2a$10$eJ6hLkhMposr3/QVM2A2rOt/cka3WviaRvsjlP12LL3se4vX9tKPG', N'Administrador TI', N'ADMIN', 1);
+    VALUES (N'admin', N'$2a$10$jACzX5sAgKRR8uXvQDY5XuF5kwy7R4BCgBRryfXq2zJodAwCsgJQK', N'Administrador TI', N'ADMIN', 1);
 GO
 
 IF NOT EXISTS (SELECT 1 FROM dbo.usuarios WHERE username = N'soporte')
     INSERT INTO dbo.usuarios (username, password_hash, nombre, rol, activo)
-    VALUES (N'soporte', N'$2a$10$eJ6hLkhMposr3/QVM2A2rOt/cka3WviaRvsjlP12LL3se4vX9tKPG', N'Mesa de Soporte', N'SOPORTE', 1);
+    VALUES (N'soporte', N'$2a$10$jACzX5sAgKRR8uXvQDY5XuF5kwy7R4BCgBRryfXq2zJodAwCsgJQK', N'Mesa de Soporte', N'SOPORTE', 1);
 GO
