@@ -1,5 +1,6 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { ActivatedRoute } from '@angular/router';
 import { AuthService } from '../../core/auth/auth.service';
 import { GenericTableComponent, TableColumn } from '../../shared/generic-table/generic-table.component';
 import { ModalComponent } from '../../shared/modal/modal.component';
@@ -26,6 +27,7 @@ import { UsuarioRedService } from './usuario-red.service';
 export class UsuariosRedListComponent implements OnInit {
   private service = inject(UsuarioRedService);
   private authService = inject(AuthService);
+  private route = inject(ActivatedRoute);
 
   items: UsuarioRed[] = [];
   columns: TableColumn[] = [
@@ -37,7 +39,10 @@ export class UsuariosRedListComponent implements OnInit {
     { key: 'ultimoLogin', label: 'Último Login' },
     { key: 'sede.nombre', label: 'Sede' },
     { key: 'dependencia.nombre', label: 'Dependencia' },
+    { key: 'subdependencia.nombre', label: 'Subdependencia' },
     { key: 'tipoContrato.nombre', label: 'Tipo Contrato' },
+    { key: 'numeroContrato', label: 'N° Contrato' },
+    { key: 'fechaCreacion', label: 'Fecha Creación' },
     { key: 'fechaFinContrato', label: 'Fin Contrato' },
     { key: 'estado', label: 'Estado' },
   ];
@@ -45,13 +50,20 @@ export class UsuariosRedListComponent implements OnInit {
   viewing: UsuarioRed | null = null;
   editing: UsuarioRed | null = null;
   formOpen = false;
+  initialSearch = '';
 
   get canWrite(): boolean {
     return this.authService.canWrite('usuarios-red');
   }
 
   ngOnInit(): void {
-    this.load();
+    const search = this.route.snapshot.queryParamMap.get('search');
+    if (search) {
+      this.initialSearch = search;
+      this.load(search);
+    } else {
+      this.load();
+    }
   }
 
   load(search?: string): void {

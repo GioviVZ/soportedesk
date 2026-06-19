@@ -48,4 +48,13 @@ describe('GenericTableComponent', () => {
     fixture.detectChanges();
     expect(fixture.nativeElement.textContent).toContain('Sin registros');
   });
+
+  it('initializes searchTerm from initialSearch and reflects it in the input value', () => {
+    component.initialSearch = 'Inactivo';
+    fixture.detectChanges();
+
+    expect(component.searchTerm).toBe('Inactivo');
+    const input: HTMLInputElement = fixture.nativeElement.querySelector('input');
+    expect(input.value).toBe('Inactivo');
+  });
 });
