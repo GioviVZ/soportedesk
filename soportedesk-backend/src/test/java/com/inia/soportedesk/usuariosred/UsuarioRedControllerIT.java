@@ -42,7 +42,9 @@ class UsuarioRedControllerIT {
         UsuarioRedRequest request = new UsuarioRedRequest();
         request.setUsuario("jperez");
         request.setNombre("Juan Pérez");
+        request.setApellidos("Pérez García");
         request.setGrupo("IT-Admins");
+        request.setUnidadOrganizativa("TI");
         request.setUltimoLogin(LocalDateTime.of(2025, 6, 13, 8, 42));
         request.setEstado("Activo");
         request.setSedeId(1L);
@@ -53,10 +55,28 @@ class UsuarioRedControllerIT {
         return request;
     }
 
+    private UsuarioRed sampleUsuarioRed() {
+        UsuarioRed usuario = new UsuarioRed();
+        usuario.setId(1L);
+        usuario.setUsuario("jperez");
+        usuario.setNombre("Juan Pérez");
+        usuario.setApellidos("Pérez García");
+        usuario.setGrupo("IT-Admins");
+        usuario.setUnidadOrganizativa("TI");
+        usuario.setUltimoLogin(LocalDateTime.of(2025, 6, 13, 8, 42));
+        usuario.setEstado("Activo");
+        usuario.setSede(sede);
+        usuario.setDependencia(dependencia);
+        usuario.setSubdependencia(subdependencia);
+        usuario.setTipoContrato(tipoContrato);
+        usuario.setFechaFinContrato(LocalDate.of(2026, 12, 31));
+        return usuario;
+    }
+
     @Test
     @WithMockUser(roles = "SOPORTE")
     void findAll_allowsAuthenticatedUser() throws Exception {
-        UsuarioRed usuario = new UsuarioRed(1L, "jperez", "Juan Pérez", "IT-Admins", LocalDateTime.of(2025, 6, 13, 8, 42), "Activo", sede, dependencia, subdependencia, tipoContrato, LocalDate.of(2026, 12, 31));
+        UsuarioRed usuario = sampleUsuarioRed();
         when(service.findAll(null)).thenReturn(List.of(usuario));
 
         mockMvc.perform(get("/api/usuarios-red"))
@@ -67,7 +87,7 @@ class UsuarioRedControllerIT {
     @Test
     @WithMockUser(roles = "ADMIN")
     void create_withAdminRole_returnsCreated() throws Exception {
-        UsuarioRed usuario = new UsuarioRed(1L, "jperez", "Juan Pérez", "IT-Admins", LocalDateTime.of(2025, 6, 13, 8, 42), "Activo", sede, dependencia, subdependencia, tipoContrato, LocalDate.of(2026, 12, 31));
+        UsuarioRed usuario = sampleUsuarioRed();
         when(service.create(any())).thenReturn(usuario);
 
         mockMvc.perform(post("/api/usuarios-red")

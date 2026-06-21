@@ -48,6 +48,7 @@ class CorreoServiceTest {
         CorreoRequest request = new CorreoRequest();
         request.setUsuario("jperez");
         request.setNombre("Juan Pérez");
+        request.setApellidos("Pérez García");
         request.setCorreo("j.perez@inia.gob.pe");
         request.setEstado("Activo");
         request.setSedeId(1L);
@@ -59,6 +60,23 @@ class CorreoServiceTest {
         return request;
     }
 
+    private Correo sampleCorreo() {
+        Correo correo = new Correo();
+        correo.setId(1L);
+        correo.setUsuario("jperez");
+        correo.setNombre("Juan Pérez");
+        correo.setApellidos("Pérez García");
+        correo.setCorreo("j.perez@inia.gob.pe");
+        correo.setEstado("Activo");
+        correo.setSede(sede);
+        correo.setDependencia(dependencia);
+        correo.setSubdependencia(subdependencia);
+        correo.setTipoContrato(tipoContrato);
+        correo.setFechaFinContrato(LocalDate.of(2026, 12, 31));
+        correo.setCreado(LocalDate.of(2023, 1, 10));
+        return correo;
+    }
+
     private void stubCatalogLookups() {
         when(sedeRepository.findById(1L)).thenReturn(Optional.of(sede));
         when(dependenciaRepository.findById(1L)).thenReturn(Optional.of(dependencia));
@@ -68,7 +86,7 @@ class CorreoServiceTest {
 
     @Test
     void findAll_withoutSearch_returnsAll() {
-        Correo correo = new Correo(1L, "jperez", "Juan Pérez", "j.perez@inia.gob.pe", "Activo", sede, dependencia, subdependencia, tipoContrato, LocalDate.of(2026, 12, 31), LocalDate.of(2023, 1, 10));
+        Correo correo = sampleCorreo();
         when(repository.findAll()).thenReturn(List.of(correo));
 
         List<Correo> result = service.findAll(null);
@@ -113,7 +131,7 @@ class CorreoServiceTest {
 
     @Test
     void delete_removesExistingCorreo() {
-        Correo correo = new Correo(1L, "jperez", "Juan Pérez", "j.perez@inia.gob.pe", "Activo", sede, dependencia, subdependencia, tipoContrato, LocalDate.of(2026, 12, 31), LocalDate.of(2023, 1, 10));
+        Correo correo = sampleCorreo();
         when(repository.findById(1L)).thenReturn(Optional.of(correo));
 
         service.delete(1L);

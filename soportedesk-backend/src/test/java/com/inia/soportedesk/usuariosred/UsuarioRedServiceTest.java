@@ -49,7 +49,9 @@ class UsuarioRedServiceTest {
         UsuarioRedRequest request = new UsuarioRedRequest();
         request.setUsuario("jperez");
         request.setNombre("Juan Pérez");
+        request.setApellidos("Pérez García");
         request.setGrupo("IT-Admins");
+        request.setUnidadOrganizativa("TI");
         request.setUltimoLogin(LocalDateTime.of(2025, 6, 13, 8, 42));
         request.setEstado("Activo");
         request.setSedeId(1L);
@@ -58,6 +60,24 @@ class UsuarioRedServiceTest {
         request.setTipoContratoId(1L);
         request.setFechaFinContrato(LocalDate.of(2026, 12, 31));
         return request;
+    }
+
+    private UsuarioRed sampleUsuarioRed() {
+        UsuarioRed usuario = new UsuarioRed();
+        usuario.setId(1L);
+        usuario.setUsuario("jperez");
+        usuario.setNombre("Juan Pérez");
+        usuario.setApellidos("Pérez García");
+        usuario.setGrupo("IT-Admins");
+        usuario.setUnidadOrganizativa("TI");
+        usuario.setUltimoLogin(LocalDateTime.of(2025, 6, 13, 8, 42));
+        usuario.setEstado("Activo");
+        usuario.setSede(sede);
+        usuario.setDependencia(dependencia);
+        usuario.setSubdependencia(subdependencia);
+        usuario.setTipoContrato(tipoContrato);
+        usuario.setFechaFinContrato(LocalDate.of(2026, 12, 31));
+        return usuario;
     }
 
     private void stubCatalogLookups() {
@@ -69,7 +89,7 @@ class UsuarioRedServiceTest {
 
     @Test
     void findAll_withoutSearch_returnsAll() {
-        UsuarioRed usuario = new UsuarioRed(1L, "jperez", "Juan Pérez", "IT-Admins", LocalDateTime.of(2025, 6, 13, 8, 42), "Activo", sede, dependencia, subdependencia, tipoContrato, LocalDate.of(2026, 12, 31));
+        UsuarioRed usuario = sampleUsuarioRed();
         when(repository.findAll()).thenReturn(List.of(usuario));
 
         List<UsuarioRed> result = service.findAll(null);
@@ -102,7 +122,7 @@ class UsuarioRedServiceTest {
 
     @Test
     void delete_removesExistingUsuarioRed() {
-        UsuarioRed usuario = new UsuarioRed(1L, "jperez", "Juan Pérez", "IT-Admins", LocalDateTime.of(2025, 6, 13, 8, 42), "Activo", sede, dependencia, subdependencia, tipoContrato, LocalDate.of(2026, 12, 31));
+        UsuarioRed usuario = sampleUsuarioRed();
         when(repository.findById(1L)).thenReturn(Optional.of(usuario));
 
         service.delete(1L);
