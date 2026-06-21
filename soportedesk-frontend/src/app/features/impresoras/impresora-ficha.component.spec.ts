@@ -34,7 +34,7 @@ describe('ImpresoraFichaComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [ImpresoraFichaComponent, HttpClientTestingModule],
-      providers: [{ provide: AuthService, useValue: { isAdmin: () => false } }],
+      providers: [{ provide: AuthService, useValue: { isAdmin: () => false, canWrite: () => false } }],
     }).compileComponents();
 
     fixture = TestBed.createComponent(ImpresoraFichaComponent);
@@ -69,7 +69,7 @@ describe('ImpresoraFichaComponent', () => {
     TestBed.resetTestingModule();
     await TestBed.configureTestingModule({
       imports: [ImpresoraFichaComponent, HttpClientTestingModule],
-      providers: [{ provide: AuthService, useValue: { isAdmin: () => true } }],
+      providers: [{ provide: AuthService, useValue: { isAdmin: () => true, canWrite: () => true } }],
     }).compileComponents();
 
     const adminFixture = TestBed.createComponent(ImpresoraFichaComponent);
