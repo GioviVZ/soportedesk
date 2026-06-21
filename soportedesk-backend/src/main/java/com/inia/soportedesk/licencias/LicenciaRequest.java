@@ -1,9 +1,9 @@
 package com.inia.soportedesk.licencias;
 
-import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -12,22 +12,30 @@ import lombok.Setter;
 public class LicenciaRequest {
 
     @NotNull
-    @Min(1)
-    private Integer cantidad;
+    private Long tipoLicenciaId;
+
+    @NotNull
+    private Long tipoBienId;
 
     @NotBlank
-    private String licencia;
+    @Size(max = 300)
+    private String descripcion;
 
-    @NotBlank
-    @Email
-    private String correo;
+    @Size(max = 200)
+    private String cuentaActivacion;
 
-    @NotBlank
-    private String clave;
+    private String claveActivacion;
+
+    @Size(max = 200)
+    private String serialActivacion;
 
     @NotBlank
     private String ordenCompra;
 
     @NotBlank
     private String anio;
+
+    @NotNull
+    @Min(1)
+    private Integer cantidad;
 }
