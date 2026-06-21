@@ -23,6 +23,9 @@ jwt:
   secret: ${JWT_SECRET:c29wb3J0ZWRlc2staW5pYS1zZWNyZXQta2V5LWNoYW5nZS1pbi1wcm9kdWNjaW9uLTEyMzQ1Ng==}
   expiration-ms: 86400000
 
+licencia:
+  encryption-key: ${LICENCIA_ENCRYPTION_KEY:CBkkF72fkRZoZLynAdKy0wLsBqZJx2AycpfPEE+9+8o=}
+
 uploads:
   drivers-dir: uploads/drivers
 
