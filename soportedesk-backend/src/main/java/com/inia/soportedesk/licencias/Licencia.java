@@ -32,7 +32,7 @@ public class Licencia {
     @Column(name = "clave_activacion", length = 1000)
     private String claveActivacion;
 
-    @Column(name = "serial_activacion")
+    @Column(name = "serial_activacion", columnDefinition = "NVARCHAR(MAX)")
     private String serialActivacion;
 
     @Column(name = "orden_compra", nullable = false)

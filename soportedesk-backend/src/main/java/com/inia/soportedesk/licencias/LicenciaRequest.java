@@ -26,7 +26,6 @@ public class LicenciaRequest {
 
     private String claveActivacion;
 
-    @Size(max = 200)
     private String serialActivacion;
 
     @NotBlank

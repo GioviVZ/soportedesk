@@ -273,7 +273,7 @@ CREATE TABLE dbo.licencias (
     descripcion        NVARCHAR(300)  NOT NULL,
     cuenta_activacion  NVARCHAR(200)  NULL,
     clave_activacion   NVARCHAR(1000) NULL,
-    serial_activacion  NVARCHAR(200)  NULL,
+    serial_activacion  NVARCHAR(MAX)  NULL,
     orden_compra       NVARCHAR(100)  NOT NULL,
     anio               CHAR(4)        NOT NULL,
     cantidad           INT            NOT NULL,
