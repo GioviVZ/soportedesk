@@ -39,6 +39,53 @@ CREATE TABLE dbo.tipos_contrato (
 );
 GO
 
+IF OBJECT_ID(N'dbo.tipos_licencia', N'U') IS NULL
+CREATE TABLE dbo.tipos_licencia (
+    id     BIGINT        NOT NULL IDENTITY(1,1),
+    nombre NVARCHAR(100) NOT NULL,
+    CONSTRAINT PK_tipos_licencia        PRIMARY KEY (id),
+    CONSTRAINT UQ_tipos_licencia_nombre UNIQUE      (nombre)
+);
+GO
+
+IF NOT EXISTS (SELECT 1 FROM dbo.tipos_licencia WHERE nombre = N'Ofimática')
+    INSERT INTO dbo.tipos_licencia (nombre) VALUES (N'Ofimática');
+GO
+IF NOT EXISTS (SELECT 1 FROM dbo.tipos_licencia WHERE nombre = N'Diseño')
+    INSERT INTO dbo.tipos_licencia (nombre) VALUES (N'Diseño');
+GO
+IF NOT EXISTS (SELECT 1 FROM dbo.tipos_licencia WHERE nombre = N'Edición de Video')
+    INSERT INTO dbo.tipos_licencia (nombre) VALUES (N'Edición de Video');
+GO
+IF NOT EXISTS (SELECT 1 FROM dbo.tipos_licencia WHERE nombre = N'Sistema Operativo')
+    INSERT INTO dbo.tipos_licencia (nombre) VALUES (N'Sistema Operativo');
+GO
+IF NOT EXISTS (SELECT 1 FROM dbo.tipos_licencia WHERE nombre = N'Antivirus')
+    INSERT INTO dbo.tipos_licencia (nombre) VALUES (N'Antivirus');
+GO
+IF NOT EXISTS (SELECT 1 FROM dbo.tipos_licencia WHERE nombre = N'Otro')
+    INSERT INTO dbo.tipos_licencia (nombre) VALUES (N'Otro');
+GO
+
+IF OBJECT_ID(N'dbo.tipos_bien', N'U') IS NULL
+CREATE TABLE dbo.tipos_bien (
+    id     BIGINT        NOT NULL IDENTITY(1,1),
+    nombre NVARCHAR(100) NOT NULL,
+    CONSTRAINT PK_tipos_bien        PRIMARY KEY (id),
+    CONSTRAINT UQ_tipos_bien_nombre UNIQUE      (nombre)
+);
+GO
+
+IF NOT EXISTS (SELECT 1 FROM dbo.tipos_bien WHERE nombre = N'Equipo')
+    INSERT INTO dbo.tipos_bien (nombre) VALUES (N'Equipo');
+GO
+IF NOT EXISTS (SELECT 1 FROM dbo.tipos_bien WHERE nombre = N'Intangible')
+    INSERT INTO dbo.tipos_bien (nombre) VALUES (N'Intangible');
+GO
+IF NOT EXISTS (SELECT 1 FROM dbo.tipos_bien WHERE nombre = N'Servicio')
+    INSERT INTO dbo.tipos_bien (nombre) VALUES (N'Servicio');
+GO
+
 IF OBJECT_ID(N'dbo.dependencias', N'U') IS NULL
 CREATE TABLE dbo.dependencias (
     id      BIGINT        NOT NULL IDENTITY(1,1),
@@ -221,16 +268,21 @@ GO
 
 IF OBJECT_ID(N'dbo.licencias', N'U') IS NULL
 CREATE TABLE dbo.licencias (
-    id           BIGINT        NOT NULL IDENTITY(1,1),
-    cantidad     INT           NOT NULL,
-    licencia     NVARCHAR(200) NOT NULL,
-    correo       NVARCHAR(200) NOT NULL,
-    clave        NVARCHAR(500) NOT NULL,
-    orden_compra NVARCHAR(100) NOT NULL,
-    anio         CHAR(4)       NOT NULL,
-    CONSTRAINT PK_licencias           PRIMARY KEY (id),
-    CONSTRAINT CHK_licencias_cantidad CHECK (cantidad > 0),
-    CONSTRAINT CHK_licencias_anio     CHECK (anio LIKE '[0-9][0-9][0-9][0-9]')
+    id                 BIGINT         NOT NULL IDENTITY(1,1),
+    tipo_licencia_id   BIGINT         NOT NULL,
+    descripcion        NVARCHAR(300)  NOT NULL,
+    cuenta_activacion  NVARCHAR(200)  NULL,
+    clave_activacion   NVARCHAR(1000) NULL,
+    serial_activacion  NVARCHAR(200)  NULL,
+    orden_compra       NVARCHAR(100)  NOT NULL,
+    anio               CHAR(4)        NOT NULL,
+    cantidad           INT            NOT NULL,
+    tipo_bien_id       BIGINT         NOT NULL,
+    CONSTRAINT PK_licencias              PRIMARY KEY (id),
+    CONSTRAINT CHK_licencias_cantidad    CHECK (cantidad > 0),
+    CONSTRAINT CHK_licencias_anio        CHECK (anio LIKE '[0-9][0-9][0-9][0-9]'),
+    CONSTRAINT FK_licencias_tipo_licencia FOREIGN KEY (tipo_licencia_id) REFERENCES dbo.tipos_licencia (id) ON UPDATE NO ACTION ON DELETE NO ACTION,
+    CONSTRAINT FK_licencias_tipo_bien     FOREIGN KEY (tipo_bien_id)     REFERENCES dbo.tipos_bien (id)     ON UPDATE NO ACTION ON DELETE NO ACTION
 );
 GO
 
@@ -338,9 +390,13 @@ GO
 IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = N'IX_correos_nombre')            CREATE INDEX IX_correos_nombre            ON dbo.correos (nombre);
 GO
 
-IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = N'IX_licencias_licencia') CREATE INDEX IX_licencias_licencia ON dbo.licencias (licencia);
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = N'IX_licencias_descripcion')      CREATE INDEX IX_licencias_descripcion      ON dbo.licencias (descripcion);
 GO
-IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = N'IX_licencias_anio')     CREATE INDEX IX_licencias_anio     ON dbo.licencias (anio);
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = N'IX_licencias_anio')              CREATE INDEX IX_licencias_anio              ON dbo.licencias (anio);
+GO
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = N'IX_licencias_tipo_licencia_id')  CREATE INDEX IX_licencias_tipo_licencia_id  ON dbo.licencias (tipo_licencia_id);
+GO
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = N'IX_licencias_tipo_bien_id')      CREATE INDEX IX_licencias_tipo_bien_id      ON dbo.licencias (tipo_bien_id);
 GO
 
 IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = N'IX_vpn_usuario_red_id')        CREATE INDEX IX_vpn_usuario_red_id        ON dbo.vpn (usuario_red_id);
