@@ -5,6 +5,8 @@
   <button [class.active]="activeTab === 'dependencias'" (click)="setTab('dependencias')">Dependencias</button>
   <button [class.active]="activeTab === 'subdependencias'" (click)="setTab('subdependencias')">Subdependencias</button>
   <button [class.active]="activeTab === 'tiposContrato'" (click)="setTab('tiposContrato')">Tipos de Contrato</button>
+  <button [class.active]="activeTab === 'tiposLicencia'" (click)="setTab('tiposLicencia')">Tipos de Licencia</button>
+  <button [class.active]="activeTab === 'tiposBien'" (click)="setTab('tiposBien')">Tipos de Bien</button>
 </div>
 
 <!-- Sedes -->
@@ -122,6 +124,60 @@
 
   <div class="form">
     <input [(ngModel)]="nombreForm" placeholder="Nombre de tipo de contrato" />
+    <button (click)="submitSimple()">{{ editingId ? 'Actualizar' : 'Agregar' }}</button>
+    <button class="secondary" *ngIf="editingId" (click)="resetForm()">Cancelar</button>
+  </div>
+</ng-container>
+
+<!-- Tipos de Licencia -->
+<ng-container *ngIf="activeTab === 'tiposLicencia'">
+  <table>
+    <thead>
+      <tr>
+        <th>Nombre</th>
+        <th>Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let item of tiposLicencia">
+        <td>{{ item.nombre }}</td>
+        <td>
+          <button (click)="startEdit(item.id, item.nombre)">Editar</button>
+          <button class="danger" (click)="deleteItem('tiposLicencia', item.id)">Eliminar</button>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="form">
+    <input [(ngModel)]="nombreForm" placeholder="Nombre de tipo de licencia" />
+    <button (click)="submitSimple()">{{ editingId ? 'Actualizar' : 'Agregar' }}</button>
+    <button class="secondary" *ngIf="editingId" (click)="resetForm()">Cancelar</button>
+  </div>
+</ng-container>
+
+<!-- Tipos de Bien -->
+<ng-container *ngIf="activeTab === 'tiposBien'">
+  <table>
+    <thead>
+      <tr>
+        <th>Nombre</th>
+        <th>Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let item of tiposBien">
+        <td>{{ item.nombre }}</td>
+        <td>
+          <button (click)="startEdit(item.id, item.nombre)">Editar</button>
+          <button class="danger" (click)="deleteItem('tiposBien', item.id)">Eliminar</button>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="form">
+    <input [(ngModel)]="nombreForm" placeholder="Nombre de tipo de bien" />
     <button (click)="submitSimple()">{{ editingId ? 'Actualizar' : 'Agregar' }}</button>
     <button class="secondary" *ngIf="editingId" (click)="resetForm()">Cancelar</button>
   </div>

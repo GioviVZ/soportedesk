@@ -6,10 +6,18 @@ import {
   Dependencia,
   Sede,
   Subdependencia,
+  TipoBien,
   TipoContrato,
+  TipoLicencia,
 } from '../../core/models/catalogo.model';
 
-type CatalogoTab = 'sedes' | 'dependencias' | 'subdependencias' | 'tiposContrato';
+type CatalogoTab =
+  | 'sedes'
+  | 'dependencias'
+  | 'subdependencias'
+  | 'tiposContrato'
+  | 'tiposLicencia'
+  | 'tiposBien';
 
 @Component({
   selector: 'app-catalogos',
@@ -27,6 +35,8 @@ export class CatalogosComponent implements OnInit {
   dependencias: Dependencia[] = [];
   subdependencias: Subdependencia[] = [];
   tiposContrato: TipoContrato[] = [];
+  tiposLicencia: TipoLicencia[] = [];
+  tiposBien: TipoBien[] = [];
 
   editingId: number | null = null;
   nombreForm = '';
@@ -41,6 +51,8 @@ export class CatalogosComponent implements OnInit {
     this.service.getDependencias().subscribe((data) => (this.dependencias = data));
     this.service.getSubdependencias().subscribe((data) => (this.subdependencias = data));
     this.service.getTiposContrato().subscribe((data) => (this.tiposContrato = data));
+    this.service.getTiposLicencia().subscribe((data) => (this.tiposLicencia = data));
+    this.service.getTiposBien().subscribe((data) => (this.tiposBien = data));
   }
 
   setTab(tab: CatalogoTab): void {
@@ -72,6 +84,14 @@ export class CatalogosComponent implements OnInit {
       obs = this.editingId
         ? this.service.updateTipoContrato(this.editingId, { nombre: this.nombreForm })
         : this.service.createTipoContrato({ nombre: this.nombreForm });
+    } else if (this.activeTab === 'tiposLicencia') {
+      obs = this.editingId
+        ? this.service.updateTipoLicencia(this.editingId, { nombre: this.nombreForm })
+        : this.service.createTipoLicencia({ nombre: this.nombreForm });
+    } else if (this.activeTab === 'tiposBien') {
+      obs = this.editingId
+        ? this.service.updateTipoBien(this.editingId, { nombre: this.nombreForm })
+        : this.service.createTipoBien({ nombre: this.nombreForm });
     } else if (this.activeTab === 'dependencias') {
       if (!this.parentIdForm) return;
       obs = this.editingId
@@ -107,8 +127,12 @@ export class CatalogosComponent implements OnInit {
       obs = this.service.deleteDependencia(id);
     } else if (tab === 'subdependencias') {
       obs = this.service.deleteSubdependencia(id);
-    } else {
+    } else if (tab === 'tiposContrato') {
       obs = this.service.deleteTipoContrato(id);
+    } else if (tab === 'tiposLicencia') {
+      obs = this.service.deleteTipoLicencia(id);
+    } else {
+      obs = this.service.deleteTipoBien(id);
     }
     obs.subscribe(() => this.loadAll());
   }

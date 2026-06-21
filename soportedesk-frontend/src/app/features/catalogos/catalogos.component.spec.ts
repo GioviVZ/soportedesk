@@ -7,6 +7,15 @@ describe('CatalogosComponent', () => {
   let fixture: ComponentFixture<CatalogosComponent>;
   let httpMock: HttpTestingController;
 
+  function flushLoadAll(sedesData: unknown[] = []): void {
+    httpMock.expectOne((req) => req.url.includes('/catalogos/sedes')).flush(sedesData);
+    httpMock.expectOne((req) => req.url.includes('/catalogos/dependencias')).flush([]);
+    httpMock.expectOne((req) => req.url.includes('/catalogos/subdependencias')).flush([]);
+    httpMock.expectOne((req) => req.url.includes('/catalogos/tipos-contrato')).flush([]);
+    httpMock.expectOne((req) => req.url.includes('/catalogos/tipos-licencia')).flush([]);
+    httpMock.expectOne((req) => req.url.includes('/catalogos/tipos-bien')).flush([]);
+  }
+
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [CatalogosComponent, HttpClientTestingModule],
@@ -17,11 +26,7 @@ describe('CatalogosComponent', () => {
     fixture.detectChanges();
     httpMock = TestBed.inject(HttpTestingController);
 
-    // Flush all 4 initial HTTP requests from loadAll()
-    httpMock.expectOne((req) => req.url.includes('/catalogos/sedes')).flush([]);
-    httpMock.expectOne((req) => req.url.includes('/catalogos/dependencias')).flush([]);
-    httpMock.expectOne((req) => req.url.includes('/catalogos/subdependencias')).flush([]);
-    httpMock.expectOne((req) => req.url.includes('/catalogos/tipos-contrato')).flush([]);
+    flushLoadAll();
   });
 
   afterEach(() => {
@@ -47,11 +52,8 @@ describe('CatalogosComponent', () => {
     );
     postReq.flush({ id: 1, nombre: 'Nueva Sede' });
 
-    // After create, loadAll() fires 4 more requests
-    httpMock.expectOne((req) => req.url.includes('/catalogos/sedes')).flush([{ id: 1, nombre: 'Nueva Sede' }]);
-    httpMock.expectOne((req) => req.url.includes('/catalogos/dependencias')).flush([]);
-    httpMock.expectOne((req) => req.url.includes('/catalogos/subdependencias')).flush([]);
-    httpMock.expectOne((req) => req.url.includes('/catalogos/tipos-contrato')).flush([]);
+    // After create, loadAll() fires 6 more requests
+    flushLoadAll([{ id: 1, nombre: 'Nueva Sede' }]);
 
     expect(component.sedes.length).toBe(1);
   });
