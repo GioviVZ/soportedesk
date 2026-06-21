@@ -13,12 +13,15 @@
 
 <app-modal title="Detalle de licencia" [open]="viewing !== null" (closed)="closeView()">
   <ng-container *ngIf="viewing">
-    <app-field label="Cantidad">{{ viewing.cantidad }}</app-field>
-    <app-field label="Licencia">{{ viewing.licencia }}</app-field>
-    <app-field label="Correo">{{ viewing.correo }}</app-field>
-    <app-field label="Clave">{{ viewing.clave }}</app-field>
+    <app-field label="Tipo de Licencia">{{ viewing.tipoLicencia?.nombre || '—' }}</app-field>
+    <app-field label="Tipo de Bien">{{ viewing.tipoBien?.nombre || '—' }}</app-field>
+    <app-field label="Descripción">{{ viewing.descripcion }}</app-field>
+    <app-field label="Cuenta de Activación">{{ viewing.cuentaActivacion || '—' }}</app-field>
+    <app-field label="Clave de Activación">{{ viewing.claveActivacion || '—' }}</app-field>
+    <app-field label="Serial de Activación">{{ viewing.serialActivacion || '—' }}</app-field>
     <app-field label="Orden de Compra">{{ viewing.ordenCompra }}</app-field>
     <app-field label="Año">{{ viewing.anio }}</app-field>
+    <app-field label="Cantidad">{{ viewing.cantidad }}</app-field>
   </ng-container>
 </app-modal>
 

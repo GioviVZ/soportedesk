@@ -21,10 +21,8 @@ export class LicenciasListComponent implements OnInit {
 
   licencias: Licencia[] = [];
   columns: TableColumn[] = [
-    { key: 'cantidad', label: 'Cantidad' },
-    { key: 'licencia', label: 'Licencia' },
-    { key: 'correo', label: 'Correo' },
-    { key: 'clave', label: 'Clave' },
+    { key: 'tipoLicencia.nombre', label: 'Tipo' },
+    { key: 'descripcion', label: 'Licencia' },
     { key: 'ordenCompra', label: 'Orden de Compra' },
     { key: 'anio', label: 'Año' },
   ];
@@ -72,7 +70,7 @@ export class LicenciasListComponent implements OnInit {
   }
 
   onDelete(licencia: Licencia): void {
-    if (!confirm(`¿Eliminar la licencia "${licencia.licencia}"?`)) {
+    if (!confirm(`¿Eliminar la licencia "${licencia.descripcion}"?`)) {
       return;
     }
     this.service.delete(licencia.id).subscribe(() => this.load());
