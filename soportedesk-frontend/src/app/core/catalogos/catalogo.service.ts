@@ -9,7 +9,9 @@ import {
   Sede,
   Subdependencia,
   SubdependenciaRequest,
+  TipoBien,
   TipoContrato,
+  TipoLicencia,
 } from '../models/catalogo.model';
 
 @Injectable({ providedIn: 'root' })
@@ -87,5 +89,37 @@ export class CatalogoService {
 
   deleteTipoContrato(id: number): Observable<void> {
     return this.http.delete<void>(`${this.apiUrl}/tipos-contrato/${id}`);
+  }
+
+  getTiposLicencia(): Observable<TipoLicencia[]> {
+    return this.http.get<TipoLicencia[]>(`${this.apiUrl}/tipos-licencia`);
+  }
+
+  createTipoLicencia(request: CatalogoRequest): Observable<TipoLicencia> {
+    return this.http.post<TipoLicencia>(`${this.apiUrl}/tipos-licencia`, request);
+  }
+
+  updateTipoLicencia(id: number, request: CatalogoRequest): Observable<TipoLicencia> {
+    return this.http.put<TipoLicencia>(`${this.apiUrl}/tipos-licencia/${id}`, request);
+  }
+
+  deleteTipoLicencia(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.apiUrl}/tipos-licencia/${id}`);
+  }
+
+  getTiposBien(): Observable<TipoBien[]> {
+    return this.http.get<TipoBien[]>(`${this.apiUrl}/tipos-bien`);
+  }
+
+  createTipoBien(request: CatalogoRequest): Observable<TipoBien> {
+    return this.http.post<TipoBien>(`${this.apiUrl}/tipos-bien`, request);
+  }
+
+  updateTipoBien(id: number, request: CatalogoRequest): Observable<TipoBien> {
+    return this.http.put<TipoBien>(`${this.apiUrl}/tipos-bien/${id}`, request);
+  }
+
+  deleteTipoBien(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.apiUrl}/tipos-bien/${id}`);
   }
 }

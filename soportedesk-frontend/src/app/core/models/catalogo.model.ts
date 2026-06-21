@@ -20,6 +20,16 @@ export interface TipoContrato {
   nombre: string;
 }
 
+export interface TipoLicencia {
+  id: number;
+  nombre: string;
+}
+
+export interface TipoBien {
+  id: number;
+  nombre: string;
+}
+
 export interface CatalogoRequest {
   nombre: string;
 }
