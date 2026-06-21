@@ -1,19 +1,36 @@
 <form [formGroup]="form" (ngSubmit)="submit()">
   <div class="field">
-    <label>Cantidad</label>
-    <input type="number" formControlName="cantidad" min="1" />
+    <label>Tipo de Licencia</label>
+    <select [value]="tipoLicenciaId" (change)="onTipoLicenciaChange($any($event.target).value)">
+      <option [ngValue]="null">Seleccione...</option>
+      <option *ngFor="let t of tiposLicencia" [value]="t.id">{{ t.nombre }}</option>
+    </select>
   </div>
   <div class="field">
-    <label>Licencia</label>
-    <input type="text" formControlName="licencia" />
+    <label>Tipo de Bien</label>
+    <select [value]="tipoBienId" (change)="onTipoBienChange($any($event.target).value)">
+      <option [ngValue]="null">Seleccione...</option>
+      <option *ngFor="let t of tiposBien" [value]="t.id">{{ t.nombre }}</option>
+    </select>
   </div>
   <div class="field">
-    <label>Correo</label>
-    <input type="email" formControlName="correo" />
+    <label>Descripción</label>
+    <input type="text" formControlName="descripcion" />
   </div>
   <div class="field">
-    <label>Clave</label>
-    <input type="text" formControlName="clave" />
+    <label>Cuenta de Activación</label>
+    <input type="text" formControlName="cuentaActivacion" />
+  </div>
+  <div class="field">
+    <label>Clave de Activación</label>
+    <input type="text" formControlName="claveActivacion" />
+    <small *ngIf="form.controls.claveActivacion.disabled">
+      Ingrese una cuenta de activación para habilitar este campo.
+    </small>
+  </div>
+  <div class="field">
+    <label>Serial de Activación</label>
+    <input type="text" formControlName="serialActivacion" />
   </div>
   <div class="field">
     <label>Orden de Compra</label>
@@ -23,8 +40,12 @@
     <label>Año</label>
     <input type="text" formControlName="anio" />
   </div>
+  <div class="field">
+    <label>Cantidad</label>
+    <input type="number" formControlName="cantidad" min="1" />
+  </div>
   <div class="actions">
     <button type="button" class="secondary" (click)="cancelled.emit()">Cancelar</button>
-    <button type="submit" [disabled]="form.invalid">Guardar</button>
+    <button type="submit" [disabled]="form.invalid || !tipoLicenciaId || !tipoBienId">Guardar</button>
   </div>
 </form>
