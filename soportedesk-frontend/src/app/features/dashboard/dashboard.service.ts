@@ -4,6 +4,7 @@ import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { DashboardCounts } from './dashboard-counts.model';
 import { UbicacionUsuariosCount } from './ubicacion-usuarios-count.model';
+import { LicenciaTipoCount } from './licencia-tipo-count.model';
 
 @Injectable({ providedIn: 'root' })
 export class DashboardService {
@@ -18,5 +19,9 @@ export class DashboardService {
     return this.http.get<UbicacionUsuariosCount[]>(`${this.apiUrl}/usuarios-red-por-ubicacion`, {
       params: { nivel },
     });
+  }
+
+  getLicenciasPorTipo(): Observable<LicenciaTipoCount[]> {
+    return this.http.get<LicenciaTipoCount[]>(`${this.apiUrl}/licencias-por-tipo`);
   }
 }

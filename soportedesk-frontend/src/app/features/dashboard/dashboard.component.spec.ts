@@ -32,6 +32,7 @@ describe('DashboardComponent', () => {
     httpMock.expectOne('/api/dashboard/counts').flush(counts);
     fixture.detectChanges();
     httpMock.expectOne((r) => r.url.endsWith('/usuarios-red-por-ubicacion')).flush([]);
+    httpMock.expectOne((r) => r.url.endsWith('/licencias-por-tipo')).flush([]);
   });
 
   afterEach(() => httpMock.verify());
