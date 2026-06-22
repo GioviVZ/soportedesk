@@ -107,4 +107,20 @@ class DashboardServiceTest {
         assertThat(result).isEmpty();
         verify(usuarioRedRepository, org.mockito.Mockito.times(2)).countGroupedBySedeAndEstado();
     }
+
+    @Test
+    void licenciasPorTipo_sumsAndMapsRowsPreservingQueryOrder() {
+        List<Object[]> rows = Arrays.<Object[]>asList(
+                new Object[]{"Office", 450L},
+                new Object[]{"Antivirus", 200L}
+        );
+        when(licenciaRepository.sumCantidadGroupedByTipoLicencia()).thenReturn(rows);
+
+        List<LicenciaTipoCount> result = service.licenciasPorTipo();
+
+        assertThat(result).containsExactly(
+                new LicenciaTipoCount("Office", 450L),
+                new LicenciaTipoCount("Antivirus", 200L)
+        );
+    }
 }

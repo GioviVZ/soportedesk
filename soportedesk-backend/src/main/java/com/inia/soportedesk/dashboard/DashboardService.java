@@ -47,6 +47,12 @@ public class DashboardService {
         return pivot(rows);
     }
 
+    public List<LicenciaTipoCount> licenciasPorTipo() {
+        return licenciaRepository.sumCantidadGroupedByTipoLicencia().stream()
+                .map(row -> new LicenciaTipoCount((String) row[0], ((Number) row[1]).longValue()))
+                .toList();
+    }
+
     private List<UbicacionUsuariosCount> pivot(List<Object[]> rows) {
         Map<String, long[]> acc = new LinkedHashMap<>();
         for (Object[] row : rows) {

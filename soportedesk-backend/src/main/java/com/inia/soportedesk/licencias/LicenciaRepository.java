@@ -17,4 +17,8 @@ public interface LicenciaRepository extends JpaRepository<Licencia, Long> {
            "LOWER(l.tipoLicencia.nombre) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
            "LOWER(l.tipoBien.nombre) LIKE LOWER(CONCAT('%', :search, '%'))")
     List<Licencia> search(@Param("search") String search);
+
+    @Query("SELECT tl.nombre, SUM(l.cantidad) FROM Licencia l " +
+           "JOIN l.tipoLicencia tl GROUP BY tl.nombre ORDER BY SUM(l.cantidad) DESC")
+    List<Object[]> sumCantidadGroupedByTipoLicencia();
 }

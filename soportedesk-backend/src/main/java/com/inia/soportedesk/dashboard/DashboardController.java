@@ -24,4 +24,9 @@ public class DashboardController {
     public List<UbicacionUsuariosCount> usuariosRedPorUbicacion(@RequestParam(required = false) String nivel) {
         return service.usuariosRedPorUbicacion(nivel);
     }
+
+    @GetMapping("/licencias-por-tipo")
+    public List<LicenciaTipoCount> licenciasPorTipo() {
+        return service.licenciasPorTipo();
+    }
 }
