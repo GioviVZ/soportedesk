@@ -55,7 +55,7 @@ export class DashboardComponent implements OnInit {
 
   private toCards(counts: DashboardCounts): DashboardCard[] {
     return [
-      { label: 'Licencias Office',       value: counts.licencias,    path: '/licencias',    color: '#3b82f6', bg: '#eff6ff', icon: this.svg('key') },
+      { label: 'Licencias',       value: counts.licencias,    path: '/licencias',    color: '#3b82f6', bg: '#eff6ff', icon: this.svg('key') },
       { label: 'Correos Institucionales',value: counts.correos,      path: '/correos',      color: '#8b5cf6', bg: '#f5f3ff', icon: this.svg('mail') },
       { label: 'Usuarios de Red/AD',     value: counts.usuariosRed,  path: '/usuarios-red', color: '#f97316', bg: '#fff7ed', icon: this.svg('users') },
       { label: 'VPN',                    value: counts.vpn,          path: '/vpn',          color: '#ef4444', bg: '#fef2f2', icon: this.svg('lock') },

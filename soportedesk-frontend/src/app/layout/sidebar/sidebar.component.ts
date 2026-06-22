@@ -58,7 +58,7 @@ export class SidebarComponent {
       { path: '/vpn',          label: 'VPN',                    icon: s.bypassSecurityTrustHtml(SVG_ICONS['lock']) },
       { path: '/impresoras',   label: 'Impresoras',             icon: s.bypassSecurityTrustHtml(SVG_ICONS['printer']) },
       { path: '/wifi',         label: 'Claves WiFi',            icon: s.bypassSecurityTrustHtml(SVG_ICONS['wifi']) },
-      { path: '/licencias',    label: 'Licencias Office',       icon: s.bypassSecurityTrustHtml(SVG_ICONS['key']) },
+      { path: '/licencias',    label: 'Licencias',       icon: s.bypassSecurityTrustHtml(SVG_ICONS['key']) },
       { path: '/usuarios-sistema', label: 'Usuarios del Sistema', icon: s.bypassSecurityTrustHtml(SVG_ICONS['shield']), adminOnly: true },
       { path: '/catalogos',    label: 'Catálogos',              icon: s.bypassSecurityTrustHtml(SVG_ICONS['grid']), adminOnly: true },
     ];

@@ -23,5 +23,5 @@ export const MODULOS: { key: string; label: string }[] = [
   { key: 'credenciales-vpn',  label: 'Credenciales VPN' },
   { key: 'impresoras',   label: 'Impresoras' },
   { key: 'wifi',         label: 'Claves WiFi' },
-  { key: 'licencias',    label: 'Licencias Office' },
+  { key: 'licencias',    label: 'Licencias' },
 ];
