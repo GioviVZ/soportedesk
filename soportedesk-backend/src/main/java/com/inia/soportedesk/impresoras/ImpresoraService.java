@@ -3,6 +3,7 @@ package com.inia.soportedesk.impresoras;
 import com.inia.soportedesk.catalogo.DependenciaRepository;
 import com.inia.soportedesk.catalogo.SedeRepository;
 import com.inia.soportedesk.catalogo.SubdependenciaRepository;
+import com.inia.soportedesk.catalogo.TipoImpresoraRepository;
 import com.inia.soportedesk.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -18,6 +19,7 @@ public class ImpresoraService {
     private final SedeRepository sedeRepository;
     private final DependenciaRepository dependenciaRepository;
     private final SubdependenciaRepository subdependenciaRepository;
+    private final TipoImpresoraRepository tipoImpresoraRepository;
 
     public List<Impresora> findAll(String search) {
         if (search == null || search.isBlank()) {
@@ -62,7 +64,6 @@ public class ImpresoraService {
         impresora.setNombre(request.getNombre());
         impresora.setMarca(request.getMarca());
         impresora.setModelo(request.getModelo());
-        impresora.setIp(request.getIp());
         impresora.setEstado(request.getEstado());
         impresora.setSede(request.getSedeId() != null
                 ? sedeRepository.findById(request.getSedeId())
@@ -76,13 +77,19 @@ public class ImpresoraService {
                 ? subdependenciaRepository.findById(request.getSubdependenciaId())
                         .orElseThrow(() -> new ResourceNotFoundException("Subdependencia no encontrada: " + request.getSubdependenciaId()))
                 : null);
+        impresora.setTipoImpresora(request.getTipoImpresoraId() != null
+                ? tipoImpresoraRepository.findById(request.getTipoImpresoraId())
+                        .orElseThrow(() -> new ResourceNotFoundException("Tipo de impresora no encontrado: " + request.getTipoImpresoraId()))
+                : null);
+        impresora.setSerie(emptyToNull(request.getSerie()));
+        impresora.setCodigoInventario(emptyToNull(request.getCodigoInventario()));
+        impresora.setCodigoPatrimonial(emptyToNull(request.getCodigoPatrimonial()));
+        impresora.setTipoConexion(request.getTipoConexion());
+        impresora.setIp("IP".equals(request.getTipoConexion()) ? emptyToNull(request.getIp()) : null);
         impresora.setModeloTonerNegro(emptyToNull(request.getModeloTonerNegro()));
         impresora.setModeloTonerC(emptyToNull(request.getModeloTonerC()));
         impresora.setModeloTonerM(emptyToNull(request.getModeloTonerM()));
         impresora.setModeloTonerY(emptyToNull(request.getModeloTonerY()));
-        impresora.setModeloCartucho(emptyToNull(request.getModeloCartucho()));
-        impresora.setModeloDrum(emptyToNull(request.getModeloDrum()));
-        impresora.setModeloFusor(emptyToNull(request.getModeloFusor()));
     }
 
     private String emptyToNull(String val) {

@@ -12,6 +12,7 @@ import {
   TipoBien,
   TipoContrato,
   TipoLicencia,
+  TipoImpresora,
 } from '../models/catalogo.model';
 
 @Injectable({ providedIn: 'root' })
@@ -121,5 +122,21 @@ export class CatalogoService {
 
   deleteTipoBien(id: number): Observable<void> {
     return this.http.delete<void>(`${this.apiUrl}/tipos-bien/${id}`);
+  }
+
+  getTiposImpresora(): Observable<TipoImpresora[]> {
+    return this.http.get<TipoImpresora[]>(`${this.apiUrl}/tipos-impresora`);
+  }
+
+  createTipoImpresora(request: CatalogoRequest): Observable<TipoImpresora> {
+    return this.http.post<TipoImpresora>(`${this.apiUrl}/tipos-impresora`, request);
+  }
+
+  updateTipoImpresora(id: number, request: CatalogoRequest): Observable<TipoImpresora> {
+    return this.http.put<TipoImpresora>(`${this.apiUrl}/tipos-impresora/${id}`, request);
+  }
+
+  deleteTipoImpresora(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.apiUrl}/tipos-impresora/${id}`);
   }
 }

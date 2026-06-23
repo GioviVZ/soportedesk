@@ -14,9 +14,6 @@ const CONSUMIBLE_DEFS: { key: keyof Impresora; label: string }[] = [
   { key: 'modeloTonerC',     label: 'Tóner Cyan' },
   { key: 'modeloTonerM',     label: 'Tóner Magenta' },
   { key: 'modeloTonerY',     label: 'Tóner Amarillo' },
-  { key: 'modeloCartucho',   label: 'Cartucho' },
-  { key: 'modeloDrum',       label: 'Drum' },
-  { key: 'modeloFusor',      label: 'Fusor' },
 ];
 
 @Component({

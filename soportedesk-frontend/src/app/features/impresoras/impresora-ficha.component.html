@@ -9,7 +9,14 @@
     <div class="row"><span>Nombre</span><span>{{ impresora.nombre }}</span></div>
     <div class="row"><span>Marca</span><span>{{ impresora.marca }}</span></div>
     <div class="row"><span>Modelo</span><span>{{ impresora.modelo }}</span></div>
-    <div class="row"><span>IP</span><span>{{ impresora.ip }}</span></div>
+    <div class="row"><span>Tipo de impresora</span><span>{{ impresora.tipoImpresora?.nombre }}</span></div>
+    <div class="row"><span>Serie</span><span>{{ impresora.serie }}</span></div>
+    <div class="row"><span>Código de Inventario</span><span>{{ impresora.codigoInventario }}</span></div>
+    <div class="row"><span>Código Patrimonial</span><span>{{ impresora.codigoPatrimonial }}</span></div>
+    <div class="row">
+      <span>Conexión</span>
+      <span>{{ impresora.tipoConexion }}<ng-container *ngIf="impresora.tipoConexion === 'IP'"> — {{ impresora.ip }}</ng-container></span>
+    </div>
     <div class="row"><span>Sede</span><span>{{ impresora.sede?.nombre }}</span></div>
     <div class="row"><span>Dependencia</span><span>{{ impresora.dependencia?.nombre }}</span></div>
     <div class="row"><span>Subdependencia</span><span>{{ impresora.subdependencia?.nombre }}</span></div>
@@ -29,15 +36,6 @@
       </div>
       <div class="row" *ngIf="impresora.modeloTonerY">
         <span>Tóner Amarillo</span><span class="modelo-tag">{{ impresora.modeloTonerY }}</span>
-      </div>
-      <div class="row" *ngIf="impresora.modeloCartucho">
-        <span>Cartucho</span><span class="modelo-tag">{{ impresora.modeloCartucho }}</span>
-      </div>
-      <div class="row" *ngIf="impresora.modeloDrum">
-        <span>Drum</span><span class="modelo-tag">{{ impresora.modeloDrum }}</span>
-      </div>
-      <div class="row" *ngIf="impresora.modeloFusor">
-        <span>Fusor</span><span class="modelo-tag">{{ impresora.modeloFusor }}</span>
       </div>
     </ng-container>
     <ng-template #noConsumibles>

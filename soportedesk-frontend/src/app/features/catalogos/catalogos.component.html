@@ -7,6 +7,7 @@
   <button [class.active]="activeTab === 'tiposContrato'" (click)="setTab('tiposContrato')">Tipos de Contrato</button>
   <button [class.active]="activeTab === 'tiposLicencia'" (click)="setTab('tiposLicencia')">Tipos de Licencia</button>
   <button [class.active]="activeTab === 'tiposBien'" (click)="setTab('tiposBien')">Tipos de Bien</button>
+  <button [class.active]="activeTab === 'tiposImpresora'" (click)="setTab('tiposImpresora')">Tipos de Impresora</button>
 </div>
 
 <!-- Sedes -->
@@ -178,6 +179,33 @@
 
   <div class="form">
     <input [(ngModel)]="nombreForm" placeholder="Nombre de tipo de bien" />
+    <button (click)="submitSimple()">{{ editingId ? 'Actualizar' : 'Agregar' }}</button>
+    <button class="secondary" *ngIf="editingId" (click)="resetForm()">Cancelar</button>
+  </div>
+</ng-container>
+
+<!-- Tipos de Impresora -->
+<ng-container *ngIf="activeTab === 'tiposImpresora'">
+  <table>
+    <thead>
+      <tr>
+        <th>Nombre</th>
+        <th>Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let item of tiposImpresora">
+        <td>{{ item.nombre }}</td>
+        <td>
+          <button (click)="startEdit(item.id, item.nombre)">Editar</button>
+          <button class="danger" (click)="deleteItem('tiposImpresora', item.id)">Eliminar</button>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="form">
+    <input [(ngModel)]="nombreForm" placeholder="Nombre de tipo de impresora" />
     <button (click)="submitSimple()">{{ editingId ? 'Actualizar' : 'Agregar' }}</button>
     <button class="secondary" *ngIf="editingId" (click)="resetForm()">Cancelar</button>
   </div>

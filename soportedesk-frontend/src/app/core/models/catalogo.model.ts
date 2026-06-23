@@ -30,6 +30,11 @@ export interface TipoBien {
   nombre: string;
 }
 
+export interface TipoImpresora {
+  id: number;
+  nombre: string;
+}
+
 export interface CatalogoRequest {
   nombre: string;
 }

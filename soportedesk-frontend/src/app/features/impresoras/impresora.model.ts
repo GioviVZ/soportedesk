@@ -3,6 +3,11 @@ export interface Impresora {
   nombre: string;
   marca: string;
   modelo: string;
+  tipoImpresora: { id: number; nombre: string } | null;
+  serie: string | null;
+  codigoInventario: string | null;
+  codigoPatrimonial: string | null;
+  tipoConexion: string;
   ip: string;
   sede: { id: number; nombre: string } | null;
   dependencia: { id: number; nombre: string } | null;
@@ -12,9 +17,6 @@ export interface Impresora {
   modeloTonerC: string | null;
   modeloTonerM: string | null;
   modeloTonerY: string | null;
-  modeloCartucho: string | null;
-  modeloDrum: string | null;
-  modeloFusor: string | null;
   driverNombre: string | null;
   driverVersion: string | null;
   driverSo: string | null;
@@ -25,6 +27,11 @@ export interface ImpresoraRequest {
   nombre: string;
   marca: string;
   modelo: string;
+  tipoImpresoraId: number | null;
+  serie: string;
+  codigoInventario: string;
+  codigoPatrimonial: string;
+  tipoConexion: string;
   ip: string;
   sedeId: number | null;
   dependenciaId: number | null;
@@ -34,7 +41,4 @@ export interface ImpresoraRequest {
   modeloTonerC: string;
   modeloTonerM: string;
   modeloTonerY: string;
-  modeloCartucho: string;
-  modeloDrum: string;
-  modeloFusor: string;
 }

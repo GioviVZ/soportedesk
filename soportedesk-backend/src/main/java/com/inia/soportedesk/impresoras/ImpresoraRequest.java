@@ -18,6 +18,17 @@ public class ImpresoraRequest {
     @NotBlank
     private String modelo;
 
+    private Long tipoImpresoraId;
+
+    private String serie;
+
+    private String codigoInventario;
+
+    private String codigoPatrimonial;
+
+    @NotBlank
+    private String tipoConexion;
+
     private String ip;
     private Long sedeId;
     private Long dependenciaId;
@@ -37,13 +48,4 @@ public class ImpresoraRequest {
 
     @Size(max = 100)
     private String modeloTonerY;
-
-    @Size(max = 100)
-    private String modeloCartucho;
-
-    @Size(max = 100)
-    private String modeloDrum;
-
-    @Size(max = 100)
-    private String modeloFusor;
 }

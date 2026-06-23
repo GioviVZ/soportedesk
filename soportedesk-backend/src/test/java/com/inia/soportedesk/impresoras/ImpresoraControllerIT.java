@@ -35,10 +35,13 @@ class ImpresoraControllerIT {
         request.setNombre("HP LaserJet 4ta planta");
         request.setMarca("HP");
         request.setModelo("M404dn");
+        request.setTipoConexion("IP");
         request.setIp("10.0.0.50");
+        request.setSerie("SN-12345");
+        request.setCodigoInventario("INV-001");
+        request.setCodigoPatrimonial("PAT-001");
         request.setEstado("Activa");
         request.setModeloTonerNegro("TN-2380");
-        request.setModeloDrum("DR-2365");
         return request;
     }
 
@@ -48,9 +51,13 @@ class ImpresoraControllerIT {
         imp.setNombre("HP LaserJet 4ta planta");
         imp.setMarca("HP");
         imp.setModelo("M404dn");
+        imp.setTipoConexion("IP");
+        imp.setIp("10.0.0.50");
+        imp.setSerie("SN-12345");
+        imp.setCodigoInventario("INV-001");
+        imp.setCodigoPatrimonial("PAT-001");
         imp.setEstado("Activa");
         imp.setModeloTonerNegro("TN-2380");
-        imp.setModeloDrum("DR-2365");
         return imp;
     }
 

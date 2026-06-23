@@ -86,6 +86,15 @@ IF NOT EXISTS (SELECT 1 FROM dbo.tipos_bien WHERE nombre = N'Servicio')
     INSERT INTO dbo.tipos_bien (nombre) VALUES (N'Servicio');
 GO
 
+IF OBJECT_ID(N'dbo.tipos_impresora', N'U') IS NULL
+CREATE TABLE dbo.tipos_impresora (
+    id     BIGINT        NOT NULL IDENTITY(1,1),
+    nombre NVARCHAR(100) NOT NULL,
+    CONSTRAINT PK_tipos_impresora        PRIMARY KEY (id),
+    CONSTRAINT UQ_tipos_impresora_nombre UNIQUE      (nombre)
+);
+GO
+
 IF OBJECT_ID(N'dbo.dependencias', N'U') IS NULL
 CREATE TABLE dbo.dependencias (
     id      BIGINT        NOT NULL IDENTITY(1,1),
@@ -212,6 +221,11 @@ CREATE TABLE dbo.impresoras (
     nombre              NVARCHAR(150) NOT NULL,
     marca               NVARCHAR(80)  NOT NULL,
     modelo              NVARCHAR(100) NOT NULL,
+    tipo_impresora_id   BIGINT        NULL,
+    serie               NVARCHAR(100) NULL,
+    codigo_inventario   NVARCHAR(100) NULL,
+    codigo_patrimonial  NVARCHAR(100) NULL,
+    tipo_conexion       NVARCHAR(10)  NOT NULL DEFAULT 'USB',
     ip                  NVARCHAR(45)  NULL,
     sede_id             BIGINT        NULL,
     dependencia_id      BIGINT        NULL,
@@ -221,14 +235,12 @@ CREATE TABLE dbo.impresoras (
     modelo_toner_c      NVARCHAR(80)  NULL,
     modelo_toner_m      NVARCHAR(80)  NULL,
     modelo_toner_y      NVARCHAR(80)  NULL,
-    modelo_cartucho     NVARCHAR(80)  NULL,
-    modelo_drum         NVARCHAR(80)  NULL,
-    modelo_fusor        NVARCHAR(80)  NULL,
     driver_nombre       NVARCHAR(200) NULL,
     driver_version      NVARCHAR(50)  NULL,
     driver_so           NVARCHAR(50)  NULL,
     driver_archivo_path NVARCHAR(500) NULL,
     CONSTRAINT PK_impresoras        PRIMARY KEY (id),
+    CONSTRAINT FK_impresoras_tipo   FOREIGN KEY (tipo_impresora_id)  REFERENCES dbo.tipos_impresora (id) ON UPDATE NO ACTION ON DELETE NO ACTION,
     CONSTRAINT FK_impresoras_sede   FOREIGN KEY (sede_id)           REFERENCES dbo.sedes (id)           ON UPDATE NO ACTION ON DELETE NO ACTION,
     CONSTRAINT FK_impresoras_dep    FOREIGN KEY (dependencia_id)    REFERENCES dbo.dependencias (id)    ON UPDATE NO ACTION ON DELETE NO ACTION,
     CONSTRAINT FK_impresoras_subdep FOREIGN KEY (subdependencia_id) REFERENCES dbo.subdependencias (id) ON UPDATE NO ACTION ON DELETE NO ACTION

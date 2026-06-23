@@ -3,6 +3,7 @@ package com.inia.soportedesk.impresoras;
 import com.inia.soportedesk.catalogo.Dependencia;
 import com.inia.soportedesk.catalogo.Sede;
 import com.inia.soportedesk.catalogo.Subdependencia;
+import com.inia.soportedesk.catalogo.TipoImpresora;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -26,6 +27,21 @@ public class Impresora {
 
     @Column(nullable = false)
     private String modelo;
+
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "tipo_impresora_id")
+    private TipoImpresora tipoImpresora;
+
+    private String serie;
+
+    @Column(name = "codigo_inventario")
+    private String codigoInventario;
+
+    @Column(name = "codigo_patrimonial")
+    private String codigoPatrimonial;
+
+    @Column(name = "tipo_conexion", nullable = false)
+    private String tipoConexion;
 
     private String ip;
 
@@ -55,15 +71,6 @@ public class Impresora {
 
     @Column(name = "modelo_toner_y")
     private String modeloTonerY;
-
-    @Column(name = "modelo_cartucho")
-    private String modeloCartucho;
-
-    @Column(name = "modelo_drum")
-    private String modeloDrum;
-
-    @Column(name = "modelo_fusor")
-    private String modeloFusor;
 
     @Column(name = "driver_nombre")
     private String driverNombre;

@@ -1,9 +1,11 @@
-import { Component, EventEmitter, Input, OnChanges, Output, inject } from '@angular/core';
+import { Component, EventEmitter, Input, OnChanges, OnInit, Output, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Impresora, ImpresoraRequest } from './impresora.model';
 import { ImpresoraService } from './impresora.service';
 import { UbicacionSelectComponent } from '../../shared/ubicacion-select/ubicacion-select.component';
+import { CatalogoService } from '../../core/catalogos/catalogo.service';
+import { TipoImpresora } from '../../core/models/catalogo.model';
 
 @Component({
   selector: 'app-impresora-form',
@@ -12,9 +14,10 @@ import { UbicacionSelectComponent } from '../../shared/ubicacion-select/ubicacio
   templateUrl: './impresora-form.component.html',
   styleUrl: './impresora-form.component.scss',
 })
-export class ImpresoraFormComponent implements OnChanges {
+export class ImpresoraFormComponent implements OnInit, OnChanges {
   private fb = inject(FormBuilder);
   private service = inject(ImpresoraService);
+  private catalogoService = inject(CatalogoService);
 
   @Input() impresora: Impresora | null = null;
   @Output() saved = new EventEmitter<void>();
@@ -23,50 +26,68 @@ export class ImpresoraFormComponent implements OnChanges {
   sedeId: number | null = null;
   dependenciaId: number | null = null;
   subdependenciaId: number | null = null;
+  tiposImpresora: TipoImpresora[] = [];
 
   form = this.fb.nonNullable.group({
-    nombre:           ['', Validators.required],
-    marca:            ['', Validators.required],
-    modelo:           ['', Validators.required],
-    ip:               [''],
-    estado:           ['Activa', Validators.required],
-    modeloTonerNegro: [''],
-    modeloTonerC:     [''],
-    modeloTonerM:     [''],
-    modeloTonerY:     [''],
-    modeloCartucho:   [''],
-    modeloDrum:       [''],
-    modeloFusor:      [''],
+    nombre:             ['', Validators.required],
+    marca:              ['', Validators.required],
+    modelo:             ['', Validators.required],
+    tipoImpresoraId:    [null as number | null],
+    serie:              [''],
+    codigoInventario:   [''],
+    codigoPatrimonial:  [''],
+    tipoConexion:       ['USB', Validators.required],
+    ip:                 [''],
+    estado:             ['Activa', Validators.required],
+    modeloTonerNegro:   [''],
+    modeloTonerC:       [''],
+    modeloTonerM:       [''],
+    modeloTonerY:       [''],
   });
+
+  constructor() {
+    this.form.get('tipoConexion')!.valueChanges.subscribe((value) => {
+      if (value === 'USB') {
+        this.form.patchValue({ ip: '' });
+      }
+    });
+  }
+
+  ngOnInit(): void {
+    this.catalogoService.getTiposImpresora().subscribe((data) => (this.tiposImpresora = data));
+  }
 
   ngOnChanges(): void {
     if (this.impresora) {
-      this.sedeId          = this.impresora.sede?.id ?? null;
-      this.dependenciaId   = this.impresora.dependencia?.id ?? null;
+      this.sedeId           = this.impresora.sede?.id ?? null;
+      this.dependenciaId    = this.impresora.dependencia?.id ?? null;
       this.subdependenciaId = this.impresora.subdependencia?.id ?? null;
       this.form.patchValue({
-        nombre:           this.impresora.nombre,
-        marca:            this.impresora.marca,
-        modelo:           this.impresora.modelo,
-        ip:               this.impresora.ip,
-        estado:           this.impresora.estado,
-        modeloTonerNegro: this.impresora.modeloTonerNegro ?? '',
-        modeloTonerC:     this.impresora.modeloTonerC     ?? '',
-        modeloTonerM:     this.impresora.modeloTonerM     ?? '',
-        modeloTonerY:     this.impresora.modeloTonerY     ?? '',
-        modeloCartucho:   this.impresora.modeloCartucho   ?? '',
-        modeloDrum:       this.impresora.modeloDrum       ?? '',
-        modeloFusor:      this.impresora.modeloFusor      ?? '',
+        nombre:            this.impresora.nombre,
+        marca:             this.impresora.marca,
+        modelo:            this.impresora.modelo,
+        tipoImpresoraId:   this.impresora.tipoImpresora?.id ?? null,
+        serie:             this.impresora.serie ?? '',
+        codigoInventario:  this.impresora.codigoInventario ?? '',
+        codigoPatrimonial: this.impresora.codigoPatrimonial ?? '',
+        tipoConexion:      this.impresora.tipoConexion,
+        ip:                this.impresora.ip,
+        estado:            this.impresora.estado,
+        modeloTonerNegro:  this.impresora.modeloTonerNegro ?? '',
+        modeloTonerC:      this.impresora.modeloTonerC     ?? '',
+        modeloTonerM:      this.impresora.modeloTonerM     ?? '',
+        modeloTonerY:      this.impresora.modeloTonerY     ?? '',
       });
     } else {
       this.sedeId = null;
       this.dependenciaId = null;
       this.subdependenciaId = null;
       this.form.reset({
-        nombre: '', marca: '', modelo: '', ip: '',
+        nombre: '', marca: '', modelo: '',
+        tipoImpresoraId: null, serie: '', codigoInventario: '', codigoPatrimonial: '',
+        tipoConexion: 'USB', ip: '',
         estado: 'Activa',
         modeloTonerNegro: '', modeloTonerC: '', modeloTonerM: '', modeloTonerY: '',
-        modeloCartucho: '', modeloDrum: '', modeloFusor: '',
       });
     }
   }

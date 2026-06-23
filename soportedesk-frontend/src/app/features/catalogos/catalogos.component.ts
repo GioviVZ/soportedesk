@@ -9,6 +9,7 @@ import {
   TipoBien,
   TipoContrato,
   TipoLicencia,
+  TipoImpresora,
 } from '../../core/models/catalogo.model';
 
 type CatalogoTab =
@@ -17,7 +18,8 @@ type CatalogoTab =
   | 'subdependencias'
   | 'tiposContrato'
   | 'tiposLicencia'
-  | 'tiposBien';
+  | 'tiposBien'
+  | 'tiposImpresora';
 
 @Component({
   selector: 'app-catalogos',
@@ -37,6 +39,7 @@ export class CatalogosComponent implements OnInit {
   tiposContrato: TipoContrato[] = [];
   tiposLicencia: TipoLicencia[] = [];
   tiposBien: TipoBien[] = [];
+  tiposImpresora: TipoImpresora[] = [];
 
   editingId: number | null = null;
   nombreForm = '';
@@ -53,6 +56,7 @@ export class CatalogosComponent implements OnInit {
     this.service.getTiposContrato().subscribe((data) => (this.tiposContrato = data));
     this.service.getTiposLicencia().subscribe((data) => (this.tiposLicencia = data));
     this.service.getTiposBien().subscribe((data) => (this.tiposBien = data));
+    this.service.getTiposImpresora().subscribe((data) => (this.tiposImpresora = data));
   }
 
   setTab(tab: CatalogoTab): void {
@@ -92,6 +96,10 @@ export class CatalogosComponent implements OnInit {
       obs = this.editingId
         ? this.service.updateTipoBien(this.editingId, { nombre: this.nombreForm })
         : this.service.createTipoBien({ nombre: this.nombreForm });
+    } else if (this.activeTab === 'tiposImpresora') {
+      obs = this.editingId
+        ? this.service.updateTipoImpresora(this.editingId, { nombre: this.nombreForm })
+        : this.service.createTipoImpresora({ nombre: this.nombreForm });
     } else if (this.activeTab === 'dependencias') {
       if (!this.parentIdForm) return;
       obs = this.editingId
@@ -131,8 +139,10 @@ export class CatalogosComponent implements OnInit {
       obs = this.service.deleteTipoContrato(id);
     } else if (tab === 'tiposLicencia') {
       obs = this.service.deleteTipoLicencia(id);
-    } else {
+    } else if (tab === 'tiposBien') {
       obs = this.service.deleteTipoBien(id);
+    } else {
+      obs = this.service.deleteTipoImpresora(id);
     }
     obs.subscribe(() => this.loadAll());
   }

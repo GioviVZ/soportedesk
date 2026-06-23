@@ -9,6 +9,11 @@ const mockImpresora: Impresora = {
   nombre: 'Impresora Test',
   marca: 'HP',
   modelo: 'LaserJet',
+  tipoImpresora: { id: 1, nombre: 'Láser' },
+  serie: 'SN-001',
+  codigoInventario: 'INV-001',
+  codigoPatrimonial: 'PAT-001',
+  tipoConexion: 'IP',
   ip: '192.168.1.100',
   sede: { id: 1, nombre: 'Sede Central' },
   dependencia: { id: 1, nombre: 'Dependencia Test' },
@@ -18,9 +23,6 @@ const mockImpresora: Impresora = {
   modeloTonerC: null,
   modeloTonerM: null,
   modeloTonerY: null,
-  modeloCartucho: null,
-  modeloDrum: 'DR-2365',
-  modeloFusor: null,
   driverNombre: null,
   driverVersion: null,
   driverSo: null,
@@ -59,8 +61,7 @@ describe('ImpresoraFichaComponent', () => {
   it('hasConsumibles returns false when all models are null', () => {
     component.impresora = {
       ...mockImpresora,
-      modeloTonerNegro: null, modeloTonerC: null, modeloTonerM: null,
-      modeloTonerY: null, modeloCartucho: null, modeloDrum: null, modeloFusor: null,
+      modeloTonerNegro: null, modeloTonerC: null, modeloTonerM: null, modeloTonerY: null,
     };
     expect(component.hasConsumibles()).toBeFalse();
   });
@@ -80,5 +81,22 @@ describe('ImpresoraFichaComponent', () => {
     adminFixture.detectChanges();
 
     expect(adminComponent.isAdmin).toBeTrue();
+  });
+
+  it('shows the IP row when tipoConexion is IP', () => {
+    component.impresora = { ...mockImpresora, tipoConexion: 'IP', ip: '10.0.0.5' };
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).toContain('10.0.0.5');
+  });
+
+  it('hides the IP row when tipoConexion is USB', () => {
+    component.impresora = { ...mockImpresora, tipoConexion: 'USB', ip: '' };
+    fixture.detectChanges();
+
+    const ipRow = Array.from(fixture.nativeElement.querySelectorAll('.row')).find((el) =>
+      (el as HTMLElement).textContent?.includes('Conexión')
+    ) as HTMLElement | undefined;
+    expect(ipRow?.textContent).not.toContain('—');
   });
 });

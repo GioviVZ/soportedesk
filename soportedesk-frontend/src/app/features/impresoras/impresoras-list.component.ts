@@ -25,6 +25,8 @@ export class ImpresorasListComponent implements OnInit {
     { key: 'nombre', label: 'Nombre' },
     { key: 'marca', label: 'Marca' },
     { key: 'modelo', label: 'Modelo' },
+    { key: 'tipoImpresora.nombre', label: 'Tipo' },
+    { key: 'serie', label: 'Serie' },
     { key: 'ip', label: 'IP' },
     { key: 'sede.nombre', label: 'Sede' },
     { key: 'dependencia.nombre', label: 'Dependencia' },

@@ -38,10 +38,7 @@ export class ImpresoraFichaComponent {
       this.impresora.modeloTonerNegro ||
       this.impresora.modeloTonerC     ||
       this.impresora.modeloTonerM     ||
-      this.impresora.modeloTonerY     ||
-      this.impresora.modeloCartucho   ||
-      this.impresora.modeloDrum       ||
-      this.impresora.modeloFusor
+      this.impresora.modeloTonerY
     );
   }
 

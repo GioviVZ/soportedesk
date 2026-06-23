@@ -13,6 +13,32 @@
       <input type="text" formControlName="modelo" />
     </div>
     <div class="field">
+      <label>Tipo de impresora</label>
+      <select formControlName="tipoImpresoraId">
+        <option [ngValue]="null">— Sin tipo —</option>
+        <option *ngFor="let t of tiposImpresora" [ngValue]="t.id">{{ t.nombre }}</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Serie</label>
+      <input type="text" formControlName="serie" />
+    </div>
+    <div class="field">
+      <label>Código de Inventario</label>
+      <input type="text" formControlName="codigoInventario" />
+    </div>
+    <div class="field">
+      <label>Código Patrimonial</label>
+      <input type="text" formControlName="codigoPatrimonial" />
+    </div>
+    <div class="field">
+      <label>Conexión</label>
+      <select formControlName="tipoConexion">
+        <option value="USB">USB</option>
+        <option value="IP">IP</option>
+      </select>
+    </div>
+    <div class="field" *ngIf="form.value.tipoConexion === 'IP'">
       <label>IP</label>
       <input type="text" formControlName="ip" />
     </div>
@@ -50,18 +76,6 @@
     <div class="field">
       <label>Tóner Amarillo</label>
       <input type="text" formControlName="modeloTonerY" placeholder="ej: TN-223Y" />
-    </div>
-    <div class="field">
-      <label>Cartucho</label>
-      <input type="text" formControlName="modeloCartucho" placeholder="ej: CB435A" />
-    </div>
-    <div class="field">
-      <label>Drum</label>
-      <input type="text" formControlName="modeloDrum" placeholder="ej: DR-2365" />
-    </div>
-    <div class="field">
-      <label>Fusor</label>
-      <input type="text" formControlName="modeloFusor" placeholder="ej: FK-502H" />
     </div>
   </div>
 
