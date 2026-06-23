@@ -1,10 +1,13 @@
 <div class="chart-card">
   <div class="chart-header">
-    <h3>Licencias por Tipo</h3>
+    <div>
+      <h3>Licencias por Tipo</h3>
+      <p>Claves registradas por categoria.</p>
+    </div>
   </div>
 
   <div class="chart-body" *ngIf="!error">
     <canvas baseChart [data]="chartData" [options]="chartOptions" type="bar"></canvas>
   </div>
-  <p class="chart-error" *ngIf="error">No se pudo cargar el gráfico</p>
+  <p class="chart-error" *ngIf="error">No se pudo cargar el grafico</p>
 </div>

@@ -9,7 +9,6 @@ import java.util.List;
 public interface ImpresoraRepository extends JpaRepository<Impresora, Long> {
 
     @Query("SELECT i FROM Impresora i LEFT JOIN i.sede s LEFT JOIN i.dependencia d WHERE " +
-           "LOWER(i.nombre) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
            "LOWER(i.marca) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
            "LOWER(i.modelo) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
            "LOWER(s.nombre) LIKE LOWER(CONCAT('%', :search, '%')) OR " +

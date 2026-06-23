@@ -221,9 +221,13 @@ wifi      (sin FK — tabla independiente)
 | Columna | Tipo | Notas |
 |---------|------|-------|
 | id | BIGINT PK | auto-increment |
-| nombre | VARCHAR NOT NULL | |
 | marca | VARCHAR NOT NULL | |
 | modelo | VARCHAR NOT NULL | |
+| tipo_impresora_id | BIGINT FK | → `tipos_impresora.id`, nullable |
+| serie | VARCHAR | nullable |
+| codigo_inventario | VARCHAR | nullable |
+| codigo_patrimonial | VARCHAR | nullable |
+| tipo_conexion | VARCHAR NOT NULL | USB/IP |
 | ip | VARCHAR | nullable |
 | sede_id | BIGINT FK | → `sedes.id`, nullable |
 | dependencia_id | BIGINT FK | → `dependencias.id`, nullable |
@@ -233,9 +237,6 @@ wifi      (sin FK — tabla independiente)
 | modelo_toner_c | VARCHAR | nullable (cyan) |
 | modelo_toner_m | VARCHAR | nullable (magenta) |
 | modelo_toner_y | VARCHAR | nullable (yellow) |
-| modelo_cartucho | VARCHAR | nullable |
-| modelo_drum | VARCHAR | nullable |
-| modelo_fusor | VARCHAR | nullable |
 | driver_nombre | VARCHAR | nullable |
 | driver_version | VARCHAR | nullable |
 | driver_so | VARCHAR | nullable (sistema operativo) |

@@ -61,7 +61,6 @@ public class ImpresoraService {
     }
 
     private void copyFields(Impresora impresora, ImpresoraRequest request) {
-        impresora.setNombre(request.getNombre());
         impresora.setMarca(request.getMarca());
         impresora.setModelo(request.getModelo());
         impresora.setEstado(request.getEstado());

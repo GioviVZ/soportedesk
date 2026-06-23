@@ -32,7 +32,6 @@ class ImpresoraControllerIT {
 
     private ImpresoraRequest sampleRequest() {
         ImpresoraRequest request = new ImpresoraRequest();
-        request.setNombre("HP LaserJet 4ta planta");
         request.setMarca("HP");
         request.setModelo("M404dn");
         request.setTipoConexion("IP");
@@ -48,7 +47,6 @@ class ImpresoraControllerIT {
     private Impresora sampleImpresora() {
         Impresora imp = new Impresora();
         imp.setId(1L);
-        imp.setNombre("HP LaserJet 4ta planta");
         imp.setMarca("HP");
         imp.setModelo("M404dn");
         imp.setTipoConexion("IP");
@@ -68,7 +66,8 @@ class ImpresoraControllerIT {
 
         mockMvc.perform(get("/api/impresoras"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].nombre", is("HP LaserJet 4ta planta")));
+                .andExpect(jsonPath("$[0].marca", is("HP")))
+                .andExpect(jsonPath("$[0].modelo", is("M404dn")));
     }
 
     @Test
@@ -80,7 +79,8 @@ class ImpresoraControllerIT {
                         .contentType("application/json")
                         .content(objectMapper.writeValueAsString(sampleRequest())))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.nombre", is("HP LaserJet 4ta planta")));
+                .andExpect(jsonPath("$.marca", is("HP")))
+                .andExpect(jsonPath("$.modelo", is("M404dn")));
     }
 
     @Test

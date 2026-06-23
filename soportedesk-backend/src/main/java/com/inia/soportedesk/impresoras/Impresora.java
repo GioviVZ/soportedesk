@@ -20,9 +20,6 @@ public class Impresora {
     private Long id;
 
     @Column(nullable = false)
-    private String nombre;
-
-    @Column(nullable = false)
     private String marca;
 
     @Column(nullable = false)

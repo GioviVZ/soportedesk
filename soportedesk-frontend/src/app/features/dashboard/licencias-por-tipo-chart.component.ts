@@ -26,8 +26,19 @@ export class LicenciasPorTipoChartComponent implements OnInit {
     indexAxis: 'y',
     responsive: true,
     maintainAspectRatio: false,
-    plugins: { legend: { display: false } },
-    scales: { x: { beginAtZero: true } },
+    plugins: {
+      legend: { display: false },
+    },
+    scales: {
+      x: {
+        beginAtZero: true,
+        grid: { color: '#e2e8f0' },
+        ticks: { precision: 0 },
+      },
+      y: {
+        grid: { display: false },
+      },
+    },
   };
 
   ngOnInit(): void {

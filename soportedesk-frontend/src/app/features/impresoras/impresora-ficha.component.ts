@@ -2,15 +2,17 @@ import { Component, EventEmitter, Input, Output, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../core/auth/auth.service';
-import { Impresora } from './impresora.model';
+import { Impresora, impresoraEstadoTone } from './impresora.model';
 import { ImpresoraService } from './impresora.service';
+import { SectionCardComponent } from '../../shared/section-card/section-card.component';
+import { StatusBadgeComponent } from '../../shared/status-badge/status-badge.component';
 
 type FichaTab = 'instalacion' | 'consumibles' | 'driver';
 
 @Component({
   selector: 'app-impresora-ficha',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, SectionCardComponent, StatusBadgeComponent],
   templateUrl: './impresora-ficha.component.html',
   styleUrl: './impresora-ficha.component.scss',
 })
@@ -24,6 +26,7 @@ export class ImpresoraFichaComponent {
   activeTab: FichaTab = 'instalacion';
   driverVersionInput = '';
   driverSoInput = '';
+  readonly impresoraEstadoTone = impresoraEstadoTone;
 
   get isAdmin(): boolean {
     return this.authService.canWrite('impresoras');

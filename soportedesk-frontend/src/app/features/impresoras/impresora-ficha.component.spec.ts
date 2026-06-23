@@ -6,7 +6,6 @@ import { Impresora } from './impresora.model';
 
 const mockImpresora: Impresora = {
   id: 1,
-  nombre: 'Impresora Test',
   marca: 'HP',
   modelo: 'LaserJet',
   tipoImpresora: { id: 1, nombre: 'Láser' },
@@ -94,9 +93,9 @@ describe('ImpresoraFichaComponent', () => {
     component.impresora = { ...mockImpresora, tipoConexion: 'USB', ip: '' };
     fixture.detectChanges();
 
-    const ipRow = Array.from(fixture.nativeElement.querySelectorAll('.row')).find((el) =>
-      (el as HTMLElement).textContent?.includes('Conexión')
+    const conexionField = Array.from(fixture.nativeElement.querySelectorAll('.detail-field')).find((el) =>
+      (el as HTMLElement).querySelector('.detail-label')?.textContent?.trim() === 'Conexión'
     ) as HTMLElement | undefined;
-    expect(ipRow?.textContent).not.toContain('—');
+    expect(conexionField?.querySelector('.detail-value')?.textContent).not.toContain('—');
   });
 });

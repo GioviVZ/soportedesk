@@ -8,11 +8,12 @@ import { EquipoService } from '../equipos/equipo.service';
 import { UsuarioRed } from '../usuarios-red/usuario-red.model';
 import { Equipo } from '../equipos/equipo.model';
 import { AuthService } from '../../core/auth/auth.service';
+import { VpnPasswordGeneratorComponent } from './vpn-password-generator.component';
 
 @Component({
   selector: 'app-vpn-form',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, VpnPasswordGeneratorComponent],
   templateUrl: './vpn-form.component.html',
   styleUrl: './vpn-form.component.scss',
 })
@@ -100,5 +101,9 @@ export class VpnFormComponent implements OnInit, OnChanges {
       ? this.service.update(this.vpn.id, request)
       : this.service.create(request);
     obs.subscribe(() => this.saved.emit());
+  }
+
+  useGeneratedPassword(password: string): void {
+    this.form.patchValue({ credencialVpn: password });
   }
 }

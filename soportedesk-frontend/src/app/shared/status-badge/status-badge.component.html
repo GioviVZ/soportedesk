@@ -1,0 +1,7 @@
+<span
+  class="status-badge"
+  [class.selectable]="selectable"
+  [class.inactive]="selectable && !active"
+  [ngClass]="'tone-' + tone"
+  (click)="onClick()"
+>{{ label }}</span>

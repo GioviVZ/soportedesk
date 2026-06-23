@@ -1,23 +1,63 @@
 <div class="dashboard">
-  <!-- Header -->
   <div class="dash-header">
-    <div>
+    <div class="dash-title">
+      <span class="eyebrow">Soporte tecnico INIA</span>
       <h2>Panel de Control</h2>
-      <p class="subtitle">Resumen del sistema de soporte técnico INIA</p>
+      <p class="subtitle">Vista general de accesos, inventario y cuentas administradas.</p>
     </div>
     <div class="total-badge">
       <span class="total-num">{{ totalRegistros }}</span>
-      <span class="total-lbl">registros totales</span>
+      <span class="total-lbl">registros</span>
     </div>
   </div>
 
-  <!-- KPI Grid -->
+  <div class="summary-grid">
+    <ng-container *ngFor="let metric of summaryMetrics">
+      <a
+        *ngIf="metric.path; else metricBox"
+        class="summary-card"
+        [class.summary-card--success]="metric.state === 'success'"
+        [class.summary-card--warning]="metric.state === 'warning'"
+        [routerLink]="metric.path"
+        [queryParams]="metric.queryParams">
+        <span class="summary-label">{{ metric.label }}</span>
+        <strong>{{ metric.value }}</strong>
+        <span class="summary-detail">{{ metric.detail }}</span>
+      </a>
+
+      <ng-template #metricBox>
+        <div
+          class="summary-card"
+          [class.summary-card--success]="metric.state === 'success'"
+          [class.summary-card--warning]="metric.state === 'warning'">
+          <span class="summary-label">{{ metric.label }}</span>
+          <strong>{{ metric.value }}</strong>
+          <span class="summary-detail">{{ metric.detail }}</span>
+        </div>
+      </ng-template>
+    </ng-container>
+  </div>
+
+  <div class="section-heading">
+    <div>
+      <h3>Modulos principales</h3>
+      <p>Entradas directas a las areas que se operan con mas frecuencia.</p>
+    </div>
+  </div>
+
   <div class="cards-grid">
-    <a class="kpi-card" *ngFor="let card of cards" [routerLink]="card.path" [queryParams]="card.queryParams" [style.--card-color]="card.color" [style.--card-bg]="card.bg">
+    <a
+      class="kpi-card"
+      *ngFor="let card of cards"
+      [routerLink]="card.path"
+      [queryParams]="card.queryParams"
+      [style.--card-color]="card.color"
+      [style.--card-bg]="card.bg">
       <div class="kpi-icon" [innerHTML]="card.icon"></div>
       <div class="kpi-body">
         <span class="kpi-value">{{ card.value }}</span>
         <span class="kpi-label">{{ card.label }}</span>
+        <span class="kpi-description">{{ card.description }}</span>
       </div>
       <div class="kpi-arrow">
         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
@@ -27,7 +67,15 @@
     </a>
   </div>
 
-  <app-usuarios-red-por-ubicacion-chart />
+  <div class="section-heading analytics-heading">
+    <div>
+      <h3>Analisis operativo</h3>
+      <p>Distribucion de usuarios y licencias para revisar carga por area.</p>
+    </div>
+  </div>
 
-  <app-licencias-por-tipo-chart />
+  <div class="charts-grid">
+    <app-usuarios-red-por-ubicacion-chart />
+    <app-licencias-por-tipo-chart />
+  </div>
 </div>

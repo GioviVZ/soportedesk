@@ -1,5 +1,6 @@
 package com.inia.soportedesk.auth;
 
+import com.inia.soportedesk.auditoria.MovimientoAuditoriaService;
 import com.inia.soportedesk.security.JwtService;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -40,6 +41,9 @@ class AuthControllerTest {
 
     @Mock
     private PasswordEncoder passwordEncoder;
+
+    @Mock
+    private MovimientoAuditoriaService auditoriaService;
 
     @Mock
     private Authentication authentication;

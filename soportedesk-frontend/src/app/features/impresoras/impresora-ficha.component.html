@@ -6,56 +6,142 @@
   </div>
 
   <div class="content" *ngIf="activeTab === 'instalacion'">
-    <div class="row"><span>Nombre</span><span>{{ impresora.nombre }}</span></div>
-    <div class="row"><span>Marca</span><span>{{ impresora.marca }}</span></div>
-    <div class="row"><span>Modelo</span><span>{{ impresora.modelo }}</span></div>
-    <div class="row"><span>Tipo de impresora</span><span>{{ impresora.tipoImpresora?.nombre }}</span></div>
-    <div class="row"><span>Serie</span><span>{{ impresora.serie }}</span></div>
-    <div class="row"><span>Código de Inventario</span><span>{{ impresora.codigoInventario }}</span></div>
-    <div class="row"><span>Código Patrimonial</span><span>{{ impresora.codigoPatrimonial }}</span></div>
-    <div class="row">
-      <span>Conexión</span>
-      <span>{{ impresora.tipoConexion }}<ng-container *ngIf="impresora.tipoConexion === 'IP'"> — {{ impresora.ip }}</ng-container></span>
-    </div>
-    <div class="row"><span>Sede</span><span>{{ impresora.sede?.nombre }}</span></div>
-    <div class="row"><span>Dependencia</span><span>{{ impresora.dependencia?.nombre }}</span></div>
-    <div class="row"><span>Subdependencia</span><span>{{ impresora.subdependencia?.nombre }}</span></div>
-    <div class="row"><span>Estado</span><span>{{ impresora.estado }}</span></div>
+    <app-section-card title="Identificación">
+      <svg icon xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M4 7h16" />
+        <path d="M7 3h10v4H7z" />
+        <path d="M6 14h12v7H6z" />
+      </svg>
+
+      <div class="detail-grid">
+        <div class="detail-field">
+          <span class="detail-label">Marca / Modelo</span>
+          <span class="detail-value">{{ impresora.marca }} {{ impresora.modelo }}</span>
+        </div>
+        <div class="detail-field">
+          <span class="detail-label">Tipo de impresora</span>
+          <span class="detail-value">{{ impresora.tipoImpresora?.nombre || '—' }}</span>
+        </div>
+        <div class="detail-field">
+          <span class="detail-label">Serie</span>
+          <span class="detail-value">{{ impresora.serie || '—' }}</span>
+        </div>
+        <div class="detail-field">
+          <span class="detail-label">Código de Inventario</span>
+          <span class="detail-value">{{ impresora.codigoInventario || '—' }}</span>
+        </div>
+        <div class="detail-field">
+          <span class="detail-label">Código Patrimonial</span>
+          <span class="detail-value">{{ impresora.codigoPatrimonial || '—' }}</span>
+        </div>
+        <div class="detail-field">
+          <span class="detail-label">Estado</span>
+          <span class="detail-value">
+            <app-status-badge [label]="impresora.estado" [tone]="impresoraEstadoTone(impresora.estado)" />
+          </span>
+        </div>
+      </div>
+    </app-section-card>
+
+    <app-section-card title="Conexión y ubicación">
+      <svg icon xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M12 21s7-4.35 7-11a7 7 0 1 0-14 0c0 6.65 7 11 7 11z" />
+        <circle cx="12" cy="10" r="2" />
+      </svg>
+
+      <div class="detail-grid">
+        <div class="detail-field">
+          <span class="detail-label">Conexión</span>
+          <span class="detail-value">
+            {{ impresora.tipoConexion }}<ng-container *ngIf="impresora.tipoConexion === 'IP'"> — <code>{{ impresora.ip }}</code></ng-container>
+          </span>
+        </div>
+        <div class="detail-field">
+          <span class="detail-label">Sede</span>
+          <span class="detail-value">{{ impresora.sede?.nombre || '—' }}</span>
+        </div>
+        <div class="detail-field">
+          <span class="detail-label">Dependencia</span>
+          <span class="detail-value">{{ impresora.dependencia?.nombre || '—' }}</span>
+        </div>
+        <div class="detail-field">
+          <span class="detail-label">Subdependencia</span>
+          <span class="detail-value">{{ impresora.subdependencia?.nombre || '—' }}</span>
+        </div>
+      </div>
+    </app-section-card>
   </div>
 
   <div class="content" *ngIf="activeTab === 'consumibles'">
-    <ng-container *ngIf="hasConsumibles(); else noConsumibles">
-      <div class="row" *ngIf="impresora.modeloTonerNegro">
-        <span>Tóner Negro</span><span class="modelo-tag">{{ impresora.modeloTonerNegro }}</span>
-      </div>
-      <div class="row" *ngIf="impresora.modeloTonerC">
-        <span>Tóner Cyan</span><span class="modelo-tag">{{ impresora.modeloTonerC }}</span>
-      </div>
-      <div class="row" *ngIf="impresora.modeloTonerM">
-        <span>Tóner Magenta</span><span class="modelo-tag">{{ impresora.modeloTonerM }}</span>
-      </div>
-      <div class="row" *ngIf="impresora.modeloTonerY">
-        <span>Tóner Amarillo</span><span class="modelo-tag">{{ impresora.modeloTonerY }}</span>
-      </div>
-    </ng-container>
-    <ng-template #noConsumibles>
-      <p class="no-consumibles">Sin modelos de consumibles registrados.</p>
-    </ng-template>
+    <app-section-card title="Consumibles">
+      <svg icon xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M4 7h16v11a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z" />
+        <path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+      </svg>
+
+      <ng-container *ngIf="hasConsumibles(); else noConsumibles">
+        <div class="consumibles-grid">
+          <div class="consumible-card" *ngIf="impresora.modeloTonerNegro">
+            <span>Tóner Negro</span>
+            <strong>{{ impresora.modeloTonerNegro }}</strong>
+          </div>
+          <div class="consumible-card" *ngIf="impresora.modeloTonerC">
+            <span>Tóner Cyan</span>
+            <strong>{{ impresora.modeloTonerC }}</strong>
+          </div>
+          <div class="consumible-card" *ngIf="impresora.modeloTonerM">
+            <span>Tóner Magenta</span>
+            <strong>{{ impresora.modeloTonerM }}</strong>
+          </div>
+          <div class="consumible-card" *ngIf="impresora.modeloTonerY">
+            <span>Tóner Amarillo</span>
+            <strong>{{ impresora.modeloTonerY }}</strong>
+          </div>
+        </div>
+      </ng-container>
+      <ng-template #noConsumibles>
+        <p class="empty-message">Sin modelos de consumibles registrados.</p>
+      </ng-template>
+    </app-section-card>
   </div>
 
   <div class="content" *ngIf="activeTab === 'driver'">
-    <ng-container *ngIf="impresora.driverNombre; else noDriver">
-      <div class="row"><span>Nombre</span><span>{{ impresora.driverNombre }}</span></div>
-      <div class="row"><span>Versión</span><span>{{ impresora.driverVersion }}</span></div>
-      <div class="row"><span>S.O.</span><span>{{ impresora.driverSo }}</span></div>
-      <button class="download-btn" (click)="downloadDriver()">Descargar driver</button>
-    </ng-container>
-    <ng-template #noDriver>
-      <p class="no-driver">No hay driver cargado.</p>
-    </ng-template>
+    <app-section-card title="Driver instalado">
+      <svg icon xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+        <path d="M7 10l5 5 5-5" />
+        <path d="M12 15V3" />
+      </svg>
 
-    <ng-container *ngIf="isAdmin">
-      <h4>Subir nuevo driver</h4>
+      <ng-container *ngIf="impresora.driverNombre; else noDriver">
+        <div class="detail-grid">
+          <div class="detail-field">
+            <span class="detail-label">Nombre</span>
+            <span class="detail-value">{{ impresora.driverNombre }}</span>
+          </div>
+          <div class="detail-field">
+            <span class="detail-label">Versión</span>
+            <span class="detail-value">{{ impresora.driverVersion || '—' }}</span>
+          </div>
+          <div class="detail-field">
+            <span class="detail-label">S.O.</span>
+            <span class="detail-value">{{ impresora.driverSo || '—' }}</span>
+          </div>
+        </div>
+        <button class="download-btn" (click)="downloadDriver()">Descargar driver</button>
+      </ng-container>
+      <ng-template #noDriver>
+        <p class="empty-message">No hay driver cargado.</p>
+      </ng-template>
+    </app-section-card>
+
+    <app-section-card title="Subir nuevo driver" *ngIf="isAdmin">
+      <svg icon xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+        <path d="M17 8l-5-5-5 5" />
+        <path d="M12 3v12" />
+      </svg>
+
       <div class="upload-fields">
         <div class="upload-field">
           <label>Versión</label>
@@ -67,6 +153,6 @@
         </div>
         <input type="file" (change)="onFileSelected($event)" />
       </div>
-    </ng-container>
+    </app-section-card>
   </div>
 </div>

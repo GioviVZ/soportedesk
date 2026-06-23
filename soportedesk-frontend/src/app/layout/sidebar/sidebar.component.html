@@ -1,5 +1,4 @@
 <aside class="sidebar" [class.collapsed]="collapsed" [class.mobile-open]="layout.sidebarOpen()">
-  <!-- Logo / brand -->
   <div class="brand">
     <div class="brand-logo">
       <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -7,42 +6,28 @@
       </svg>
     </div>
     <span class="brand-name" *ngIf="!collapsed">SoporteDesk</span>
-    <button class="mobile-close" *ngIf="!collapsed" (click)="layout.close()" aria-label="Cerrar menú">
+    <button class="mobile-close" *ngIf="!collapsed" (click)="layout.close()" aria-label="Cerrar menu">
       <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
     </button>
   </div>
 
-  <!-- Navigation -->
   <nav>
     <ng-container *ngFor="let item of navItems">
       <a
-        *ngIf="!item.adminOnly"
+        *ngIf="canShow(item)"
         [routerLink]="item.path"
         routerLinkActive="active"
         class="nav-item"
+        [class.admin-item]="item.adminOnly"
         [title]="collapsed ? item.label : ''"
         (click)="layout.close()"
       >
         <span class="nav-icon" [innerHTML]="item.icon"></span>
         <span class="nav-label" *ngIf="!collapsed">{{ item.label }}</span>
       </a>
-      <ng-container *ifAdmin>
-        <a
-          *ngIf="item.adminOnly"
-          [routerLink]="item.path"
-          routerLinkActive="active"
-          class="nav-item admin-item"
-          [title]="collapsed ? item.label : ''"
-          (click)="layout.close()"
-        >
-          <span class="nav-icon" [innerHTML]="item.icon"></span>
-          <span class="nav-label" *ngIf="!collapsed">{{ item.label }}</span>
-        </a>
-      </ng-container>
     </ng-container>
   </nav>
 
-  <!-- Collapse toggle (desktop only) -->
   <button class="collapse-btn" (click)="toggleCollapsed()" [title]="collapsed ? 'Expandir' : 'Colapsar'">
     <span [innerHTML]="collapsed ? chevR : chevL"></span>
     <span *ngIf="!collapsed" class="collapse-label">Colapsar</span>

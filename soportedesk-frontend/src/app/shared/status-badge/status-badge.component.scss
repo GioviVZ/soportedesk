@@ -1,0 +1,49 @@
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: fit-content;
+  min-height: 24px;
+  border: 1px solid transparent;
+  border-radius: 20px;
+  padding: 3px 10px;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.2;
+  white-space: nowrap;
+  transition: var(--transition);
+}
+
+.tone-success {
+  background: var(--color-success-light);
+  color: var(--color-success);
+}
+
+.tone-warning {
+  background: var(--color-warning-light);
+  color: var(--color-warning);
+}
+
+.tone-danger {
+  background: var(--color-danger-light);
+  color: var(--color-danger);
+}
+
+.tone-neutral {
+  background: var(--color-muted);
+  color: var(--color-text-secondary);
+}
+
+.selectable {
+  cursor: pointer;
+
+  &:hover {
+    border-color: currentColor;
+  }
+}
+
+.inactive {
+  background: var(--color-muted);
+  border-color: transparent;
+  color: var(--color-text-muted);
+}

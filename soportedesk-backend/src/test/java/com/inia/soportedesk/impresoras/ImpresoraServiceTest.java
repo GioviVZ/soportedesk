@@ -44,7 +44,6 @@ class ImpresoraServiceTest {
 
     private ImpresoraRequest sampleRequest() {
         ImpresoraRequest request = new ImpresoraRequest();
-        request.setNombre("HP LaserJet 4ta planta");
         request.setMarca("HP");
         request.setModelo("M404dn");
         request.setTipoConexion("IP");
@@ -60,7 +59,6 @@ class ImpresoraServiceTest {
     private Impresora sampleImpresora(Long id) {
         Impresora imp = new Impresora();
         imp.setId(id);
-        imp.setNombre("HP LaserJet 4ta planta");
         imp.setMarca("HP");
         imp.setModelo("M404dn");
         imp.setTipoConexion("IP");
@@ -97,7 +95,8 @@ class ImpresoraServiceTest {
 
         Impresora result = service.create(sampleRequest());
 
-        assertThat(result.getNombre()).isEqualTo("HP LaserJet 4ta planta");
+        assertThat(result.getMarca()).isEqualTo("HP");
+        assertThat(result.getModelo()).isEqualTo("M404dn");
         assertThat(result.getModeloTonerNegro()).isEqualTo("TN-2380");
         assertThat(result.getSerie()).isEqualTo("SN-12345");
     }

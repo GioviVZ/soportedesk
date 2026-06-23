@@ -6,7 +6,9 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
@@ -68,14 +70,26 @@ public class UsuarioSistemaService {
 
     private void setPermisos(Usuario u, List<String> modulos) {
         permisoRepository.deleteByUsuario(u);
-        if (modulos != null) {
-            modulos.forEach(modulo -> {
-                Permiso p = new Permiso();
-                p.setUsuario(u);
-                p.setModulo(modulo);
-                permisoRepository.save(p);
-            });
+        permisoRepository.flush();
+
+        for (String modulo : normalizePermisos(modulos)) {
+            Permiso p = new Permiso();
+            p.setUsuario(u);
+            p.setModulo(modulo);
+            permisoRepository.save(p);
         }
+    }
+
+    private Set<String> normalizePermisos(List<String> modulos) {
+        Set<String> normalized = new LinkedHashSet<>();
+        if (modulos == null) {
+            return normalized;
+        }
+        modulos.stream()
+                .filter(modulo -> modulo != null && !modulo.isBlank())
+                .map(String::trim)
+                .forEach(normalized::add);
+        return normalized;
     }
 
     private UsuarioSistemaResponse toResponse(Usuario u) {

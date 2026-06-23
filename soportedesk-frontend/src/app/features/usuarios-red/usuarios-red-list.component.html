@@ -1,36 +1,87 @@
-<h2>Usuarios de Red/AD</h2>
+<div class="usuarios-red-page">
+  <header class="page-heading">
+    <div>
+      <span class="eyebrow">Active Directory</span>
+      <h2>Usuarios de Red/AD</h2>
+      <p>Control de cuentas, ubicacion, contratos y estado de acceso.</p>
+    </div>
+  </header>
 
-<app-generic-table
-  [columns]="columns"
-  [data]="items"
-  [canEdit]="canWrite"
-  [initialSearch]="initialSearch"
-  extraColumnLabel="Vencimiento"
-  (searchChange)="onSearch($event)"
-  (add)="onAdd()"
-  (view)="onView($event)"
-  (edit)="onEdit($event)"
-  (delete)="onDelete($event)"
->
-  <ng-template #extraCell let-row>
-    <app-vencimiento-badge [fecha]="row.fechaFinContrato" />
-  </ng-template>
-</app-generic-table>
+  <section class="summary-grid" aria-label="Resumen de usuarios de red">
+    <article class="summary-card">
+      <span>Total</span>
+      <strong>{{ items.length }}</strong>
+      <small>usuarios registrados</small>
+    </article>
+    <article class="summary-card success">
+      <span>Activos</span>
+      <strong>{{ totalActivos }}</strong>
+      <small>cuentas habilitadas</small>
+    </article>
+    <article class="summary-card danger">
+      <span>Inactivos</span>
+      <strong>{{ totalInactivos }}</strong>
+      <small>cuentas deshabilitadas</small>
+    </article>
+    <article class="summary-card warning">
+      <span>Por vencer</span>
+      <strong>{{ totalPorVencer }}</strong>
+      <small>contratos en 30 dias</small>
+    </article>
+  </section>
+
+  <app-generic-table
+    [columns]="columns"
+    [data]="items"
+    [canEdit]="canWrite"
+    [initialSearch]="initialSearch"
+    extraColumnLabel="Vencimiento"
+    (searchChange)="onSearch($event)"
+    (add)="onAdd()"
+    (view)="onView($event)"
+    (edit)="onEdit($event)"
+    (delete)="onDelete($event)"
+  >
+    <ng-template #extraCell let-row>
+      <app-vencimiento-badge [fecha]="row.fechaFinContrato" />
+    </ng-template>
+  </app-generic-table>
+</div>
 
 <app-modal title="Detalle de usuario de red" [open]="viewing !== null" (closed)="closeView()">
   <ng-container *ngIf="viewing">
-    <app-field label="Usuario">{{ viewing.usuario }}</app-field>
-    <app-field label="Nombre">{{ viewing.nombre }}</app-field>
-    <app-field label="Apellidos">{{ viewing.apellidos }}</app-field>
-    <app-field label="Grupo">{{ viewing.grupo }}</app-field>
-    <app-field label="Unidad Organizativa">{{ viewing.unidadOrganizativa }}</app-field>
-    <app-field label="Último Login">{{ viewing.ultimoLogin }}</app-field>
-    <app-field label="Sede">{{ viewing.sede?.nombre }}</app-field>
-    <app-field label="Dependencia">{{ viewing.dependencia?.nombre }}</app-field>
-    <app-field label="Subdependencia">{{ viewing.subdependencia?.nombre }}</app-field>
-    <app-field label="Tipo de Contrato">{{ viewing.tipoContrato?.nombre }}</app-field>
-    <app-field label="Fin de Contrato">{{ viewing.fechaFinContrato }}</app-field>
-    <app-field label="Estado">{{ viewing.estado }}</app-field>
+    <div class="detail-grid">
+      <app-section-card title="Cuenta">
+        <div icon>AD</div>
+        <div class="identity-line">
+          <span class="user-chip">{{ viewing.usuario }}</span>
+          <app-status-badge [label]="viewing.estado || 'Sin estado'" [tone]="estadoTone(viewing.estado)" />
+        </div>
+        <app-field label="Nombre completo">{{ fullName(viewing) }}</app-field>
+        <app-field label="Grupo">{{ viewing.grupo }}</app-field>
+        <app-field label="Unidad Organizativa">{{ viewing.unidadOrganizativa || 'No registrada' }}</app-field>
+        <app-field label="Ultimo Login">{{ viewing.ultimoLogin || 'Sin registro' }}</app-field>
+      </app-section-card>
+
+      <app-section-card title="Ubicacion">
+        <div icon>UB</div>
+        <app-field label="Sede">{{ viewing.sede.nombre || 'No registrada' }}</app-field>
+        <app-field label="Dependencia">{{ viewing.dependencia.nombre || 'No registrada' }}</app-field>
+        <app-field label="Subdependencia">{{ viewing.subdependencia.nombre || 'No registrada' }}</app-field>
+      </app-section-card>
+
+      <app-section-card title="Contrato">
+        <div icon>CT</div>
+        <app-field label="Tipo de Contrato">{{ viewing.tipoContrato.nombre || 'No registrado' }}</app-field>
+        <app-field label="Nro. de contrato">{{ viewing.numeroContrato || 'No registrado' }}</app-field>
+        <app-field label="Fecha de creacion">{{ viewing.fechaCreacion || 'No registrada' }}</app-field>
+        <app-field label="Fin de Contrato">{{ viewing.fechaFinContrato || 'No registrado' }}</app-field>
+        <div class="vencimiento-row">
+          <span>Vencimiento</span>
+          <app-vencimiento-badge [fecha]="viewing.fechaFinContrato" />
+        </div>
+      </app-section-card>
+    </div>
   </ng-container>
 </app-modal>
 

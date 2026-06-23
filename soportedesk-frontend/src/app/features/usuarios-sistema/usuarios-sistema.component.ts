@@ -15,6 +15,8 @@ import { UsuarioSistemaService } from './usuario-sistema.service';
 export class UsuariosSistemaComponent implements OnInit {
   private service = inject(UsuarioSistemaService);
 
+  readonly modulosEdicion = MODULOS.filter((m) => m.kind === 'write');
+  readonly modulosVista = MODULOS.filter((m) => m.kind === 'view');
   readonly modulos = MODULOS;
 
   usuarios: UsuarioSistema[] = [];

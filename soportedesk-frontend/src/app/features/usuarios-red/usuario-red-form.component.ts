@@ -66,7 +66,7 @@ export class UsuarioRedFormComponent implements OnChanges {
   submit(): void {
     if (this.form.invalid) return;
     if (!this.sedeId || !this.dependenciaId || !this.subdependenciaId || !this.tipoContratoId) {
-      alert('Complete todos los campos de ubicación y tipo de contrato.');
+      alert('Complete todos los campos de ubicacion y tipo de contrato.');
       return;
     }
     const raw = this.form.getRawValue();

@@ -1,5 +1,6 @@
 package com.inia.soportedesk.auth;
 
+import com.inia.soportedesk.auditoria.MovimientoAuditoriaService;
 import com.inia.soportedesk.exception.ResourceNotFoundException;
 import com.inia.soportedesk.security.JwtService;
 import lombok.RequiredArgsConstructor;
@@ -27,6 +28,7 @@ public class AuthController {
     private final PermisoRepository permisoRepository;
     private final JwtService jwtService;
     private final PasswordEncoder passwordEncoder;
+    private final MovimientoAuditoriaService auditoriaService;
 
     @PostMapping("/login")
     public ResponseEntity<?> login(@Valid @RequestBody LoginRequest request) {
@@ -34,6 +36,17 @@ public class AuthController {
             authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword()));
         } catch (Exception ex) {
+            auditoriaService.registrar(
+                    request.getUsername(),
+                    "LOGIN_FALLIDO",
+                    "auth",
+                    "POST",
+                    "/api/auth/login",
+                    null,
+                    401,
+                    null,
+                    "Intento de inicio de sesion fallido"
+            );
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(Map.of("message", "Usuario o contraseña incorrectos"));
         }
@@ -46,6 +59,17 @@ public class AuthController {
                 .toList();
 
         String token = jwtService.generateToken(usuario.getUsername(), usuario.getRol().name(), permisos);
+        auditoriaService.registrar(
+                usuario.getUsername(),
+                "LOGIN",
+                "auth",
+                "POST",
+                "/api/auth/login",
+                usuario.getId().toString(),
+                200,
+                null,
+                "Inicio de sesion exitoso"
+        );
 
         return ResponseEntity.ok(new AuthResponse(token, usuario.getUsername(), usuario.getNombre(), usuario.getRol().name(), permisos));
     }

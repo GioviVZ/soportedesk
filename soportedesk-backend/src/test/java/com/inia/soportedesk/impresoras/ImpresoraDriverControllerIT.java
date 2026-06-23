@@ -36,7 +36,6 @@ class ImpresoraDriverControllerIT {
     private Impresora impresoraConDriver(Long id, String path) {
         Impresora imp = new Impresora();
         imp.setId(id);
-        imp.setNombre("HP LaserJet");
         imp.setMarca("HP");
         imp.setModelo("M404dn");
         imp.setEstado("Activa");

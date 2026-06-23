@@ -1,0 +1,86 @@
+<div class="auditoria-page">
+  <div class="page-header">
+    <div>
+      <h2>Movimientos del Sistema</h2>
+      <p>Monitoreo de accesos y cambios realizados en los modulos.</p>
+    </div>
+    <button type="button" class="btn btn-ghost" (click)="load()" [disabled]="loading">
+      Actualizar
+    </button>
+  </div>
+
+  <section class="filters">
+    <div class="field">
+      <label>Buscar</label>
+      <input type="text" [(ngModel)]="filters.search" placeholder="Usuario, ruta o detalle" (keyup.enter)="load()" />
+    </div>
+    <div class="field">
+      <label>Modulo</label>
+      <select [(ngModel)]="filters.modulo">
+        <option value="">Todos</option>
+        <option *ngFor="let modulo of modulos" [value]="modulo.key">{{ modulo.label }}</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Accion</label>
+      <select [(ngModel)]="filters.accion">
+        <option value="">Todas</option>
+        <option *ngFor="let accion of acciones" [value]="accion">{{ accion }}</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Desde</label>
+      <input type="date" [(ngModel)]="filters.desde" />
+    </div>
+    <div class="field">
+      <label>Hasta</label>
+      <input type="date" [(ngModel)]="filters.hasta" />
+    </div>
+    <div class="filter-actions">
+      <button type="button" class="btn btn-primary" (click)="load()">Filtrar</button>
+      <button type="button" class="btn btn-ghost" (click)="clearFilters()">Limpiar</button>
+    </div>
+  </section>
+
+  <section class="audit-table">
+    <div class="table-state" *ngIf="loading">Cargando movimientos...</div>
+    <div class="table-state error" *ngIf="!loading && error">{{ error }}</div>
+
+    <div class="table-scroll" *ngIf="!loading && !error">
+      <table>
+        <thead>
+          <tr>
+            <th>Fecha</th>
+            <th>Usuario</th>
+            <th>Accion</th>
+            <th>Modulo</th>
+            <th>Ruta</th>
+            <th>Estado</th>
+            <th>IP</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let movimiento of movimientos">
+            <td class="fecha">{{ formatFecha(movimiento.fecha) }}</td>
+            <td class="usuario">{{ movimiento.usuario }}</td>
+            <td>
+              <span class="accion-badge" [ngClass]="accionClass(movimiento.accion)">
+                {{ movimiento.accion }}
+              </span>
+            </td>
+            <td>{{ moduloLabel(movimiento.modulo) }}</td>
+            <td class="ruta">
+              <span>{{ movimiento.detalle || movimiento.ruta }}</span>
+              <small *ngIf="movimiento.entidadId">ID {{ movimiento.entidadId }}</small>
+            </td>
+            <td>{{ movimiento.estadoHttp || '-' }}</td>
+            <td>{{ movimiento.ip || '-' }}</td>
+          </tr>
+          <tr *ngIf="movimientos.length === 0">
+            <td colspan="7" class="empty">No hay movimientos para los filtros seleccionados</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+</div>

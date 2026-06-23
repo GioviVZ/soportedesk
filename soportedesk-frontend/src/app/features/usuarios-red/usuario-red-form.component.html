@@ -1,51 +1,76 @@
-<form [formGroup]="form" (ngSubmit)="submit()">
-  <div class="field">
-    <label>Usuario</label>
-    <input type="text" formControlName="usuario" />
-  </div>
-  <div class="field">
-    <label>Nombre</label>
-    <input type="text" formControlName="nombre" />
-  </div>
-  <div class="field">
-    <label>Apellidos</label>
-    <input type="text" formControlName="apellidos" />
-  </div>
-  <div class="field">
-    <label>Grupo</label>
-    <input type="text" formControlName="grupo" />
-  </div>
-  <div class="field">
-    <label>Unidad Organizativa</label>
-    <input type="text" formControlName="unidadOrganizativa" placeholder="Ej. OU=Soporte,OU=INIA" />
-  </div>
-  <div class="field">
-    <label>Estado</label>
-    <select formControlName="estado">
-      <option value="Activo">Activo</option>
-      <option value="Inactivo">Inactivo</option>
-    </select>
-  </div>
+<form [formGroup]="form" (ngSubmit)="submit()" class="usuario-red-form">
+  <section class="form-section">
+    <div class="section-title">
+      <span>01</span>
+      <h3>Cuenta</h3>
+    </div>
 
-  <app-ubicacion-select
-    [(sedeId)]="sedeId"
-    [(dependenciaId)]="dependenciaId"
-    [(subdependenciaId)]="subdependenciaId"
-    [(tipoContratoId)]="tipoContratoId"
-  />
+    <div class="form-grid">
+      <div class="field">
+        <label>Usuario</label>
+        <input type="text" formControlName="usuario" autocomplete="off" />
+      </div>
+      <div class="field">
+        <label>Estado</label>
+        <select formControlName="estado">
+          <option value="Activo">Activo</option>
+          <option value="Inactivo">Inactivo</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Nombre</label>
+        <input type="text" formControlName="nombre" autocomplete="off" />
+      </div>
+      <div class="field">
+        <label>Apellidos</label>
+        <input type="text" formControlName="apellidos" autocomplete="off" />
+      </div>
+      <div class="field">
+        <label>Grupo</label>
+        <input type="text" formControlName="grupo" autocomplete="off" />
+      </div>
+      <div class="field wide">
+        <label>Unidad Organizativa</label>
+        <input type="text" formControlName="unidadOrganizativa" placeholder="Ej. OU=Soporte,OU=INIA" />
+      </div>
+    </div>
+  </section>
 
-  <div class="field">
-    <label>N° de contrato</label>
-    <input type="text" formControlName="numeroContrato" placeholder="Ej. CAS-001-2024" />
-  </div>
-  <div class="field">
-    <label>Fecha de creación</label>
-    <input type="date" formControlName="fechaCreacion" />
-  </div>
-  <div class="field">
-    <label>Fecha fin de contrato</label>
-    <input type="date" formControlName="fechaFinContrato" />
-  </div>
+  <section class="form-section">
+    <div class="section-title">
+      <span>02</span>
+      <h3>Ubicacion</h3>
+    </div>
+
+    <app-ubicacion-select
+      [(sedeId)]="sedeId"
+      [(dependenciaId)]="dependenciaId"
+      [(subdependenciaId)]="subdependenciaId"
+      [(tipoContratoId)]="tipoContratoId"
+    />
+  </section>
+
+  <section class="form-section">
+    <div class="section-title">
+      <span>03</span>
+      <h3>Contrato</h3>
+    </div>
+
+    <div class="form-grid">
+      <div class="field wide">
+        <label>Nro. de contrato</label>
+        <input type="text" formControlName="numeroContrato" placeholder="Ej. CAS-001-2024" />
+      </div>
+      <div class="field">
+        <label>Fecha de creacion</label>
+        <input type="date" formControlName="fechaCreacion" />
+      </div>
+      <div class="field">
+        <label>Fecha fin de contrato</label>
+        <input type="date" formControlName="fechaFinContrato" />
+      </div>
+    </div>
+  </section>
 
   <div class="actions">
     <button type="button" class="secondary" (click)="cancelled.emit()">Cancelar</button>

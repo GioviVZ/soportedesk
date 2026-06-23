@@ -15,13 +15,28 @@ export interface UsuarioSistemaRequest {
   permisos: string[];
 }
 
-export const MODULOS: { key: string; label: string }[] = [
-  { key: 'usuarios-red', label: 'Usuarios de Red/AD' },
-  { key: 'correos',      label: 'Correos Institucionales' },
-  { key: 'equipos',      label: 'Equipos Asignados' },
-  { key: 'vpn',                label: 'VPN' },
-  { key: 'credenciales-vpn',  label: 'Credenciales VPN' },
-  { key: 'impresoras',   label: 'Impresoras' },
-  { key: 'wifi',         label: 'Claves WiFi' },
-  { key: 'licencias',    label: 'Licencias' },
+export type PermisoKind = 'write' | 'view';
+
+export interface ModuloPermiso {
+  key: string;
+  label: string;
+  kind: PermisoKind;
+  description?: string;
+}
+
+export const MODULOS: ModuloPermiso[] = [
+  { key: 'usuarios-red', label: 'Usuarios de Red/AD', kind: 'write' },
+  { key: 'correos', label: 'Correos Institucionales', kind: 'write' },
+  { key: 'equipos', label: 'Equipos Asignados', kind: 'write' },
+  { key: 'vpn', label: 'VPN', kind: 'write' },
+  { key: 'credenciales-vpn', label: 'Credenciales VPN', kind: 'write' },
+  { key: 'impresoras', label: 'Impresoras', kind: 'write' },
+  { key: 'wifi', label: 'Claves WiFi', kind: 'write' },
+  { key: 'licencias', label: 'Licencias', kind: 'write' },
+  {
+    key: 'auditoria',
+    label: 'Vista de Movimientos',
+    kind: 'view',
+    description: 'Permite entrar al modulo Movimientos y revisar la auditoria del sistema.',
+  },
 ];

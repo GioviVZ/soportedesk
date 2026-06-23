@@ -2,16 +2,13 @@ package com.inia.soportedesk.impresoras;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase.Replace.NONE;
 
 @DataJpaTest
-@AutoConfigureTestDatabase(replace = NONE)
 class ImpresoraRepositoryTest {
 
     @Autowired
@@ -20,7 +17,6 @@ class ImpresoraRepositoryTest {
     @Test
     void search_bySerie_returnsMatchingImpresora() {
         Impresora impresora = new Impresora();
-        impresora.setNombre("HP LaserJet 4ta planta");
         impresora.setMarca("HP");
         impresora.setModelo("M404dn");
         impresora.setTipoConexion("USB");
@@ -37,7 +33,6 @@ class ImpresoraRepositoryTest {
     @Test
     void search_byCodigoInventario_returnsMatchingImpresora() {
         Impresora impresora = new Impresora();
-        impresora.setNombre("Canon Oficina Central");
         impresora.setMarca("Canon");
         impresora.setModelo("LBP6230");
         impresora.setTipoConexion("USB");

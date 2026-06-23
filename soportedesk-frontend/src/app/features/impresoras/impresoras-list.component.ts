@@ -6,13 +6,22 @@ import { ModalComponent } from '../../shared/modal/modal.component';
 import { ImpresoraFichaComponent } from './impresora-ficha.component';
 import { ImpresoraFormComponent } from './impresora-form.component';
 import { ImpresoraResumenComponent } from './impresora-resumen.component';
-import { Impresora } from './impresora.model';
+import { Impresora, impresoraEstadoTone } from './impresora.model';
 import { ImpresoraService } from './impresora.service';
+import { StatusBadgeComponent } from '../../shared/status-badge/status-badge.component';
 
 @Component({
   selector: 'app-impresoras-list',
   standalone: true,
-  imports: [CommonModule, GenericTableComponent, ModalComponent, ImpresoraFichaComponent, ImpresoraFormComponent, ImpresoraResumenComponent],
+  imports: [
+    CommonModule,
+    GenericTableComponent,
+    ModalComponent,
+    ImpresoraFichaComponent,
+    ImpresoraFormComponent,
+    ImpresoraResumenComponent,
+    StatusBadgeComponent,
+  ],
   templateUrl: './impresoras-list.component.html',
   styleUrl: './impresoras-list.component.scss',
 })
@@ -22,7 +31,6 @@ export class ImpresorasListComponent implements OnInit {
 
   items: Impresora[] = [];
   columns: TableColumn[] = [
-    { key: 'nombre', label: 'Nombre' },
     { key: 'marca', label: 'Marca' },
     { key: 'modelo', label: 'Modelo' },
     { key: 'tipoImpresora.nombre', label: 'Tipo' },
@@ -31,8 +39,8 @@ export class ImpresorasListComponent implements OnInit {
     { key: 'sede.nombre', label: 'Sede' },
     { key: 'dependencia.nombre', label: 'Dependencia' },
     { key: 'subdependencia.nombre', label: 'Subdependencia' },
-    { key: 'estado', label: 'Estado' },
   ];
+  readonly impresoraEstadoTone = impresoraEstadoTone;
 
   viewing: Impresora | null = null;
   editing: Impresora | null = null;
@@ -77,7 +85,7 @@ export class ImpresorasListComponent implements OnInit {
   }
 
   onDelete(item: Impresora): void {
-    if (!confirm(`¿Eliminar la impresora "${item.nombre}"?`)) return;
+    if (!confirm(`¿Eliminar la impresora "${item.marca} ${item.modelo}"?`)) return;
     this.service.delete(item.id).subscribe(() => this.load());
   }
 

@@ -147,6 +147,23 @@ CREATE TABLE dbo.permisos (
 );
 GO
 
+IF OBJECT_ID(N'dbo.movimientos_auditoria', N'U') IS NULL
+CREATE TABLE dbo.movimientos_auditoria (
+    id          BIGINT        NOT NULL IDENTITY(1,1),
+    fecha       DATETIME2     NOT NULL,
+    usuario     NVARCHAR(80)  NOT NULL,
+    accion      NVARCHAR(30)  NOT NULL,
+    modulo      NVARCHAR(60)  NOT NULL,
+    metodo      NVARCHAR(10)  NOT NULL,
+    ruta        NVARCHAR(300) NOT NULL,
+    entidad_id  NVARCHAR(80)  NULL,
+    estado_http INT           NULL,
+    ip          NVARCHAR(80)  NULL,
+    detalle     NVARCHAR(500) NULL,
+    CONSTRAINT PK_movimientos_auditoria PRIMARY KEY (id)
+);
+GO
+
 -- ============================================================
 -- USUARIOS DE RED / ACTIVE DIRECTORY
 -- ============================================================
@@ -218,7 +235,6 @@ GO
 IF OBJECT_ID(N'dbo.impresoras', N'U') IS NULL
 CREATE TABLE dbo.impresoras (
     id                  BIGINT        NOT NULL IDENTITY(1,1),
-    nombre              NVARCHAR(150) NOT NULL,
     marca               NVARCHAR(80)  NOT NULL,
     modelo              NVARCHAR(100) NOT NULL,
     tipo_impresora_id   BIGINT        NULL,
@@ -348,6 +364,15 @@ IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = N'IX_subdependencias_depen
 GO
 IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = N'IX_permisos_usuario_id')
     CREATE INDEX IX_permisos_usuario_id ON dbo.permisos (usuario_id);
+GO
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = N'IX_movimientos_auditoria_fecha')
+    CREATE INDEX IX_movimientos_auditoria_fecha ON dbo.movimientos_auditoria (fecha DESC);
+GO
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = N'IX_movimientos_auditoria_usuario')
+    CREATE INDEX IX_movimientos_auditoria_usuario ON dbo.movimientos_auditoria (usuario);
+GO
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = N'IX_movimientos_auditoria_modulo_accion')
+    CREATE INDEX IX_movimientos_auditoria_modulo_accion ON dbo.movimientos_auditoria (modulo, accion);
 GO
 
 IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = N'IX_usuarios_red_sede_id')         CREATE INDEX IX_usuarios_red_sede_id         ON dbo.usuarios_red (sede_id);

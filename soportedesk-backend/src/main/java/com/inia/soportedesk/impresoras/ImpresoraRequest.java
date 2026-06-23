@@ -10,9 +10,6 @@ import lombok.Setter;
 public class ImpresoraRequest {
 
     @NotBlank
-    private String nombre;
-
-    @NotBlank
     private String marca;
 
     @NotBlank

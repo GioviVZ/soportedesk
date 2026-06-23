@@ -97,6 +97,8 @@
       <label>Credencial / Contraseña VPN</label>
       <input type="text" formControlName="credencialVpn" placeholder="Contraseña o clave de acceso" />
     </div>
+
+    <app-vpn-password-generator (passwordSelected)="useGeneratedPassword($event)" />
   </div>
 
   <div class="credential-locked" *ngIf="!canEditCredenciales">

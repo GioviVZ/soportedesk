@@ -4,12 +4,17 @@
   [columns]="columns"
   [data]="items"
   [canEdit]="canWrite"
+  extraColumnLabel="Estado"
   (searchChange)="onSearch($event)"
   (add)="onAdd()"
   (view)="onView($event)"
   (edit)="onEdit($event)"
   (delete)="onDelete($event)"
-/>
+>
+  <ng-template #extraCell let-row>
+    <app-status-badge [label]="row.estado" [tone]="impresoraEstadoTone(row.estado)" />
+  </ng-template>
+</app-generic-table>
 
 <app-impresora-resumen [impresoras]="items" />
 

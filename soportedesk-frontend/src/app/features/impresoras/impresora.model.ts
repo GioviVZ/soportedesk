@@ -1,6 +1,7 @@
+import { BadgeTone } from '../../shared/status-badge/status-badge.component';
+
 export interface Impresora {
   id: number;
-  nombre: string;
   marca: string;
   modelo: string;
   tipoImpresora: { id: number; nombre: string } | null;
@@ -24,7 +25,6 @@ export interface Impresora {
 }
 
 export interface ImpresoraRequest {
-  nombre: string;
   marca: string;
   modelo: string;
   tipoImpresoraId: number | null;
@@ -41,4 +41,14 @@ export interface ImpresoraRequest {
   modeloTonerC: string;
   modeloTonerM: string;
   modeloTonerY: string;
+}
+
+export const IMPRESORA_ESTADOS: { value: string; tone: BadgeTone }[] = [
+  { value: 'Activa', tone: 'success' },
+  { value: 'En mantenimiento', tone: 'warning' },
+  { value: 'De baja', tone: 'danger' },
+];
+
+export function impresoraEstadoTone(estado: string): BadgeTone {
+  return IMPRESORA_ESTADOS.find((item) => item.value === estado)?.tone ?? 'neutral';
 }

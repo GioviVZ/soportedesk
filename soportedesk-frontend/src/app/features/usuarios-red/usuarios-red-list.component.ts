@@ -5,6 +5,8 @@ import { AuthService } from '../../core/auth/auth.service';
 import { GenericTableComponent, TableColumn } from '../../shared/generic-table/generic-table.component';
 import { ModalComponent } from '../../shared/modal/modal.component';
 import { FieldComponent } from '../../shared/field/field.component';
+import { SectionCardComponent } from '../../shared/section-card/section-card.component';
+import { BadgeTone, StatusBadgeComponent } from '../../shared/status-badge/status-badge.component';
 import { VencimientoBadgeComponent } from '../../shared/vencimiento-badge/vencimiento-badge.component';
 import { UsuarioRedFormComponent } from './usuario-red-form.component';
 import { UsuarioRed } from './usuario-red.model';
@@ -18,6 +20,8 @@ import { UsuarioRedService } from './usuario-red.service';
     GenericTableComponent,
     ModalComponent,
     FieldComponent,
+    SectionCardComponent,
+    StatusBadgeComponent,
     VencimientoBadgeComponent,
     UsuarioRedFormComponent,
   ],
@@ -35,14 +39,9 @@ export class UsuariosRedListComponent implements OnInit {
     { key: 'nombre', label: 'Nombre' },
     { key: 'apellidos', label: 'Apellidos' },
     { key: 'grupo', label: 'Grupo' },
-    { key: 'unidadOrganizativa', label: 'Unidad Organizativa' },
-    { key: 'ultimoLogin', label: 'Último Login' },
     { key: 'sede.nombre', label: 'Sede' },
     { key: 'dependencia.nombre', label: 'Dependencia' },
-    { key: 'subdependencia.nombre', label: 'Subdependencia' },
     { key: 'tipoContrato.nombre', label: 'Tipo Contrato' },
-    { key: 'numeroContrato', label: 'N° Contrato' },
-    { key: 'fechaCreacion', label: 'Fecha Creación' },
     { key: 'fechaFinContrato', label: 'Fin Contrato' },
     { key: 'estado', label: 'Estado' },
   ];
@@ -54,6 +53,21 @@ export class UsuariosRedListComponent implements OnInit {
 
   get canWrite(): boolean {
     return this.authService.canWrite('usuarios-red');
+  }
+
+  get totalActivos(): number {
+    return this.items.filter((item) => this.isActivo(item)).length;
+  }
+
+  get totalInactivos(): number {
+    return this.items.filter((item) => !this.isActivo(item)).length;
+  }
+
+  get totalPorVencer(): number {
+    return this.items.filter((item) => {
+      const days = this.diasHastaFinContrato(item);
+      return days !== null && days >= 0 && days <= 30;
+    }).length;
   }
 
   ngOnInit(): void {
@@ -97,12 +111,34 @@ export class UsuariosRedListComponent implements OnInit {
   }
 
   onDelete(item: UsuarioRed): void {
-    if (!confirm(`¿Eliminar el usuario "${item.usuario}"?`)) return;
+    if (!confirm(`Eliminar el usuario "${item.usuario}"?`)) return;
     this.service.delete(item.id).subscribe(() => this.load());
   }
 
   onSaved(): void {
     this.formOpen = false;
     this.load();
+  }
+
+  fullName(item: UsuarioRed): string {
+    return `${item.nombre} ${item.apellidos}`.trim();
+  }
+
+  estadoTone(estado: string | null | undefined): BadgeTone {
+    return estado?.toLowerCase() === 'activo' ? 'success' : 'danger';
+  }
+
+  isActivo(item: UsuarioRed): boolean {
+    return item.estado?.toLowerCase() === 'activo';
+  }
+
+  diasHastaFinContrato(item: UsuarioRed): number | null {
+    if (!item.fechaFinContrato) {
+      return null;
+    }
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const end = new Date(`${item.fechaFinContrato}T00:00:00`);
+    return Math.ceil((end.getTime() - today.getTime()) / 86400000);
   }
 }

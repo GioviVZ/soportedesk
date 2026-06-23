@@ -1,7 +1,9 @@
 package com.inia.soportedesk.security;
 
 import jakarta.servlet.http.HttpServletResponse;
+import com.inia.soportedesk.auditoria.AuditoriaFilter;
 import lombok.RequiredArgsConstructor;
+import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -31,6 +33,7 @@ public class SecurityConfig {
 
     private final CustomUserDetailsService userDetailsService;
     private final JwtAuthFilter jwtAuthFilter;
+    private final AuditoriaFilter auditoriaFilter;
 
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -64,6 +67,13 @@ public class SecurityConfig {
     }
 
     @Bean
+    public FilterRegistrationBean<AuditoriaFilter> auditoriaFilterRegistration(AuditoriaFilter filter) {
+        FilterRegistrationBean<AuditoriaFilter> registration = new FilterRegistrationBean<>(filter);
+        registration.setEnabled(false);
+        return registration;
+    }
+
+    @Bean
     public AuthenticationEntryPoint authenticationEntryPoint() {
         return (request, response, authException) ->
                 response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized");
@@ -80,7 +90,8 @@ public class SecurityConfig {
                         .requestMatchers("/api/auth/login").permitAll()
                         .anyRequest().authenticated())
                 .authenticationProvider(authenticationProvider())
-                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
+                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
+                .addFilterAfter(auditoriaFilter, JwtAuthFilter.class);
 
         return http.build();
     }

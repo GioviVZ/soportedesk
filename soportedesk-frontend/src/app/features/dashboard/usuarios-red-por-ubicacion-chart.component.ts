@@ -32,7 +32,22 @@ export class UsuariosRedPorUbicacionChartComponent implements OnInit {
     indexAxis: 'y',
     responsive: true,
     maintainAspectRatio: false,
-    scales: { x: { beginAtZero: true } },
+    plugins: {
+      legend: {
+        position: 'bottom',
+        labels: { boxWidth: 10, boxHeight: 10, usePointStyle: true },
+      },
+    },
+    scales: {
+      x: {
+        beginAtZero: true,
+        grid: { color: '#e2e8f0' },
+        ticks: { precision: 0 },
+      },
+      y: {
+        grid: { display: false },
+      },
+    },
   };
 
   ngOnInit(): void {
