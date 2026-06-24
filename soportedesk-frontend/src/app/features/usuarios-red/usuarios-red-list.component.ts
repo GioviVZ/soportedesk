@@ -6,10 +6,10 @@ import { GenericTableComponent, TableColumn } from '../../shared/generic-table/g
 import { ModalComponent } from '../../shared/modal/modal.component';
 import { FieldComponent } from '../../shared/field/field.component';
 import { SectionCardComponent } from '../../shared/section-card/section-card.component';
-import { BadgeTone, StatusBadgeComponent } from '../../shared/status-badge/status-badge.component';
+import { StatusBadgeComponent } from '../../shared/status-badge/status-badge.component';
 import { VencimientoBadgeComponent } from '../../shared/vencimiento-badge/vencimiento-badge.component';
 import { UsuarioRedFormComponent } from './usuario-red-form.component';
-import { UsuarioRed } from './usuario-red.model';
+import { UsuarioRed, usuarioRedEstadoTone } from './usuario-red.model';
 import { UsuarioRedService } from './usuario-red.service';
 
 @Component({
@@ -45,6 +45,7 @@ export class UsuariosRedListComponent implements OnInit {
     { key: 'fechaFinContrato', label: 'Fin Contrato' },
     { key: 'estado', label: 'Estado' },
   ];
+  readonly usuarioRedEstadoTone = usuarioRedEstadoTone;
 
   viewing: UsuarioRed | null = null;
   editing: UsuarioRed | null = null;
@@ -122,10 +123,6 @@ export class UsuariosRedListComponent implements OnInit {
 
   fullName(item: UsuarioRed): string {
     return `${item.nombre} ${item.apellidos}`.trim();
-  }
-
-  estadoTone(estado: string | null | undefined): BadgeTone {
-    return estado?.toLowerCase() === 'activo' ? 'success' : 'danger';
   }
 
   isActivo(item: UsuarioRed): boolean {

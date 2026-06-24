@@ -55,7 +55,7 @@
         <div icon>AD</div>
         <div class="identity-line">
           <span class="user-chip">{{ viewing.usuario }}</span>
-          <app-status-badge [label]="viewing.estado || 'Sin estado'" [tone]="estadoTone(viewing.estado)" />
+          <app-status-badge [label]="viewing.estado || 'Sin estado'" [tone]="usuarioRedEstadoTone(viewing.estado)" />
         </div>
         <app-field label="Nombre completo">{{ fullName(viewing) }}</app-field>
         <app-field label="Grupo">{{ viewing.grupo }}</app-field>
