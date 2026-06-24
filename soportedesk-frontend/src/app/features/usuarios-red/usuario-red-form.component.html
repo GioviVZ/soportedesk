@@ -1,21 +1,27 @@
 <form [formGroup]="form" (ngSubmit)="submit()" class="usuario-red-form">
-  <section class="form-section">
-    <div class="section-title">
-      <span>01</span>
-      <h3>Cuenta</h3>
-    </div>
+  <app-section-card title="Cuenta">
+    <svg icon xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+      <circle cx="12" cy="7" r="4" />
+    </svg>
 
-    <div class="form-grid">
+    <div class="two-col">
       <div class="field">
         <label>Usuario</label>
         <input type="text" formControlName="usuario" autocomplete="off" />
       </div>
       <div class="field">
         <label>Estado</label>
-        <select formControlName="estado">
-          <option value="Activo">Activo</option>
-          <option value="Inactivo">Inactivo</option>
-        </select>
+        <div class="estado-selector">
+          <app-status-badge
+            *ngFor="let opt of estadoOptions"
+            [label]="opt.value"
+            [tone]="opt.tone"
+            [selectable]="true"
+            [active]="form.value.estado === opt.value"
+            (select)="form.patchValue({ estado: opt.value })"
+          />
+        </div>
       </div>
       <div class="field">
         <label>Nombre</label>
@@ -34,13 +40,13 @@
         <input type="text" formControlName="unidadOrganizativa" placeholder="Ej. OU=Soporte,OU=INIA" />
       </div>
     </div>
-  </section>
+  </app-section-card>
 
-  <section class="form-section">
-    <div class="section-title">
-      <span>02</span>
-      <h3>Ubicacion</h3>
-    </div>
+  <app-section-card title="Ubicación">
+    <svg icon xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M12 21s7-4.35 7-11a7 7 0 1 0-14 0c0 6.65 7 11 7 11z" />
+      <circle cx="12" cy="10" r="2" />
+    </svg>
 
     <app-ubicacion-select
       [(sedeId)]="sedeId"
@@ -48,29 +54,34 @@
       [(subdependenciaId)]="subdependenciaId"
       [(tipoContratoId)]="tipoContratoId"
     />
-  </section>
+  </app-section-card>
 
-  <section class="form-section">
-    <div class="section-title">
-      <span>03</span>
-      <h3>Contrato</h3>
-    </div>
+  <app-section-card title="Contrato">
+    <svg icon xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+      <path d="M14 2v6h6" />
+      <path d="M9 13h6" />
+      <path d="M9 17h6" />
+    </svg>
 
-    <div class="form-grid">
+    <div class="two-col">
       <div class="field wide">
         <label>Nro. de contrato</label>
         <input type="text" formControlName="numeroContrato" placeholder="Ej. CAS-001-2024" />
       </div>
       <div class="field">
-        <label>Fecha de creacion</label>
+        <label>Fecha de creación</label>
         <input type="date" formControlName="fechaCreacion" />
       </div>
       <div class="field">
         <label>Fecha fin de contrato</label>
-        <input type="date" formControlName="fechaFinContrato" />
+        <div class="input-with-badge">
+          <input type="date" formControlName="fechaFinContrato" />
+          <app-vencimiento-badge [fecha]="form.value.fechaFinContrato" />
+        </div>
       </div>
     </div>
-  </section>
+  </app-section-card>
 
   <div class="actions">
     <button type="button" class="secondary" (click)="cancelled.emit()">Cancelar</button>

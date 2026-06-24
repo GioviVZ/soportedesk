@@ -2,13 +2,23 @@ import { Component, EventEmitter, Input, OnChanges, Output, inject } from '@angu
 import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { UbicacionSelectComponent } from '../../shared/ubicacion-select/ubicacion-select.component';
-import { UsuarioRed } from './usuario-red.model';
+import { SectionCardComponent } from '../../shared/section-card/section-card.component';
+import { StatusBadgeComponent } from '../../shared/status-badge/status-badge.component';
+import { VencimientoBadgeComponent } from '../../shared/vencimiento-badge/vencimiento-badge.component';
+import { USUARIO_RED_ESTADOS, UsuarioRed } from './usuario-red.model';
 import { UsuarioRedService } from './usuario-red.service';
 
 @Component({
   selector: 'app-usuario-red-form',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, UbicacionSelectComponent],
+  imports: [
+    CommonModule,
+    ReactiveFormsModule,
+    UbicacionSelectComponent,
+    SectionCardComponent,
+    StatusBadgeComponent,
+    VencimientoBadgeComponent,
+  ],
   templateUrl: './usuario-red-form.component.html',
   styleUrl: './usuario-red-form.component.scss',
 })
@@ -24,6 +34,7 @@ export class UsuarioRedFormComponent implements OnChanges {
   dependenciaId: number | null = null;
   subdependenciaId: number | null = null;
   tipoContratoId: number | null = null;
+  readonly estadoOptions = USUARIO_RED_ESTADOS;
 
   form = this.fb.nonNullable.group({
     usuario: ['', Validators.required],
