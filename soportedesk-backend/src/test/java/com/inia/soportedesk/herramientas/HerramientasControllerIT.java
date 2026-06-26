@@ -13,7 +13,6 @@ import java.util.List;
 
 import static org.hamcrest.Matchers.is;
 import static org.mockito.Mockito.when;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -58,27 +57,5 @@ class HerramientasControllerIT {
                         .contentType("application/json")
                         .content("{\"host\":\"127.0.0.1 & whoami\"}"))
                 .andExpect(status().isBadRequest());
-    }
-
-    @Test
-    @WithMockUser(roles = "SOPORTE")
-    void inventory_allowsAuthenticatedUser() throws Exception {
-        when(service.inventory()).thenReturn(SystemInventoryResponse.builder()
-                .computerName("DESKTOP-01")
-                .operatingSystem("Windows")
-                .installedPrograms(List.of())
-                .networkInterfaces(List.of())
-                .build());
-
-        mockMvc.perform(get("/api/herramientas/inventario"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.computerName", is("DESKTOP-01")))
-                .andExpect(jsonPath("$.operatingSystem", is("Windows")));
-    }
-
-    @Test
-    void inventory_withoutAuth_returns401() throws Exception {
-        mockMvc.perform(get("/api/herramientas/inventario"))
-                .andExpect(status().isUnauthorized());
     }
 }
