@@ -1,9 +1,9 @@
-import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Component, OnInit, inject } from '@angular/core';
 import { AuthService } from '../../core/auth/auth.service';
+import { FieldComponent } from '../../shared/field/field.component';
 import { GenericTableComponent, TableColumn } from '../../shared/generic-table/generic-table.component';
 import { ModalComponent } from '../../shared/modal/modal.component';
-import { FieldComponent } from '../../shared/field/field.component';
 import { LicenciaFormComponent } from './licencia-form.component';
 import { Licencia } from './licencia.model';
 import { LicenciaService } from './licencia.service';
@@ -24,7 +24,7 @@ export class LicenciasListComponent implements OnInit {
     { key: 'tipoLicencia.nombre', label: 'Tipo' },
     { key: 'descripcion', label: 'Licencia' },
     { key: 'ordenCompra', label: 'Orden de Compra' },
-    { key: 'anio', label: 'Año' },
+    { key: 'anio', label: 'Anio' },
   ];
 
   viewing: Licencia | null = null;
@@ -70,7 +70,7 @@ export class LicenciasListComponent implements OnInit {
   }
 
   onDelete(licencia: Licencia): void {
-    if (!confirm(`¿Eliminar la licencia "${licencia.descripcion}"?`)) {
+    if (!confirm(`Eliminar la licencia "${licencia.descripcion}"?`)) {
       return;
     }
     this.service.delete(licencia.id).subscribe(() => this.load());
@@ -79,5 +79,18 @@ export class LicenciasListComponent implements OnInit {
   onSaved(): void {
     this.formOpen = false;
     this.load();
+  }
+
+  activacionesOf(licencia: Licencia): { cuentaActivacion: string; claveActivacion: string }[] {
+    if (licencia.activaciones?.length) {
+      return licencia.activaciones;
+    }
+    if (licencia.cuentaActivacion || licencia.claveActivacion) {
+      return [{
+        cuentaActivacion: licencia.cuentaActivacion ?? '',
+        claveActivacion: licencia.claveActivacion ?? '',
+      }];
+    }
+    return [];
   }
 }

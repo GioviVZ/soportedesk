@@ -13,15 +13,29 @@
 
 <app-modal title="Detalle de licencia" [open]="viewing !== null" (closed)="closeView()">
   <ng-container *ngIf="viewing">
-    <app-field label="Tipo de Licencia">{{ viewing.tipoLicencia?.nombre || '—' }}</app-field>
-    <app-field label="Tipo de Bien">{{ viewing.tipoBien?.nombre || '—' }}</app-field>
-    <app-field label="Descripción">{{ viewing.descripcion }}</app-field>
-    <app-field label="Cuenta de Activación">{{ viewing.cuentaActivacion || '—' }}</app-field>
-    <app-field label="Clave de Activación">{{ viewing.claveActivacion || '—' }}</app-field>
-    <app-field label="Serial de Activación"><span style="white-space: pre-wrap">{{ viewing.serialActivacion || '—' }}</span></app-field>
+    <app-field label="Tipo de Licencia">{{ viewing.tipoLicencia.nombre || '-' }}</app-field>
+    <app-field label="Tipo de Bien">{{ viewing.tipoBien.nombre || '-' }}</app-field>
+    <app-field label="Descripcion">{{ viewing.descripcion }}</app-field>
     <app-field label="Orden de Compra">{{ viewing.ordenCompra }}</app-field>
-    <app-field label="Año">{{ viewing.anio }}</app-field>
+    <app-field label="Anio">{{ viewing.anio }}</app-field>
     <app-field label="Cantidad">{{ viewing.cantidad }}</app-field>
+
+    <div class="activation-detail">
+      <h3>Cuentas y claves de activacion</h3>
+      <div *ngIf="activacionesOf(viewing).length; else sinActivaciones" class="activation-detail-list">
+        <div class="activation-detail-row" *ngFor="let item of activacionesOf(viewing); let i = index">
+          <strong>Cuenta {{ i + 1 }}</strong>
+          <span>{{ item.cuentaActivacion }}</span>
+          <strong>Clave {{ i + 1 }}</strong>
+          <span>{{ item.claveActivacion }}</span>
+        </div>
+      </div>
+      <ng-template #sinActivaciones>
+        <p>No hay cuentas de activacion registradas.</p>
+      </ng-template>
+    </div>
+
+    <app-field label="Serial de Activacion"><span style="white-space: pre-wrap">{{ viewing.serialActivacion || '-' }}</span></app-field>
   </ng-container>
 </app-modal>
 

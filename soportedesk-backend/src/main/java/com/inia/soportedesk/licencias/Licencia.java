@@ -7,6 +7,9 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Entity
 @Table(name = "licencias")
 @Getter
@@ -47,4 +50,8 @@ public class Licencia {
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "tipo_bien_id", nullable = false)
     private TipoBien tipoBien;
+
+    @OneToMany(mappedBy = "licencia", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
+    @OrderBy("id ASC")
+    private List<LicenciaActivacion> activaciones = new ArrayList<>();
 }

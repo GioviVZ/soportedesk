@@ -1,0 +1,16 @@
+# Local/editor folders
+.claude/
+.codex-screens/
+.vscode/
+
+# Logs
+*.log
+*.err.log
+
+# Frontend build/cache/dependencies
+soportedesk-frontend/node_modules/
+soportedesk-frontend/dist/
+soportedesk-frontend/.angular/
+
+# Backend build
+soportedesk-backend/target/

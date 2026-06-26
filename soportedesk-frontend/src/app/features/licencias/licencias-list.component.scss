@@ -2,3 +2,43 @@ h2 {
   color: var(--color-green-dark);
   margin-top: 0;
 }
+
+.activation-detail {
+  display: grid;
+  gap: 10px;
+  margin: 12px 0;
+
+  h3 {
+    margin: 0;
+    color: var(--color-text);
+    font-size: 14px;
+  }
+
+  p {
+    margin: 0;
+    color: var(--color-text-secondary);
+  }
+}
+
+.activation-detail-list {
+  display: grid;
+  gap: 8px;
+}
+
+.activation-detail-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 4px 10px;
+  padding: 10px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+
+  strong {
+    color: var(--color-text-secondary);
+    font-size: 12px;
+  }
+
+  span {
+    overflow-wrap: anywhere;
+  }
+}

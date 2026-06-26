@@ -1,10 +1,10 @@
-import { Component, EventEmitter, Input, OnChanges, OnInit, Output, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Component, EventEmitter, Input, OnChanges, OnInit, Output, inject } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Licencia, LicenciaRequest } from './licencia.model';
-import { LicenciaService } from './licencia.service';
-import { CatalogoService } from '../../core/catalogos/catalogo.service';
 import { TipoBien, TipoLicencia } from '../../core/models/catalogo.model';
+import { CatalogoService } from '../../core/catalogos/catalogo.service';
+import { Licencia, LicenciaActivacion, LicenciaRequest } from './licencia.model';
+import { LicenciaService } from './licencia.service';
 
 @Component({
   selector: 'app-licencia-form',
@@ -29,19 +29,20 @@ export class LicenciaFormComponent implements OnInit, OnChanges {
 
   form = this.fb.nonNullable.group({
     descripcion: ['', Validators.required],
-    cuentaActivacion: [''],
-    claveActivacion: [''],
     serialActivacion: [''],
     ordenCompra: ['', Validators.required],
     anio: ['', Validators.required],
     cantidad: [1, [Validators.required, Validators.min(1)]],
+    activaciones: this.fb.array([this.createActivacionGroup()]),
   });
+
+  get activacionesArray() {
+    return this.form.controls.activaciones;
+  }
 
   ngOnInit(): void {
     this.catalogoService.getTiposLicencia().subscribe((data) => (this.tiposLicencia = data));
     this.catalogoService.getTiposBien().subscribe((data) => (this.tiposBien = data));
-    this.form.controls.cuentaActivacion.valueChanges.subscribe(() => this.syncClaveActivacionState());
-    this.syncClaveActivacionState();
   }
 
   ngOnChanges(): void {
@@ -50,27 +51,24 @@ export class LicenciaFormComponent implements OnInit, OnChanges {
       this.tipoBienId = this.licencia.tipoBien?.id ?? null;
       this.form.patchValue({
         descripcion: this.licencia.descripcion,
-        cuentaActivacion: this.licencia.cuentaActivacion ?? '',
-        claveActivacion: this.licencia.claveActivacion ?? '',
         serialActivacion: this.licencia.serialActivacion ?? '',
         ordenCompra: this.licencia.ordenCompra,
         anio: this.licencia.anio,
         cantidad: this.licencia.cantidad,
       });
+      this.setActivaciones(this.initialActivaciones(this.licencia));
     } else {
       this.tipoLicenciaId = null;
       this.tipoBienId = null;
       this.form.reset({
         descripcion: '',
-        cuentaActivacion: '',
-        claveActivacion: '',
         serialActivacion: '',
         ordenCompra: '',
         anio: '',
         cantidad: 1,
       });
+      this.setActivaciones([this.emptyActivacion()]);
     }
-    this.syncClaveActivacionState();
   }
 
   onTipoLicenciaChange(value: string): void {
@@ -81,13 +79,14 @@ export class LicenciaFormComponent implements OnInit, OnChanges {
     this.tipoBienId = value ? Number(value) : null;
   }
 
-  private syncClaveActivacionState(): void {
-    const cuenta = this.form.controls.cuentaActivacion.value;
-    if (cuenta && cuenta.trim()) {
-      this.form.controls.claveActivacion.enable({ emitEvent: false });
-    } else {
-      this.form.controls.claveActivacion.setValue('', { emitEvent: false });
-      this.form.controls.claveActivacion.disable({ emitEvent: false });
+  addActivacion(): void {
+    this.activacionesArray.push(this.createActivacionGroup());
+  }
+
+  removeActivacion(index: number): void {
+    this.activacionesArray.removeAt(index);
+    if (this.activacionesArray.length === 0) {
+      this.addActivacion();
     }
   }
 
@@ -95,13 +94,19 @@ export class LicenciaFormComponent implements OnInit, OnChanges {
     if (this.form.invalid || !this.tipoLicenciaId || !this.tipoBienId) {
       return;
     }
+    const activaciones = this.normalizedActivaciones();
+    if (activaciones === null) {
+      alert('Cada cuenta de activacion debe tener su clave, y cada clave debe tener una cuenta.');
+      return;
+    }
     const raw = this.form.getRawValue();
     const request: LicenciaRequest = {
       tipoLicenciaId: this.tipoLicenciaId,
       tipoBienId: this.tipoBienId,
       descripcion: raw.descripcion,
-      cuentaActivacion: raw.cuentaActivacion || undefined,
-      claveActivacion: raw.claveActivacion || undefined,
+      activaciones,
+      cuentaActivacion: activaciones[0]?.cuentaActivacion,
+      claveActivacion: activaciones[0]?.claveActivacion,
       serialActivacion: raw.serialActivacion || undefined,
       ordenCompra: raw.ordenCompra,
       anio: raw.anio,
@@ -111,5 +116,56 @@ export class LicenciaFormComponent implements OnInit, OnChanges {
       ? this.service.update(this.licencia.id, request)
       : this.service.create(request);
     obs.subscribe(() => this.saved.emit());
+  }
+
+  private setActivaciones(items: LicenciaActivacion[]): void {
+    this.activacionesArray.clear();
+    for (const item of items.length ? items : [this.emptyActivacion()]) {
+      this.activacionesArray.push(this.createActivacionGroup(item));
+    }
+  }
+
+  private createActivacionGroup(value?: Partial<LicenciaActivacion>) {
+    return this.fb.nonNullable.group({
+      cuentaActivacion: [value?.cuentaActivacion ?? ''],
+      claveActivacion: [value?.claveActivacion ?? ''],
+    });
+  }
+
+  private initialActivaciones(licencia: Licencia): LicenciaActivacion[] {
+    if (licencia.activaciones?.length) {
+      return licencia.activaciones.map((item) => ({
+        id: item.id,
+        cuentaActivacion: item.cuentaActivacion ?? '',
+        claveActivacion: item.claveActivacion ?? '',
+      }));
+    }
+    if (licencia.cuentaActivacion || licencia.claveActivacion) {
+      return [{
+        cuentaActivacion: licencia.cuentaActivacion ?? '',
+        claveActivacion: licencia.claveActivacion ?? '',
+      }];
+    }
+    return [this.emptyActivacion()];
+  }
+
+  private normalizedActivaciones(): LicenciaActivacion[] | null {
+    const result: LicenciaActivacion[] = [];
+    for (const group of this.activacionesArray.controls) {
+      const cuentaActivacion = group.controls.cuentaActivacion.value.trim();
+      const claveActivacion = group.controls.claveActivacion.value.trim();
+      if (!cuentaActivacion && !claveActivacion) {
+        continue;
+      }
+      if (!cuentaActivacion || !claveActivacion) {
+        return null;
+      }
+      result.push({ cuentaActivacion, claveActivacion });
+    }
+    return result;
+  }
+
+  private emptyActivacion(): LicenciaActivacion {
+    return { cuentaActivacion: '', claveActivacion: '' };
   }
 }

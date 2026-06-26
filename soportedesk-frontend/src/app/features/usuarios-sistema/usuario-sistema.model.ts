@@ -39,4 +39,10 @@ export const MODULOS: ModuloPermiso[] = [
     kind: 'view',
     description: 'Permite entrar al modulo Movimientos y revisar la auditoria del sistema.',
   },
+  {
+    key: 'herramientas',
+    label: 'Herramientas',
+    kind: 'view',
+    description: 'Permite usar ping, inventario, GPU, RAM, teclado y mouse.',
+  },
 ];

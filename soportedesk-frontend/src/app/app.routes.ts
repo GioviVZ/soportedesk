@@ -2,6 +2,7 @@ import { Routes } from '@angular/router';
 import { adminGuard } from './core/auth/admin.guard';
 import { authGuard } from './core/auth/auth.guard';
 import { auditoriaGuard } from './features/auditoria/auditoria.guard';
+import { herramientasGuard } from './features/herramientas/herramientas.guard';
 import { ShellComponent } from './layout/shell/shell.component';
 
 export const routes: Routes = [
@@ -77,6 +78,14 @@ export const routes: Routes = [
         canActivate: [auditoriaGuard],
         loadComponent: () =>
           import('./features/auditoria/auditoria.component').then((m) => m.AuditoriaComponent),
+      },
+      {
+        path: 'herramientas',
+        canActivate: [herramientasGuard],
+        loadComponent: () =>
+          import('./features/herramientas/herramientas.component').then(
+            (m) => m.HerramientasComponent,
+          ),
       },
       {
         path: 'catalogos',

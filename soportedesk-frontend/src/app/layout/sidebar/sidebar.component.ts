@@ -25,6 +25,7 @@ const SVG_ICONS: Record<string, string> = {
   grid: `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>`,
   shield: `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>`,
   activity: `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>`,
+  wrench: `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a4.5 4.5 0 0 0-5.9 5.9L3 18v3h3l5.8-5.8a4.5 4.5 0 0 0 5.9-5.9l-3.1 3.1-3-3 3.1-3.1z"/></svg>`,
   chevL: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>`,
   chevR: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>`,
 };
@@ -62,6 +63,7 @@ export class SidebarComponent {
       { path: '/wifi', label: 'Claves WiFi', icon: s.bypassSecurityTrustHtml(SVG_ICONS['wifi']) },
       { path: '/licencias', label: 'Licencias', icon: s.bypassSecurityTrustHtml(SVG_ICONS['key']) },
       { path: '/auditoria', label: 'Movimientos', icon: s.bypassSecurityTrustHtml(SVG_ICONS['activity']), permission: 'auditoria' },
+      { path: '/herramientas', label: 'Herramientas', icon: s.bypassSecurityTrustHtml(SVG_ICONS['wrench']), permission: 'herramientas' },
       { path: '/usuarios-sistema', label: 'Usuarios del Sistema', icon: s.bypassSecurityTrustHtml(SVG_ICONS['shield']), adminOnly: true },
       { path: '/catalogos', label: 'Catalogos', icon: s.bypassSecurityTrustHtml(SVG_ICONS['grid']), adminOnly: true },
     ];

@@ -8,9 +8,11 @@ import java.util.List;
 
 public interface LicenciaRepository extends JpaRepository<Licencia, Long> {
 
-    @Query("SELECT l FROM Licencia l WHERE " +
+    @Query("SELECT DISTINCT l FROM Licencia l LEFT JOIN l.activaciones a WHERE " +
            "LOWER(l.descripcion) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
            "LOWER(l.cuentaActivacion) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
+           "LOWER(a.cuentaActivacion) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
+           "LOWER(a.claveActivacion) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
            "LOWER(l.serialActivacion) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
            "LOWER(l.ordenCompra) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
            "LOWER(l.anio) LIKE LOWER(CONCAT('%', :search, '%')) OR " +

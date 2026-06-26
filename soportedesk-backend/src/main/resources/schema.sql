@@ -314,6 +314,18 @@ CREATE TABLE dbo.licencias (
 );
 GO
 
+IF OBJECT_ID(N'dbo.licencia_activaciones', N'U') IS NULL
+CREATE TABLE dbo.licencia_activaciones (
+    id                BIGINT         NOT NULL IDENTITY(1,1),
+    licencia_id       BIGINT         NOT NULL,
+    cuenta_activacion NVARCHAR(200)  NOT NULL,
+    clave_activacion  NVARCHAR(1000) NOT NULL,
+    CONSTRAINT PK_licencia_activaciones PRIMARY KEY (id),
+    CONSTRAINT FK_licencia_activaciones_licencia FOREIGN KEY (licencia_id)
+        REFERENCES dbo.licencias (id) ON DELETE CASCADE
+);
+GO
+
 -- ============================================================
 -- VPN
 -- ============================================================
@@ -434,6 +446,10 @@ GO
 IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = N'IX_licencias_tipo_licencia_id')  CREATE INDEX IX_licencias_tipo_licencia_id  ON dbo.licencias (tipo_licencia_id);
 GO
 IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = N'IX_licencias_tipo_bien_id')      CREATE INDEX IX_licencias_tipo_bien_id      ON dbo.licencias (tipo_bien_id);
+GO
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = N'IX_licencia_activaciones_licencia_id') CREATE INDEX IX_licencia_activaciones_licencia_id ON dbo.licencia_activaciones (licencia_id);
+GO
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = N'IX_licencia_activaciones_cuenta') CREATE INDEX IX_licencia_activaciones_cuenta ON dbo.licencia_activaciones (cuenta_activacion);
 GO
 
 IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = N'IX_vpn_usuario_red_id')        CREATE INDEX IX_vpn_usuario_red_id        ON dbo.vpn (usuario_red_id);

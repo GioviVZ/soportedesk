@@ -48,6 +48,10 @@ export class UsuarioRedFormComponent implements OnChanges {
     numeroContrato: [''],
   });
 
+  get fechaFinContratoValue(): string | null {
+    return this.form.controls.fechaFinContrato.value || null;
+  }
+
   ngOnChanges(): void {
     if (this.usuarioRed) {
       this.form.patchValue({

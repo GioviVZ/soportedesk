@@ -7,6 +7,9 @@ import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Getter
 @Setter
 public class LicenciaRequest {
@@ -26,6 +29,8 @@ public class LicenciaRequest {
 
     private String claveActivacion;
 
+    private List<ActivacionRequest> activaciones = new ArrayList<>();
+
     private String serialActivacion;
 
     @NotBlank
@@ -37,4 +42,13 @@ public class LicenciaRequest {
     @NotNull
     @Min(1)
     private Integer cantidad;
+
+    @Getter
+    @Setter
+    public static class ActivacionRequest {
+        @Size(max = 200)
+        private String cuentaActivacion;
+
+        private String claveActivacion;
+    }
 }

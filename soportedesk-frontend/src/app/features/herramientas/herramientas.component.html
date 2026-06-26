@@ -1,0 +1,318 @@
+<div class="tools-page">
+  <header class="tools-header">
+    <div>
+      <span class="eyebrow">Herramientas de soporte</span>
+      <h2>Diagnostico rapido</h2>
+      <p>Pruebas web para validar red, hardware basico, perifericos e inventario del equipo.</p>
+    </div>
+    <div class="report-actions">
+      <button type="button" class="ghost-btn" (click)="copyReport()" [disabled]="!reportEntries.length && !inventory">
+        Copiar reporte
+      </button>
+      <button type="button" class="primary-btn" (click)="exportReport()" [disabled]="!reportEntries.length && !inventory">
+        Descargar reporte
+      </button>
+      <span class="copied" *ngIf="reportCopied">Copiado</span>
+    </div>
+  </header>
+
+  <nav class="tool-tabs" aria-label="Herramientas disponibles">
+    <button
+      type="button"
+      *ngFor="let tab of tabs"
+      [class.active]="activeTab === tab.id"
+      (click)="selectTab(tab.id)"
+    >
+      <strong>{{ tab.label }}</strong>
+      <span>{{ tab.detail }}</span>
+    </button>
+  </nav>
+
+  <section class="tool-panel" [class.active]="activeTab === 'ping'">
+    <div class="panel-heading">
+      <div>
+        <h3>Ping / Red</h3>
+        <p>Comprueba respuesta de una IP o dominio desde el servidor del sistema.</p>
+      </div>
+      <span class="status-pill" [class.ok]="pingResult?.reachable" [class.bad]="pingResult && !pingResult.reachable">
+        {{ pingState === 'running' ? 'Ejecutando' : (pingResult?.status || 'Listo') }}
+      </span>
+    </div>
+
+    <div class="ping-box">
+      <label>
+        IP o dominio
+        <input type="text" [(ngModel)]="pingHost" placeholder="192.168.1.1 o inia.gob.pe" (keyup.enter)="runPing()" />
+      </label>
+      <button type="button" class="primary-btn" (click)="runPing()" [disabled]="pingState === 'running'">
+        {{ pingState === 'running' ? 'Probando...' : 'Probar ping' }}
+      </button>
+    </div>
+
+    <p class="error-text" *ngIf="pingError">{{ pingError }}</p>
+
+    <div class="metric-grid" *ngIf="pingResult">
+      <div class="metric">
+        <span>Estado</span>
+        <strong>{{ pingResult.status }}</strong>
+      </div>
+      <div class="metric">
+        <span>Promedio</span>
+        <strong>{{ pingResult.averageLatencyMs || '-' }} ms</strong>
+      </div>
+      <div class="metric">
+        <span>Recibidos</span>
+        <strong>{{ pingResult.packetsReceived ?? '-' }}</strong>
+      </div>
+      <div class="metric">
+        <span>Perdidos</span>
+        <strong>{{ pingResult.packetsLost ?? '-' }}</strong>
+      </div>
+    </div>
+
+    <pre class="terminal" *ngIf="pingResult?.output?.length">{{ pingResult?.output?.join('\n') }}</pre>
+  </section>
+
+  <section class="tool-panel" [class.active]="activeTab === 'inventario'">
+    <div class="panel-heading">
+      <div>
+        <h3>Inventario del equipo</h3>
+        <p>Datos del servidor donde corre el backend y datos visibles del navegador cliente.</p>
+      </div>
+      <button type="button" class="ghost-btn" (click)="loadInventory()" [disabled]="inventoryState === 'running'">
+        {{ inventoryState === 'running' ? 'Cargando...' : 'Actualizar' }}
+      </button>
+    </div>
+
+    <p class="error-text" *ngIf="inventoryError">{{ inventoryError }}</p>
+
+    <div class="inventory-layout">
+      <div class="info-card">
+        <h4>Cliente web</h4>
+        <dl>
+          <div><dt>Plataforma</dt><dd>{{ clientInfo.plataforma }}</dd></div>
+          <div><dt>Nucleos</dt><dd>{{ clientInfo.nucleos }}</dd></div>
+          <div><dt>Memoria</dt><dd>{{ clientInfo.memoria }}</dd></div>
+          <div><dt>Pantalla</dt><dd>{{ clientInfo.pantalla }}</dd></div>
+          <div><dt>Conexion</dt><dd>{{ clientInfo.conexion }}</dd></div>
+          <div><dt>Idioma</dt><dd>{{ clientInfo.idioma }}</dd></div>
+        </dl>
+      </div>
+
+      <div class="info-card" *ngIf="inventory">
+        <h4>Servidor / backend</h4>
+        <dl>
+          <div><dt>Equipo</dt><dd>{{ inventory.computerName || '-' }}</dd></div>
+          <div><dt>Usuario</dt><dd>{{ inventory.userName || '-' }}</dd></div>
+          <div><dt>Sistema</dt><dd>{{ inventory.operatingSystem }} {{ inventory.osVersion }}</dd></div>
+          <div><dt>Arquitectura</dt><dd>{{ inventory.architecture }}</dd></div>
+          <div><dt>Procesador</dt><dd>{{ inventory.processor || '-' }}</dd></div>
+          <div><dt>Nucleos</dt><dd>{{ inventory.availableProcessors || '-' }}</dd></div>
+          <div><dt>Java</dt><dd>{{ inventory.javaVersion }}</dd></div>
+          <div><dt>Uptime</dt><dd>{{ formatUptime(inventory.uptimeSeconds) }}</dd></div>
+          <div><dt>Disco libre</dt><dd>{{ formatBytes(inventory.freeDiskBytes) }} / {{ formatBytes(inventory.totalDiskBytes) }}</dd></div>
+          <div><dt>Memoria JVM</dt><dd>{{ formatBytes(inventory.freeMemoryBytes) }} / {{ formatBytes(inventory.totalMemoryBytes) }}</dd></div>
+        </dl>
+      </div>
+    </div>
+
+    <div class="info-card wide" *ngIf="inventory?.networkInterfaces?.length">
+      <h4>Interfaces de red</h4>
+      <div class="network-list">
+        <div class="network-row" *ngFor="let net of inventory?.networkInterfaces">
+          <strong>{{ net.displayName || net.name }}</strong>
+          <span>{{ net.macAddress || 'MAC no disponible' }}</span>
+          <small>{{ net.addresses.join(', ') }}</small>
+        </div>
+      </div>
+    </div>
+
+    <div class="programs-block" *ngIf="inventory">
+      <div class="programs-head">
+        <div>
+          <h4>Programas instalados</h4>
+          <p>{{ inventory.installedPrograms.length }} programas detectados desde el backend.</p>
+        </div>
+        <input type="text" [(ngModel)]="programSearch" placeholder="Buscar programa" />
+      </div>
+
+      <div class="program-table" *ngIf="filteredPrograms.length; else noPrograms">
+        <table>
+          <thead>
+            <tr>
+              <th>Programa</th>
+              <th>Version</th>
+              <th>Fabricante</th>
+              <th>Instalacion</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let program of filteredPrograms">
+              <td>{{ program.name }}</td>
+              <td>{{ program.version || '-' }}</td>
+              <td>{{ program.publisher || '-' }}</td>
+              <td>{{ program.installDate || '-' }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <ng-template #noPrograms>
+        <p class="empty-text">No hay programas para mostrar. En navegadores no se puede leer software instalado del cliente sin agente local.</p>
+      </ng-template>
+    </div>
+  </section>
+
+  <section class="tool-panel gpu-panel" [class.active]="activeTab === 'gpu'">
+    <div class="panel-heading">
+      <div>
+        <h3>Prueba GPU WebGL</h3>
+        <p>Escena 3D con esferas configurables. Mide FPS promedio, FPS minimo y puntaje.</p>
+      </div>
+      <div class="button-row">
+        <button type="button" class="ghost-btn" (click)="stopGpuTest()" [disabled]="gpuStats.status !== 'running'">Detener</button>
+        <button type="button" class="primary-btn" (click)="startGpuTest()" [disabled]="gpuStats.status === 'running'">
+          {{ gpuStats.status === 'running' ? 'Midiendo...' : 'Iniciar prueba' }}
+        </button>
+      </div>
+    </div>
+
+    <div class="gpu-controls">
+      <label>
+        Tiempo de prueba: <strong>{{ gpuDurationSeconds }} s</strong>
+        <input
+          type="range"
+          min="5"
+          max="60"
+          step="5"
+          [(ngModel)]="gpuDurationSeconds"
+          [disabled]="gpuStats.status === 'running'"
+        />
+      </label>
+      <label>
+        Cantidad de esferas: <strong>{{ gpuSphereCount }}</strong>
+        <input
+          type="range"
+          min="50"
+          max="2000"
+          step="50"
+          [(ngModel)]="gpuSphereCount"
+          [disabled]="gpuStats.status === 'running'"
+        />
+      </label>
+    </div>
+
+    <div class="gpu-layout">
+      <canvas #gpuCanvas class="gpu-canvas" aria-label="Escena 3D de prueba GPU"></canvas>
+      <aside class="gpu-stats">
+        <div><span>FPS</span><strong>{{ gpuStats.fps }}</strong></div>
+        <div><span>Promedio</span><strong>{{ gpuStats.averageFps }}</strong></div>
+        <div><span>Minimo</span><strong>{{ gpuStats.minFps }}</strong></div>
+        <div><span>Objetos</span><strong>{{ gpuStats.objects }}</strong></div>
+        <div><span>Tiempo</span><strong>{{ gpuStats.elapsedSeconds }} s</strong></div>
+        <div><span>Puntaje</span><strong>{{ gpuStats.score }}</strong></div>
+        <div class="gpu-progress">
+          <span>Avance</span>
+          <strong>{{ gpuStats.progress }}%</strong>
+          <i><b [style.width.%]="gpuStats.progress"></b></i>
+        </div>
+        <p>{{ gpuStats.message }}</p>
+        <small>{{ gpuStats.vendor || 'GPU' }} - {{ gpuStats.renderer || 'Renderer no detectado' }}</small>
+      </aside>
+    </div>
+  </section>
+
+  <section class="tool-panel" [class.active]="activeTab === 'ram'">
+    <div class="panel-heading">
+      <div>
+        <h3>Prueba RAM web</h3>
+        <p>Reserva memoria dentro del navegador, escribe bloques y permite liberarla al terminar.</p>
+      </div>
+      <div class="button-row">
+        <button type="button" class="ghost-btn" (click)="releaseRam()">Liberar</button>
+        <button type="button" class="primary-btn" (click)="runRamTest()" [disabled]="ramStats.status === 'running'">Probar RAM</button>
+      </div>
+    </div>
+
+    <div class="range-control">
+      <label for="ramRange">Memoria a probar: <strong>{{ ramStats.selectedMb }} MB</strong></label>
+      <input id="ramRange" type="range" min="32" max="512" step="32" [(ngModel)]="ramStats.selectedMb" />
+    </div>
+
+    <div class="metric-grid">
+      <div class="metric"><span>Asignado</span><strong>{{ ramStats.allocatedMb }} MB</strong></div>
+      <div class="metric"><span>Tiempo</span><strong>{{ ramStats.elapsedMs }} ms</strong></div>
+      <div class="metric"><span>Velocidad</span><strong>{{ ramStats.speedMbS }} MB/s</strong></div>
+      <div class="metric"><span>Estado</span><strong>{{ ramStats.status }}</strong></div>
+    </div>
+    <p class="note">{{ ramStats.message }}</p>
+  </section>
+
+  <section class="tool-panel" [class.active]="activeTab === 'teclado'">
+    <div class="panel-heading">
+      <div>
+        <h3>Prueba teclado</h3>
+        <p>Activa la captura y presiona teclas. Cada tecla detectada queda marcada.</p>
+      </div>
+      <div class="button-row">
+        <button type="button" class="ghost-btn" (click)="resetKeyboard()">Reiniciar</button>
+        <button type="button" class="primary-btn" (click)="enableKeyboardCapture()">
+          {{ keyboardCapture ? 'Capturando' : 'Activar captura' }}
+        </button>
+      </div>
+    </div>
+
+    <div class="keyboard-summary">
+      <strong>{{ testedKeysCount }} / {{ keyboardTotal }}</strong>
+      <span>Ultima tecla: {{ lastKey }}</span>
+    </div>
+
+    <div class="keyboard">
+      <div class="key-row" *ngFor="let row of keyRows">
+        <button
+          type="button"
+          class="key"
+          *ngFor="let code of row"
+          [class.down]="isKeyDown(code)"
+          [class.tested]="wasKeyTested(code)"
+          [class.space]="code === 'Space'"
+        >
+          {{ keyLabel(code) }}
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <section class="tool-panel" [class.active]="activeTab === 'mouse'">
+    <div class="panel-heading">
+      <div>
+        <h3>Prueba mouse</h3>
+        <p>Usa la zona de prueba para validar movimiento, clics, doble clic, rueda y arrastre.</p>
+      </div>
+      <button type="button" class="ghost-btn" (click)="resetMouse()">Reiniciar</button>
+    </div>
+
+    <div
+      class="mouse-zone"
+      (mousemove)="onMouseMove($event)"
+      (mousedown)="onMouseDown($event)"
+      (mouseup)="onMouseUp()"
+      (mouseleave)="onMouseUp()"
+      (wheel)="onMouseWheel($event)"
+      (dblclick)="onDoubleClick()"
+      (contextmenu)="$event.preventDefault()"
+    >
+      <div class="cursor-dot" [style.left.px]="mouseStats.x" [style.top.px]="mouseStats.y"></div>
+      <strong>{{ mouseStats.dragging ? 'Arrastrando' : 'Zona de prueba' }}</strong>
+      <span>X {{ mouseStats.x }} / Y {{ mouseStats.y }} / movimientos {{ mouseStats.moves }}</span>
+    </div>
+
+    <div class="mouse-grid">
+      <div [class.ok]="mouseStats.left"><span>Izquierdo</span><strong>{{ statusText(mouseStats.left) }}</strong></div>
+      <div [class.ok]="mouseStats.middle"><span>Medio</span><strong>{{ statusText(mouseStats.middle) }}</strong></div>
+      <div [class.ok]="mouseStats.right"><span>Derecho</span><strong>{{ statusText(mouseStats.right) }}</strong></div>
+      <div [class.ok]="mouseStats.doubleClick"><span>Doble clic</span><strong>{{ statusText(mouseStats.doubleClick) }}</strong></div>
+      <div [class.ok]="mouseStats.wheel"><span>Rueda</span><strong>{{ statusText(mouseStats.wheel) }}</strong></div>
+      <div [class.ok]="mouseStats.moves > 0"><span>Movimiento</span><strong>{{ mouseStats.moves }}</strong></div>
+    </div>
+  </section>
+</div>

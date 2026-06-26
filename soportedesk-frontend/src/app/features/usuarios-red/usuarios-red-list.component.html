@@ -30,22 +30,97 @@
     </article>
   </section>
 
-  <app-generic-table
-    [columns]="columns"
-    [data]="items"
-    [canEdit]="canWrite"
-    [initialSearch]="initialSearch"
-    extraColumnLabel="Vencimiento"
-    (searchChange)="onSearch($event)"
-    (add)="onAdd()"
-    (view)="onView($event)"
-    (edit)="onEdit($event)"
-    (delete)="onDelete($event)"
-  >
-    <ng-template #extraCell let-row>
-      <app-vencimiento-badge [fecha]="row.fechaFinContrato" />
+  <section class="network-users-panel">
+    <div class="table-toolbar">
+      <div class="search-wrap">
+        <span class="search-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        </span>
+        <input
+          type="text"
+          placeholder="Buscar usuario, nombre o dependencia..."
+          [value]="searchTerm"
+          (input)="queueSearch($any($event.target).value)"
+        />
+      </div>
+      <span class="result-count">{{ items.length }} {{ items.length === 1 ? 'registro' : 'registros' }}</span>
+      <button *ngIf="canWrite" class="add-btn" type="button" (click)="onAdd()">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Agregar
+      </button>
+    </div>
+
+    <div class="users-table-wrap" *ngIf="items.length > 0; else emptyState">
+      <table class="users-table">
+        <thead>
+          <tr>
+            <th>Usuario</th>
+            <th>Nombre</th>
+            <th>Apellidos</th>
+            <th>Dependencia</th>
+            <th>Subdependencia</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let row of items">
+            <td>
+              <div class="user-cell">
+                <strong>{{ row.usuario }}</strong>
+                <app-status-badge [label]="row.estado || 'Sin estado'" [tone]="usuarioRedEstadoTone(row.estado)" />
+              </div>
+            </td>
+            <td>{{ row.nombre }}</td>
+            <td>{{ row.apellidos }}</td>
+            <td>{{ row.dependencia.nombre }}</td>
+            <td>{{ row.subdependencia.nombre }}</td>
+            <td>
+              <div class="actions">
+                <button class="view-btn" type="button" (click)="onView(row)">Ver</button>
+                <button *ngIf="canWrite" class="edit-btn" type="button" (click)="onEdit(row)">Editar</button>
+                <button *ngIf="canWrite" class="del-btn" type="button" (click)="onDelete(row)">Eliminar</button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="users-cards">
+        <article class="user-card" *ngFor="let row of items">
+          <header>
+            <div>
+              <strong>{{ row.usuario }}</strong>
+              <span>{{ row.nombre }} {{ row.apellidos }}</span>
+            </div>
+            <app-status-badge [label]="row.estado || 'Sin estado'" [tone]="usuarioRedEstadoTone(row.estado)" />
+          </header>
+          <dl>
+            <div>
+              <dt>Dependencia</dt>
+              <dd>{{ row.dependencia.nombre }}</dd>
+            </div>
+            <div>
+              <dt>Subdependencia</dt>
+              <dd>{{ row.subdependencia.nombre }}</dd>
+            </div>
+          </dl>
+          <div class="actions">
+            <button class="view-btn" type="button" (click)="onView(row)">Ver</button>
+            <button *ngIf="canWrite" class="edit-btn" type="button" (click)="onEdit(row)">Editar</button>
+            <button *ngIf="canWrite" class="del-btn" type="button" (click)="onDelete(row)">Eliminar</button>
+          </div>
+        </article>
+      </div>
+    </div>
+
+    <ng-template #emptyState>
+      <div class="empty-state">
+        <span>Sin registros</span>
+        <p *ngIf="searchTerm.trim()">No se encontraron resultados para "{{ searchTerm }}".</p>
+        <p *ngIf="!searchTerm.trim()">Aun no hay usuarios de red registrados.</p>
+      </div>
     </ng-template>
-  </app-generic-table>
+  </section>
 </div>
 
 <app-modal title="Detalle de usuario de red" [open]="viewing !== null" (closed)="closeView()">

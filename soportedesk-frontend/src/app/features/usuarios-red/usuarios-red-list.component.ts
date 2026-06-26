@@ -2,7 +2,6 @@ import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute } from '@angular/router';
 import { AuthService } from '../../core/auth/auth.service';
-import { GenericTableComponent, TableColumn } from '../../shared/generic-table/generic-table.component';
 import { ModalComponent } from '../../shared/modal/modal.component';
 import { FieldComponent } from '../../shared/field/field.component';
 import { SectionCardComponent } from '../../shared/section-card/section-card.component';
@@ -17,7 +16,6 @@ import { UsuarioRedService } from './usuario-red.service';
   standalone: true,
   imports: [
     CommonModule,
-    GenericTableComponent,
     ModalComponent,
     FieldComponent,
     SectionCardComponent,
@@ -34,23 +32,14 @@ export class UsuariosRedListComponent implements OnInit {
   private route = inject(ActivatedRoute);
 
   items: UsuarioRed[] = [];
-  columns: TableColumn[] = [
-    { key: 'usuario', label: 'Usuario' },
-    { key: 'nombre', label: 'Nombre' },
-    { key: 'apellidos', label: 'Apellidos' },
-    { key: 'grupo', label: 'Grupo' },
-    { key: 'sede.nombre', label: 'Sede' },
-    { key: 'dependencia.nombre', label: 'Dependencia' },
-    { key: 'tipoContrato.nombre', label: 'Tipo Contrato' },
-    { key: 'fechaFinContrato', label: 'Fin Contrato' },
-    { key: 'estado', label: 'Estado' },
-  ];
   readonly usuarioRedEstadoTone = usuarioRedEstadoTone;
 
   viewing: UsuarioRed | null = null;
   editing: UsuarioRed | null = null;
   formOpen = false;
   initialSearch = '';
+  searchTerm = '';
+  private searchTimeout?: ReturnType<typeof setTimeout>;
 
   get canWrite(): boolean {
     return this.authService.canWrite('usuarios-red');
@@ -75,8 +64,10 @@ export class UsuariosRedListComponent implements OnInit {
     const search = this.route.snapshot.queryParamMap.get('search');
     if (search) {
       this.initialSearch = search;
+      this.searchTerm = search;
       this.load(search);
     } else {
+      this.initialSearch = '';
       this.load();
     }
   }
@@ -87,6 +78,12 @@ export class UsuariosRedListComponent implements OnInit {
 
   onSearch(term: string): void {
     this.load(term);
+  }
+
+  queueSearch(term: string): void {
+    this.searchTerm = term;
+    clearTimeout(this.searchTimeout);
+    this.searchTimeout = setTimeout(() => this.onSearch(term), 300);
   }
 
   onView(item: UsuarioRed): void {

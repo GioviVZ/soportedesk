@@ -7,10 +7,17 @@ export interface Licencia {
   descripcion: string;
   cuentaActivacion?: string;
   claveActivacion?: string;
+  activaciones?: LicenciaActivacion[];
   serialActivacion?: string;
   ordenCompra: string;
   anio: string;
   cantidad: number;
+}
+
+export interface LicenciaActivacion {
+  id?: number;
+  cuentaActivacion: string;
+  claveActivacion: string;
 }
 
 export interface LicenciaRequest {
@@ -19,6 +26,7 @@ export interface LicenciaRequest {
   descripcion: string;
   cuentaActivacion?: string;
   claveActivacion?: string;
+  activaciones?: LicenciaActivacion[];
   serialActivacion?: string;
   ordenCompra: string;
   anio: string;
