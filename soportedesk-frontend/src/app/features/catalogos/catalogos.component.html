@@ -50,9 +50,9 @@
     <tbody>
       <tr *ngFor="let item of dependencias">
         <td>{{ item.nombre }}</td>
-        <td>{{ item.sede?.nombre }}</td>
+        <td>{{ item.sede.nombre }}</td>
         <td>
-          <button (click)="startEdit(item.id, item.nombre, item.sede?.id)">Editar</button>
+          <button (click)="startEdit(item.id, item.nombre, item.sede.id)">Editar</button>
           <button class="danger" (click)="deleteItem('dependencias', item.id)">Eliminar</button>
         </td>
       </tr>
@@ -83,9 +83,9 @@
     <tbody>
       <tr *ngFor="let item of subdependencias">
         <td>{{ item.nombre }}</td>
-        <td>{{ item.dependencia?.nombre }}</td>
+        <td>{{ item.dependencia.nombre }}</td>
         <td>
-          <button (click)="startEdit(item.id, item.nombre, item.dependencia?.id)">Editar</button>
+          <button (click)="startEdit(item.id, item.nombre, item.dependencia.id)">Editar</button>
           <button class="danger" (click)="deleteItem('subdependencias', item.id)">Eliminar</button>
         </td>
       </tr>
