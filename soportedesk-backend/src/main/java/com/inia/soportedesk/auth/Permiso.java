@@ -25,4 +25,8 @@ public class Permiso {
 
     @Column(nullable = false, length = 50)
     private String modulo;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 10)
+    private NivelPermiso nivel = NivelPermiso.EDIT;
 }
