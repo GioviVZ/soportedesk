@@ -25,11 +25,13 @@ public class ImpresoraController {
     private final FileStorageService fileStorageService;
 
     @GetMapping
+    @PreAuthorize("hasRole('ADMIN') || hasAuthority('READ_impresoras')")
     public List<Impresora> findAll(@RequestParam(required = false) String search) {
         return service.findAll(search);
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN') || hasAuthority('READ_impresoras')")
     public Impresora findById(@PathVariable Long id) {
         return service.findById(id);
     }
@@ -64,6 +66,7 @@ public class ImpresoraController {
     }
 
     @GetMapping("/{id}/driver")
+    @PreAuthorize("hasRole('ADMIN') || hasAuthority('READ_impresoras')")
     public ResponseEntity<Resource> downloadDriver(@PathVariable Long id) {
         Impresora impresora = service.findById(id);
         if (impresora.getDriverArchivoPath() == null) {

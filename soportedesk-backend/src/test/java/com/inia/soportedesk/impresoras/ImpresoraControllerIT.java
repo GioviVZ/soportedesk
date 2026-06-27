@@ -60,14 +60,21 @@ class ImpresoraControllerIT {
     }
 
     @Test
-    @WithMockUser(roles = "SOPORTE")
-    void findAll_allowsAuthenticatedUser() throws Exception {
+    @WithMockUser(authorities = {"ROLE_SOPORTE", "READ_impresoras"})
+    void findAll_withReadAuthority_allowsUser() throws Exception {
         when(service.findAll(null)).thenReturn(List.of(sampleImpresora()));
 
         mockMvc.perform(get("/api/impresoras"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].marca", is("HP")))
                 .andExpect(jsonPath("$[0].modelo", is("M404dn")));
+    }
+
+    @Test
+    @WithMockUser(roles = "SOPORTE")
+    void findAll_withoutReadAuthority_returnsForbidden() throws Exception {
+        mockMvc.perform(get("/api/impresoras"))
+                .andExpect(status().isForbidden());
     }
 
     @Test

@@ -75,8 +75,8 @@ class ImpresoraDriverControllerIT {
     }
 
     @Test
-    @WithMockUser(roles = "SOPORTE")
-    void downloadDriver_returnsFileBytes() throws Exception {
+    @WithMockUser(authorities = {"ROLE_SOPORTE", "READ_impresoras"})
+    void downloadDriver_withReadAuthority_returnsFileBytes() throws Exception {
         Path stored = fileStorageService.load(
                 fileStorageService.store(2L, new MockMultipartFile("file", "driver-canon.zip", "application/zip", "contenido".getBytes())));
 
@@ -85,5 +85,12 @@ class ImpresoraDriverControllerIT {
         mockMvc.perform(get("/api/impresoras/2/driver"))
                 .andExpect(status().isOk())
                 .andExpect(content().bytes(Files.readAllBytes(stored)));
+    }
+
+    @Test
+    @WithMockUser(roles = "SOPORTE")
+    void downloadDriver_withoutReadAuthority_returnsForbidden() throws Exception {
+        mockMvc.perform(get("/api/impresoras/2/driver"))
+                .andExpect(status().isForbidden());
     }
 }
