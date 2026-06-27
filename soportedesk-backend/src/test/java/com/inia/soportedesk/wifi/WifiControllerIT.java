@@ -41,13 +41,20 @@ class WifiControllerIT {
     }
 
     @Test
-    @WithMockUser(roles = "SOPORTE")
-    void findAll_allowsAuthenticatedUser() throws Exception {
+    @WithMockUser(authorities = {"ROLE_SOPORTE", "READ_wifi"})
+    void findAll_withReadAuthority_allowsUser() throws Exception {
         when(service.findAll(null)).thenReturn(List.of(new Wifi(1L, "INIA-CORP", "clave-secreta", "Edificio Principal", "WPA2-Enterprise", "Activo")));
 
         mockMvc.perform(get("/api/wifi"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].ssid", is("INIA-CORP")));
+    }
+
+    @Test
+    @WithMockUser(roles = "SOPORTE")
+    void findAll_withoutReadAuthority_returnsForbidden() throws Exception {
+        mockMvc.perform(get("/api/wifi"))
+                .andExpect(status().isForbidden());
     }
 
     @Test

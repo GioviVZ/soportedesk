@@ -17,11 +17,13 @@ public class WifiController {
     private final WifiService service;
 
     @GetMapping
+    @PreAuthorize("hasRole('ADMIN') || hasAuthority('READ_wifi')")
     public List<Wifi> findAll(@RequestParam(required = false) String search) {
         return service.findAll(search);
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN') || hasAuthority('READ_wifi')")
     public Wifi findById(@PathVariable Long id) {
         return service.findById(id);
     }
