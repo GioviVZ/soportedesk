@@ -1,5 +1,7 @@
 export type Rol = 'ADMIN' | 'SOPORTE';
 
+export type NivelPermiso = 'VIEW' | 'EDIT';
+
 export interface LoginRequest {
   username: string;
   password: string;
@@ -10,5 +12,5 @@ export interface AuthResponse {
   username: string;
   nombre: string;
   rol: Rol;
-  permisos: string[];
+  permisos: Record<string, NivelPermiso>;
 }

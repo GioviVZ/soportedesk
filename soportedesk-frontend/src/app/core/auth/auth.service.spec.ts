@@ -12,7 +12,7 @@ describe('AuthService', () => {
     username: 'admin',
     nombre: 'Administrador',
     rol: 'ADMIN',
-    permisos: [],
+    permisos: {},
   };
 
   beforeEach(() => {
