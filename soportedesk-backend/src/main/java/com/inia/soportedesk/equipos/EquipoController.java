@@ -17,16 +17,19 @@ public class EquipoController {
     private final EquipoService service;
 
     @GetMapping
+    @PreAuthorize("hasRole('ADMIN') || hasAuthority('READ_equipos')")
     public List<Equipo> findAll(@RequestParam(required = false) String search) {
         return service.findAll(search);
     }
 
     @GetMapping("/con-red")
+    @PreAuthorize("hasRole('ADMIN') || hasAuthority('READ_equipos')")
     public List<Equipo> findConRed() {
         return service.findConRed();
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN') || hasAuthority('READ_equipos')")
     public Equipo findById(@PathVariable Long id) {
         return service.findById(id);
     }

@@ -54,13 +54,20 @@ class EquipoControllerIT {
     }
 
     @Test
-    @WithMockUser(roles = "SOPORTE")
-    void findAll_allowsAuthenticatedUser() throws Exception {
+    @WithMockUser(authorities = {"ROLE_SOPORTE", "READ_equipos"})
+    void findAll_withReadAuthority_allowsUser() throws Exception {
         when(service.findAll(null)).thenReturn(List.of(sampleEquipo()));
 
         mockMvc.perform(get("/api/equipos"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].numeroSerie", is("SN-2024-001")));
+    }
+
+    @Test
+    @WithMockUser(roles = "SOPORTE")
+    void findAll_withoutReadAuthority_returnsForbidden() throws Exception {
+        mockMvc.perform(get("/api/equipos"))
+                .andExpect(status().isForbidden());
     }
 
     @Test
