@@ -3,7 +3,7 @@ package com.inia.soportedesk.auth;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
-import java.util.List;
+import java.util.Map;
 
 @Getter
 @AllArgsConstructor
@@ -12,5 +12,5 @@ public class AuthResponse {
     private String username;
     private String nombre;
     private String rol;
-    private List<String> permisos;
+    private Map<String, String> permisos;
 }

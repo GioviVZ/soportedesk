@@ -16,10 +16,13 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -63,7 +66,7 @@ class AuthControllerTest {
         usuario.setRol(Rol.ADMIN);
         usuario.setActivo(true);
 
-        when(authentication.getName()).thenReturn("admin");
+        org.mockito.Mockito.lenient().when(authentication.getName()).thenReturn("admin");
         SecurityContextHolder.getContext().setAuthentication(authentication);
     }
 
@@ -102,5 +105,40 @@ class AuthControllerTest {
                 .isInstanceOf(BadCredentialsException.class);
 
         verify(usuarioRepository, never()).save(usuario);
+    }
+
+    @Test
+    void login_returnsPermisosAsModuloNivelMap() {
+        Usuario soporte = new Usuario();
+        soporte.setId(2L);
+        soporte.setUsername("soporte01");
+        soporte.setPasswordHash("hash");
+        soporte.setNombre("Soporte Uno");
+        soporte.setRol(Rol.SOPORTE);
+        soporte.setActivo(true);
+
+        Permiso editLicencias = new Permiso();
+        editLicencias.setUsuario(soporte);
+        editLicencias.setModulo("licencias");
+        editLicencias.setNivel(NivelPermiso.EDIT);
+
+        Permiso viewAuditoria = new Permiso();
+        viewAuditoria.setUsuario(soporte);
+        viewAuditoria.setModulo("auditoria");
+        viewAuditoria.setNivel(NivelPermiso.VIEW);
+
+        when(usuarioRepository.findByUsername("soporte01")).thenReturn(Optional.of(soporte));
+        when(permisoRepository.findByUsuario(soporte)).thenReturn(List.of(editLicencias, viewAuditoria));
+        when(jwtService.generateToken(eq("soporte01"), eq("SOPORTE"), any())).thenReturn("fake-token");
+
+        LoginRequest request = new LoginRequest();
+        request.setUsername("soporte01");
+        request.setPassword("secret");
+
+        ResponseEntity<?> response = controller.login(request);
+
+        AuthResponse body = (AuthResponse) response.getBody();
+        assertThat(body.getPermisos()).containsEntry("licencias", "EDIT");
+        assertThat(body.getPermisos()).containsEntry("auditoria", "VIEW");
     }
 }

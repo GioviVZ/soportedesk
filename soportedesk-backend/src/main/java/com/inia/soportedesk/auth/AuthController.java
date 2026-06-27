@@ -15,8 +15,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 import jakarta.validation.Valid;
-import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -54,9 +54,8 @@ public class AuthController {
         Usuario usuario = usuarioRepository.findByUsername(request.getUsername())
                 .orElseThrow(() -> new IllegalStateException("Usuario autenticado no encontrado en BD"));
 
-        List<String> permisos = permisoRepository.findByUsuario(usuario).stream()
-                .map(Permiso::getModulo)
-                .toList();
+        Map<String, String> permisos = permisoRepository.findByUsuario(usuario).stream()
+                .collect(Collectors.toMap(Permiso::getModulo, p -> p.getNivel().name()));
 
         String token = jwtService.generateToken(usuario.getUsername(), usuario.getRol().name(), permisos);
         auditoriaService.registrar(
@@ -80,9 +79,8 @@ public class AuthController {
         Usuario usuario = usuarioRepository.findByUsername(authentication.getName())
                 .orElseThrow(() -> new ResourceNotFoundException("Usuario autenticado no encontrado en BD"));
 
-        List<String> permisos = permisoRepository.findByUsuario(usuario).stream()
-                .map(Permiso::getModulo)
-                .toList();
+        Map<String, String> permisos = permisoRepository.findByUsuario(usuario).stream()
+                .collect(Collectors.toMap(Permiso::getModulo, p -> p.getNivel().name()));
 
         return ResponseEntity.ok(new AuthResponse(null, usuario.getUsername(), usuario.getNombre(), usuario.getRol().name(), permisos));
     }
