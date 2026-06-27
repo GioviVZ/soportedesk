@@ -22,6 +22,7 @@ const SVG_ICONS: Record<string, string> = {
   wifi: `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg>`,
   printer: `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>`,
   monitor: `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>`,
+  server: `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="6" rx="2"/><rect x="3" y="14" width="18" height="6" rx="2"/><path d="M7 7h.01"/><path d="M7 17h.01"/><path d="M11 7h6"/><path d="M11 17h6"/></svg>`,
   grid: `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>`,
   shield: `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>`,
   activity: `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>`,
@@ -55,15 +56,16 @@ export class SidebarComponent {
 
     this.navItems = [
       { path: '/dashboard', label: 'Dashboard', icon: s.bypassSecurityTrustHtml(SVG_ICONS['home']) },
-      { path: '/usuarios-red', label: 'Usuarios de Red/AD', icon: s.bypassSecurityTrustHtml(SVG_ICONS['users']) },
-      { path: '/correos', label: 'Correos Institucionales', icon: s.bypassSecurityTrustHtml(SVG_ICONS['mail']) },
-      { path: '/equipos', label: 'Equipos Asignados', icon: s.bypassSecurityTrustHtml(SVG_ICONS['monitor']) },
-      { path: '/vpn', label: 'VPN', icon: s.bypassSecurityTrustHtml(SVG_ICONS['lock']) },
-      { path: '/impresoras', label: 'Impresoras', icon: s.bypassSecurityTrustHtml(SVG_ICONS['printer']) },
-      { path: '/wifi', label: 'Claves WiFi', icon: s.bypassSecurityTrustHtml(SVG_ICONS['wifi']) },
-      { path: '/licencias', label: 'Licencias', icon: s.bypassSecurityTrustHtml(SVG_ICONS['key']) },
+      { path: '/usuarios-red', label: 'Usuarios de Red/AD', icon: s.bypassSecurityTrustHtml(SVG_ICONS['users']), permission: 'usuarios-red' },
+      { path: '/correos', label: 'Correos Institucionales', icon: s.bypassSecurityTrustHtml(SVG_ICONS['mail']), permission: 'correos' },
+      { path: '/equipos', label: 'Equipos Asignados', icon: s.bypassSecurityTrustHtml(SVG_ICONS['monitor']), permission: 'equipos' },
+      { path: '/vpn', label: 'VPN', icon: s.bypassSecurityTrustHtml(SVG_ICONS['lock']), permission: 'vpn' },
+      { path: '/impresoras', label: 'Impresoras', icon: s.bypassSecurityTrustHtml(SVG_ICONS['printer']), permission: 'impresoras' },
+      { path: '/wifi', label: 'Claves WiFi', icon: s.bypassSecurityTrustHtml(SVG_ICONS['wifi']), permission: 'wifi' },
+      { path: '/licencias', label: 'Licencias', icon: s.bypassSecurityTrustHtml(SVG_ICONS['key']), permission: 'licencias' },
       { path: '/auditoria', label: 'Movimientos', icon: s.bypassSecurityTrustHtml(SVG_ICONS['activity']), permission: 'auditoria' },
       { path: '/herramientas', label: 'Herramientas', icon: s.bypassSecurityTrustHtml(SVG_ICONS['wrench']), permission: 'herramientas' },
+      { path: '/inventario-equipos', label: 'Inventario AD', icon: s.bypassSecurityTrustHtml(SVG_ICONS['server']), permission: 'inventario-equipos' },
       { path: '/usuarios-sistema', label: 'Usuarios del Sistema', icon: s.bypassSecurityTrustHtml(SVG_ICONS['shield']), adminOnly: true },
       { path: '/catalogos', label: 'Catalogos', icon: s.bypassSecurityTrustHtml(SVG_ICONS['grid']), adminOnly: true },
     ];
@@ -74,7 +76,7 @@ export class SidebarComponent {
       return this.authService.isAdmin();
     }
     if (item.permission) {
-      return this.authService.isAdmin() || this.authService.canWrite(item.permission);
+      return this.authService.isAdmin() || this.authService.canRead(item.permission);
     }
     return true;
   }
