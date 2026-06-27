@@ -6,9 +6,9 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Set;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -68,34 +68,41 @@ public class UsuarioSistemaService {
         usuarioRepository.delete(u);
     }
 
-    private void setPermisos(Usuario u, List<String> modulos) {
+    private void setPermisos(Usuario u, Map<String, String> permisos) {
         permisoRepository.deleteByUsuario(u);
         permisoRepository.flush();
 
-        for (String modulo : normalizePermisos(modulos)) {
+        if (permisos == null) {
+            return;
+        }
+        for (Map.Entry<String, String> entry : permisos.entrySet()) {
+            String modulo = entry.getKey();
+            if (modulo == null || modulo.isBlank() || !Modulos.VALIDOS.contains(modulo)) {
+                throw new IllegalArgumentException("Modulo de permiso invalido: " + modulo);
+            }
+            NivelPermiso nivel = Modulos.SOLO_VISTA.contains(modulo)
+                    ? NivelPermiso.VIEW
+                    : parseNivel(entry.getValue());
+
             Permiso p = new Permiso();
             p.setUsuario(u);
             p.setModulo(modulo);
+            p.setNivel(nivel);
             permisoRepository.save(p);
         }
     }
 
-    private Set<String> normalizePermisos(List<String> modulos) {
-        Set<String> normalized = new LinkedHashSet<>();
-        if (modulos == null) {
-            return normalized;
+    private NivelPermiso parseNivel(String value) {
+        try {
+            return NivelPermiso.valueOf(value);
+        } catch (IllegalArgumentException | NullPointerException ex) {
+            throw new IllegalArgumentException("Nivel de permiso invalido: " + value);
         }
-        modulos.stream()
-                .filter(modulo -> modulo != null && !modulo.isBlank())
-                .map(String::trim)
-                .forEach(normalized::add);
-        return normalized;
     }
 
     private UsuarioSistemaResponse toResponse(Usuario u) {
-        List<String> permisos = permisoRepository.findByUsuario(u).stream()
-                .map(Permiso::getModulo)
-                .toList();
+        Map<String, String> permisos = permisoRepository.findByUsuario(u).stream()
+                .collect(Collectors.toMap(Permiso::getModulo, p -> p.getNivel().name()));
         return new UsuarioSistemaResponse(u.getId(), u.getUsername(), u.getNombre(),
                 u.getRol().name(), u.isActivo(), permisos);
     }

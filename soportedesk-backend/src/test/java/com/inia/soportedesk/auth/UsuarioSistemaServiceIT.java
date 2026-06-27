@@ -5,7 +5,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
-import java.util.List;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -34,7 +34,7 @@ class UsuarioSistemaServiceIT {
         create.setNombre("Soporte Uno");
         create.setPassword("secret123");
         create.setActivo(true);
-        create.setPermisos(List.of("vpn"));
+        create.setPermisos(Map.of("vpn", "EDIT"));
 
         UsuarioSistemaResponse created = service.create(create);
 
@@ -42,11 +42,12 @@ class UsuarioSistemaServiceIT {
         update.setUsername("soporte01");
         update.setNombre("Soporte Uno");
         update.setActivo(true);
-        update.setPermisos(List.of("vpn", "auditoria"));
+        update.setPermisos(Map.of("vpn", "VIEW", "auditoria", "EDIT"));
 
         UsuarioSistemaResponse updated = service.update(created.getId(), update);
 
-        assertThat(updated.getPermisos()).containsExactlyInAnyOrder("vpn", "auditoria");
+        assertThat(updated.getPermisos()).containsEntry("vpn", "VIEW");
+        assertThat(updated.getPermisos()).containsEntry("auditoria", "VIEW");
         Usuario usuario = usuarioRepository.findByUsername("soporte01").orElseThrow();
         assertThat(permisoRepository.findByUsuario(usuario))
                 .extracting(Permiso::getModulo)

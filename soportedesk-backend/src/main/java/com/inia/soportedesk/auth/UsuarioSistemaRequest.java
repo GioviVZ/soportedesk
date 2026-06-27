@@ -4,7 +4,7 @@ import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.util.List;
+import java.util.Map;
 
 @Getter
 @Setter
@@ -20,5 +20,5 @@ public class UsuarioSistemaRequest {
 
     private boolean activo = true;
 
-    private List<String> permisos;
+    private Map<String, String> permisos;
 }
