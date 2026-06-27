@@ -52,6 +52,29 @@ describe('AuthService', () => {
     expect(service.isLoggedIn()).toBe(false);
   });
 
+  it('canRead returns true when the module has any nivel assigned', () => {
+    localStorage.setItem('rol', 'SOPORTE');
+    localStorage.setItem('permisos', JSON.stringify({ licencias: 'VIEW' }));
+
+    expect(service.canRead('licencias')).toBe(true);
+    expect(service.canRead('vpn')).toBe(false);
+  });
+
+  it('canWrite returns true only when nivel is EDIT', () => {
+    localStorage.setItem('rol', 'SOPORTE');
+    localStorage.setItem('permisos', JSON.stringify({ licencias: 'VIEW', vpn: 'EDIT' }));
+
+    expect(service.canWrite('licencias')).toBe(false);
+    expect(service.canWrite('vpn')).toBe(true);
+  });
+
+  it('canRead and canWrite return true for admin regardless of permisos', () => {
+    localStorage.setItem('rol', 'ADMIN');
+
+    expect(service.canRead('licencias')).toBe(true);
+    expect(service.canWrite('licencias')).toBe(true);
+  });
+
   it('cambiarPassword posts current and new password', () => {
     service.cambiarPassword('old123', 'newpass1').subscribe();
 

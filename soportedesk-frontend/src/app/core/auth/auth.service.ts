@@ -2,7 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, tap } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { AuthResponse, LoginRequest, Rol } from '../models/auth.model';
+import { AuthResponse, LoginRequest, NivelPermiso, Rol } from '../models/auth.model';
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
@@ -16,7 +16,7 @@ export class AuthService {
         localStorage.setItem('rol', response.rol);
         localStorage.setItem('username', response.username);
         localStorage.setItem('nombre', response.nombre);
-        localStorage.setItem('permisos', JSON.stringify(response.permisos ?? []));
+        localStorage.setItem('permisos', JSON.stringify(response.permisos ?? {}));
       })
     );
   }
@@ -53,16 +53,21 @@ export class AuthService {
     return this.getRole() === 'ADMIN';
   }
 
-  getPermisos(): string[] {
+  getPermisos(): Record<string, NivelPermiso> {
     try {
-      return JSON.parse(localStorage.getItem('permisos') ?? '[]');
+      return JSON.parse(localStorage.getItem('permisos') ?? '{}');
     } catch {
-      return [];
+      return {};
     }
+  }
+
+  canRead(modulo: string): boolean {
+    if (this.isAdmin()) return true;
+    return modulo in this.getPermisos();
   }
 
   canWrite(modulo: string): boolean {
     if (this.isAdmin()) return true;
-    return this.getPermisos().includes(modulo);
+    return this.getPermisos()[modulo] === 'EDIT';
   }
 }
