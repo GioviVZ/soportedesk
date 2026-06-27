@@ -15,7 +15,7 @@ describe('UsuariosSistemaComponent', () => {
     nombre: 'Soporte Uno',
     rol: 'SOPORTE',
     activo: true,
-    permisos: ['vpn'],
+    permisos: { vpn: 'EDIT' },
   };
 
   beforeEach(() => {
@@ -26,7 +26,7 @@ describe('UsuariosSistemaComponent', () => {
       'delete',
     ]);
     service.getAll.and.returnValue(of([usuario]));
-    service.update.and.returnValue(of({ ...usuario, permisos: ['vpn', 'auditoria'] }));
+    service.update.and.returnValue(of({ ...usuario, permisos: { vpn: 'EDIT', auditoria: 'VIEW' } }));
 
     TestBed.configureTestingModule({
       imports: [UsuariosSistemaComponent],
@@ -58,7 +58,52 @@ describe('UsuariosSistemaComponent', () => {
     saveButton!.triggerEventHandler('click');
 
     const request = service.update.calls.mostRecent().args[1] as UsuarioSistemaRequest;
-    expect(service.update).toHaveBeenCalledWith(7, jasmine.objectContaining({ permisos: ['vpn', 'auditoria'] }));
-    expect(request.permisos).toContain('auditoria');
+    expect(service.update).toHaveBeenCalledWith(
+      7,
+      jasmine.objectContaining({ permisos: jasmine.objectContaining({ vpn: 'EDIT', auditoria: 'VIEW' }) }),
+    );
+    expect(request.permisos['auditoria']).toBe('VIEW');
+  });
+
+  it('permite asignar nivel de edicion a un modulo mediante el selector de 3 opciones', () => {
+    const editButton = fixture.debugElement.query(By.css('.edit-btn'));
+    editButton.triggerEventHandler('click');
+    fixture.detectChanges();
+
+    const editRadio = fixture.debugElement.query(By.css('input[data-modulo="licencias"][data-nivel="EDIT"]'));
+    expect(editRadio).toBeTruthy();
+    editRadio.nativeElement.checked = true;
+    editRadio.triggerEventHandler('change');
+    fixture.detectChanges();
+
+    const saveButton = fixture.debugElement
+      .queryAll(By.css('.form-actions button'))
+      .find((button) => button.nativeElement.textContent.includes('Guardar'));
+    saveButton!.triggerEventHandler('click');
+
+    expect(service.update).toHaveBeenCalledWith(
+      7,
+      jasmine.objectContaining({ permisos: jasmine.objectContaining({ licencias: 'EDIT' }) }),
+    );
+  });
+
+  it('quitar el nivel de un modulo de edicion elimina la clave del mapa de permisos', () => {
+    const editButton = fixture.debugElement.query(By.css('.edit-btn'));
+    editButton.triggerEventHandler('click');
+    fixture.detectChanges();
+
+    const sinAccesoRadio = fixture.debugElement.query(By.css('input[data-modulo="vpn"][data-nivel="NONE"]'));
+    expect(sinAccesoRadio).toBeTruthy();
+    sinAccesoRadio.nativeElement.checked = true;
+    sinAccesoRadio.triggerEventHandler('change');
+    fixture.detectChanges();
+
+    const saveButton = fixture.debugElement
+      .queryAll(By.css('.form-actions button'))
+      .find((button) => button.nativeElement.textContent.includes('Guardar'));
+    saveButton!.triggerEventHandler('click');
+
+    const request = service.update.calls.mostRecent().args[1] as UsuarioSistemaRequest;
+    expect(request.permisos['vpn']).toBeUndefined();
   });
 });

@@ -32,11 +32,13 @@
         </td>
         <td>
           <div class="permisos-tags">
-            <ng-container *ngIf="u.permisos.length > 0; else sinPermisos">
-              <span class="tag" *ngFor="let p of u.permisos">{{ moduloLabel(p) }}</span>
+            <ng-container *ngIf="permisoKeys(u.permisos).length > 0; else sinPermisos">
+              <span class="tag" *ngFor="let p of permisoKeys(u.permisos)" [class.tag--view]="u.permisos[p] === 'VIEW'">
+                {{ moduloLabel(p) }} <small>{{ u.permisos[p] === 'EDIT' ? 'Edicion' : 'Vista' }}</small>
+              </span>
             </ng-container>
             <ng-template #sinPermisos>
-              <span class="sin-permisos">Solo lectura</span>
+              <span class="sin-permisos">Sin modulos asignados</span>
             </ng-template>
           </div>
         </td>
@@ -84,11 +86,27 @@
 
       <div class="permisos-subsection">
         <span class="permisos-subtitle">Permisos de edicion</span>
-        <div class="permisos-grid">
-          <label class="permiso-check" *ngFor="let m of modulosEdicion">
-            <input type="checkbox" [checked]="hasPermiso(m.key)" (change)="togglePermiso(m.key)" />
-            <span>{{ m.label }}</span>
-          </label>
+        <div class="permisos-rows">
+          <div class="permiso-row" *ngFor="let m of modulosEdicion">
+            <span class="permiso-label">{{ m.label }}</span>
+            <div class="nivel-options">
+              <label class="nivel-option">
+                <input type="radio" [attr.data-modulo]="m.key" data-nivel="NONE"
+                       [checked]="nivelDe(m.key) === null" (change)="setNivel(m.key, null)" />
+                <span>Sin acceso</span>
+              </label>
+              <label class="nivel-option">
+                <input type="radio" [attr.data-modulo]="m.key" data-nivel="VIEW"
+                       [checked]="nivelDe(m.key) === 'VIEW'" (change)="setNivel(m.key, 'VIEW')" />
+                <span>Vista</span>
+              </label>
+              <label class="nivel-option">
+                <input type="radio" [attr.data-modulo]="m.key" data-nivel="EDIT"
+                       [checked]="nivelDe(m.key) === 'EDIT'" (change)="setNivel(m.key, 'EDIT')" />
+                <span>Edicion</span>
+              </label>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -96,7 +114,7 @@
         <span class="permisos-subtitle">Permisos de vista</span>
         <div class="permisos-grid permisos-grid--view">
           <label class="permiso-check permiso-check--featured" *ngFor="let m of modulosVista">
-            <input type="checkbox" [checked]="hasPermiso(m.key)" (change)="togglePermiso(m.key)" />
+            <input type="checkbox" [checked]="hasVista(m.key)" (change)="toggleVista(m.key)" />
             <span>
               {{ m.label }}
               <small *ngIf="m.description">{{ m.description }}</small>

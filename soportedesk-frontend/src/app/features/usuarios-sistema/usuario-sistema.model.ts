@@ -4,7 +4,7 @@ export interface UsuarioSistema {
   nombre: string;
   rol: string;
   activo: boolean;
-  permisos: string[];
+  permisos: Record<string, NivelPermiso>;
 }
 
 export interface UsuarioSistemaRequest {
@@ -12,8 +12,10 @@ export interface UsuarioSistemaRequest {
   nombre: string;
   password?: string;
   activo: boolean;
-  permisos: string[];
+  permisos: Record<string, NivelPermiso>;
 }
+
+export type NivelPermiso = 'VIEW' | 'EDIT';
 
 export type PermisoKind = 'write' | 'view';
 
@@ -44,5 +46,11 @@ export const MODULOS: ModuloPermiso[] = [
     label: 'Herramientas',
     kind: 'view',
     description: 'Permite usar ping, inventario, GPU, RAM, teclado y mouse.',
+  },
+  {
+    key: 'inventario-equipos',
+    label: 'Inventario AD',
+    kind: 'view',
+    description: 'Permite revisar los equipos reportados por el agente y su estado de enlace.',
   },
 ];

@@ -2,7 +2,7 @@ import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ModalComponent } from '../../shared/modal/modal.component';
-import { MODULOS, UsuarioSistema, UsuarioSistemaRequest } from './usuario-sistema.model';
+import { MODULOS, NivelPermiso, UsuarioSistema, UsuarioSistemaRequest } from './usuario-sistema.model';
 import { UsuarioSistemaService } from './usuario-sistema.service';
 
 @Component({
@@ -46,7 +46,7 @@ export class UsuariosSistemaComponent implements OnInit {
       nombre: u.nombre,
       password: '',
       activo: u.activo,
-      permisos: [...u.permisos],
+      permisos: { ...u.permisos },
     };
     this.formOpen = true;
   }
@@ -55,17 +55,32 @@ export class UsuariosSistemaComponent implements OnInit {
     this.formOpen = false;
   }
 
-  togglePermiso(key: string): void {
-    const idx = this.form.permisos.indexOf(key);
-    if (idx >= 0) {
-      this.form.permisos.splice(idx, 1);
+  nivelDe(key: string): NivelPermiso | null {
+    return this.form.permisos[key] ?? null;
+  }
+
+  setNivel(key: string, nivel: NivelPermiso | null): void {
+    if (nivel === null) {
+      delete this.form.permisos[key];
     } else {
-      this.form.permisos.push(key);
+      this.form.permisos[key] = nivel;
     }
   }
 
-  hasPermiso(key: string): boolean {
-    return this.form.permisos.includes(key);
+  hasVista(key: string): boolean {
+    return key in this.form.permisos;
+  }
+
+  toggleVista(key: string): void {
+    if (this.hasVista(key)) {
+      delete this.form.permisos[key];
+    } else {
+      this.form.permisos[key] = 'VIEW';
+    }
+  }
+
+  permisoKeys(permisos: Record<string, NivelPermiso>): string[] {
+    return Object.keys(permisos);
   }
 
   moduloLabel(key: string): string {
@@ -91,6 +106,6 @@ export class UsuariosSistemaComponent implements OnInit {
   }
 
   private emptyForm(): UsuarioSistemaRequest {
-    return { username: '', nombre: '', password: '', activo: true, permisos: [] };
+    return { username: '', nombre: '', password: '', activo: true, permisos: {} };
   }
 }
