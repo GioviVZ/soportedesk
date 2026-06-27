@@ -17,11 +17,13 @@ public class UsuarioRedController {
     private final UsuarioRedService service;
 
     @GetMapping
+    @PreAuthorize("hasRole('ADMIN') || hasAuthority('READ_usuarios-red')")
     public List<UsuarioRed> findAll(@RequestParam(required = false) String search) {
         return service.findAll(search);
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN') || hasAuthority('READ_usuarios-red')")
     public UsuarioRed findById(@PathVariable Long id) {
         return service.findById(id);
     }

@@ -74,14 +74,21 @@ class UsuarioRedControllerIT {
     }
 
     @Test
-    @WithMockUser(roles = "SOPORTE")
-    void findAll_allowsAuthenticatedUser() throws Exception {
+    @WithMockUser(authorities = {"ROLE_SOPORTE", "READ_usuarios-red"})
+    void findAll_withReadAuthority_allowsUser() throws Exception {
         UsuarioRed usuario = sampleUsuarioRed();
         when(service.findAll(null)).thenReturn(List.of(usuario));
 
         mockMvc.perform(get("/api/usuarios-red"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].usuario", is("jperez")));
+    }
+
+    @Test
+    @WithMockUser(roles = "SOPORTE")
+    void findAll_withoutReadAuthority_returnsForbidden() throws Exception {
+        mockMvc.perform(get("/api/usuarios-red"))
+                .andExpect(status().isForbidden());
     }
 
     @Test
