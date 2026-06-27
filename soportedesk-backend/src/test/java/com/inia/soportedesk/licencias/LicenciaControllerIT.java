@@ -74,8 +74,8 @@ class LicenciaControllerIT {
     }
 
     @Test
-    @WithMockUser(roles = "SOPORTE")
-    void findAll_allowsAuthenticatedUser() throws Exception {
+    @WithMockUser(authorities = {"ROLE_SOPORTE", "READ_licencias"})
+    void findAll_withReadAuthority_allowsUser() throws Exception {
         when(service.findAll(null)).thenReturn(List.of(sampleLicencia()));
 
         mockMvc.perform(get("/api/licencias"))
@@ -83,6 +83,13 @@ class LicenciaControllerIT {
                 .andExpect(jsonPath("$[0].descripcion", is("Office 2024 Profesional Home and Business")))
                 .andExpect(jsonPath("$[0].tipoLicencia.nombre", is("Ofimática")))
                 .andExpect(jsonPath("$[0].tipoBien.nombre", is("Intangible")));
+    }
+
+    @Test
+    @WithMockUser(roles = "SOPORTE")
+    void findAll_withoutReadAuthority_returnsForbidden() throws Exception {
+        mockMvc.perform(get("/api/licencias"))
+                .andExpect(status().isForbidden());
     }
 
     @Test

@@ -17,11 +17,13 @@ public class LicenciaController {
     private final LicenciaService service;
 
     @GetMapping
+    @PreAuthorize("hasRole('ADMIN') || hasAuthority('READ_licencias')")
     public List<Licencia> findAll(@RequestParam(required = false) String search) {
         return service.findAll(search);
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN') || hasAuthority('READ_licencias')")
     public Licencia findById(@PathVariable Long id) {
         return service.findById(id);
     }
