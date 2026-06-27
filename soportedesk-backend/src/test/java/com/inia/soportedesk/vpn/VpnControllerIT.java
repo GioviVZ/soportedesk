@@ -14,6 +14,8 @@ import java.util.List;
 
 import static org.hamcrest.Matchers.is;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -63,6 +65,44 @@ class VpnControllerIT {
     void findAll_withoutReadAuthority_returnsForbidden() throws Exception {
         mockMvc.perform(get("/api/vpn"))
                 .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @WithMockUser(authorities = {"ROLE_SOPORTE", "READ_vpn"})
+    void findAll_withoutCredencialesAuthority_masksCredentials() throws Exception {
+        Vpn vpn = sampleVpn();
+        vpn.setUsuarioVpn("vpnuser1");
+        vpn.setCredencialVpn("supersecret");
+        when(service.findAll(null)).thenReturn(List.of(vpn));
+        // service is a @MockBean, so the real VpnService.maskCredencialesIfNeeded
+        // (covered by VpnServiceTest) never runs here; simulate its effect so this
+        // test can verify the controller actually wires the call through.
+        doAnswer(invocation -> {
+            List<Vpn> vpns = invocation.getArgument(0);
+            vpns.forEach(v -> {
+                v.setUsuarioVpn(null);
+                v.setCredencialVpn(null);
+            });
+            return null;
+        }).when(service).maskCredencialesIfNeeded(anyList(), any());
+
+        mockMvc.perform(get("/api/vpn"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].usuarioVpn", org.hamcrest.Matchers.nullValue()))
+                .andExpect(jsonPath("$[0].credencialVpn", org.hamcrest.Matchers.nullValue()));
+    }
+
+    @Test
+    @WithMockUser(authorities = {"ROLE_SOPORTE", "READ_vpn", "READ_credenciales-vpn"})
+    void findAll_withCredencialesAuthority_keepsCredentials() throws Exception {
+        Vpn vpn = sampleVpn();
+        vpn.setUsuarioVpn("vpnuser1");
+        vpn.setCredencialVpn("supersecret");
+        when(service.findAll(null)).thenReturn(List.of(vpn));
+
+        mockMvc.perform(get("/api/vpn"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].usuarioVpn", is("vpnuser1")));
     }
 
     @Test

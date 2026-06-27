@@ -86,4 +86,21 @@ public class VpnService {
                 a.getAuthority().equals("ROLE_ADMIN") ||
                 a.getAuthority().equals("WRITE_credenciales-vpn"));
     }
+
+    public void maskCredencialesIfNeeded(Vpn vpn, Authentication auth) {
+        if (!canViewCredenciales(auth)) {
+            vpn.setUsuarioVpn(null);
+            vpn.setCredencialVpn(null);
+        }
+    }
+
+    public void maskCredencialesIfNeeded(List<Vpn> vpns, Authentication auth) {
+        vpns.forEach(vpn -> maskCredencialesIfNeeded(vpn, auth));
+    }
+
+    private boolean canViewCredenciales(Authentication auth) {
+        return auth.getAuthorities().stream().anyMatch(a ->
+                a.getAuthority().equals("ROLE_ADMIN") ||
+                a.getAuthority().equals("READ_credenciales-vpn"));
+    }
 }

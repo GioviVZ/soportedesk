@@ -93,4 +93,55 @@ class VpnServiceTest {
 
         verify(repository).delete(existing);
     }
+
+    @Test
+    void maskCredencialesIfNeeded_withoutReadAuthority_nullsOutCredentials() {
+        Vpn vpn = new Vpn();
+        vpn.setUsuarioVpn("vpnuser1");
+        vpn.setCredencialVpn("supersecret");
+
+        Authentication auth = org.mockito.Mockito.mock(Authentication.class);
+        java.util.List<org.springframework.security.core.GrantedAuthority> authorities = java.util.List.of(
+                new org.springframework.security.core.authority.SimpleGrantedAuthority("ROLE_SOPORTE"));
+        org.mockito.Mockito.doReturn(authorities).when(auth).getAuthorities();
+
+        service.maskCredencialesIfNeeded(vpn, auth);
+
+        assertThat(vpn.getUsuarioVpn()).isNull();
+        assertThat(vpn.getCredencialVpn()).isNull();
+    }
+
+    @Test
+    void maskCredencialesIfNeeded_withReadAuthority_keepsCredentials() {
+        Vpn vpn = new Vpn();
+        vpn.setUsuarioVpn("vpnuser1");
+        vpn.setCredencialVpn("supersecret");
+
+        Authentication auth = org.mockito.Mockito.mock(Authentication.class);
+        java.util.List<org.springframework.security.core.GrantedAuthority> authorities = java.util.List.of(
+                new org.springframework.security.core.authority.SimpleGrantedAuthority("ROLE_SOPORTE"),
+                new org.springframework.security.core.authority.SimpleGrantedAuthority("READ_credenciales-vpn"));
+        org.mockito.Mockito.doReturn(authorities).when(auth).getAuthorities();
+
+        service.maskCredencialesIfNeeded(vpn, auth);
+
+        assertThat(vpn.getUsuarioVpn()).isEqualTo("vpnuser1");
+        assertThat(vpn.getCredencialVpn()).isEqualTo("supersecret");
+    }
+
+    @Test
+    void maskCredencialesIfNeeded_withAdminRole_keepsCredentials() {
+        Vpn vpn = new Vpn();
+        vpn.setUsuarioVpn("vpnuser1");
+        vpn.setCredencialVpn("supersecret");
+
+        Authentication auth = org.mockito.Mockito.mock(Authentication.class);
+        java.util.List<org.springframework.security.core.GrantedAuthority> authorities = java.util.List.of(
+                new org.springframework.security.core.authority.SimpleGrantedAuthority("ROLE_ADMIN"));
+        org.mockito.Mockito.doReturn(authorities).when(auth).getAuthorities();
+
+        service.maskCredencialesIfNeeded(vpn, auth);
+
+        assertThat(vpn.getUsuarioVpn()).isEqualTo("vpnuser1");
+    }
 }
