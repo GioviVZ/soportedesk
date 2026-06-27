@@ -310,6 +310,41 @@ button:disabled {
   }
 }
 
+.level-meter {
+  display: grid;
+  grid-template-columns: 60px minmax(0, 1fr) 50px;
+  align-items: center;
+  gap: 10px;
+  margin: 14px 0;
+
+  span {
+    color: var(--color-text-secondary);
+    font-size: 12px;
+    font-weight: 800;
+  }
+
+  strong {
+    color: var(--color-text);
+    text-align: right;
+  }
+
+  i {
+    display: block;
+    height: 10px;
+    overflow: hidden;
+    border-radius: 999px;
+    background: #dbe3ea;
+  }
+
+  b {
+    display: block;
+    height: 100%;
+    border-radius: inherit;
+    background: var(--color-accent);
+    transition: width .1s linear;
+  }
+}
+
 .keyboard-summary {
   display: flex;
   justify-content: space-between;

@@ -13,7 +13,7 @@ import * as THREE from 'three';
 import { PingResult } from './herramientas.model';
 import { HerramientasService } from './herramientas.service';
 
-type ToolTab = 'ping' | 'gpu' | 'ram' | 'teclado' | 'mouse';
+type ToolTab = 'ping' | 'gpu' | 'ram' | 'teclado' | 'mouse' | 'microfono';
 type TestState = 'idle' | 'running' | 'done' | 'error';
 
 interface ToolTabItem {
@@ -72,6 +72,13 @@ interface MouseStats {
   y: number;
 }
 
+interface MicStats {
+  status: TestState;
+  level: number;
+  peakLevel: number;
+  message: string;
+}
+
 const KEY_ROWS = [
   ['Escape', 'F1', 'F2', 'F3', 'F4', 'F5', 'F6', 'F7', 'F8', 'F9', 'F10', 'F11', 'F12'],
   ['Backquote', 'Digit1', 'Digit2', 'Digit3', 'Digit4', 'Digit5', 'Digit6', 'Digit7', 'Digit8', 'Digit9', 'Digit0', 'Minus', 'Equal', 'Backspace'],
@@ -120,6 +127,7 @@ export class HerramientasComponent implements AfterViewInit, OnDestroy {
     { id: 'ram', label: 'RAM', detail: 'Memoria web' },
     { id: 'teclado', label: 'Teclado', detail: 'Entrada' },
     { id: 'mouse', label: 'Mouse', detail: 'Botones' },
+    { id: 'microfono', label: 'Micrófono', detail: 'Audio' },
   ];
 
   readonly keyRows = KEY_ROWS;
@@ -174,6 +182,15 @@ export class HerramientasComponent implements AfterViewInit, OnDestroy {
     y: 0,
   };
 
+  micStats: MicStats = {
+    status: 'idle',
+    level: 0,
+    peakLevel: 0,
+    message: 'Selecciona un microfono e inicia la prueba.',
+  };
+  micDevices: MediaDeviceInfo[] = [];
+  selectedMicId: string | null = null;
+
   reportEntries: ReportEntry[] = [];
   reportCopied = false;
 
@@ -187,6 +204,10 @@ export class HerramientasComponent implements AfterViewInit, OnDestroy {
   private gpuStartedAt = 0;
   private gpuLastFrameAt = 0;
   private ramBuffer: Uint8Array | null = null;
+  private micStream: MediaStream | null = null;
+  private micAudioContext: AudioContext | null = null;
+  private micAnalyser: AnalyserNode | null = null;
+  private micAnimationFrame = 0;
 
   get testedKeysCount(): number {
     return this.testedKeys.size;
@@ -204,13 +225,20 @@ export class HerramientasComponent implements AfterViewInit, OnDestroy {
     this.stopGpuTest();
     this.renderer?.dispose();
     this.ramBuffer = null;
+    this.stopMicTest();
   }
 
   selectTab(tab: ToolTab): void {
+    if (this.activeTab === 'microfono' && tab !== 'microfono') {
+      this.stopMicTest();
+    }
     this.activeTab = tab;
     this.reportCopied = false;
     if (tab === 'gpu') {
       window.setTimeout(() => this.resizeGpu(), 0);
+    }
+    if (tab === 'microfono') {
+      this.loadMicDevices();
     }
   }
 
@@ -338,6 +366,114 @@ export class HerramientasComponent implements AfterViewInit, OnDestroy {
       allocatedMb: 0,
       message: 'Memoria liberada',
     };
+  }
+
+  loadMicDevices(): void {
+    if (!navigator.mediaDevices?.enumerateDevices) {
+      return;
+    }
+    navigator.mediaDevices.enumerateDevices().then((devices) => {
+      this.micDevices = devices.filter((device) => device.kind === 'audioinput');
+      if (!this.selectedMicId && this.micDevices.length) {
+        this.selectedMicId = this.micDevices[0].deviceId;
+      }
+    });
+  }
+
+  micDeviceLabel(device: MediaDeviceInfo, index: number): string {
+    return device.label || `Microfono ${index + 1}`;
+  }
+
+  startMicTest(): void {
+    if (!navigator.mediaDevices?.getUserMedia) {
+      this.micStats = {
+        ...this.micStats,
+        status: 'error',
+        message: 'Este navegador o esta conexion no permite acceder al microfono (revisa que estes en HTTPS o localhost).',
+      };
+      return;
+    }
+
+    this.stopMicTest();
+    this.micStats = { status: 'running', level: 0, peakLevel: 0, message: 'Escuchando...' };
+
+    const constraints: MediaStreamConstraints = {
+      audio: this.selectedMicId ? { deviceId: { exact: this.selectedMicId } } : true,
+    };
+
+    navigator.mediaDevices.getUserMedia(constraints).then(
+      (stream) => {
+        this.micStream = stream;
+        this.micAudioContext = new AudioContext();
+        const source = this.micAudioContext.createMediaStreamSource(stream);
+        this.micAnalyser = this.micAudioContext.createAnalyser();
+        this.micAnalyser.fftSize = 2048;
+        source.connect(this.micAnalyser);
+        this.loadMicDevices();
+        this.animateMic();
+      },
+      () => {
+        this.micStats = {
+          ...this.micStats,
+          status: 'error',
+          message: 'Permiso de microfono denegado o no disponible.',
+        };
+      },
+    );
+  }
+
+  stopMicTest(): void {
+    if (this.micAnimationFrame) {
+      cancelAnimationFrame(this.micAnimationFrame);
+      this.micAnimationFrame = 0;
+    }
+    this.micStream?.getTracks().forEach((track) => track.stop());
+    this.micStream = null;
+    this.micAudioContext?.close();
+    this.micAudioContext = null;
+    this.micAnalyser = null;
+
+    if (this.micStats.status === 'running') {
+      if (this.micStats.peakLevel > 0) {
+        const device = this.micDevices.find((d) => d.deviceId === this.selectedMicId);
+        const label = device ? this.micDeviceLabel(device, this.micDevices.indexOf(device)) : 'Microfono';
+        this.addReport('Microfono', `Nivel pico detectado: ${this.micStats.peakLevel}% - dispositivo: ${label}`);
+      }
+      this.micStats = { ...this.micStats, status: 'done', message: 'Prueba detenida.' };
+    }
+  }
+
+  onMicDeviceChange(deviceId: string): void {
+    this.selectedMicId = deviceId;
+    if (this.micStats.status === 'running') {
+      this.startMicTest();
+    }
+  }
+
+  private animateMic(): void {
+    if (!this.micAnalyser) {
+      return;
+    }
+    const buffer = new Uint8Array(this.micAnalyser.fftSize);
+    this.micAnalyser.getByteTimeDomainData(buffer);
+
+    let sumSquares = 0;
+    for (let i = 0; i < buffer.length; i++) {
+      const normalized = buffer[i] / 128 - 1;
+      sumSquares += normalized * normalized;
+    }
+    const rms = Math.sqrt(sumSquares / buffer.length);
+    const level = Math.min(100, Math.round(rms * 100 * 3));
+
+    this.micStats = {
+      ...this.micStats,
+      level,
+      peakLevel: Math.max(this.micStats.peakLevel, level),
+    };
+
+    if (this.micStats.status === 'running') {
+      this.micAnimationFrame = requestAnimationFrame(() => this.animateMic());
+    }
   }
 
   enableKeyboardCapture(): void {

@@ -226,4 +226,43 @@
       <div [class.ok]="mouseStats.moves > 0"><span>Movimiento</span><strong>{{ mouseStats.moves }}</strong></div>
     </div>
   </section>
+
+  <section class="tool-panel" [class.active]="activeTab === 'microfono'">
+    <div class="panel-heading">
+      <div>
+        <h3>Prueba de microfono</h3>
+        <p>Verifica que el microfono capte sonido en tiempo real.</p>
+      </div>
+      <span class="status-pill" [class.ok]="micStats.status === 'done' && micStats.peakLevel > 0" [class.bad]="micStats.status === 'error'">
+        {{ micStats.status === 'running' ? 'Escuchando' : (micStats.status === 'error' ? 'Error' : 'Listo') }}
+      </span>
+    </div>
+
+    <div class="ping-box" *ngIf="micDevices.length > 1">
+      <label>
+        Microfono
+        <select [ngModel]="selectedMicId" (ngModelChange)="onMicDeviceChange($event)">
+          <option *ngFor="let device of micDevices; let i = index" [value]="device.deviceId">
+            {{ micDeviceLabel(device, i) }}
+          </option>
+        </select>
+      </label>
+    </div>
+
+    <div class="button-row">
+      <button type="button" class="ghost-btn" (click)="stopMicTest()" [disabled]="micStats.status !== 'running'">Detener</button>
+      <button type="button" class="primary-btn" (click)="startMicTest()" [disabled]="micStats.status === 'running'">
+        {{ micStats.status === 'running' ? 'Escuchando...' : 'Iniciar prueba' }}
+      </button>
+    </div>
+
+    <p class="error-text" *ngIf="micStats.status === 'error'">{{ micStats.message }}</p>
+
+    <div class="level-meter" *ngIf="micStats.status !== 'error'">
+      <span>Nivel</span>
+      <i><b [style.width.%]="micStats.level"></b></i>
+      <strong>{{ micStats.level }}%</strong>
+    </div>
+    <p class="note" *ngIf="micStats.status !== 'error'">Pico de esta sesion: {{ micStats.peakLevel }}%</p>
+  </section>
 </div>
