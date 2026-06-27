@@ -14,7 +14,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/auditoria")
 @RequiredArgsConstructor
-@PreAuthorize("hasRole('ADMIN') || hasAuthority('WRITE_auditoria')")
+@PreAuthorize("hasRole('ADMIN') || hasAuthority('READ_auditoria')")
 public class MovimientoAuditoriaController {
 
     private final MovimientoAuditoriaService service;
