@@ -265,4 +265,38 @@
     </div>
     <p class="note" *ngIf="micStats.status !== 'error'">Pico de esta sesion: {{ micStats.peakLevel }}%</p>
   </section>
+
+  <section class="tool-panel" [class.active]="activeTab === 'camara'">
+    <div class="panel-heading">
+      <div>
+        <h3>Prueba de camara</h3>
+        <p>Vista previa en vivo para confirmar que la camara funciona y la imagen se ve bien.</p>
+      </div>
+      <span class="status-pill" [class.ok]="camStats.status === 'running'" [class.bad]="camStats.status === 'error'">
+        {{ camStats.status === 'running' ? 'Activa' : (camStats.status === 'error' ? 'Error' : 'Lista') }}
+      </span>
+    </div>
+
+    <div class="ping-box" *ngIf="camDevices.length > 1">
+      <label>
+        Camara
+        <select [ngModel]="selectedCamId" (ngModelChange)="onCameraDeviceChange($event)">
+          <option *ngFor="let device of camDevices; let i = index" [value]="device.deviceId">
+            {{ camDeviceLabel(device, i) }}
+          </option>
+        </select>
+      </label>
+    </div>
+
+    <div class="button-row">
+      <button type="button" class="ghost-btn" (click)="stopCameraTest()" [disabled]="camStats.status !== 'running'">Detener</button>
+      <button type="button" class="primary-btn" (click)="startCameraTest()" [disabled]="camStats.status === 'running'">
+        {{ camStats.status === 'running' ? 'Activa' : 'Iniciar prueba' }}
+      </button>
+    </div>
+
+    <p class="error-text" *ngIf="camStats.status === 'error'">{{ camStats.message }}</p>
+
+    <video #cameraVideo class="camera-preview" autoplay playsinline muted></video>
+  </section>
 </div>

@@ -266,6 +266,17 @@ button:disabled {
   background: #f8fafc;
 }
 
+.camera-preview {
+  display: block;
+  width: 100%;
+  height: 360px;
+  min-height: 240px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: #111827;
+  object-fit: contain;
+}
+
 .gpu-stats {
   display: grid;
   gap: 9px;

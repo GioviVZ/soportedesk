@@ -13,7 +13,7 @@ import * as THREE from 'three';
 import { PingResult } from './herramientas.model';
 import { HerramientasService } from './herramientas.service';
 
-type ToolTab = 'ping' | 'gpu' | 'ram' | 'teclado' | 'mouse' | 'microfono';
+type ToolTab = 'ping' | 'gpu' | 'ram' | 'teclado' | 'mouse' | 'microfono' | 'camara';
 type TestState = 'idle' | 'running' | 'done' | 'error';
 
 interface ToolTabItem {
@@ -79,6 +79,11 @@ interface MicStats {
   message: string;
 }
 
+interface CamStats {
+  status: TestState;
+  message: string;
+}
+
 const KEY_ROWS = [
   ['Escape', 'F1', 'F2', 'F3', 'F4', 'F5', 'F6', 'F7', 'F8', 'F9', 'F10', 'F11', 'F12'],
   ['Backquote', 'Digit1', 'Digit2', 'Digit3', 'Digit4', 'Digit5', 'Digit6', 'Digit7', 'Digit8', 'Digit9', 'Digit0', 'Minus', 'Equal', 'Backspace'],
@@ -120,6 +125,7 @@ export class HerramientasComponent implements AfterViewInit, OnDestroy {
   private service = inject(HerramientasService);
 
   @ViewChild('gpuCanvas') gpuCanvas?: ElementRef<HTMLCanvasElement>;
+  @ViewChild('cameraVideo') cameraVideo?: ElementRef<HTMLVideoElement>;
 
   readonly tabs: ToolTabItem[] = [
     { id: 'ping', label: 'Ping', detail: 'Red' },
@@ -128,6 +134,7 @@ export class HerramientasComponent implements AfterViewInit, OnDestroy {
     { id: 'teclado', label: 'Teclado', detail: 'Entrada' },
     { id: 'mouse', label: 'Mouse', detail: 'Botones' },
     { id: 'microfono', label: 'Micrófono', detail: 'Audio' },
+    { id: 'camara', label: 'Cámara', detail: 'Video' },
   ];
 
   readonly keyRows = KEY_ROWS;
@@ -191,6 +198,10 @@ export class HerramientasComponent implements AfterViewInit, OnDestroy {
   micDevices: MediaDeviceInfo[] = [];
   selectedMicId: string | null = null;
 
+  camStats: CamStats = { status: 'idle', message: 'Selecciona una camara e inicia la prueba.' };
+  camDevices: MediaDeviceInfo[] = [];
+  selectedCamId: string | null = null;
+
   reportEntries: ReportEntry[] = [];
   reportCopied = false;
 
@@ -208,6 +219,7 @@ export class HerramientasComponent implements AfterViewInit, OnDestroy {
   private micAudioContext: AudioContext | null = null;
   private micAnalyser: AnalyserNode | null = null;
   private micAnimationFrame = 0;
+  private camStream: MediaStream | null = null;
 
   get testedKeysCount(): number {
     return this.testedKeys.size;
@@ -226,11 +238,15 @@ export class HerramientasComponent implements AfterViewInit, OnDestroy {
     this.renderer?.dispose();
     this.ramBuffer = null;
     this.stopMicTest();
+    this.stopCameraTest();
   }
 
   selectTab(tab: ToolTab): void {
     if (this.activeTab === 'microfono' && tab !== 'microfono') {
       this.stopMicTest();
+    }
+    if (this.activeTab === 'camara' && tab !== 'camara') {
+      this.stopCameraTest();
     }
     this.activeTab = tab;
     this.reportCopied = false;
@@ -239,6 +255,9 @@ export class HerramientasComponent implements AfterViewInit, OnDestroy {
     }
     if (tab === 'microfono') {
       this.loadMicDevices();
+    }
+    if (tab === 'camara') {
+      this.loadCamDevices();
     }
   }
 
@@ -447,6 +466,78 @@ export class HerramientasComponent implements AfterViewInit, OnDestroy {
     this.selectedMicId = deviceId;
     if (this.micStats.status === 'running') {
       this.startMicTest();
+    }
+  }
+
+  loadCamDevices(): void {
+    if (!navigator.mediaDevices?.enumerateDevices) {
+      return;
+    }
+    navigator.mediaDevices.enumerateDevices().then((devices) => {
+      this.camDevices = devices.filter((device) => device.kind === 'videoinput');
+      if (!this.selectedCamId && this.camDevices.length) {
+        this.selectedCamId = this.camDevices[0].deviceId;
+      }
+    });
+  }
+
+  camDeviceLabel(device: MediaDeviceInfo, index: number): string {
+    return device.label || `Camara ${index + 1}`;
+  }
+
+  startCameraTest(): void {
+    if (!navigator.mediaDevices?.getUserMedia) {
+      this.camStats = {
+        status: 'error',
+        message: 'Este navegador o esta conexion no permite acceder a la camara (revisa que estes en HTTPS o localhost).',
+      };
+      return;
+    }
+
+    this.stopCameraTest();
+    this.camStats = { status: 'running', message: 'Iniciando camara...' };
+
+    const constraints: MediaStreamConstraints = {
+      video: this.selectedCamId ? { deviceId: { exact: this.selectedCamId } } : true,
+    };
+
+    navigator.mediaDevices.getUserMedia(constraints).then(
+      (stream) => {
+        this.camStream = stream;
+        if (this.cameraVideo) {
+          this.cameraVideo.nativeElement.srcObject = stream;
+        }
+        this.loadCamDevices();
+        const device = this.camDevices.find((d) => d.deviceId === this.selectedCamId);
+        const label = device ? this.camDeviceLabel(device, this.camDevices.indexOf(device)) : 'Camara';
+        this.camStats = { status: 'running', message: 'Vista previa activa.' };
+        this.addReport('Camara', `Vista previa activa - dispositivo: ${label}`);
+      },
+      (err) => {
+        const notFound = err?.name === 'NotFoundError';
+        this.camStats = {
+          status: 'error',
+          message: notFound ? 'No se detecto ninguna camara.' : 'Permiso de camara denegado o no disponible.',
+        };
+      },
+    );
+  }
+
+  stopCameraTest(): void {
+    this.camStream?.getTracks().forEach((track) => track.stop());
+    this.camStream = null;
+    if (this.cameraVideo) {
+      this.cameraVideo.nativeElement.srcObject = null;
+    }
+    if (this.camStats.status === 'running') {
+      this.camStats = { status: 'idle', message: 'Prueba detenida.' };
+    }
+  }
+
+  onCameraDeviceChange(deviceId: string): void {
+    this.selectedCamId = deviceId;
+    if (this.camStats.status === 'running') {
+      this.startCameraTest();
     }
   }
 
