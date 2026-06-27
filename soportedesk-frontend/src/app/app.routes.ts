@@ -1,8 +1,7 @@
 import { Routes } from '@angular/router';
 import { adminGuard } from './core/auth/admin.guard';
 import { authGuard } from './core/auth/auth.guard';
-import { auditoriaGuard } from './features/auditoria/auditoria.guard';
-import { herramientasGuard } from './features/herramientas/herramientas.guard';
+import { moduloGuard } from './core/auth/modulo.guard';
 import { ShellComponent } from './layout/shell/shell.component';
 
 export const routes: Routes = [
@@ -28,31 +27,37 @@ export const routes: Routes = [
       },
       {
         path: 'licencias',
+        canActivate: [moduloGuard('licencias')],
         loadComponent: () =>
           import('./features/licencias/licencias-list.component').then((m) => m.LicenciasListComponent),
       },
       {
         path: 'wifi',
+        canActivate: [moduloGuard('wifi')],
         loadComponent: () =>
           import('./features/wifi/wifi-list.component').then((m) => m.WifiListComponent),
       },
       {
         path: 'equipos',
+        canActivate: [moduloGuard('equipos')],
         loadComponent: () =>
           import('./features/equipos/equipos-list.component').then((m) => m.EquiposListComponent),
       },
       {
         path: 'vpn',
+        canActivate: [moduloGuard('vpn')],
         loadComponent: () =>
           import('./features/vpn/vpn-list.component').then((m) => m.VpnListComponent),
       },
       {
         path: 'correos',
+        canActivate: [moduloGuard('correos')],
         loadComponent: () =>
           import('./features/correos/correos-list.component').then((m) => m.CorreosListComponent),
       },
       {
         path: 'usuarios-red',
+        canActivate: [moduloGuard('usuarios-red')],
         loadComponent: () =>
           import('./features/usuarios-red/usuarios-red-list.component').then(
             (m) => m.UsuariosRedListComponent,
@@ -60,6 +65,7 @@ export const routes: Routes = [
       },
       {
         path: 'impresoras',
+        canActivate: [moduloGuard('impresoras')],
         loadComponent: () =>
           import('./features/impresoras/impresoras-list.component').then(
             (m) => m.ImpresorasListComponent,
@@ -75,16 +81,24 @@ export const routes: Routes = [
       },
       {
         path: 'auditoria',
-        canActivate: [auditoriaGuard],
+        canActivate: [moduloGuard('auditoria')],
         loadComponent: () =>
           import('./features/auditoria/auditoria.component').then((m) => m.AuditoriaComponent),
       },
       {
         path: 'herramientas',
-        canActivate: [herramientasGuard],
+        canActivate: [moduloGuard('herramientas')],
         loadComponent: () =>
           import('./features/herramientas/herramientas.component').then(
             (m) => m.HerramientasComponent,
+          ),
+      },
+      {
+        path: 'inventario-equipos',
+        canActivate: [moduloGuard('inventario-equipos')],
+        loadComponent: () =>
+          import('./features/inventario-equipos/inventario-equipos.component').then(
+            (m) => m.InventarioEquiposComponent,
           ),
       },
       {
