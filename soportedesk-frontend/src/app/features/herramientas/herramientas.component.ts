@@ -10,14 +10,10 @@ import {
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import * as THREE from 'three';
-import {
-  InstalledProgramInfo,
-  PingResult,
-  SystemInventoryResponse,
-} from './herramientas.model';
+import { PingResult } from './herramientas.model';
 import { HerramientasService } from './herramientas.service';
 
-type ToolTab = 'ping' | 'inventario' | 'gpu' | 'ram' | 'teclado' | 'mouse';
+type ToolTab = 'ping' | 'gpu' | 'ram' | 'teclado' | 'mouse';
 type TestState = 'idle' | 'running' | 'done' | 'error';
 
 interface ToolTabItem {
@@ -120,7 +116,6 @@ export class HerramientasComponent implements AfterViewInit, OnDestroy {
 
   readonly tabs: ToolTabItem[] = [
     { id: 'ping', label: 'Ping', detail: 'Red' },
-    { id: 'inventario', label: 'Inventario', detail: 'Sistema' },
     { id: 'gpu', label: 'GPU', detail: 'WebGL' },
     { id: 'ram', label: 'RAM', detail: 'Memoria web' },
     { id: 'teclado', label: 'Teclado', detail: 'Entrada' },
@@ -134,11 +129,6 @@ export class HerramientasComponent implements AfterViewInit, OnDestroy {
   pingState: TestState = 'idle';
   pingResult: PingResult | null = null;
   pingError = '';
-
-  inventoryState: TestState = 'idle';
-  inventory: SystemInventoryResponse | null = null;
-  inventoryError = '';
-  programSearch = '';
 
   clientInfo: ClientInfo = this.readClientInfo();
 
@@ -198,20 +188,6 @@ export class HerramientasComponent implements AfterViewInit, OnDestroy {
   private gpuLastFrameAt = 0;
   private ramBuffer: Uint8Array | null = null;
 
-  get filteredPrograms(): InstalledProgramInfo[] {
-    const programs = this.inventory?.installedPrograms ?? [];
-    const term = this.programSearch.trim().toLowerCase();
-    if (!term) {
-      return programs;
-    }
-    return programs.filter((program) =>
-      [program.name, program.version, program.publisher, program.installDate]
-        .join(' ')
-        .toLowerCase()
-        .includes(term),
-    );
-  }
-
   get testedKeysCount(): number {
     return this.testedKeys.size;
   }
@@ -233,9 +209,6 @@ export class HerramientasComponent implements AfterViewInit, OnDestroy {
   selectTab(tab: ToolTab): void {
     this.activeTab = tab;
     this.reportCopied = false;
-    if (tab === 'inventario' && this.inventoryState === 'idle') {
-      this.loadInventory();
-    }
     if (tab === 'gpu') {
       window.setTimeout(() => this.resizeGpu(), 0);
     }
@@ -260,22 +233,6 @@ export class HerramientasComponent implements AfterViewInit, OnDestroy {
       error: (err) => {
         this.pingState = 'error';
         this.pingError = err?.error?.message ?? 'No se pudo ejecutar la prueba.';
-      },
-    });
-  }
-
-  loadInventory(): void {
-    this.inventoryState = 'running';
-    this.inventoryError = '';
-    this.service.inventory().subscribe({
-      next: (data) => {
-        this.inventory = data;
-        this.inventoryState = 'done';
-        this.addReport('Inventario', `${data.computerName || 'Equipo'} - ${data.operatingSystem || 'SO no detectado'}`);
-      },
-      error: (err) => {
-        this.inventoryState = 'error';
-        this.inventoryError = err?.error?.message ?? 'No se pudo cargar el inventario.';
       },
     });
   }
@@ -739,18 +696,6 @@ export class HerramientasComponent implements AfterViewInit, OnDestroy {
       'Resultados',
       ...this.reportEntries.map((entry) => `${entry.label}: ${entry.value}`),
     ];
-
-    if (this.inventory) {
-      lines.push(
-        '',
-        'Inventario backend',
-        `Equipo: ${this.inventory.computerName || '-'}`,
-        `SO: ${this.inventory.operatingSystem || '-'} ${this.inventory.osVersion || ''}`.trim(),
-        `CPU: ${this.inventory.availableProcessors || '-'} nucleos`,
-        `Disco libre: ${this.formatBytes(this.inventory.freeDiskBytes)}`,
-        `Programas detectados: ${this.inventory.installedPrograms?.length ?? 0}`,
-      );
-    }
 
     return lines.join('\n');
   }

@@ -3,13 +3,13 @@
     <div>
       <span class="eyebrow">Herramientas de soporte</span>
       <h2>Diagnostico rapido</h2>
-      <p>Pruebas web para validar red, hardware basico, perifericos e inventario del equipo.</p>
+      <p>Pruebas web para validar red, hardware basico y perifericos.</p>
     </div>
     <div class="report-actions">
-      <button type="button" class="ghost-btn" (click)="copyReport()" [disabled]="!reportEntries.length && !inventory">
+      <button type="button" class="ghost-btn" (click)="copyReport()" [disabled]="!reportEntries.length">
         Copiar reporte
       </button>
-      <button type="button" class="primary-btn" (click)="exportReport()" [disabled]="!reportEntries.length && !inventory">
+      <button type="button" class="primary-btn" (click)="exportReport()" [disabled]="!reportEntries.length">
         Descargar reporte
       </button>
       <span class="copied" *ngIf="reportCopied">Copiado</span>
@@ -71,95 +71,6 @@
     </div>
 
     <pre class="terminal" *ngIf="pingResult?.output?.length">{{ pingResult?.output?.join('\n') }}</pre>
-  </section>
-
-  <section class="tool-panel" [class.active]="activeTab === 'inventario'">
-    <div class="panel-heading">
-      <div>
-        <h3>Inventario del equipo</h3>
-        <p>Datos del servidor donde corre el backend y datos visibles del navegador cliente.</p>
-      </div>
-      <button type="button" class="ghost-btn" (click)="loadInventory()" [disabled]="inventoryState === 'running'">
-        {{ inventoryState === 'running' ? 'Cargando...' : 'Actualizar' }}
-      </button>
-    </div>
-
-    <p class="error-text" *ngIf="inventoryError">{{ inventoryError }}</p>
-
-    <div class="inventory-layout">
-      <div class="info-card">
-        <h4>Cliente web</h4>
-        <dl>
-          <div><dt>Plataforma</dt><dd>{{ clientInfo.plataforma }}</dd></div>
-          <div><dt>Nucleos</dt><dd>{{ clientInfo.nucleos }}</dd></div>
-          <div><dt>Memoria</dt><dd>{{ clientInfo.memoria }}</dd></div>
-          <div><dt>Pantalla</dt><dd>{{ clientInfo.pantalla }}</dd></div>
-          <div><dt>Conexion</dt><dd>{{ clientInfo.conexion }}</dd></div>
-          <div><dt>Idioma</dt><dd>{{ clientInfo.idioma }}</dd></div>
-        </dl>
-      </div>
-
-      <div class="info-card" *ngIf="inventory">
-        <h4>Servidor / backend</h4>
-        <dl>
-          <div><dt>Equipo</dt><dd>{{ inventory.computerName || '-' }}</dd></div>
-          <div><dt>Usuario</dt><dd>{{ inventory.userName || '-' }}</dd></div>
-          <div><dt>Sistema</dt><dd>{{ inventory.operatingSystem }} {{ inventory.osVersion }}</dd></div>
-          <div><dt>Arquitectura</dt><dd>{{ inventory.architecture }}</dd></div>
-          <div><dt>Procesador</dt><dd>{{ inventory.processor || '-' }}</dd></div>
-          <div><dt>Nucleos</dt><dd>{{ inventory.availableProcessors || '-' }}</dd></div>
-          <div><dt>Java</dt><dd>{{ inventory.javaVersion }}</dd></div>
-          <div><dt>Uptime</dt><dd>{{ formatUptime(inventory.uptimeSeconds) }}</dd></div>
-          <div><dt>Disco libre</dt><dd>{{ formatBytes(inventory.freeDiskBytes) }} / {{ formatBytes(inventory.totalDiskBytes) }}</dd></div>
-          <div><dt>Memoria JVM</dt><dd>{{ formatBytes(inventory.freeMemoryBytes) }} / {{ formatBytes(inventory.totalMemoryBytes) }}</dd></div>
-        </dl>
-      </div>
-    </div>
-
-    <div class="info-card wide" *ngIf="inventory?.networkInterfaces?.length">
-      <h4>Interfaces de red</h4>
-      <div class="network-list">
-        <div class="network-row" *ngFor="let net of inventory?.networkInterfaces">
-          <strong>{{ net.displayName || net.name }}</strong>
-          <span>{{ net.macAddress || 'MAC no disponible' }}</span>
-          <small>{{ net.addresses.join(', ') }}</small>
-        </div>
-      </div>
-    </div>
-
-    <div class="programs-block" *ngIf="inventory">
-      <div class="programs-head">
-        <div>
-          <h4>Programas instalados</h4>
-          <p>{{ inventory.installedPrograms.length }} programas detectados desde el backend.</p>
-        </div>
-        <input type="text" [(ngModel)]="programSearch" placeholder="Buscar programa" />
-      </div>
-
-      <div class="program-table" *ngIf="filteredPrograms.length; else noPrograms">
-        <table>
-          <thead>
-            <tr>
-              <th>Programa</th>
-              <th>Version</th>
-              <th>Fabricante</th>
-              <th>Instalacion</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr *ngFor="let program of filteredPrograms">
-              <td>{{ program.name }}</td>
-              <td>{{ program.version || '-' }}</td>
-              <td>{{ program.publisher || '-' }}</td>
-              <td>{{ program.installDate || '-' }}</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-      <ng-template #noPrograms>
-        <p class="empty-text">No hay programas para mostrar. En navegadores no se puede leer software instalado del cliente sin agente local.</p>
-      </ng-template>
-    </div>
   </section>
 
   <section class="tool-panel gpu-panel" [class.active]="activeTab === 'gpu'">
