@@ -71,8 +71,8 @@ class CorreoControllerIT {
     }
 
     @Test
-    @WithMockUser(roles = "SOPORTE")
-    void findAll_allowsAuthenticatedUser() throws Exception {
+    @WithMockUser(authorities = {"ROLE_SOPORTE", "READ_correos"})
+    void findAll_withReadAuthority_allowsUser() throws Exception {
         Correo correo = sampleCorreo();
         when(service.findAll(null)).thenReturn(List.of(correo));
 
@@ -80,6 +80,13 @@ class CorreoControllerIT {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].usuario", is("jperez")))
                 .andExpect(jsonPath("$[0].sede.nombre", is("Lima")));
+    }
+
+    @Test
+    @WithMockUser(roles = "SOPORTE")
+    void findAll_withoutReadAuthority_returnsForbidden() throws Exception {
+        mockMvc.perform(get("/api/correos"))
+                .andExpect(status().isForbidden());
     }
 
     @Test

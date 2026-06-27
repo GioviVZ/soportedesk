@@ -17,11 +17,13 @@ public class CorreoController {
     private final CorreoService service;
 
     @GetMapping
+    @PreAuthorize("hasRole('ADMIN') || hasAuthority('READ_correos')")
     public List<Correo> findAll(@RequestParam(required = false) String search) {
         return service.findAll(search);
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN') || hasAuthority('READ_correos')")
     public Correo findById(@PathVariable Long id) {
         return service.findById(id);
     }
