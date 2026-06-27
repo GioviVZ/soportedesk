@@ -18,11 +18,13 @@ public class VpnController {
     private final VpnService service;
 
     @GetMapping
+    @PreAuthorize("hasRole('ADMIN') || hasAuthority('READ_vpn')")
     public List<Vpn> findAll(@RequestParam(required = false) String search) {
         return service.findAll(search);
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN') || hasAuthority('READ_vpn')")
     public Vpn findById(@PathVariable Long id) {
         return service.findById(id);
     }

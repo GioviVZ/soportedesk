@@ -49,13 +49,20 @@ class VpnControllerIT {
     }
 
     @Test
-    @WithMockUser(roles = "SOPORTE")
-    void findAll_allowsAuthenticatedUser() throws Exception {
+    @WithMockUser(authorities = {"ROLE_SOPORTE", "READ_vpn"})
+    void findAll_withReadAuthority_allowsUser() throws Exception {
         when(service.findAll(null)).thenReturn(List.of(sampleVpn()));
 
         mockMvc.perform(get("/api/vpn"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].estado", is("Activo")));
+    }
+
+    @Test
+    @WithMockUser(roles = "SOPORTE")
+    void findAll_withoutReadAuthority_returnsForbidden() throws Exception {
+        mockMvc.perform(get("/api/vpn"))
+                .andExpect(status().isForbidden());
     }
 
     @Test
