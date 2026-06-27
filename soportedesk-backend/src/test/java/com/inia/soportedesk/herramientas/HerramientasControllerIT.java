@@ -31,8 +31,8 @@ class HerramientasControllerIT {
     private HerramientasService service;
 
     @Test
-    @WithMockUser(roles = "SOPORTE")
-    void ping_allowsAuthenticatedUser() throws Exception {
+    @WithMockUser(authorities = {"ROLE_SOPORTE", "READ_herramientas"})
+    void ping_withReadAuthority_allowsUser() throws Exception {
         PingRequest request = new PingRequest();
         request.setHost("127.0.0.1");
         when(service.ping("127.0.0.1")).thenReturn(PingResult.builder()
@@ -51,11 +51,23 @@ class HerramientasControllerIT {
     }
 
     @Test
-    @WithMockUser(roles = "SOPORTE")
+    @WithMockUser(authorities = {"ROLE_SOPORTE", "READ_herramientas"})
     void ping_rejectsUnsafeHost() throws Exception {
         mockMvc.perform(post("/api/herramientas/ping")
                         .contentType("application/json")
                         .content("{\"host\":\"127.0.0.1 & whoami\"}"))
                 .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @WithMockUser(roles = "SOPORTE")
+    void ping_withoutReadAuthority_returnsForbidden() throws Exception {
+        PingRequest request = new PingRequest();
+        request.setHost("127.0.0.1");
+
+        mockMvc.perform(post("/api/herramientas/ping")
+                        .contentType("application/json")
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isForbidden());
     }
 }
