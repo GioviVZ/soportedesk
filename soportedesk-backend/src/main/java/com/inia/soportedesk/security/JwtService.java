@@ -11,7 +11,6 @@ import javax.crypto.SecretKey;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 
@@ -24,7 +23,7 @@ public class JwtService {
     @Value("${jwt.expiration-ms}")
     private long expirationMs;
 
-    public String generateToken(String username, String role, List<String> permisos) {
+    public String generateToken(String username, String role, Map<String, String> permisos) {
         Map<String, Object> claims = new HashMap<>();
         claims.put("role", role);
         claims.put("permisos", permisos);
@@ -50,10 +49,10 @@ public class JwtService {
     }
 
     @SuppressWarnings("unchecked")
-    public List<String> extractPermisos(String token) {
+    public Map<String, String> extractPermisos(String token) {
         return extractClaim(token, claims -> {
             Object p = claims.get("permisos");
-            return (p instanceof List) ? (List<String>) p : Collections.emptyList();
+            return (p instanceof Map) ? (Map<String, String>) p : Collections.emptyMap();
         });
     }
 
