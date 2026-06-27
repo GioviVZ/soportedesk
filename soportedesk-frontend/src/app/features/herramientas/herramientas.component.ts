@@ -175,7 +175,6 @@ export class HerramientasComponent implements AfterViewInit, OnDestroy {
   pressedKeys = new Set<string>();
   testedKeys = new Set<string>();
   lastKey = 'Sin actividad';
-  keyboardCapture = false;
 
   mouseStats: MouseStats = {
     left: false,
@@ -567,10 +566,6 @@ export class HerramientasComponent implements AfterViewInit, OnDestroy {
     }
   }
 
-  enableKeyboardCapture(): void {
-    this.keyboardCapture = true;
-  }
-
   resetKeyboard(): void {
     this.pressedKeys.clear();
     this.testedKeys.clear();
@@ -703,7 +698,7 @@ export class HerramientasComponent implements AfterViewInit, OnDestroy {
 
   @HostListener('window:keydown', ['$event'])
   onKeyDown(event: KeyboardEvent): void {
-    if (!this.keyboardCapture || this.activeTab !== 'teclado') {
+    if (this.activeTab !== 'teclado') {
       return;
     }
     event.preventDefault();
@@ -715,7 +710,7 @@ export class HerramientasComponent implements AfterViewInit, OnDestroy {
 
   @HostListener('window:keyup', ['$event'])
   onKeyUp(event: KeyboardEvent): void {
-    if (!this.keyboardCapture || this.activeTab !== 'teclado') {
+    if (this.activeTab !== 'teclado') {
       return;
     }
     event.preventDefault();
