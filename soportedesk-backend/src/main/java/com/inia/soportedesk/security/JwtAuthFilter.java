@@ -47,9 +47,13 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                     List<org.springframework.security.core.GrantedAuthority> authorities =
                             new ArrayList<>(userDetails.getAuthorities());
 
-                    List<String> permisos = jwtService.extractPermisos(token);
-                    for (String modulo : permisos) {
-                        authorities.add(new org.springframework.security.core.authority.SimpleGrantedAuthority("WRITE_" + modulo));
+                    java.util.Map<String, String> permisos = jwtService.extractPermisos(token);
+                    for (java.util.Map.Entry<String, String> entry : permisos.entrySet()) {
+                        String modulo = entry.getKey();
+                        authorities.add(new org.springframework.security.core.authority.SimpleGrantedAuthority("READ_" + modulo));
+                        if ("EDIT".equals(entry.getValue())) {
+                            authorities.add(new org.springframework.security.core.authority.SimpleGrantedAuthority("WRITE_" + modulo));
+                        }
                     }
 
                     UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
