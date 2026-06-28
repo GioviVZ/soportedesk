@@ -6,6 +6,9 @@ import {
   CatalogoRequest,
   Dependencia,
   DependenciaRequest,
+  MarcaImpresora,
+  ModeloImpresora,
+  ModeloImpresoraRequest,
   Sede,
   Subdependencia,
   SubdependenciaRequest,
@@ -138,5 +141,41 @@ export class CatalogoService {
 
   deleteTipoImpresora(id: number): Observable<void> {
     return this.http.delete<void>(`${this.apiUrl}/tipos-impresora/${id}`);
+  }
+
+  getMarcasImpresora(): Observable<MarcaImpresora[]> {
+    return this.http.get<MarcaImpresora[]>(`${this.apiUrl}/marcas-impresora`);
+  }
+
+  createMarcaImpresora(request: CatalogoRequest): Observable<MarcaImpresora> {
+    return this.http.post<MarcaImpresora>(`${this.apiUrl}/marcas-impresora`, request);
+  }
+
+  updateMarcaImpresora(id: number, request: CatalogoRequest): Observable<MarcaImpresora> {
+    return this.http.put<MarcaImpresora>(`${this.apiUrl}/marcas-impresora/${id}`, request);
+  }
+
+  deleteMarcaImpresora(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.apiUrl}/marcas-impresora/${id}`);
+  }
+
+  getModelosImpresora(marcaId?: number): Observable<ModeloImpresora[]> {
+    let params = new HttpParams();
+    if (marcaId) {
+      params = params.set('marcaId', marcaId);
+    }
+    return this.http.get<ModeloImpresora[]>(`${this.apiUrl}/modelos-impresora`, { params });
+  }
+
+  createModeloImpresora(request: ModeloImpresoraRequest): Observable<ModeloImpresora> {
+    return this.http.post<ModeloImpresora>(`${this.apiUrl}/modelos-impresora`, request);
+  }
+
+  updateModeloImpresora(id: number, request: ModeloImpresoraRequest): Observable<ModeloImpresora> {
+    return this.http.put<ModeloImpresora>(`${this.apiUrl}/modelos-impresora/${id}`, request);
+  }
+
+  deleteModeloImpresora(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.apiUrl}/modelos-impresora/${id}`);
   }
 }

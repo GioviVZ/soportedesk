@@ -48,3 +48,28 @@ export interface SubdependenciaRequest {
   nombre: string;
   dependenciaId: number;
 }
+
+export interface MarcaImpresora {
+  id: number;
+  nombre: string;
+}
+
+export interface ModeloImpresoraToner {
+  id?: number;
+  color: string;
+  variante: string;
+  codigo: string;
+}
+
+export interface ModeloImpresora {
+  id: number;
+  nombre: string;
+  marca: MarcaImpresora;
+  toners: ModeloImpresoraToner[];
+}
+
+export interface ModeloImpresoraRequest {
+  marcaId: number;
+  nombre: string;
+  toners: ModeloImpresoraToner[];
+}
