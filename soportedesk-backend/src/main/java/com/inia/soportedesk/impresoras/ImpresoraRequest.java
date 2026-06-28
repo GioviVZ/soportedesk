@@ -1,7 +1,7 @@
 package com.inia.soportedesk.impresoras;
 
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Size;
+import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -9,11 +9,8 @@ import lombok.Setter;
 @Setter
 public class ImpresoraRequest {
 
-    @NotBlank
-    private String marca;
-
-    @NotBlank
-    private String modelo;
+    @NotNull
+    private Long modeloImpresoraId;
 
     private Long tipoImpresoraId;
 
@@ -33,16 +30,4 @@ public class ImpresoraRequest {
 
     @NotBlank
     private String estado;
-
-    @Size(max = 100)
-    private String modeloTonerNegro;
-
-    @Size(max = 100)
-    private String modeloTonerC;
-
-    @Size(max = 100)
-    private String modeloTonerM;
-
-    @Size(max = 100)
-    private String modeloTonerY;
 }

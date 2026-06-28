@@ -1,6 +1,8 @@
 package com.inia.soportedesk.impresoras;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.inia.soportedesk.catalogo.MarcaImpresora;
+import com.inia.soportedesk.catalogo.ModeloImpresora;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -32,30 +34,35 @@ class ImpresoraControllerIT {
 
     private ImpresoraRequest sampleRequest() {
         ImpresoraRequest request = new ImpresoraRequest();
-        request.setMarca("HP");
-        request.setModelo("M404dn");
+        request.setModeloImpresoraId(1L);
         request.setTipoConexion("IP");
         request.setIp("10.0.0.50");
         request.setSerie("SN-12345");
         request.setCodigoInventario("INV-001");
         request.setCodigoPatrimonial("PAT-001");
         request.setEstado("Activa");
-        request.setModeloTonerNegro("TN-2380");
         return request;
     }
 
     private Impresora sampleImpresora() {
+        MarcaImpresora marca = new MarcaImpresora();
+        marca.setId(1L);
+        marca.setNombre("HP");
+
+        ModeloImpresora modelo = new ModeloImpresora();
+        modelo.setId(1L);
+        modelo.setMarca(marca);
+        modelo.setNombre("M404dn");
+
         Impresora imp = new Impresora();
         imp.setId(1L);
-        imp.setMarca("HP");
-        imp.setModelo("M404dn");
+        imp.setModeloImpresora(modelo);
         imp.setTipoConexion("IP");
         imp.setIp("10.0.0.50");
         imp.setSerie("SN-12345");
         imp.setCodigoInventario("INV-001");
         imp.setCodigoPatrimonial("PAT-001");
         imp.setEstado("Activa");
-        imp.setModeloTonerNegro("TN-2380");
         return imp;
     }
 
@@ -66,8 +73,8 @@ class ImpresoraControllerIT {
 
         mockMvc.perform(get("/api/impresoras"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].marca", is("HP")))
-                .andExpect(jsonPath("$[0].modelo", is("M404dn")));
+                .andExpect(jsonPath("$[0].modeloImpresora.marca.nombre", is("HP")))
+                .andExpect(jsonPath("$[0].modeloImpresora.nombre", is("M404dn")));
     }
 
     @Test
@@ -86,8 +93,8 @@ class ImpresoraControllerIT {
                         .contentType("application/json")
                         .content(objectMapper.writeValueAsString(sampleRequest())))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.marca", is("HP")))
-                .andExpect(jsonPath("$.modelo", is("M404dn")));
+                .andExpect(jsonPath("$.modeloImpresora.marca.nombre", is("HP")))
+                .andExpect(jsonPath("$.modeloImpresora.nombre", is("M404dn")));
     }
 
     @Test

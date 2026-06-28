@@ -1,5 +1,7 @@
 package com.inia.soportedesk.impresoras;
 
+import com.inia.soportedesk.catalogo.MarcaImpresora;
+import com.inia.soportedesk.catalogo.ModeloImpresora;
 import com.inia.soportedesk.common.FileStorageService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,10 +36,18 @@ class ImpresoraDriverControllerIT {
     private FileStorageService fileStorageService;
 
     private Impresora impresoraConDriver(Long id, String path) {
+        MarcaImpresora marca = new MarcaImpresora();
+        marca.setId(1L);
+        marca.setNombre("HP");
+
+        ModeloImpresora modelo = new ModeloImpresora();
+        modelo.setId(1L);
+        modelo.setMarca(marca);
+        modelo.setNombre("M404dn");
+
         Impresora imp = new Impresora();
         imp.setId(id);
-        imp.setMarca("HP");
-        imp.setModelo("M404dn");
+        imp.setModeloImpresora(modelo);
         imp.setEstado("Activa");
         imp.setDriverNombre("driver-hp.zip");
         imp.setDriverVersion("1.2");

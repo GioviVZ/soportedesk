@@ -1,6 +1,9 @@
 package com.inia.soportedesk.impresoras;
 
 import com.inia.soportedesk.catalogo.DependenciaRepository;
+import com.inia.soportedesk.catalogo.MarcaImpresora;
+import com.inia.soportedesk.catalogo.ModeloImpresora;
+import com.inia.soportedesk.catalogo.ModeloImpresoraRepository;
 import com.inia.soportedesk.catalogo.SedeRepository;
 import com.inia.soportedesk.catalogo.SubdependenciaRepository;
 import com.inia.soportedesk.catalogo.TipoImpresora;
@@ -39,35 +42,46 @@ class ImpresoraServiceTest {
     @Mock
     private TipoImpresoraRepository tipoImpresoraRepository;
 
+    @Mock
+    private ModeloImpresoraRepository modeloImpresoraRepository;
+
     @InjectMocks
     private ImpresoraService service;
 
+    private ModeloImpresora modeloImpresora() {
+        MarcaImpresora marca = new MarcaImpresora();
+        marca.setId(1L);
+        marca.setNombre("HP");
+
+        ModeloImpresora modelo = new ModeloImpresora();
+        modelo.setId(1L);
+        modelo.setMarca(marca);
+        modelo.setNombre("M404dn");
+        return modelo;
+    }
+
     private ImpresoraRequest sampleRequest() {
         ImpresoraRequest request = new ImpresoraRequest();
-        request.setMarca("HP");
-        request.setModelo("M404dn");
+        request.setModeloImpresoraId(1L);
         request.setTipoConexion("IP");
         request.setIp("10.0.0.50");
         request.setSerie("SN-12345");
         request.setCodigoInventario("INV-001");
         request.setCodigoPatrimonial("PAT-001");
         request.setEstado("Activa");
-        request.setModeloTonerNegro("TN-2380");
         return request;
     }
 
     private Impresora sampleImpresora(Long id) {
         Impresora imp = new Impresora();
         imp.setId(id);
-        imp.setMarca("HP");
-        imp.setModelo("M404dn");
+        imp.setModeloImpresora(modeloImpresora());
         imp.setTipoConexion("IP");
         imp.setIp("10.0.0.50");
         imp.setSerie("SN-12345");
         imp.setCodigoInventario("INV-001");
         imp.setCodigoPatrimonial("PAT-001");
         imp.setEstado("Activa");
-        imp.setModeloTonerNegro("TN-2380");
         return imp;
     }
 
@@ -90,26 +104,26 @@ class ImpresoraServiceTest {
     }
 
     @Test
-    void create_savesImpresoraWithModeloConsumibles() {
+    void create_savesImpresoraWithModeloImpresora() {
+        when(modeloImpresoraRepository.findById(1L)).thenReturn(Optional.of(modeloImpresora()));
         when(repository.save(any(Impresora.class))).thenAnswer(inv -> inv.getArgument(0));
 
         Impresora result = service.create(sampleRequest());
 
-        assertThat(result.getMarca()).isEqualTo("HP");
-        assertThat(result.getModelo()).isEqualTo("M404dn");
-        assertThat(result.getModeloTonerNegro()).isEqualTo("TN-2380");
+        assertThat(result.getModeloImpresora().getNombre()).isEqualTo("M404dn");
+        assertThat(result.getModeloImpresora().getMarca().getNombre()).isEqualTo("HP");
         assertThat(result.getSerie()).isEqualTo("SN-12345");
     }
 
     @Test
-    void create_blankModelo_storesNull() {
+    void create_withUnknownModeloImpresoraId_throwsResourceNotFoundException() {
+        when(modeloImpresoraRepository.findById(99L)).thenReturn(Optional.empty());
+
         ImpresoraRequest request = sampleRequest();
-        request.setModeloTonerNegro("   ");
-        when(repository.save(any(Impresora.class))).thenAnswer(inv -> inv.getArgument(0));
+        request.setModeloImpresoraId(99L);
 
-        Impresora result = service.create(request);
-
-        assertThat(result.getModeloTonerNegro()).isNull();
+        assertThatThrownBy(() -> service.create(request))
+                .isInstanceOf(ResourceNotFoundException.class);
     }
 
     @Test
@@ -120,14 +134,12 @@ class ImpresoraServiceTest {
         existing.setDriverVersion("1.2");
         existing.setDriverSo("Windows 10");
         when(repository.findById(1L)).thenReturn(Optional.of(existing));
+        when(modeloImpresoraRepository.findById(1L)).thenReturn(Optional.of(modeloImpresora()));
         when(repository.save(any(Impresora.class))).thenAnswer(inv -> inv.getArgument(0));
 
-        ImpresoraRequest request = sampleRequest();
-        request.setModeloTonerNegro("TN-2500");
+        Impresora result = service.update(1L, sampleRequest());
 
-        Impresora result = service.update(1L, request);
-
-        assertThat(result.getModeloTonerNegro()).isEqualTo("TN-2500");
+        assertThat(result.getModeloImpresora().getNombre()).isEqualTo("M404dn");
         assertThat(result.getDriverArchivoPath()).isEqualTo("drivers/1/driver-hp.zip");
     }
 
@@ -143,6 +155,7 @@ class ImpresoraServiceTest {
 
     @Test
     void create_withTipoConexionUsb_forcesIpNull() {
+        when(modeloImpresoraRepository.findById(1L)).thenReturn(Optional.of(modeloImpresora()));
         ImpresoraRequest request = sampleRequest();
         request.setTipoConexion("USB");
         request.setIp("10.0.0.50");
@@ -156,10 +169,10 @@ class ImpresoraServiceTest {
 
     @Test
     void create_withTipoConexionIp_preservesIp() {
-        ImpresoraRequest request = sampleRequest();
+        when(modeloImpresoraRepository.findById(1L)).thenReturn(Optional.of(modeloImpresora()));
         when(repository.save(any(Impresora.class))).thenAnswer(inv -> inv.getArgument(0));
 
-        Impresora result = service.create(request);
+        Impresora result = service.create(sampleRequest());
 
         assertThat(result.getTipoConexion()).isEqualTo("IP");
         assertThat(result.getIp()).isEqualTo("10.0.0.50");
@@ -167,6 +180,7 @@ class ImpresoraServiceTest {
 
     @Test
     void create_resolvesTipoImpresoraFromId() {
+        when(modeloImpresoraRepository.findById(1L)).thenReturn(Optional.of(modeloImpresora()));
         ImpresoraRequest request = sampleRequest();
         request.setTipoImpresoraId(5L);
         TipoImpresora tipo = new TipoImpresora();

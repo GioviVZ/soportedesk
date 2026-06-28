@@ -1,6 +1,7 @@
 package com.inia.soportedesk.impresoras;
 
 import com.inia.soportedesk.catalogo.Dependencia;
+import com.inia.soportedesk.catalogo.ModeloImpresora;
 import com.inia.soportedesk.catalogo.Sede;
 import com.inia.soportedesk.catalogo.Subdependencia;
 import com.inia.soportedesk.catalogo.TipoImpresora;
@@ -19,11 +20,9 @@ public class Impresora {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false)
-    private String marca;
-
-    @Column(nullable = false)
-    private String modelo;
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "modelo_impresora_id", nullable = false)
+    private ModeloImpresora modeloImpresora;
 
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "tipo_impresora_id")
@@ -56,18 +55,6 @@ public class Impresora {
 
     @Column(nullable = false)
     private String estado;
-
-    @Column(name = "modelo_toner_negro")
-    private String modeloTonerNegro;
-
-    @Column(name = "modelo_toner_c")
-    private String modeloTonerC;
-
-    @Column(name = "modelo_toner_m")
-    private String modeloTonerM;
-
-    @Column(name = "modelo_toner_y")
-    private String modeloTonerY;
 
     @Column(name = "driver_nombre")
     private String driverNombre;

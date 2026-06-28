@@ -1,6 +1,7 @@
 package com.inia.soportedesk.impresoras;
 
 import com.inia.soportedesk.catalogo.DependenciaRepository;
+import com.inia.soportedesk.catalogo.ModeloImpresoraRepository;
 import com.inia.soportedesk.catalogo.SedeRepository;
 import com.inia.soportedesk.catalogo.SubdependenciaRepository;
 import com.inia.soportedesk.catalogo.TipoImpresoraRepository;
@@ -20,6 +21,7 @@ public class ImpresoraService {
     private final DependenciaRepository dependenciaRepository;
     private final SubdependenciaRepository subdependenciaRepository;
     private final TipoImpresoraRepository tipoImpresoraRepository;
+    private final ModeloImpresoraRepository modeloImpresoraRepository;
 
     public List<Impresora> findAll(String search) {
         if (search == null || search.isBlank()) {
@@ -61,8 +63,9 @@ public class ImpresoraService {
     }
 
     private void copyFields(Impresora impresora, ImpresoraRequest request) {
-        impresora.setMarca(request.getMarca());
-        impresora.setModelo(request.getModelo());
+        impresora.setModeloImpresora(modeloImpresoraRepository.findById(request.getModeloImpresoraId())
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Modelo de impresora no encontrado: " + request.getModeloImpresoraId())));
         impresora.setEstado(request.getEstado());
         impresora.setSede(request.getSedeId() != null
                 ? sedeRepository.findById(request.getSedeId())
@@ -85,10 +88,6 @@ public class ImpresoraService {
         impresora.setCodigoPatrimonial(emptyToNull(request.getCodigoPatrimonial()));
         impresora.setTipoConexion(request.getTipoConexion());
         impresora.setIp("IP".equals(request.getTipoConexion()) ? emptyToNull(request.getIp()) : null);
-        impresora.setModeloTonerNegro(emptyToNull(request.getModeloTonerNegro()));
-        impresora.setModeloTonerC(emptyToNull(request.getModeloTonerC()));
-        impresora.setModeloTonerM(emptyToNull(request.getModeloTonerM()));
-        impresora.setModeloTonerY(emptyToNull(request.getModeloTonerY()));
     }
 
     private String emptyToNull(String val) {
