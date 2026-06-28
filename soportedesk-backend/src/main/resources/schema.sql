@@ -552,7 +552,7 @@ IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = N'IX_impresoras_subdepende
 GO
 IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = N'IX_impresoras_estado')            CREATE INDEX IX_impresoras_estado            ON dbo.impresoras (estado);
 GO
-IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = N'IX_impresoras_marca_modelo')      CREATE INDEX IX_impresoras_marca_modelo      ON dbo.impresoras (marca, modelo);
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = N'IX_impresoras_modelo_impresora_id') CREATE INDEX IX_impresoras_modelo_impresora_id ON dbo.impresoras (modelo_impresora_id);
 GO
 
 IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = N'IX_correos_sede_id')           CREATE INDEX IX_correos_sede_id           ON dbo.correos (sede_id);

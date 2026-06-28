@@ -39,9 +39,17 @@ CREATE TABLE dbo.modelo_impresora_toners (
 );
 GO
 
+IF EXISTS (SELECT * FROM sys.indexes WHERE name = N'IX_impresoras_marca_modelo')
+    DROP INDEX IX_impresoras_marca_modelo ON dbo.impresoras;
+GO
+
 ALTER TABLE dbo.impresoras DROP COLUMN marca, modelo, modelo_toner_negro, modelo_toner_c, modelo_toner_m, modelo_toner_y;
 GO
 
 ALTER TABLE dbo.impresoras ADD modelo_impresora_id BIGINT NOT NULL
     CONSTRAINT FK_impresoras_modelo FOREIGN KEY REFERENCES dbo.modelos_impresora (id);
+GO
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = N'IX_impresoras_modelo_impresora_id')
+    CREATE INDEX IX_impresoras_modelo_impresora_id ON dbo.impresoras (modelo_impresora_id);
 GO
