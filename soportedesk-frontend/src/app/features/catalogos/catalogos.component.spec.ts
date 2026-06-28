@@ -7,7 +7,7 @@ describe('CatalogosComponent', () => {
   let fixture: ComponentFixture<CatalogosComponent>;
   let httpMock: HttpTestingController;
 
-  function flushLoadAll(sedesData: unknown[] = [], tiposImpresoraData: unknown[] = []): void {
+  function flushLoadAll(sedesData: unknown[] = [], tiposImpresoraData: unknown[] = [], marcasImpresoraData: unknown[] = []): void {
     httpMock.expectOne((req) => req.url.includes('/catalogos/sedes')).flush(sedesData);
     httpMock.expectOne((req) => req.url.includes('/catalogos/dependencias')).flush([]);
     httpMock.expectOne((req) => req.url.includes('/catalogos/subdependencias')).flush([]);
@@ -15,6 +15,8 @@ describe('CatalogosComponent', () => {
     httpMock.expectOne((req) => req.url.includes('/catalogos/tipos-licencia')).flush([]);
     httpMock.expectOne((req) => req.url.includes('/catalogos/tipos-bien')).flush([]);
     httpMock.expectOne((req) => req.url.includes('/catalogos/tipos-impresora')).flush(tiposImpresoraData);
+    httpMock.expectOne((req) => req.url.includes('/catalogos/marcas-impresora')).flush(marcasImpresoraData);
+    httpMock.expectOne((req) => req.url.includes('/catalogos/modelos-impresora')).flush([]);
   }
 
   beforeEach(async () => {
@@ -73,5 +75,20 @@ describe('CatalogosComponent', () => {
     flushLoadAll([], [{ id: 1, nombre: 'Láser' }]);
 
     expect(component.tiposImpresora.length).toBe(1);
+  });
+
+  it('should create a marca de impresora and reload', () => {
+    component.activeTab = 'marcasImpresora';
+    component.nombreForm = 'HP';
+    component.submitSimple();
+
+    const postReq = httpMock.expectOne((req) =>
+      req.method === 'POST' && req.url.includes('/catalogos/marcas-impresora'),
+    );
+    postReq.flush({ id: 1, nombre: 'HP' });
+
+    flushLoadAll([], [], [{ id: 1, nombre: 'HP' }]);
+
+    expect(component.marcasImpresora.length).toBe(1);
   });
 });

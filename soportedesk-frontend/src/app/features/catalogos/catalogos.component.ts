@@ -4,6 +4,8 @@ import { FormsModule } from '@angular/forms';
 import { CatalogoService } from '../../core/catalogos/catalogo.service';
 import {
   Dependencia,
+  MarcaImpresora,
+  ModeloImpresora,
   Sede,
   Subdependencia,
   TipoBien,
@@ -19,7 +21,9 @@ type CatalogoTab =
   | 'tiposContrato'
   | 'tiposLicencia'
   | 'tiposBien'
-  | 'tiposImpresora';
+  | 'tiposImpresora'
+  | 'marcasImpresora'
+  | 'modelosImpresora';
 
 @Component({
   selector: 'app-catalogos',
@@ -40,6 +44,8 @@ export class CatalogosComponent implements OnInit {
   tiposLicencia: TipoLicencia[] = [];
   tiposBien: TipoBien[] = [];
   tiposImpresora: TipoImpresora[] = [];
+  marcasImpresora: MarcaImpresora[] = [];
+  modelosImpresora: ModeloImpresora[] = [];
 
   editingId: number | null = null;
   nombreForm = '';
@@ -57,6 +63,8 @@ export class CatalogosComponent implements OnInit {
     this.service.getTiposLicencia().subscribe((data) => (this.tiposLicencia = data));
     this.service.getTiposBien().subscribe((data) => (this.tiposBien = data));
     this.service.getTiposImpresora().subscribe((data) => (this.tiposImpresora = data));
+    this.service.getMarcasImpresora().subscribe((data) => (this.marcasImpresora = data));
+    this.service.getModelosImpresora().subscribe((data) => (this.modelosImpresora = data));
   }
 
   setTab(tab: CatalogoTab): void {
@@ -100,6 +108,10 @@ export class CatalogosComponent implements OnInit {
       obs = this.editingId
         ? this.service.updateTipoImpresora(this.editingId, { nombre: this.nombreForm })
         : this.service.createTipoImpresora({ nombre: this.nombreForm });
+    } else if (this.activeTab === 'marcasImpresora') {
+      obs = this.editingId
+        ? this.service.updateMarcaImpresora(this.editingId, { nombre: this.nombreForm })
+        : this.service.createMarcaImpresora({ nombre: this.nombreForm });
     } else if (this.activeTab === 'dependencias') {
       if (!this.parentIdForm) return;
       obs = this.editingId
@@ -141,6 +153,8 @@ export class CatalogosComponent implements OnInit {
       obs = this.service.deleteTipoLicencia(id);
     } else if (tab === 'tiposBien') {
       obs = this.service.deleteTipoBien(id);
+    } else if (tab === 'marcasImpresora') {
+      obs = this.service.deleteMarcaImpresora(id);
     } else {
       obs = this.service.deleteTipoImpresora(id);
     }
