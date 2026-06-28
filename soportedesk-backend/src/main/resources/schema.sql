@@ -1,5 +1,5 @@
 -- =============================================================
--- SoporteDesk INIA — Schema v1.0 (SQL Server)
+-- Sistema Gestión de Soporte Informático INIA - Schema v1.0 (SQL Server)
 -- Motor: Microsoft SQL Server 2016+
 -- Ejecutar en SSMS conectado al servidor (master o ssti)
 -- =============================================================
@@ -92,6 +92,40 @@ CREATE TABLE dbo.tipos_impresora (
     nombre NVARCHAR(100) NOT NULL,
     CONSTRAINT PK_tipos_impresora        PRIMARY KEY (id),
     CONSTRAINT UQ_tipos_impresora_nombre UNIQUE      (nombre)
+);
+GO
+
+IF OBJECT_ID(N'dbo.marcas_impresora', N'U') IS NULL
+CREATE TABLE dbo.marcas_impresora (
+    id     BIGINT        NOT NULL IDENTITY(1,1),
+    nombre NVARCHAR(100) NOT NULL,
+    CONSTRAINT PK_marcas_impresora        PRIMARY KEY (id),
+    CONSTRAINT UQ_marcas_impresora_nombre UNIQUE      (nombre)
+);
+GO
+
+IF OBJECT_ID(N'dbo.modelos_impresora', N'U') IS NULL
+CREATE TABLE dbo.modelos_impresora (
+    id       BIGINT        NOT NULL IDENTITY(1,1),
+    marca_id BIGINT        NOT NULL,
+    nombre   NVARCHAR(100) NOT NULL,
+    CONSTRAINT PK_modelos_impresora       PRIMARY KEY (id),
+    CONSTRAINT FK_modelos_impresora_marca FOREIGN KEY (marca_id) REFERENCES dbo.marcas_impresora (id) ON UPDATE NO ACTION ON DELETE NO ACTION,
+    CONSTRAINT UQ_modelos_impresora_marca_nombre UNIQUE (marca_id, nombre)
+);
+GO
+
+IF OBJECT_ID(N'dbo.modelo_impresora_toners', N'U') IS NULL
+CREATE TABLE dbo.modelo_impresora_toners (
+    id                  BIGINT        NOT NULL IDENTITY(1,1),
+    modelo_impresora_id BIGINT        NOT NULL,
+    color               NVARCHAR(20)  NOT NULL,
+    variante            NVARCHAR(50)  NOT NULL,
+    codigo              NVARCHAR(80)  NOT NULL,
+    CONSTRAINT PK_modelo_impresora_toners PRIMARY KEY (id),
+    CONSTRAINT FK_modelo_impresora_toners_modelo FOREIGN KEY (modelo_impresora_id)
+        REFERENCES dbo.modelos_impresora (id) ON DELETE CASCADE,
+    CONSTRAINT UQ_modelo_impresora_toners UNIQUE (modelo_impresora_id, color, variante)
 );
 GO
 
@@ -237,8 +271,7 @@ GO
 IF OBJECT_ID(N'dbo.impresoras', N'U') IS NULL
 CREATE TABLE dbo.impresoras (
     id                  BIGINT        NOT NULL IDENTITY(1,1),
-    marca               NVARCHAR(80)  NOT NULL,
-    modelo              NVARCHAR(100) NOT NULL,
+    modelo_impresora_id BIGINT        NOT NULL,
     tipo_impresora_id   BIGINT        NULL,
     serie               NVARCHAR(100) NULL,
     codigo_inventario   NVARCHAR(100) NULL,
@@ -249,15 +282,12 @@ CREATE TABLE dbo.impresoras (
     dependencia_id      BIGINT        NULL,
     subdependencia_id   BIGINT        NULL,
     estado              NVARCHAR(30)  NOT NULL,
-    modelo_toner_negro  NVARCHAR(80)  NULL,
-    modelo_toner_c      NVARCHAR(80)  NULL,
-    modelo_toner_m      NVARCHAR(80)  NULL,
-    modelo_toner_y      NVARCHAR(80)  NULL,
     driver_nombre       NVARCHAR(200) NULL,
     driver_version      NVARCHAR(50)  NULL,
     driver_so           NVARCHAR(50)  NULL,
     driver_archivo_path NVARCHAR(500) NULL,
     CONSTRAINT PK_impresoras        PRIMARY KEY (id),
+    CONSTRAINT FK_impresoras_modelo FOREIGN KEY (modelo_impresora_id) REFERENCES dbo.modelos_impresora (id) ON UPDATE NO ACTION ON DELETE NO ACTION,
     CONSTRAINT FK_impresoras_tipo   FOREIGN KEY (tipo_impresora_id)  REFERENCES dbo.tipos_impresora (id) ON UPDATE NO ACTION ON DELETE NO ACTION,
     CONSTRAINT FK_impresoras_sede   FOREIGN KEY (sede_id)           REFERENCES dbo.sedes (id)           ON UPDATE NO ACTION ON DELETE NO ACTION,
     CONSTRAINT FK_impresoras_dep    FOREIGN KEY (dependencia_id)    REFERENCES dbo.dependencias (id)    ON UPDATE NO ACTION ON DELETE NO ACTION,
