@@ -1,8 +1,8 @@
 -- ============================================================
 -- Catalogo Marca -> Modelo -> Toner de Impresoras
 -- Ejecutar manualmente en SSMS antes de desplegar el backend actualizado.
--- Pre-requisito: la tabla dbo.impresoras debe estar vacia (o sin filas que
--- vayan a violar el NOT NULL de modelo_impresora_id agregado al final).
+-- Cada paso es idempotente (se puede volver a correr el script completo
+-- aunque una corrida anterior haya quedado a mitad de camino).
 -- ============================================================
 
 IF OBJECT_ID(N'dbo.marcas_impresora', N'U') IS NULL
@@ -39,17 +39,28 @@ CREATE TABLE dbo.modelo_impresora_toners (
 );
 GO
 
-IF EXISTS (SELECT * FROM sys.indexes WHERE name = N'IX_impresoras_marca_modelo')
+-- dbo.impresoras solo tenia datos de prueba sin valor real (confirmado) --
+-- se vacia para poder agregar modelo_impresora_id como NOT NULL sin backfill.
+DELETE FROM dbo.impresoras;
+GO
+
+IF EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_impresoras_marca_modelo')
     DROP INDEX IX_impresoras_marca_modelo ON dbo.impresoras;
 GO
 
-ALTER TABLE dbo.impresoras DROP COLUMN marca, modelo, modelo_toner_negro, modelo_toner_c, modelo_toner_m, modelo_toner_y;
+IF EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID(N'dbo.impresoras') AND name = 'marca')
+BEGIN
+    ALTER TABLE dbo.impresoras DROP COLUMN marca, modelo, modelo_toner_negro, modelo_toner_c, modelo_toner_m, modelo_toner_y;
+END
 GO
 
-ALTER TABLE dbo.impresoras ADD modelo_impresora_id BIGINT NOT NULL
-    CONSTRAINT FK_impresoras_modelo FOREIGN KEY REFERENCES dbo.modelos_impresora (id);
+IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID(N'dbo.impresoras') AND name = 'modelo_impresora_id')
+BEGIN
+    ALTER TABLE dbo.impresoras ADD modelo_impresora_id BIGINT NOT NULL
+        CONSTRAINT FK_impresoras_modelo FOREIGN KEY REFERENCES dbo.modelos_impresora (id);
+END
 GO
 
-IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = N'IX_impresoras_modelo_impresora_id')
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_impresoras_modelo_impresora_id')
     CREATE INDEX IX_impresoras_modelo_impresora_id ON dbo.impresoras (modelo_impresora_id);
 GO
