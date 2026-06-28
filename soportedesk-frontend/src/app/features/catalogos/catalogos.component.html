@@ -9,6 +9,7 @@
   <button [class.active]="activeTab === 'tiposBien'" (click)="setTab('tiposBien')">Tipos de Bien</button>
   <button [class.active]="activeTab === 'tiposImpresora'" (click)="setTab('tiposImpresora')">Tipos de Impresora</button>
   <button [class.active]="activeTab === 'marcasImpresora'" (click)="setTab('marcasImpresora')">Marcas de Impresora</button>
+  <button [class.active]="activeTab === 'modelosImpresora'" (click)="setTab('modelosImpresora')">Modelos de Impresora</button>
 </div>
 
 <!-- Sedes -->
@@ -237,4 +238,38 @@
     <button (click)="submitSimple()">{{ editingId ? 'Actualizar' : 'Agregar' }}</button>
     <button class="secondary" *ngIf="editingId" (click)="resetForm()">Cancelar</button>
   </div>
+</ng-container>
+
+<!-- Modelos de Impresora -->
+<ng-container *ngIf="activeTab === 'modelosImpresora'">
+  <table>
+    <thead>
+      <tr>
+        <th>Marca</th>
+        <th>Modelo</th>
+        <th>Tóner</th>
+        <th>Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let item of modelosImpresora">
+        <td>{{ item.marca.nombre }}</td>
+        <td>{{ item.nombre }}</td>
+        <td>
+          <div *ngFor="let toner of item.toners">{{ toner.color }} · {{ toner.variante }} — {{ toner.codigo }}</div>
+        </td>
+        <td>
+          <button (click)="onEditModeloImpresora(item)">Editar</button>
+          <button class="danger" (click)="deleteModeloImpresora(item.id)">Eliminar</button>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+
+  <app-modelo-impresora-form
+    [modelo]="editingModeloImpresora"
+    [marcas]="marcasImpresora"
+    (saved)="onModeloImpresoraSaved()"
+    (cancelled)="onModeloImpresoraCancelled()"
+  />
 </ng-container>

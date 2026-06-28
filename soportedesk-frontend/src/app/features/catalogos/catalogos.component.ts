@@ -2,6 +2,7 @@ import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { CatalogoService } from '../../core/catalogos/catalogo.service';
+import { ModeloImpresoraFormComponent } from './modelo-impresora-form.component';
 import {
   Dependencia,
   MarcaImpresora,
@@ -28,7 +29,7 @@ type CatalogoTab =
 @Component({
   selector: 'app-catalogos',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, ModeloImpresoraFormComponent],
   templateUrl: './catalogos.component.html',
   styleUrl: './catalogos.component.scss',
 })
@@ -50,6 +51,7 @@ export class CatalogosComponent implements OnInit {
   editingId: number | null = null;
   nombreForm = '';
   parentIdForm: number | null = null;
+  editingModeloImpresora: ModeloImpresora | null = null;
 
   ngOnInit(): void {
     this.loadAll();
@@ -69,7 +71,25 @@ export class CatalogosComponent implements OnInit {
 
   setTab(tab: CatalogoTab): void {
     this.activeTab = tab;
+    this.editingModeloImpresora = null;
     this.resetForm();
+  }
+
+  onEditModeloImpresora(modelo: ModeloImpresora): void {
+    this.editingModeloImpresora = modelo;
+  }
+
+  onModeloImpresoraSaved(): void {
+    this.editingModeloImpresora = null;
+    this.loadAll();
+  }
+
+  onModeloImpresoraCancelled(): void {
+    this.editingModeloImpresora = null;
+  }
+
+  deleteModeloImpresora(id: number): void {
+    this.service.deleteModeloImpresora(id).subscribe(() => this.loadAll());
   }
 
   startEdit(id: number, nombre: string, parentId?: number): void {

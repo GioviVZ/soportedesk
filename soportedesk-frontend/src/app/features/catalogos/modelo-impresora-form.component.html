@@ -1,0 +1,51 @@
+<form [formGroup]="form" (ngSubmit)="submit()" class="modelo-impresora-form">
+  <div class="form-grid">
+    <div class="field">
+      <label>Marca</label>
+      <select [value]="marcaId" (change)="onMarcaChange($any($event.target).value)">
+        <option [ngValue]="null">Seleccione...</option>
+        <option *ngFor="let m of marcas" [value]="m.id">{{ m.nombre }}</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Modelo</label>
+      <input type="text" formControlName="nombre" />
+    </div>
+  </div>
+
+  <section class="toner-section">
+    <div class="section-heading">
+      <div>
+        <h3>Variantes de tóner</h3>
+        <p>Agrega una fila por cada color y variante (ej. Estándar, Alto rendimiento).</p>
+      </div>
+      <button type="button" class="secondary compact" (click)="addToner()">Agregar tóner</button>
+    </div>
+
+    <div class="toner-list" formArrayName="toners">
+      <div class="toner-row" *ngFor="let group of tonersArray.controls; let i = index" [formGroupName]="i">
+        <div class="field">
+          <label>Color</label>
+          <select formControlName="color">
+            <option value="">Seleccione...</option>
+            <option *ngFor="let c of tonerColores" [value]="c">{{ c }}</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Variante</label>
+          <input type="text" formControlName="variante" placeholder="ej: Estándar" />
+        </div>
+        <div class="field">
+          <label>Código</label>
+          <input type="text" formControlName="codigo" placeholder="ej: CF259A" />
+        </div>
+        <button type="button" class="icon-btn" (click)="removeToner(i)" title="Quitar tóner">Quitar</button>
+      </div>
+    </div>
+  </section>
+
+  <div class="actions">
+    <button type="button" class="secondary" (click)="cancelled.emit()">Cancelar</button>
+    <button type="submit" [disabled]="form.invalid || !marcaId">Guardar</button>
+  </div>
+</form>
