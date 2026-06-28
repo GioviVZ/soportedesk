@@ -18,6 +18,7 @@ describe('ImpresoraFormComponent', () => {
     httpMock = TestBed.inject(HttpTestingController);
 
     httpMock.expectOne((req) => req.url.includes('/catalogos/tipos-impresora')).flush([]);
+    httpMock.expectOne((req) => req.url.includes('/catalogos/marcas-impresora')).flush([]);
     httpMock.expectOne((req) => req.url.includes('/catalogos/sedes')).flush([]);
     httpMock.expectOne((req) => req.url.includes('/catalogos/tipos-contrato')).flush([]);
   });

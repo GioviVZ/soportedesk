@@ -16,7 +16,7 @@
       <div class="detail-grid">
         <div class="detail-field">
           <span class="detail-label">Marca / Modelo</span>
-          <span class="detail-value">{{ impresora.marca }} {{ impresora.modelo }}</span>
+          <span class="detail-value">{{ impresora.modeloImpresora.marca.nombre }} {{ impresora.modeloImpresora.nombre }}</span>
         </div>
         <div class="detail-field">
           <span class="detail-label">Tipo de impresora</span>
@@ -79,23 +79,13 @@
         <path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
       </svg>
 
-      <ng-container *ngIf="hasConsumibles(); else noConsumibles">
+      <ng-container *ngIf="tonersPorColor.length; else noConsumibles">
         <div class="consumibles-grid">
-          <div class="consumible-card" *ngIf="impresora.modeloTonerNegro">
-            <span>Tóner Negro</span>
-            <strong>{{ impresora.modeloTonerNegro }}</strong>
-          </div>
-          <div class="consumible-card" *ngIf="impresora.modeloTonerC">
-            <span>Tóner Cyan</span>
-            <strong>{{ impresora.modeloTonerC }}</strong>
-          </div>
-          <div class="consumible-card" *ngIf="impresora.modeloTonerM">
-            <span>Tóner Magenta</span>
-            <strong>{{ impresora.modeloTonerM }}</strong>
-          </div>
-          <div class="consumible-card" *ngIf="impresora.modeloTonerY">
-            <span>Tóner Amarillo</span>
-            <strong>{{ impresora.modeloTonerY }}</strong>
+          <div class="consumible-card" *ngFor="let grupo of tonersPorColor">
+            <span>{{ grupo.color }}</span>
+            <div class="toner-variante" *ngFor="let variante of grupo.variantes">
+              <strong>{{ variante.variante }}</strong> — {{ variante.codigo }}
+            </div>
           </div>
         </div>
       </ng-container>

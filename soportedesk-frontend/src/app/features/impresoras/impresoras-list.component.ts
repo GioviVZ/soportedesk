@@ -31,8 +31,8 @@ export class ImpresorasListComponent implements OnInit {
 
   items: Impresora[] = [];
   columns: TableColumn[] = [
-    { key: 'marca', label: 'Marca' },
-    { key: 'modelo', label: 'Modelo' },
+    { key: 'modeloImpresora.marca.nombre', label: 'Marca' },
+    { key: 'modeloImpresora.nombre', label: 'Modelo' },
     { key: 'tipoImpresora.nombre', label: 'Tipo' },
     { key: 'serie', label: 'Serie' },
     { key: 'ip', label: 'IP' },
@@ -85,7 +85,7 @@ export class ImpresorasListComponent implements OnInit {
   }
 
   onDelete(item: Impresora): void {
-    if (!confirm(`¿Eliminar la impresora "${item.marca} ${item.modelo}"?`)) return;
+    if (!confirm(`¿Eliminar la impresora "${item.modeloImpresora.marca.nombre} ${item.modeloImpresora.nombre}"?`)) return;
     this.service.delete(item.id).subscribe(() => this.load());
   }
 

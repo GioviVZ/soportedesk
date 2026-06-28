@@ -10,11 +10,17 @@
     <div class="two-col">
       <div class="field">
         <label>Marca</label>
-        <input type="text" formControlName="marca" />
+        <select [value]="marcaId" (change)="onMarcaChange($any($event.target).value)">
+          <option [ngValue]="null">Seleccione...</option>
+          <option *ngFor="let m of marcas" [value]="m.id">{{ m.nombre }}</option>
+        </select>
       </div>
       <div class="field">
         <label>Modelo</label>
-        <input type="text" formControlName="modelo" />
+        <select formControlName="modeloImpresoraId">
+          <option [ngValue]="null">Seleccione...</option>
+          <option *ngFor="let modelo of modelos" [ngValue]="modelo.id">{{ modelo.nombre }}</option>
+        </select>
       </div>
       <div class="field">
         <label>Tipo de impresora</label>
@@ -87,31 +93,24 @@
     />
   </app-section-card>
 
-  <app-section-card title="Consumibles">
+  <app-section-card title="Consumibles" *ngIf="modeloSeleccionado">
     <svg icon xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
       <path d="M4 7h16v11a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z" />
       <path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
       <path d="M8 12h8" />
     </svg>
 
-    <div class="two-col">
-      <div class="field">
-        <label>Tóner Negro</label>
-        <input type="text" formControlName="modeloTonerNegro" placeholder="ej: TN-2380" />
+    <ng-container *ngIf="modeloSeleccionado!.toners.length; else sinToner">
+      <div class="toner-preview">
+        <div class="toner-chip" *ngFor="let toner of modeloSeleccionado!.toners">
+          <span>{{ toner.color }} · {{ toner.variante }}</span>
+          <strong>{{ toner.codigo }}</strong>
+        </div>
       </div>
-      <div class="field">
-        <label>Tóner Cyan</label>
-        <input type="text" formControlName="modeloTonerC" placeholder="ej: TN-223C" />
-      </div>
-      <div class="field">
-        <label>Tóner Magenta</label>
-        <input type="text" formControlName="modeloTonerM" placeholder="ej: TN-223M" />
-      </div>
-      <div class="field">
-        <label>Tóner Amarillo</label>
-        <input type="text" formControlName="modeloTonerY" placeholder="ej: TN-223Y" />
-      </div>
-    </div>
+    </ng-container>
+    <ng-template #sinToner>
+      <p class="empty-message">Este modelo no tiene tóner registrado en el catálogo.</p>
+    </ng-template>
   </app-section-card>
 
   <div class="actions">

@@ -6,8 +6,12 @@ import { Impresora } from './impresora.model';
 
 const mockImpresora: Impresora = {
   id: 1,
-  marca: 'HP',
-  modelo: 'LaserJet',
+  modeloImpresora: {
+    id: 1,
+    nombre: 'LaserJet',
+    marca: { id: 1, nombre: 'HP' },
+    toners: [{ id: 1, color: 'Negro', variante: 'Estándar', codigo: 'TN-2380' }],
+  },
   tipoImpresora: { id: 1, nombre: 'Láser' },
   serie: 'SN-001',
   codigoInventario: 'INV-001',
@@ -18,10 +22,6 @@ const mockImpresora: Impresora = {
   dependencia: { id: 1, nombre: 'Dependencia Test' },
   subdependencia: null,
   estado: 'Activa',
-  modeloTonerNegro: 'TN-2380',
-  modeloTonerC: null,
-  modeloTonerM: null,
-  modeloTonerY: null,
   driverNombre: null,
   driverVersion: null,
   driverSo: null,
@@ -53,16 +53,18 @@ describe('ImpresoraFichaComponent', () => {
     expect(component.activeTab).toBe('consumibles');
   });
 
-  it('hasConsumibles returns true when any model is set', () => {
-    expect(component.hasConsumibles()).toBeTrue();
+  it('tonersPorColor groups toners by color', () => {
+    expect(component.tonersPorColor).toEqual([
+      { color: 'Negro', variantes: [{ id: 1, color: 'Negro', variante: 'Estándar', codigo: 'TN-2380' }] },
+    ]);
   });
 
-  it('hasConsumibles returns false when all models are null', () => {
+  it('tonersPorColor returns empty array when modelo has no toners', () => {
     component.impresora = {
       ...mockImpresora,
-      modeloTonerNegro: null, modeloTonerC: null, modeloTonerM: null, modeloTonerY: null,
+      modeloImpresora: { ...mockImpresora.modeloImpresora, toners: [] },
     };
-    expect(component.hasConsumibles()).toBeFalse();
+    expect(component.tonersPorColor).toEqual([]);
   });
 
   it('should show upload section for admin', async () => {

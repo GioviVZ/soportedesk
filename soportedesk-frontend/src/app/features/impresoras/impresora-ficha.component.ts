@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../core/auth/auth.service';
 import { Impresora, impresoraEstadoTone } from './impresora.model';
 import { ImpresoraService } from './impresora.service';
+import { ModeloImpresoraToner } from '../../core/models/catalogo.model';
 import { SectionCardComponent } from '../../shared/section-card/section-card.component';
 import { StatusBadgeComponent } from '../../shared/status-badge/status-badge.component';
 
@@ -32,17 +33,18 @@ export class ImpresoraFichaComponent {
     return this.authService.canWrite('impresoras');
   }
 
-  setTab(tab: FichaTab): void {
-    this.activeTab = tab;
+  get tonersPorColor(): { color: string; variantes: ModeloImpresoraToner[] }[] {
+    const grupos = new Map<string, ModeloImpresoraToner[]>();
+    for (const toner of this.impresora.modeloImpresora?.toners ?? []) {
+      const lista = grupos.get(toner.color) ?? [];
+      lista.push(toner);
+      grupos.set(toner.color, lista);
+    }
+    return Array.from(grupos.entries()).map(([color, variantes]) => ({ color, variantes }));
   }
 
-  hasConsumibles(): boolean {
-    return !!(
-      this.impresora.modeloTonerNegro ||
-      this.impresora.modeloTonerC     ||
-      this.impresora.modeloTonerM     ||
-      this.impresora.modeloTonerY
-    );
+  setTab(tab: FichaTab): void {
+    this.activeTab = tab;
   }
 
   downloadDriver(): void {

@@ -80,6 +80,16 @@
   }
 }
 
+.toner-variante {
+  margin-top: 4px;
+  font-size: 13px;
+  color: var(--color-text);
+
+  strong {
+    font-family: Consolas, 'Courier New', monospace;
+  }
+}
+
 .download-btn {
   margin-top: 12px;
   padding: 8px 16px;

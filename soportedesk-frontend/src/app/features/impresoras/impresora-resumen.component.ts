@@ -9,13 +9,6 @@ interface ResumenRow {
   cantidad: number;
 }
 
-const CONSUMIBLE_DEFS: { key: keyof Impresora; label: string }[] = [
-  { key: 'modeloTonerNegro', label: 'Tóner Negro' },
-  { key: 'modeloTonerC',     label: 'Tóner Cyan' },
-  { key: 'modeloTonerM',     label: 'Tóner Magenta' },
-  { key: 'modeloTonerY',     label: 'Tóner Amarillo' },
-];
-
 @Component({
   selector: 'app-impresora-resumen',
   standalone: true,
@@ -58,17 +51,22 @@ export class ImpresoraResumenComponent implements OnChanges {
       (!this.selectedDependencia || imp.dependencia?.nombre === this.selectedDependencia)
     );
 
-    const rows: ResumenRow[] = [];
-    for (const { key, label } of CONSUMIBLE_DEFS) {
-      const counts = new Map<string, number>();
-      for (const imp of filtered) {
-        const val = imp[key] as string | null | undefined;
-        if (val) counts.set(val, (counts.get(val) ?? 0) + 1);
-      }
-      for (const [modelo, cantidad] of counts) {
-        rows.push({ tipoLabel: label, modelo, cantidad });
+    const counts = new Map<string, ResumenRow>();
+    for (const imp of filtered) {
+      for (const toner of imp.modeloImpresora?.toners ?? []) {
+        const key = `${toner.color}|${toner.variante}|${toner.codigo}`;
+        const entry = counts.get(key);
+        if (entry) {
+          entry.cantidad += 1;
+        } else {
+          counts.set(key, {
+            tipoLabel: `Tóner ${toner.color} — ${toner.variante}`,
+            modelo: toner.codigo,
+            cantidad: 1,
+          });
+        }
       }
     }
-    this.rows = rows;
+    this.rows = Array.from(counts.values());
   }
 }
