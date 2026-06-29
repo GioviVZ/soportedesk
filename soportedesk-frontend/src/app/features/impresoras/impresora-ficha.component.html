@@ -2,6 +2,7 @@
   <div class="tabs">
     <button [class.active]="activeTab === 'instalacion'" (click)="setTab('instalacion')">Instalación</button>
     <button [class.active]="activeTab === 'consumibles'" (click)="setTab('consumibles')">Consumibles</button>
+    <button [class.active]="activeTab === 'driver'" (click)="setTab('driver')">Driver</button>
   </div>
 
   <div class="content" *ngIf="activeTab === 'instalacion'">
@@ -94,4 +95,34 @@
     </app-section-card>
   </div>
 
+  <div class="content" *ngIf="activeTab === 'driver'">
+    <app-section-card title="Driver del modelo">
+      <svg icon xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+        <path d="M7 10l5 5 5-5" />
+        <path d="M12 15V3" />
+      </svg>
+
+      <ng-container *ngIf="impresora.modeloImpresora.driverNombre; else noDriver">
+        <div class="detail-grid">
+          <div class="detail-field">
+            <span class="detail-label">Nombre</span>
+            <span class="detail-value">{{ impresora.modeloImpresora.driverNombre }}</span>
+          </div>
+          <div class="detail-field">
+            <span class="detail-label">Versión</span>
+            <span class="detail-value">{{ impresora.modeloImpresora.driverVersion || '—' }}</span>
+          </div>
+          <div class="detail-field">
+            <span class="detail-label">S.O.</span>
+            <span class="detail-value">{{ impresora.modeloImpresora.driverSo || '—' }}</span>
+          </div>
+        </div>
+        <button class="download-btn" (click)="downloadDriver()">Descargar driver</button>
+      </ng-container>
+      <ng-template #noDriver>
+        <p class="empty-message">El modelo {{ impresora.modeloImpresora.marca.nombre }} {{ impresora.modeloImpresora.nombre }} no tiene driver cargado.</p>
+      </ng-template>
+    </app-section-card>
+  </div>
 </div>

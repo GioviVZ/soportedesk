@@ -96,3 +96,14 @@
   font-style: italic;
   font-size: 14px;
 }
+
+.download-btn {
+  margin-top: 12px;
+  padding: 8px 16px;
+  background-color: var(--color-accent);
+  color: var(--color-white);
+  border: none;
+  border-radius: var(--radius-sm);
+  font-weight: 700;
+  cursor: pointer;
+}

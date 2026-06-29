@@ -1,12 +1,13 @@
 import { Component, Input, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { AuthService } from '../../core/auth/auth.service';
+import { CatalogoService } from '../../core/catalogos/catalogo.service';
 import { Impresora, impresoraEstadoTone } from './impresora.model';
 import { ModeloImpresoraToner } from '../../core/models/catalogo.model';
 import { SectionCardComponent } from '../../shared/section-card/section-card.component';
 import { StatusBadgeComponent } from '../../shared/status-badge/status-badge.component';
 
-type FichaTab = 'instalacion' | 'consumibles';
+type FichaTab = 'instalacion' | 'consumibles' | 'driver';
 
 @Component({
   selector: 'app-impresora-ficha',
@@ -17,6 +18,7 @@ type FichaTab = 'instalacion' | 'consumibles';
 })
 export class ImpresoraFichaComponent {
   private authService = inject(AuthService);
+  private catalogoService = inject(CatalogoService);
 
   @Input({ required: true }) impresora!: Impresora;
 
@@ -39,5 +41,17 @@ export class ImpresoraFichaComponent {
 
   setTab(tab: FichaTab): void {
     this.activeTab = tab;
+  }
+
+  downloadDriver(): void {
+    const modeloId = this.impresora.modeloImpresora.id;
+    this.catalogoService.downloadModeloImpresoraDriver(modeloId).subscribe((blob) => {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = this.impresora.modeloImpresora.driverNombre ?? 'driver';
+      a.click();
+      URL.revokeObjectURL(url);
+    });
   }
 }

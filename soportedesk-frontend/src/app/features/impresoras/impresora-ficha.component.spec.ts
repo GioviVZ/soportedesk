@@ -83,4 +83,23 @@ describe('ImpresoraFichaComponent', () => {
     ) as HTMLElement | undefined;
     expect(conexionField?.querySelector('.detail-value')?.textContent).not.toContain('—');
   });
+
+  it('shows "no hay driver" message when modelo has no driver', () => {
+    component.setTab('driver');
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).toContain('no tiene driver cargado');
+  });
+
+  it('shows download button and driver info when modelo has a driver', () => {
+    component.impresora = {
+      ...mockImpresora,
+      modeloImpresora: { ...mockImpresora.modeloImpresora, driverNombre: 'driver-hp.zip', driverVersion: '1.2', driverSo: 'Windows 10' },
+    };
+    component.setTab('driver');
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).toContain('driver-hp.zip');
+    expect(fixture.nativeElement.querySelector('.download-btn')).toBeTruthy();
+  });
 });
