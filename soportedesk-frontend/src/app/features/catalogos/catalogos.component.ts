@@ -88,6 +88,11 @@ export class CatalogosComponent implements OnInit {
     this.editingModeloImpresora = null;
   }
 
+  onModeloImpresoraDriverUploaded(updated: ModeloImpresora): void {
+    this.editingModeloImpresora = updated;
+    this.service.getModelosImpresora().subscribe((data) => (this.modelosImpresora = data));
+  }
+
   deleteModeloImpresora(id: number): void {
     this.service.deleteModeloImpresora(id).subscribe(() => this.loadAll());
   }

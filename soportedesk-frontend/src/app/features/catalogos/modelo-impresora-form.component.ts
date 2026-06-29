@@ -26,6 +26,7 @@ export class ModeloImpresoraFormComponent implements OnChanges {
   @Input() marcas: MarcaImpresora[] = [];
   @Output() saved = new EventEmitter<void>();
   @Output() cancelled = new EventEmitter<void>();
+  @Output() driverUploaded = new EventEmitter<ModeloImpresora>();
 
   readonly tonerColores = TONER_COLORES;
   marcaId: number | null = null;
@@ -109,10 +110,10 @@ export class ModeloImpresoraFormComponent implements OnChanges {
   onFileSelected(event: Event): void {
     const file = (event.target as HTMLInputElement).files?.[0];
     if (!file || !this.modelo) return;
-    this.service.uploadModeloImpresoraDriver(this.modelo.id, file, this.driverVersionInput, this.driverSoInput).subscribe(() => {
+    this.service.uploadModeloImpresoraDriver(this.modelo.id, file, this.driverVersionInput, this.driverSoInput).subscribe((updated) => {
       this.driverVersionInput = '';
       this.driverSoInput = '';
-      this.saved.emit();
+      this.driverUploaded.emit(updated);
     });
   }
 
