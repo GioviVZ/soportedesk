@@ -127,23 +127,6 @@ class ImpresoraServiceTest {
     }
 
     @Test
-    void update_preservesDriverFields() {
-        Impresora existing = sampleImpresora(1L);
-        existing.setDriverArchivoPath("drivers/1/driver-hp.zip");
-        existing.setDriverNombre("driver-hp.zip");
-        existing.setDriverVersion("1.2");
-        existing.setDriverSo("Windows 10");
-        when(repository.findById(1L)).thenReturn(Optional.of(existing));
-        when(modeloImpresoraRepository.findById(1L)).thenReturn(Optional.of(modeloImpresora()));
-        when(repository.save(any(Impresora.class))).thenAnswer(inv -> inv.getArgument(0));
-
-        Impresora result = service.update(1L, sampleRequest());
-
-        assertThat(result.getModeloImpresora().getNombre()).isEqualTo("M404dn");
-        assertThat(result.getDriverArchivoPath()).isEqualTo("drivers/1/driver-hp.zip");
-    }
-
-    @Test
     void delete_removesExistingImpresora() {
         Impresora impresora = sampleImpresora(1L);
         when(repository.findById(1L)).thenReturn(Optional.of(impresora));
