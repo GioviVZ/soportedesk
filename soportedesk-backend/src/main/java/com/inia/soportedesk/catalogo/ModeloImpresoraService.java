@@ -53,6 +53,15 @@ public class ModeloImpresoraService {
         repository.delete(findById(id));
     }
 
+    public ModeloImpresora updateDriver(Long id, String driverNombre, String driverVersion, String driverSo, String driverArchivoPath) {
+        ModeloImpresora modelo = findById(id);
+        modelo.setDriverNombre(driverNombre);
+        modelo.setDriverVersion(driverVersion);
+        modelo.setDriverSo(driverSo);
+        modelo.setDriverArchivoPath(driverArchivoPath);
+        return repository.save(modelo);
+    }
+
     private void copyFields(ModeloImpresora modelo, ModeloImpresoraRequest request) {
         MarcaImpresora marca = marcaImpresoraRepository.findById(request.getMarcaId())
                 .orElseThrow(() -> new ResourceNotFoundException(

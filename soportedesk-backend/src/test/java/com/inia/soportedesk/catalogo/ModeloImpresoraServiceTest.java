@@ -157,4 +157,20 @@ class ModeloImpresoraServiceTest {
 
         verify(repository).delete(existing);
     }
+
+    @Test
+    void updateDriver_setsDriverFieldsAndSaves() {
+        ModeloImpresora existing = new ModeloImpresora();
+        existing.setId(1L);
+        when(repository.findById(1L)).thenReturn(Optional.of(existing));
+        when(repository.save(any(ModeloImpresora.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        ModeloImpresora result = service.updateDriver(1L, "driver-hp.zip", "1.2", "Windows 10", "1/driver-hp.zip");
+
+        assertThat(result.getDriverNombre()).isEqualTo("driver-hp.zip");
+        assertThat(result.getDriverVersion()).isEqualTo("1.2");
+        assertThat(result.getDriverSo()).isEqualTo("Windows 10");
+        assertThat(result.getDriverArchivoPath()).isEqualTo("1/driver-hp.zip");
+        verify(repository).save(existing);
+    }
 }

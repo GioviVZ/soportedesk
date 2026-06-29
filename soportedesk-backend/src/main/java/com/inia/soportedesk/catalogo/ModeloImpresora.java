@@ -40,4 +40,16 @@ public class ModeloImpresora {
     @OneToMany(mappedBy = "modeloImpresora", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
     @OrderBy("id ASC")
     private List<ModeloImpresoraToner> toners = new ArrayList<>();
+
+    @Column(name = "driver_nombre")
+    private String driverNombre;
+
+    @Column(name = "driver_version")
+    private String driverVersion;
+
+    @Column(name = "driver_so")
+    private String driverSo;
+
+    @Column(name = "driver_archivo_path")
+    private String driverArchivoPath;
 }
