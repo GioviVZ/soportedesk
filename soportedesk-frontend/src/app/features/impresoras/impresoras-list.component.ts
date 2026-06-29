@@ -46,6 +46,14 @@ export class ImpresorasListComponent implements OnInit {
   editing: Impresora | null = null;
   formOpen = false;
 
+  get activas(): number {
+    return this.items.filter((item) => item.estado?.toLowerCase() === 'activa').length;
+  }
+
+  get enMantenimiento(): number {
+    return this.items.filter((item) => item.estado?.toLowerCase().includes('mantenimiento')).length;
+  }
+
   get canWrite(): boolean {
     return this.authService.canWrite('impresoras');
   }
@@ -92,15 +100,5 @@ export class ImpresorasListComponent implements OnInit {
   onSaved(): void {
     this.formOpen = false;
     this.load();
-  }
-
-  onDriverUpdated(updated: Impresora): void {
-    const index = this.items.findIndex((i) => i.id === updated.id);
-    if (index !== -1) {
-      this.items = [...this.items.slice(0, index), updated, ...this.items.slice(index + 1)];
-    }
-    if (this.viewing?.id === updated.id) {
-      this.viewing = updated;
-    }
   }
 }

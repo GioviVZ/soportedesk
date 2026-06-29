@@ -14,10 +14,6 @@ export interface Impresora {
   dependencia: { id: number; nombre: string } | null;
   subdependencia: { id: number; nombre: string } | null;
   estado: string;
-  driverNombre: string | null;
-  driverVersion: string | null;
-  driverSo: string | null;
-  driverArchivoPath: string | null;
 }
 
 export interface ImpresoraRequest {

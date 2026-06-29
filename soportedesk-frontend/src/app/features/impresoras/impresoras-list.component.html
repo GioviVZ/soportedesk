@@ -1,29 +1,47 @@
-<h2>Impresoras</h2>
+<div class="module-page impresoras-page">
+  <div class="module-header">
+    <div>
+      <span class="module-eyebrow">Inventario fisico</span>
+      <h2>Impresoras</h2>
+      <p>Ficha técnica, ubicación, conexión, estado y consumibles de cada equipo.</p>
+    </div>
+    <div class="module-stats">
+      <div class="stat-pill">
+        <strong>{{ items.length }}</strong>
+        <span>Total</span>
+      </div>
+      <div class="stat-pill">
+        <strong>{{ activas }}</strong>
+        <span>Activas</span>
+      </div>
+      <div class="stat-pill">
+        <strong>{{ enMantenimiento }}</strong>
+        <span>Mant.</span>
+      </div>
+    </div>
+  </div>
 
-<app-generic-table
-  [columns]="columns"
-  [data]="items"
-  [canEdit]="canWrite"
-  extraColumnLabel="Estado"
-  (searchChange)="onSearch($event)"
-  (add)="onAdd()"
-  (view)="onView($event)"
-  (edit)="onEdit($event)"
-  (delete)="onDelete($event)"
->
-  <ng-template #extraCell let-row>
-    <app-status-badge [label]="row.estado" [tone]="impresoraEstadoTone(row.estado)" />
-  </ng-template>
-</app-generic-table>
+  <app-impresora-resumen [impresoras]="items" />
 
-<app-impresora-resumen [impresoras]="items" />
+  <app-generic-table
+    [columns]="columns"
+    [data]="items"
+    [canEdit]="canWrite"
+    extraColumnLabel="Estado"
+    (searchChange)="onSearch($event)"
+    (add)="onAdd()"
+    (view)="onView($event)"
+    (edit)="onEdit($event)"
+    (delete)="onDelete($event)"
+  >
+    <ng-template #extraCell let-row>
+      <app-status-badge [label]="row.estado" [tone]="impresoraEstadoTone(row.estado)" />
+    </ng-template>
+  </app-generic-table>
+</div>
 
-<app-modal title="Ficha técnica" [open]="viewing !== null" (closed)="closeView()">
-  <app-impresora-ficha
-    *ngIf="viewing"
-    [impresora]="viewing"
-    (driverUpdated)="onDriverUpdated($event)"
-  />
+<app-modal title="Ficha tecnica" [open]="viewing !== null" (closed)="closeView()">
+  <app-impresora-ficha *ngIf="viewing" [impresora]="viewing" />
 </app-modal>
 
 <app-modal

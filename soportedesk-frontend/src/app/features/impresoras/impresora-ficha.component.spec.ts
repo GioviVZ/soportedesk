@@ -11,6 +11,10 @@ const mockImpresora: Impresora = {
     nombre: 'LaserJet',
     marca: { id: 1, nombre: 'HP' },
     toners: [{ id: 1, color: 'Negro', variante: 'Estándar', codigo: 'TN-2380' }],
+    driverNombre: null,
+    driverVersion: null,
+    driverSo: null,
+    driverArchivoPath: null,
   },
   tipoImpresora: { id: 1, nombre: 'Láser' },
   serie: 'SN-001',
@@ -22,10 +26,6 @@ const mockImpresora: Impresora = {
   dependencia: { id: 1, nombre: 'Dependencia Test' },
   subdependencia: null,
   estado: 'Activa',
-  driverNombre: null,
-  driverVersion: null,
-  driverSo: null,
-  driverArchivoPath: null,
 };
 
 describe('ImpresoraFichaComponent', () => {
@@ -65,23 +65,6 @@ describe('ImpresoraFichaComponent', () => {
       modeloImpresora: { ...mockImpresora.modeloImpresora, toners: [] },
     };
     expect(component.tonersPorColor).toEqual([]);
-  });
-
-  it('should show upload section for admin', async () => {
-    TestBed.resetTestingModule();
-    await TestBed.configureTestingModule({
-      imports: [ImpresoraFichaComponent, HttpClientTestingModule],
-      providers: [{ provide: AuthService, useValue: { isAdmin: () => true, canWrite: () => true } }],
-    }).compileComponents();
-
-    const adminFixture = TestBed.createComponent(ImpresoraFichaComponent);
-    const adminComponent = adminFixture.componentInstance;
-    adminComponent.impresora = mockImpresora;
-    adminFixture.detectChanges();
-    adminComponent.setTab('driver');
-    adminFixture.detectChanges();
-
-    expect(adminComponent.isAdmin).toBeTrue();
   });
 
   it('shows the IP row when tipoConexion is IP', () => {

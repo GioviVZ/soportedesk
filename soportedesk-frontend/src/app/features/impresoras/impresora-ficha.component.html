@@ -2,7 +2,6 @@
   <div class="tabs">
     <button [class.active]="activeTab === 'instalacion'" (click)="setTab('instalacion')">Instalación</button>
     <button [class.active]="activeTab === 'consumibles'" (click)="setTab('consumibles')">Consumibles</button>
-    <button [class.active]="activeTab === 'driver'" (click)="setTab('driver')">Driver</button>
   </div>
 
   <div class="content" *ngIf="activeTab === 'instalacion'">
@@ -95,54 +94,4 @@
     </app-section-card>
   </div>
 
-  <div class="content" *ngIf="activeTab === 'driver'">
-    <app-section-card title="Driver instalado">
-      <svg icon xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-        <path d="M7 10l5 5 5-5" />
-        <path d="M12 15V3" />
-      </svg>
-
-      <ng-container *ngIf="impresora.driverNombre; else noDriver">
-        <div class="detail-grid">
-          <div class="detail-field">
-            <span class="detail-label">Nombre</span>
-            <span class="detail-value">{{ impresora.driverNombre }}</span>
-          </div>
-          <div class="detail-field">
-            <span class="detail-label">Versión</span>
-            <span class="detail-value">{{ impresora.driverVersion || '—' }}</span>
-          </div>
-          <div class="detail-field">
-            <span class="detail-label">S.O.</span>
-            <span class="detail-value">{{ impresora.driverSo || '—' }}</span>
-          </div>
-        </div>
-        <button class="download-btn" (click)="downloadDriver()">Descargar driver</button>
-      </ng-container>
-      <ng-template #noDriver>
-        <p class="empty-message">No hay driver cargado.</p>
-      </ng-template>
-    </app-section-card>
-
-    <app-section-card title="Subir nuevo driver" *ngIf="isAdmin">
-      <svg icon xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-        <path d="M17 8l-5-5-5 5" />
-        <path d="M12 3v12" />
-      </svg>
-
-      <div class="upload-fields">
-        <div class="upload-field">
-          <label>Versión</label>
-          <input type="text" [(ngModel)]="driverVersionInput" placeholder="ej: 1.2.3" />
-        </div>
-        <div class="upload-field">
-          <label>Sistema operativo</label>
-          <input type="text" [(ngModel)]="driverSoInput" placeholder="ej: Windows 10 / 11" />
-        </div>
-        <input type="file" (change)="onFileSelected($event)" />
-      </div>
-    </app-section-card>
-  </div>
 </div>
