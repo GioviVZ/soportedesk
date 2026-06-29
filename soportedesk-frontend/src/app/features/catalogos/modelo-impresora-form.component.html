@@ -44,6 +44,38 @@
     </div>
   </section>
 
+  <section class="toner-section" *ngIf="modelo">
+    <div class="section-heading">
+      <div>
+        <h3>Driver</h3>
+        <p>Un solo archivo por modelo, compartido por todas las impresoras de ese modelo.</p>
+      </div>
+    </div>
+
+    <ng-container *ngIf="modelo.driverNombre; else noDriver">
+      <div class="field">
+        <label>Archivo cargado</label>
+        <span>{{ modelo.driverNombre }} — {{ modelo.driverVersion || 'sin versión' }} ({{ modelo.driverSo || 'S.O. no especificado' }})</span>
+      </div>
+      <button type="button" class="secondary compact" (click)="downloadDriver()">Descargar driver</button>
+    </ng-container>
+    <ng-template #noDriver>
+      <p>No hay driver cargado para este modelo.</p>
+    </ng-template>
+
+    <div class="form-grid">
+      <div class="field">
+        <label>Versión</label>
+        <input type="text" [(ngModel)]="driverVersionInput" [ngModelOptions]="{standalone: true}" placeholder="ej: 1.2.3" />
+      </div>
+      <div class="field">
+        <label>Sistema operativo</label>
+        <input type="text" [(ngModel)]="driverSoInput" [ngModelOptions]="{standalone: true}" placeholder="ej: Windows 10 / 11" />
+      </div>
+    </div>
+    <input type="file" (change)="onFileSelected($event)" />
+  </section>
+
   <div class="actions">
     <button type="button" class="secondary" (click)="cancelled.emit()">Cancelar</button>
     <button type="submit" [disabled]="form.invalid || !marcaId">Guardar</button>

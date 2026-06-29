@@ -178,4 +178,16 @@ export class CatalogoService {
   deleteModeloImpresora(id: number): Observable<void> {
     return this.http.delete<void>(`${this.apiUrl}/modelos-impresora/${id}`);
   }
+
+  uploadModeloImpresoraDriver(id: number, file: File, version = '', so = ''): Observable<ModeloImpresora> {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('version', version);
+    formData.append('so', so);
+    return this.http.post<ModeloImpresora>(`${this.apiUrl}/modelos-impresora/${id}/driver`, formData);
+  }
+
+  downloadModeloImpresoraDriver(id: number): Observable<Blob> {
+    return this.http.get(`${this.apiUrl}/modelos-impresora/${id}/driver`, { responseType: 'blob' });
+  }
 }

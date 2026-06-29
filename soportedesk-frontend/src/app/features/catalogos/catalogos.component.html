@@ -248,6 +248,7 @@
         <th>Marca</th>
         <th>Modelo</th>
         <th>Tóner</th>
+        <th>Driver</th>
         <th>Acciones</th>
       </tr>
     </thead>
@@ -258,6 +259,7 @@
         <td>
           <div *ngFor="let toner of item.toners">{{ toner.color }} · {{ toner.variante }} — {{ toner.codigo }}</div>
         </td>
+        <td>{{ item.driverNombre || '—' }}</td>
         <td>
           <button (click)="onEditModeloImpresora(item)">Editar</button>
           <button class="danger" (click)="deleteModeloImpresora(item.id)">Eliminar</button>

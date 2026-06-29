@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, EventEmitter, Input, OnChanges, Output, inject } from '@angular/core';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { CatalogoService } from '../../core/catalogos/catalogo.service';
 import {
   MarcaImpresora,
@@ -14,7 +14,7 @@ export const TONER_COLORES = ['Negro', 'Cyan', 'Magenta', 'Amarillo'];
 @Component({
   selector: 'app-modelo-impresora-form',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule],
   templateUrl: './modelo-impresora-form.component.html',
   styleUrl: './modelo-impresora-form.component.scss',
 })
@@ -29,6 +29,8 @@ export class ModeloImpresoraFormComponent implements OnChanges {
 
   readonly tonerColores = TONER_COLORES;
   marcaId: number | null = null;
+  driverVersionInput = '';
+  driverSoInput = '';
 
   form = this.fb.nonNullable.group({
     nombre: ['', Validators.required],
@@ -88,6 +90,28 @@ export class ModeloImpresoraFormComponent implements OnChanges {
       this.form.reset({ nombre: '' });
       this.marcaId = null;
       this.setToners([this.emptyToner()]);
+      this.saved.emit();
+    });
+  }
+
+  downloadDriver(): void {
+    if (!this.modelo) return;
+    this.service.downloadModeloImpresoraDriver(this.modelo.id).subscribe((blob) => {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = this.modelo!.driverNombre ?? 'driver';
+      a.click();
+      URL.revokeObjectURL(url);
+    });
+  }
+
+  onFileSelected(event: Event): void {
+    const file = (event.target as HTMLInputElement).files?.[0];
+    if (!file || !this.modelo) return;
+    this.service.uploadModeloImpresoraDriver(this.modelo.id, file, this.driverVersionInput, this.driverSoInput).subscribe(() => {
+      this.driverVersionInput = '';
+      this.driverSoInput = '';
       this.saved.emit();
     });
   }

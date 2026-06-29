@@ -66,6 +66,10 @@ export interface ModeloImpresora {
   nombre: string;
   marca: MarcaImpresora;
   toners: ModeloImpresoraToner[];
+  driverNombre: string | null;
+  driverVersion: string | null;
+  driverSo: string | null;
+  driverArchivoPath: string | null;
 }
 
 export interface ModeloImpresoraRequest {
