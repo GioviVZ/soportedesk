@@ -1,4 +1,4 @@
-import { Component, ContentChild, EventEmitter, Input, OnInit, Output, TemplateRef } from '@angular/core';
+import { Component, ContentChild, EventEmitter, Input, OnChanges, OnInit, Output, SimpleChanges, TemplateRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
 export interface TableColumn {
@@ -14,12 +14,13 @@ export interface TableColumn {
   styleUrl: './generic-table.component.scss',
 })
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export class GenericTableComponent<T = any> implements OnInit {
+export class GenericTableComponent<T = any> implements OnInit, OnChanges {
   @Input({ required: true }) columns: TableColumn[] = [];
   @Input({ required: true }) data: T[] = [];
   @Input() canEdit = false;
   @Input() extraColumnLabel: string | null = null;
   @Input() initialSearch = '';
+  @Input() emptyMessage = 'Sin registros aun';
 
   @Output() searchChange = new EventEmitter<string>();
   @Output() add = new EventEmitter<void>();
@@ -34,6 +35,12 @@ export class GenericTableComponent<T = any> implements OnInit {
 
   ngOnInit(): void {
     this.searchTerm = this.initialSearch;
+  }
+
+  ngOnChanges(changes: SimpleChanges): void {
+    if (changes['initialSearch'] && !changes['initialSearch'].firstChange) {
+      this.searchTerm = this.initialSearch;
+    }
   }
 
   getValue(row: T, key: string): unknown {

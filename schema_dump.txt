@@ -1,0 +1,69 @@
+
+=== Anexos ===
+  AnexoID  int(None)  NULL=NO
+  SedeID  int(None)  NULL=NO
+  UbigeoID  int(None)  NULL=NO
+  NombreAnexo  nvarchar(150)  NULL=NO
+  DireccionAnexo  nvarchar(250)  NULL=NO
+
+=== ConectividadSedes ===
+  ConectividadID  int(None)  NULL=NO
+  SedeID  int(None)  NULL=NO
+  TipoUnidad  nvarchar(100)  NULL=YES
+  TipoConexion  nvarchar(100)  NULL=YES
+  Proveedor  nvarchar(100)  NULL=YES
+  Velocidad  float(None)  NULL=YES
+  Estado  nvarchar(50)  NULL=YES
+  CantidadEquipos  int(None)  NULL=YES
+  FechaUltimaActualizacion  datetime(None)  NULL=YES
+  AnexoID  int(None)  NULL=YES
+  Velocidad_Subida  float(None)  NULL=YES
+  Observacion  nvarchar(-1)  NULL=YES
+
+=== Equipos ===
+  EquipoID  int(None)  NULL=NO
+  OficinaID  int(None)  NULL=YES
+  TipoID  int(None)  NULL=YES
+  Marca  nvarchar(100)  NULL=YES
+  Modelo  nvarchar(100)  NULL=YES
+  Serie  nvarchar(100)  NULL=YES
+  CodigoInventario  nvarchar(100)  NULL=YES
+  UbicacionFisica  nvarchar(100)  NULL=YES
+  IP  nvarchar(50)  NULL=YES
+  MAC  nvarchar(50)  NULL=YES
+  Estado  nvarchar(50)  NULL=YES
+  FechaAdquisicion  nvarchar(50)  NULL=YES
+  OrdenCompra  nvarchar(50)  NULL=YES
+  ExpedienteSIAF  nvarchar(50)  NULL=YES
+  Responsable  nvarchar(100)  NULL=YES
+  Observaciones  nvarchar(-1)  NULL=YES
+  FechaRegistro  datetime(None)  NULL=YES
+
+=== Oficinas ===
+  OficinaID  int(None)  NULL=NO
+  SedeID  int(None)  NULL=NO
+  NombreOficina  nvarchar(150)  NULL=NO
+
+=== Sedes ===
+  SedeID  int(None)  NULL=NO
+  Nombre  nvarchar(100)  NULL=YES
+  UbigeoID  int(None)  NULL=YES
+  Direccion  nvarchar(250)  NULL=YES
+
+=== TipoDispositivo ===
+  TipoID  int(None)  NULL=NO
+  NombreTipoDispositivo  nvarchar(100)  NULL=NO
+
+=== Ubigeo ===
+  UbigeoID  int(None)  NULL=NO
+  CodigoUbigeo  nvarchar(10)  NULL=YES
+  Departamento  nvarchar(100)  NULL=YES
+  Provincia  nvarchar(100)  NULL=YES
+  Distrito  nvarchar(100)  NULL=YES
+
+=== UnidadesOrganizativas ===
+  OUID  int(None)  NULL=NO
+  OrgUnitPath  nvarchar(100)  NULL=NO
+  SedeID  int(None)  NULL=NO
+  OficinaID  int(None)  NULL=YES
+  NombreCompleto  nvarchar(250)  NULL=NO

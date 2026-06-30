@@ -13,7 +13,6 @@ interface DashboardCard {
   value: number;
   path: string;
   color: string;
-  bg: string;
   icon: SafeHtml;
   queryParams?: Record<string, string>;
 }
@@ -70,14 +69,14 @@ export class DashboardComponent implements OnInit {
 
   private toCards(counts: DashboardCounts): DashboardCard[] {
     return [
-      { label: 'Licencias', description: 'Claves y software registrado', value: counts.licencias, path: '/licencias', color: '#2563eb', bg: '#eff6ff', icon: this.svg('key') },
-      { label: 'Correos Institucionales', description: 'Cuentas y accesos de correo', value: counts.correos, path: '/correos', color: '#7c3aed', bg: '#f5f3ff', icon: this.svg('mail') },
-      { label: 'Usuarios de Red/AD', description: 'Cuentas activas e historicas', value: counts.usuariosRed, path: '/usuarios-red', color: '#ea580c', bg: '#fff7ed', icon: this.svg('users') },
-      { label: 'VPN', description: 'Credenciales de acceso remoto', value: counts.vpn, path: '/vpn', color: '#dc2626', bg: '#fef2f2', icon: this.svg('lock') },
-      { label: 'Claves WiFi', description: 'Redes y claves administradas', value: counts.wifi, path: '/wifi', color: '#0891b2', bg: '#ecfeff', icon: this.svg('wifi') },
-      { label: 'Impresoras', description: 'Equipos de impresion registrados', value: counts.impresoras, path: '/impresoras', color: '#475569', bg: '#f8fafc', icon: this.svg('printer') },
-      { label: 'Equipos Asignados', description: 'Inventario operativo asignado', value: counts.equipos, path: '/equipos', color: '#16a34a', bg: '#f0fdf4', icon: this.svg('monitor') },
-      { label: 'Usuarios Desactivados', description: 'Cuentas marcadas como inactivas', value: counts.usuariosRedInactivos, path: '/usuarios-red', color: '#d97706', bg: '#fffbeb', icon: this.svg('userX'), queryParams: { search: 'Inactivo' } },
+      { label: 'Licencias', description: 'Claves y software registrado', value: counts.licencias, path: '/licencias', color: '#2563eb', icon: this.svg('key') },
+      { label: 'Correos Institucionales', description: 'Cuentas y accesos de correo', value: counts.correos, path: '/correos', color: '#7c3aed', icon: this.svg('mail') },
+      { label: 'Usuarios de Red/AD', description: 'Cuentas activas e historicas', value: counts.usuariosRed, path: '/usuarios-red', color: '#ea580c', icon: this.svg('users') },
+      { label: 'VPN', description: 'Credenciales de acceso remoto', value: counts.vpn, path: '/vpn', color: '#dc2626', icon: this.svg('lock') },
+      { label: 'Claves WiFi', description: 'Redes y claves administradas', value: counts.wifi, path: '/wifi', color: '#0891b2', icon: this.svg('wifi') },
+      { label: 'Impresoras', description: 'Equipos de impresion registrados', value: counts.impresoras, path: '/impresoras', color: '#475569', icon: this.svg('printer') },
+      { label: 'Equipos Asignados', description: 'Inventario operativo asignado', value: counts.equipos, path: '/equipos', color: '#16a34a', icon: this.svg('monitor') },
+      { label: 'Usuarios Desactivados', description: 'Cuentas marcadas como inactivas', value: counts.usuariosRedInactivos, path: '/usuarios-red', color: '#d97706', icon: this.svg('userX'), queryParams: { search: 'Inactivo' } },
     ];
   }
 

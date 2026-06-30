@@ -9,6 +9,7 @@
   position: relative;
   z-index: 200;
   overflow: hidden;
+  border-right: 1px solid rgba(255,255,255,.06);
 
   &.collapsed {
     width: var(--sidebar-collapsed);
@@ -24,7 +25,7 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 18px 16px 14px;
+  padding: 16px 14px 14px;
   border-bottom: 1px solid rgba(255,255,255,.08);
   min-height: var(--header-height);
 }
@@ -36,17 +37,18 @@
   width: 32px;
   height: 32px;
   background: var(--color-accent);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-md);
   flex-shrink: 0;
   color: #fff;
 }
 
 .brand-name {
-  font-size: 15px;
+  font-size: 12.5px;
+  line-height: 1.2;
   font-weight: 700;
   color: #fff;
-  white-space: nowrap;
   flex: 1;
+  min-width: 0;
 }
 
 .mobile-close {
@@ -82,18 +84,23 @@ nav {
   text-decoration: none;
   font-size: 13.5px;
   font-weight: 450;
-  transition: background var(--transition), color var(--transition);
+  border-left: 2px solid transparent;
+  transition: background var(--transition), color var(--transition), border-color var(--transition);
   white-space: nowrap;
+  min-width: 0;
 
   &:hover {
-    background: rgba(255,255,255,.08);
+    background: rgba(255,255,255,.075);
     color: #fff;
   }
 
   &.active {
-    background: var(--color-accent);
+    background: rgba(255,255,255,.09);
+    border-left-color: var(--color-accent);
     color: #fff;
     font-weight: 600;
+
+    .nav-icon { color: var(--color-accent); }
   }
 }
 
@@ -124,7 +131,7 @@ nav {
   align-items: center;
   gap: 8px;
   padding: 12px 12px;
-  margin: 8px;
+  margin: 6px 8px 8px;
   background: none;
   border: none;
   border-radius: var(--radius-sm);
@@ -135,8 +142,8 @@ nav {
   white-space: nowrap;
   border-top: 1px solid rgba(255,255,255,.08);
   margin-top: 0;
-  border-radius: 0;
-  padding: 14px 20px;
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
 
   &:hover { color: rgba(255,255,255,.8); }
 }

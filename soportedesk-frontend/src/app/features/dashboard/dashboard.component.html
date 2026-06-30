@@ -1,7 +1,7 @@
 <div class="dashboard">
   <div class="dash-header">
     <div class="dash-title">
-      <span class="eyebrow">Soporte tecnico INIA</span>
+      <span class="eyebrow">Sistema Gestión de Soporte Informático INIA</span>
       <h2>Panel de Control</h2>
       <p class="subtitle">Vista general de accesos, inventario y cuentas administradas.</p>
     </div>
@@ -40,8 +40,8 @@
 
   <div class="section-heading">
     <div>
-      <h3>Modulos principales</h3>
-      <p>Entradas directas a las areas que se operan con mas frecuencia.</p>
+      <h3>Módulos principales</h3>
+      <p>Entradas directas a las áreas que se operan con más frecuencia.</p>
     </div>
   </div>
 
@@ -51,14 +51,14 @@
       *ngFor="let card of cards"
       [routerLink]="card.path"
       [queryParams]="card.queryParams"
-      [style.--card-color]="card.color"
-      [style.--card-bg]="card.bg">
-      <div class="kpi-icon" [innerHTML]="card.icon"></div>
-      <div class="kpi-body">
-        <span class="kpi-value">{{ card.value }}</span>
+      [style.--card-color]="card.color">
+      <div class="kpi-top">
+        <span class="kpi-icon" [innerHTML]="card.icon"></span>
+        <span class="kpi-dot"></span>
         <span class="kpi-label">{{ card.label }}</span>
-        <span class="kpi-description">{{ card.description }}</span>
       </div>
+      <span class="kpi-value">{{ card.value }}</span>
+      <span class="kpi-description">{{ card.description }}</span>
       <div class="kpi-arrow">
         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
           <polyline points="9 18 15 12 9 6"/>
@@ -69,8 +69,8 @@
 
   <div class="section-heading analytics-heading">
     <div>
-      <h3>Analisis operativo</h3>
-      <p>Distribucion de usuarios y licencias para revisar carga por area.</p>
+      <h3>Análisis operativo</h3>
+      <p>Distribución de usuarios y licencias para revisar carga por área.</p>
     </div>
   </div>
 

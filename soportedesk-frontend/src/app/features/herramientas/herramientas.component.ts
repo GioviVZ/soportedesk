@@ -907,7 +907,7 @@ export class HerramientasComponent implements AfterViewInit, OnDestroy {
 
   private buildReport(): string {
     const lines = [
-      'Reporte de herramientas - SoporteDesk INIA',
+      'Reporte de herramientas - Sistema Gestión de Soporte Informático INIA',
       `Fecha: ${new Date().toLocaleString()}`,
       '',
       'Equipo cliente',

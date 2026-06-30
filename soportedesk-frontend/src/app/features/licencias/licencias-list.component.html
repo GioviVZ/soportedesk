@@ -1,24 +1,103 @@
-<h2>Licencias</h2>
+<div class="module-page licencias-page">
+  <div class="module-header">
+    <div>
+      <span class="module-eyebrow">Activos de software</span>
+      <h2>Licencias</h2>
+      <p>Control de compras, cuentas de activacion, seriales y cantidades disponibles.</p>
+    </div>
+    <div class="module-stats">
+      <div class="stat-pill">
+        <strong>{{ filteredLicencias.length }}</strong>
+        <span>Registros</span>
+      </div>
+      <div class="stat-pill">
+        <strong>{{ totalUnidades }}</strong>
+        <span>Unidades</span>
+      </div>
+      <div class="stat-pill">
+        <strong>{{ totalActivaciones }}</strong>
+        <span>Activaciones</span>
+      </div>
+    </div>
+  </div>
 
-<app-generic-table
-  [columns]="columns"
-  [data]="licencias"
-  [canEdit]="canWrite"
-  (searchChange)="onSearch($event)"
-  (add)="onAdd()"
-  (view)="onView($event)"
-  (edit)="onEdit($event)"
-  (delete)="onDelete($event)"
-/>
+  <section class="license-filter-panel">
+    <div class="filter-header">
+      <div>
+        <span>Filtros</span>
+        <strong>{{ filteredLicencias.length }} de {{ licencias.length }} licencias</strong>
+      </div>
+      <div class="filter-actions">
+        <button type="button" class="ghost-action" (click)="clearFilters()" [disabled]="!hasActiveFilters">Limpiar</button>
+        <button type="button" class="primary-action" (click)="exportExcel()" [disabled]="filteredLicencias.length === 0">
+          Exportar Excel
+        </button>
+      </div>
+    </div>
+
+    <div class="filter-grid">
+      <label>
+        Tipo licencia
+        <select [(ngModel)]="filters.tipoLicencia" (ngModelChange)="onTipoLicenciaFilterChange()">
+          <option value="">Todos</option>
+          <option *ngFor="let value of tiposLicencia" [value]="value">{{ value }}</option>
+        </select>
+      </label>
+
+      <label>
+        Tipo bien
+        <select [(ngModel)]="filters.tipoBien">
+          <option value="">Todos</option>
+          <option *ngFor="let value of tiposBien" [value]="value">{{ value }}</option>
+        </select>
+      </label>
+
+      <label>
+        Anio
+        <select [(ngModel)]="filters.anio">
+          <option value="">Todos</option>
+          <option *ngFor="let value of anios" [value]="value">{{ value }}</option>
+        </select>
+      </label>
+
+      <label>
+        Orden de compra
+        <input type="text" [(ngModel)]="filters.ordenCompra" placeholder="OC, proceso o codigo" />
+      </label>
+    </div>
+  </section>
+
+  <app-generic-table
+    [columns]="columns"
+    [data]="filteredLicencias"
+    [canEdit]="canWrite"
+    [initialSearch]="searchTerm"
+    (searchChange)="onSearch($event)"
+    (add)="onAdd()"
+    (view)="onView($event)"
+    (edit)="onEdit($event)"
+    (delete)="onDelete($event)"
+  />
+</div>
 
 <app-modal title="Detalle de licencia" [open]="viewing !== null" (closed)="closeView()">
   <ng-container *ngIf="viewing">
-    <app-field label="Tipo de Licencia">{{ viewing.tipoLicencia.nombre || '-' }}</app-field>
-    <app-field label="Tipo de Bien">{{ viewing.tipoBien.nombre || '-' }}</app-field>
-    <app-field label="Descripcion">{{ viewing.descripcion }}</app-field>
-    <app-field label="Orden de Compra">{{ viewing.ordenCompra }}</app-field>
-    <app-field label="Anio">{{ viewing.anio }}</app-field>
-    <app-field label="Cantidad">{{ viewing.cantidad }}</app-field>
+    <div class="detail-hero">
+      <div>
+        <span>{{ viewing.tipoLicencia.nombre || 'Licencia' }}</span>
+        <h3>{{ viewing.descripcion }}</h3>
+      </div>
+      <strong>{{ viewing.cantidad }} und.</strong>
+    </div>
+
+    <div class="detail-grid">
+      <app-field label="Tipo de Licencia">{{ viewing.tipoLicencia.nombre || '-' }}</app-field>
+      <app-field label="Tipo de Bien">{{ viewing.tipoBien.nombre || '-' }}</app-field>
+      <app-field label="Descripcion">{{ viewing.descripcion }}</app-field>
+      <app-field label="Orden de Compra">{{ viewing.ordenCompra }}</app-field>
+      <app-field label="Anio">{{ viewing.anio }}</app-field>
+      <app-field label="Cantidad">{{ viewing.cantidad }}</app-field>
+    </div>
 
     <div class="activation-detail">
       <h3>Cuentas y claves de activacion</h3>

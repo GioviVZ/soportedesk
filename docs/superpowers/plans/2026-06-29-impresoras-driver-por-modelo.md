@@ -12,7 +12,7 @@
 
 - No real driver data exists anywhere today (`driverArchivoPath` is `NULL` on all 164 imported `impresoras` rows) — no data migration needed, only schema.
 - Schema changes are never auto-run by the agent: SQL migration files are handed to the user to run manually in SSMS, per this project's established convention.
-- Backend `*ControllerIT` tests (Failsafe, run via `mvn verify`) fail to load the Spring `ApplicationContext` project-wide because the `test` profile uses H2 while `schema.sql` is SQL-Server-only T-SQL — this is a pre-existing, documented infra gap (confirmed affecting the `ImpresoraDriverControllerIT` this plan deletes). The new `ModeloImpresoraDriverControllerIT` will hit the same pre-existing failure; this is expected and is not a regression introduced by this work. The meaningful, currently-green test signal is `mvn test` (Surefire: `*Test`/`*ServiceTest`), which must stay green throughout.
+- Backend `*ControllerIT` tests (Failsafe, run via `mvn verify`) build their schema via `ddl-auto: create-drop` against H2 and never touch `schema.sql` (`sql.init.mode: never` in the test profile) — they run and pass normally. `mvn test` (Surefire: `*Test`/`*ServiceTest`) must also stay green throughout.
 - Single driver file per model (no list) — same shape `Impresora` used (`driverNombre`, `driverVersion`, `driverSo`, `driverArchivoPath`).
 
 ---
@@ -286,10 +286,10 @@ public class ModeloImpresoraController {
 Run: `cd soportedesk-backend && mvn test`
 Expected: `BUILD SUCCESS`, same pass count as before plus the 1 new test (no failures). `ModeloImpresoraDriverControllerIT` is a Failsafe `*IT` test and does **not** run under `mvn test` — that's expected, see Step 9.
 
-- [ ] **Step 9: Run the new IT test and confirm it hits the known pre-existing failure (not a new regression)**
+- [ ] **Step 9: Run the new IT test**
 
-Run: `cd soportedesk-backend && mvn verify -Dmaven.test.failure.ignore=true -Dtest=none -Dit.test=ModeloImpresoraDriverControllerIT -DfailIfNoTests=false`
-Expected: the test fails to start because the Spring `ApplicationContext` can't load (H2 vs SQL-Server-only `schema.sql`) — the exact same pre-existing, documented failure mode the deleted `ImpresoraDriverControllerIT` already had. Confirm via `target/failsafe-reports/*ModeloImpresoraDriverControllerIT*.txt` that the failure is an `ApplicationContext` load error, not an assertion failure in the test body itself. This is expected; do not attempt to fix the H2/schema.sql infra gap as part of this task.
+Run: `cd soportedesk-backend && mvn verify -Dmaven.test.failure.ignore=true -Dtest=none -Dsurefire.failIfNoSpecifiedTests=false -Dit.test=ModeloImpresoraDriverControllerIT -DfailIfNoTests=false`
+Expected: `Tests run: 3, Failures: 0, Errors: 0` — the test profile (`src/test/resources/application.yml`) uses `ddl-auto: create-drop` with `sql.init.mode: never`, so Hibernate builds the schema straight from the JPA entities and never touches `schema.sql`. (An earlier project note claimed `*ControllerIT` tests fail to load the `ApplicationContext` due to H2/`schema.sql` incompatibility — verified during this task that this is no longer the case, so this test is expected to actually pass.)
 
 - [ ] **Step 10: Commit**
 

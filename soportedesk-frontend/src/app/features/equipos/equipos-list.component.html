@@ -1,15 +1,23 @@
-<h2>Equipos Asignados</h2>
+<div class="module-page equipos-page">
+  <div class="module-header">
+    <div>
+      <span class="module-eyebrow">Asignaciones</span>
+      <h2>Equipos Asignados</h2>
+      <p>Equipos, usuarios responsables, ubicación y datos patrimoniales.</p>
+    </div>
+  </div>
 
-<app-generic-table
-  [columns]="columns"
-  [data]="items"
-  [canEdit]="canWrite"
-  (searchChange)="onSearch($event)"
-  (add)="onAdd()"
-  (view)="onView($event)"
-  (edit)="onEdit($event)"
-  (delete)="onDelete($event)"
-/>
+  <app-generic-table
+    [columns]="columns"
+    [data]="items"
+    [canEdit]="canWrite"
+    (searchChange)="onSearch($event)"
+    (add)="onAdd()"
+    (view)="onView($event)"
+    (edit)="onEdit($event)"
+    (delete)="onDelete($event)"
+  />
+</div>
 
 <app-modal title="Detalle de equipo" [open]="viewing !== null" (closed)="closeView()">
   <ng-container *ngIf="viewing">

@@ -43,6 +43,18 @@ export class AuditoriaComponent implements OnInit {
     limit: 100,
   };
 
+  get errores(): number {
+    return this.movimientos.filter((m) => (m.estadoHttp ?? 0) >= 400).length;
+  }
+
+  get usuariosUnicos(): number {
+    return new Set(this.movimientos.map((m) => m.usuario).filter(Boolean)).size;
+  }
+
+  get ultimaActividad(): string {
+    return this.movimientos.length ? this.formatFecha(this.movimientos[0].fecha) : '-';
+  }
+
   ngOnInit(): void {
     this.load();
   }

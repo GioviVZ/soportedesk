@@ -1,4 +1,4 @@
-# Sistema de Soporte Técnico INIA (SoporteDesk)
+# Sistema Gestión de Soporte Informático INIA
 
 Sistema interno de gestión de activos y soporte de TI para INIA: equipos,
 impresoras, usuarios de red (AD), correos institucionales, licencias de

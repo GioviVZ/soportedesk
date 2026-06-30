@@ -1,20 +1,28 @@
-<h2>VPN</h2>
+<div class="module-page vpn-page">
+  <div class="module-header">
+    <div>
+      <span class="module-eyebrow">Acceso remoto</span>
+      <h2>VPN</h2>
+      <p>Credenciales, equipos asociados, vencimientos VPN y control de antivirus.</p>
+    </div>
+  </div>
 
-<app-generic-table
-  [columns]="columns"
-  [data]="items"
-  [canEdit]="canWriteVpn"
-  extraColumnLabel="Vence VPN"
-  (searchChange)="onSearch($event)"
-  (add)="onAdd()"
-  (view)="onView($event)"
-  (edit)="onEdit($event)"
-  (delete)="onDelete($event)"
->
-  <ng-template #extraCell let-row>
-    <app-vencimiento-badge [fecha]="row.vence" />
-  </ng-template>
-</app-generic-table>
+  <app-generic-table
+    [columns]="columns"
+    [data]="items"
+    [canEdit]="canWriteVpn"
+    extraColumnLabel="Vence VPN"
+    (searchChange)="onSearch($event)"
+    (add)="onAdd()"
+    (view)="onView($event)"
+    (edit)="onEdit($event)"
+    (delete)="onDelete($event)"
+  >
+    <ng-template #extraCell let-row>
+      <app-vencimiento-badge [fecha]="row.vence" />
+    </ng-template>
+  </app-generic-table>
+</div>
 
 <!-- Modal: detalle -->
 <app-modal title="Detalle VPN" [open]="viewing !== null" (closed)="closeView()">

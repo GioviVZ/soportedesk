@@ -15,9 +15,30 @@
       </label>
       <label>
         Dependencia
-        <select [(ngModel)]="selectedDependencia" (ngModelChange)="onFilterChange()">
+        <select [(ngModel)]="selectedDependencia" (ngModelChange)="onDependenciaChange()">
           <option value="">Todas</option>
           <option *ngFor="let d of dependencias" [value]="d">{{ d }}</option>
+        </select>
+      </label>
+      <label>
+        Subdependencia
+        <select [(ngModel)]="selectedSubdependencia" (ngModelChange)="onFilterChange()">
+          <option value="">Todas</option>
+          <option *ngFor="let s of subdependencias" [value]="s">{{ s }}</option>
+        </select>
+      </label>
+      <label>
+        Marca
+        <select [(ngModel)]="selectedMarca" (ngModelChange)="onMarcaChange()">
+          <option value="">Todas</option>
+          <option *ngFor="let m of marcas" [value]="m">{{ m }}</option>
+        </select>
+      </label>
+      <label>
+        Modelo
+        <select [(ngModel)]="selectedModelo" (ngModelChange)="onFilterChange()">
+          <option value="">Todos</option>
+          <option *ngFor="let m of modelos" [value]="m">{{ m }}</option>
         </select>
       </label>
     </div>

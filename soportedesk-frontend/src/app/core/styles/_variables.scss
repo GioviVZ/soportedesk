@@ -8,14 +8,15 @@
   --color-accent-subtle: #f0fdf4;
 
   /* Neutral */
-  --color-bg: #f1f5f9;
+  --color-bg: #f6f8fb;
   --color-surface: #ffffff;
-  --color-border: #e2e8f0;
-  --color-border-strong: #cbd5e1;
-  --color-text: #0f172a;
-  --color-text-secondary: #64748b;
-  --color-text-muted: #94a3b8;
-  --color-muted: #f8fafc;
+  --color-surface-raised: #ffffff;
+  --color-border: #e5e9f0;
+  --color-border-strong: #cbd3df;
+  --color-text: #111827;
+  --color-text-secondary: #5f6b7a;
+  --color-text-muted: #8a97a8;
+  --color-muted: #f7f9fc;
 
   /* Status */
   --color-success: #16a34a;
@@ -43,16 +44,17 @@
   --color-equipos: #16a34a;
   --color-equipos-light: #f0fdf4;
 
-  /* Shadows */
-  --shadow-sm: 0 1px 3px rgba(0,0,0,.06), 0 1px 2px rgba(0,0,0,.04);
-  --shadow-md: 0 4px 6px -1px rgba(0,0,0,.07), 0 2px 4px -2px rgba(0,0,0,.05);
-  --shadow-lg: 0 10px 15px -3px rgba(0,0,0,.08), 0 4px 6px -4px rgba(0,0,0,.05);
+  /* Shadows — reserved for floating/overlay surfaces (menus, modals, drawers).
+     Static cards and panels use a border, not a shadow. */
+  --shadow-sm: 0 1px 2px rgba(15,23,42,.05), 0 8px 20px -18px rgba(15,23,42,.22);
+  --shadow-md: 0 12px 28px -20px rgba(15,23,42,.28);
+  --shadow-lg: 0 24px 56px -28px rgba(15,23,42,.32);
 
-  /* Radius */
-  --radius-sm: 6px;
-  --radius-md: 10px;
-  --radius-lg: 14px;
-  --radius-xl: 20px;
+  /* Radius — tighter, more deliberate scale */
+  --radius-sm: 5px;
+  --radius-md: 7px;
+  --radius-lg: 8px;
+  --radius-xl: 10px;
 
   /* Transitions */
   --transition: 150ms ease;

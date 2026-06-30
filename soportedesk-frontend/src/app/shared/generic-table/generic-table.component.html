@@ -36,7 +36,7 @@
       <tr *ngIf="data.length === 0">
         <td [attr.colspan]="columns.length + (extraColumnLabel ? 2 : 1)" class="empty">
           <ng-container *ngIf="searchTerm.trim()">No se encontraron resultados para "{{ searchTerm }}"</ng-container>
-          <ng-container *ngIf="!searchTerm.trim()">Sin registros aún</ng-container>
+          <ng-container *ngIf="!searchTerm.trim()">{{ emptyMessage }}</ng-container>
         </td>
       </tr>
     </tbody>

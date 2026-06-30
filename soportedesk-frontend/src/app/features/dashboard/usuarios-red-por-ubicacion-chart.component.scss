@@ -7,7 +7,6 @@
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   background: var(--color-surface);
-  box-shadow: var(--shadow-sm);
 }
 
 .chart-header {
@@ -53,7 +52,7 @@
     &.active {
       background: var(--color-surface);
       color: var(--color-accent);
-      box-shadow: var(--shadow-sm);
+      border: 1px solid var(--color-border);
     }
   }
 }

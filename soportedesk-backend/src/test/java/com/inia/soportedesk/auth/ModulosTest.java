@@ -7,7 +7,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 class ModulosTest {
 
     @Test
-    void validos_containsAllElevenModuleKeys() {
+    void validos_containsAllModuleKeys() {
         assertThat(Modulos.VALIDOS).containsExactlyInAnyOrder(
                 "usuarios-red", "correos", "equipos", "vpn", "credenciales-vpn",
                 "impresoras", "wifi", "licencias",

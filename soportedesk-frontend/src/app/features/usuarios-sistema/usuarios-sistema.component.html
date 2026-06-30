@@ -1,16 +1,37 @@
-<h2>Usuarios del Sistema</h2>
+<div class="module-page usuarios-sistema-page">
+  <div class="module-header">
+    <div>
+      <span class="module-eyebrow">Administracion</span>
+      <h2>Usuarios del Sistema</h2>
+      <p>Administra cuentas de soporte, estado de acceso y permisos por modulo.</p>
+    </div>
+    <div class="module-stats">
+      <div class="stat-pill">
+        <strong>{{ usuarios.length }}</strong>
+        <span>Usuarios</span>
+      </div>
+      <div class="stat-pill">
+        <strong>{{ activos }}</strong>
+        <span>Activos</span>
+      </div>
+      <div class="stat-pill">
+        <strong>{{ permisosAsignados }}</strong>
+        <span>Permisos</span>
+      </div>
+    </div>
+  </div>
 
-<div class="toolbar">
-  <button class="add-btn" (click)="openCreate()">
-    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
-      stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-      <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-    </svg>
-    Agregar usuario
-  </button>
-</div>
+  <div class="toolbar">
+    <button class="add-btn" (click)="openCreate()">
+      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+        stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+      </svg>
+      Agregar usuario
+    </button>
+  </div>
 
-<div class="table-wrap">
+  <div class="table-wrap">
   <table>
     <thead>
       <tr>
@@ -23,7 +44,15 @@
     </thead>
     <tbody>
       <tr *ngFor="let u of usuarios">
-        <td>{{ u.nombre }}</td>
+        <td>
+          <div class="user-cell">
+            <span class="avatar-mini">{{ u.nombre.charAt(0) }}</span>
+            <div>
+              <strong>{{ u.nombre }}</strong>
+              <small>{{ u.rol }}</small>
+            </div>
+          </div>
+        </td>
         <td class="username">{{ u.username }}</td>
         <td>
           <span class="badge" [class.activo]="u.activo" [class.inactivo]="!u.activo">
@@ -52,6 +81,7 @@
       </tr>
     </tbody>
   </table>
+  </div>
 </div>
 
 <app-modal
@@ -60,29 +90,39 @@
   (closed)="closeForm()"
 >
   <div class="form">
-    <div class="field">
-      <label>Nombre completo</label>
-      <input type="text" [(ngModel)]="form.nombre" placeholder="Nombre" />
-    </div>
-    <div class="field">
-      <label>Usuario (login)</label>
-      <input type="text" [(ngModel)]="form.username" [disabled]="!!editingId" placeholder="username" />
-    </div>
-    <div class="field">
-      <label>Contrasena {{ editingId ? '(dejar vacio para no cambiar)' : '' }}</label>
-      <input type="password" [(ngModel)]="form.password" placeholder="Contrasena" />
-    </div>
-    <div class="field">
-      <label>Estado</label>
-      <select [(ngModel)]="form.activo">
-        <option [ngValue]="true">Activo</option>
-        <option [ngValue]="false">Inactivo</option>
-      </select>
-    </div>
+    <section class="form-section">
+      <div class="form-section-title">
+        <h3>Datos de acceso</h3>
+        <p>Informacion basica para iniciar sesion y controlar vigencia.</p>
+      </div>
+      <div class="form-grid">
+        <div class="field">
+          <label>Nombre completo</label>
+          <input type="text" [(ngModel)]="form.nombre" placeholder="Nombre" />
+        </div>
+        <div class="field">
+          <label>Usuario (login)</label>
+          <input type="text" [(ngModel)]="form.username" [disabled]="!!editingId" placeholder="username" />
+        </div>
+        <div class="field">
+          <label>Contrasena {{ editingId ? '(dejar vacio para no cambiar)' : '' }}</label>
+          <input type="password" [(ngModel)]="form.password" placeholder="Contrasena" />
+        </div>
+        <div class="field">
+          <label>Estado</label>
+          <select [(ngModel)]="form.activo">
+            <option [ngValue]="true">Activo</option>
+            <option [ngValue]="false">Inactivo</option>
+          </select>
+        </div>
+      </div>
+    </section>
 
-    <div class="permisos-section">
-      <p class="permisos-title">Permisos por modulo</p>
-      <p class="permisos-hint">Marca los modulos que el usuario podra editar o visualizar.</p>
+    <div class="permisos-section form-section">
+      <div class="form-section-title">
+        <h3>Permisos por modulo</h3>
+        <p>Define si el usuario solo visualiza o tambien puede editar cada modulo.</p>
+      </div>
 
       <div class="permisos-subsection">
         <span class="permisos-subtitle">Permisos de edicion</span>

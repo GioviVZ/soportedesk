@@ -3,7 +3,7 @@
     <div>
       <span class="eyebrow">Active Directory</span>
       <h2>Usuarios de Red/AD</h2>
-      <p>Control de cuentas, ubicacion, contratos y estado de acceso.</p>
+      <p>Control de cuentas, ubicación, contratos y estado de acceso.</p>
     </div>
   </header>
 
@@ -26,7 +26,7 @@
     <article class="summary-card warning">
       <span>Por vencer</span>
       <strong>{{ totalPorVencer }}</strong>
-      <small>contratos en 30 dias</small>
+      <small>contratos en 30 días</small>
     </article>
   </section>
 
@@ -117,7 +117,7 @@
       <div class="empty-state">
         <span>Sin registros</span>
         <p *ngIf="searchTerm.trim()">No se encontraron resultados para "{{ searchTerm }}".</p>
-        <p *ngIf="!searchTerm.trim()">Aun no hay usuarios de red registrados.</p>
+        <p *ngIf="!searchTerm.trim()">Aún no hay usuarios de red registrados.</p>
       </div>
     </ng-template>
   </section>
@@ -135,7 +135,7 @@
         <app-field label="Nombre completo">{{ fullName(viewing) }}</app-field>
         <app-field label="Grupo">{{ viewing.grupo }}</app-field>
         <app-field label="Unidad Organizativa">{{ viewing.unidadOrganizativa || 'No registrada' }}</app-field>
-        <app-field label="Ultimo Login">{{ viewing.ultimoLogin || 'Sin registro' }}</app-field>
+        <app-field label="Último Login">{{ viewing.ultimoLogin || 'Sin registro' }}</app-field>
       </app-section-card>
 
       <app-section-card title="Ubicacion">
@@ -149,7 +149,7 @@
         <div icon>CT</div>
         <app-field label="Tipo de Contrato">{{ viewing.tipoContrato.nombre || 'No registrado' }}</app-field>
         <app-field label="Nro. de contrato">{{ viewing.numeroContrato || 'No registrado' }}</app-field>
-        <app-field label="Fecha de creacion">{{ viewing.fechaCreacion || 'No registrada' }}</app-field>
+        <app-field label="Fecha de creación">{{ viewing.fechaCreacion || 'No registrada' }}</app-field>
         <app-field label="Fin de Contrato">{{ viewing.fechaFinContrato || 'No registrado' }}</app-field>
         <div class="vencimiento-row">
           <span>Vencimiento</span>

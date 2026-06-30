@@ -5,8 +5,13 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface VpnRepository extends JpaRepository<Vpn, Long> {
+
+    Optional<Vpn> findFirstByEquipoId(Long equipoId);
+
+    Optional<Vpn> findFirstByUsuarioRedId(Long usuarioRedId);
 
     @Query("SELECT v FROM Vpn v LEFT JOIN v.usuarioRed u LEFT JOIN v.equipo e WHERE " +
            "LOWER(u.nombre) LIKE LOWER(CONCAT('%', :search, '%')) OR " +

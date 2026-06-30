@@ -19,5 +19,8 @@ jwt:
 licencia:
   encryption-key: CBkkF72fkRZoZLynAdKy0wLsBqZJx2AycpfPEE+9+8o=
 
+agente:
+  inventario-token: test-agent-token
+
 uploads:
   drivers-dir: build/test-uploads/drivers

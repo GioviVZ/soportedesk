@@ -1,26 +1,28 @@
-<form [formGroup]="form" (ngSubmit)="submit()">
-  <div class="field">
-    <label>SSID</label>
-    <input type="text" formControlName="ssid" />
-  </div>
-  <div class="field">
-    <label>Clave</label>
-    <input type="text" formControlName="clave" />
-  </div>
-  <div class="field">
-    <label>Ubicación</label>
-    <input type="text" formControlName="ubicacion" />
-  </div>
-  <div class="field">
-    <label>Tipo</label>
-    <input type="text" formControlName="tipo" />
-  </div>
-  <div class="field">
-    <label>Estado</label>
-    <select formControlName="estado">
-      <option value="Activa">Activa</option>
-      <option value="Inactiva">Inactiva</option>
-    </select>
+<form [formGroup]="form" (ngSubmit)="submit()" class="wifi-form">
+  <div class="form-grid">
+    <div class="field">
+      <label>SSID</label>
+      <input type="text" formControlName="ssid" placeholder="Nombre de la red" />
+    </div>
+    <div class="field">
+      <label>Tipo</label>
+      <input type="text" formControlName="tipo" placeholder="WPA2, WPA3, WEP o Abierta" />
+    </div>
+    <div class="field wide">
+      <label>Clave</label>
+      <input type="text" formControlName="clave" placeholder="Clave de acceso" />
+    </div>
+    <div class="field wide">
+      <label>Ubicacion</label>
+      <input type="text" formControlName="ubicacion" placeholder="Sede, piso o ambiente" />
+    </div>
+    <div class="field">
+      <label>Estado</label>
+      <select formControlName="estado">
+        <option value="Activa">Activa</option>
+        <option value="Inactiva">Inactiva</option>
+      </select>
+    </div>
   </div>
   <div class="actions">
     <button type="button" class="secondary" (click)="cancelled.emit()">Cancelar</button>

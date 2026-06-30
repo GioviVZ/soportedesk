@@ -25,6 +25,18 @@ export class UsuariosSistemaComponent implements OnInit {
 
   form: UsuarioSistemaRequest = this.emptyForm();
 
+  get activos(): number {
+    return this.usuarios.filter((u) => u.activo).length;
+  }
+
+  get inactivos(): number {
+    return this.usuarios.length - this.activos;
+  }
+
+  get permisosAsignados(): number {
+    return this.usuarios.reduce((total, u) => total + this.permisoKeys(u.permisos).length, 0);
+  }
+
   ngOnInit(): void {
     this.load();
   }

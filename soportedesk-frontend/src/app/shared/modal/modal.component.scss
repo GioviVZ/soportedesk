@@ -1,24 +1,24 @@
 .overlay {
   position: fixed;
   inset: 0;
-  background: rgba(15,23,42,.45);
+  background: rgba(15,23,42,.52);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 1000;
-  padding: 20px;
-  backdrop-filter: blur(2px);
+  padding: clamp(10px, 3vw, 20px);
+  backdrop-filter: blur(4px);
   animation: fadeIn .15s ease;
 }
 
 .dialog {
   background: var(--color-surface);
   border-radius: var(--radius-lg);
-  width: 520px;
+  width: min(720px, calc(100vw - 20px));
   max-width: 100%;
   max-height: 90dvh;
   overflow-y: auto;
-  box-shadow: var(--shadow-lg), 0 0 0 1px rgba(0,0,0,.04);
+  box-shadow: var(--shadow-lg), 0 0 0 1px rgba(15,23,42,.08);
   animation: slideUp .18s ease;
 }
 
@@ -26,7 +26,7 @@ header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 20px 24px 16px;
+  padding: 16px clamp(16px, 3vw, 22px) 14px;
   border-bottom: 1px solid var(--color-border);
   position: sticky;
   top: 0;
@@ -35,7 +35,7 @@ header {
 
   h2 {
     margin: 0;
-    font-size: 16px;
+    font-size: 17px;
     font-weight: 700;
     color: var(--color-text);
   }
@@ -63,7 +63,18 @@ header {
 }
 
 .body {
-  padding: 20px 24px 24px;
+  padding: 18px clamp(16px, 3vw, 22px) 22px;
+}
+
+@media (max-width: 520px) {
+  .overlay {
+    align-items: stretch;
+  }
+
+  .dialog {
+    width: 100%;
+    max-height: calc(100dvh - 20px);
+  }
 }
 
 @keyframes fadeIn  { from { opacity: 0; } to { opacity: 1; } }

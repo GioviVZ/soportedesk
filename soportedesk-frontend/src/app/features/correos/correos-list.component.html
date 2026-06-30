@@ -1,20 +1,28 @@
-<h2>Correos Institucionales</h2>
+<div class="module-page correos-page">
+  <div class="module-header">
+    <div>
+      <span class="module-eyebrow">Cuentas institucionales</span>
+      <h2>Correos Institucionales</h2>
+      <p>Usuarios, dependencias, contrato y vencimiento de cuentas de correo.</p>
+    </div>
+  </div>
 
-<app-generic-table
-  [columns]="columns"
-  [data]="items"
-  [canEdit]="canWrite"
-  extraColumnLabel="Vencimiento"
-  (searchChange)="onSearch($event)"
-  (add)="onAdd()"
-  (view)="onView($event)"
-  (edit)="onEdit($event)"
-  (delete)="onDelete($event)"
->
-  <ng-template #extraCell let-row>
-    <app-vencimiento-badge [fecha]="row.fechaFinContrato" />
-  </ng-template>
-</app-generic-table>
+  <app-generic-table
+    [columns]="columns"
+    [data]="items"
+    [canEdit]="canWrite"
+    extraColumnLabel="Vencimiento"
+    (searchChange)="onSearch($event)"
+    (add)="onAdd()"
+    (view)="onView($event)"
+    (edit)="onEdit($event)"
+    (delete)="onDelete($event)"
+  >
+    <ng-template #extraCell let-row>
+      <app-vencimiento-badge [fecha]="row.fechaFinContrato" />
+    </ng-template>
+  </app-generic-table>
+</div>
 
 <app-modal title="Detalle de correo" [open]="viewing !== null" (closed)="closeView()">
   <ng-container *ngIf="viewing">

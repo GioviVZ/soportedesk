@@ -2,15 +2,20 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 12px;
-  margin-bottom: 16px;
+  gap: 10px;
+  margin-bottom: 12px;
   flex-wrap: wrap;
+  padding: 12px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-sm);
 
   .search-wrap {
     position: relative;
     flex: 1;
-    min-width: 180px;
-    max-width: 320px;
+    min-width: min(100%, 220px);
+    max-width: 420px;
 
     .search-icon {
       position: absolute;
@@ -59,32 +64,49 @@
   }
 }
 
+.result-count {
+  margin-left: auto;
+  color: var(--color-text-secondary);
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
 /* Wrap table in a card */
 .table-wrap {
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
-  box-shadow: var(--shadow-sm);
   max-width: 100%;
   overflow-x: auto;
   overflow-y: hidden;
+  box-shadow: var(--shadow-sm);
+  -webkit-overflow-scrolling: touch;
 }
 
 .table-wrap table {
-  width: max-content;
+  width: 100%;
   min-width: 100%;
+  table-layout: auto;
+}
+
+.table-wrap th,
+.table-wrap td {
+  vertical-align: middle;
+  overflow-wrap: anywhere;
 }
 
 .actions {
   display: flex;
   gap: 6px;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+  min-width: max-content;
 
   button {
     display: inline-flex;
     align-items: center;
     gap: 4px;
-    padding: 4px 10px;
+    padding: 5px 10px;
     border-radius: var(--radius-sm);
     font-size: 12px;
     font-weight: 500;
@@ -100,6 +122,30 @@
     &.view-btn  { color: var(--color-info);    border-color: rgba(3,105,161,.2);  &:hover { background: var(--color-info-light); } }
     &.edit-btn  { color: var(--color-warning); border-color: rgba(217,119,6,.2);  &:hover { background: var(--color-warning-light); } }
     &.del-btn   { color: var(--color-danger);  border-color: rgba(220,38,38,.2);  &:hover { background: var(--color-danger-light); } }
+  }
+}
+
+@media (max-width: 640px) {
+  .table-toolbar {
+    align-items: stretch;
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .table-toolbar .search-wrap,
+  .table-toolbar .add-btn,
+  .result-count {
+    width: 100%;
+    max-width: none;
+    justify-content: center;
+  }
+
+  .table-wrap {
+    border-radius: var(--radius-sm);
+  }
+
+  .table-wrap table {
+    min-width: 720px;
   }
 }
 

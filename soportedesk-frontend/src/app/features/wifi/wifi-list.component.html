@@ -1,23 +1,71 @@
-<h2>Claves WiFi</h2>
+<div class="module-page wifi-page">
+  <div class="module-header">
+    <div>
+      <span class="module-eyebrow">Conectividad</span>
+      <h2>Claves WiFi</h2>
+      <p>Redes, claves, ubicación y estado operativo para soporte de acceso inalámbrico.</p>
+    </div>
+    <div class="module-stats">
+      <div class="stat-pill">
+        <strong>{{ items.length }}</strong>
+        <span>Redes</span>
+      </div>
+      <div class="stat-pill">
+        <strong>{{ activas }}</strong>
+        <span>Activas</span>
+      </div>
+      <div class="stat-pill">
+        <strong>{{ inactivas }}</strong>
+        <span>Inactivas</span>
+      </div>
+    </div>
+  </div>
 
-<app-generic-table
-  [columns]="columns"
-  [data]="items"
-  [canEdit]="canWrite"
-  (searchChange)="onSearch($event)"
-  (add)="onAdd()"
-  (view)="onView($event)"
-  (edit)="onEdit($event)"
-  (delete)="onDelete($event)"
-/>
+  <app-generic-table
+    [columns]="columns"
+    [data]="items"
+    [canEdit]="canWrite"
+    (searchChange)="onSearch($event)"
+    (add)="onAdd()"
+    (view)="onView($event)"
+    (edit)="onEdit($event)"
+    (delete)="onDelete($event)"
+  />
+</div>
 
 <app-modal title="Detalle de red WiFi" [open]="viewing !== null" (closed)="closeView()">
   <ng-container *ngIf="viewing">
-    <app-field label="SSID">{{ viewing.ssid }}</app-field>
-    <app-field label="Clave">{{ viewing.clave }}</app-field>
-    <app-field label="Ubicación">{{ viewing.ubicacion }}</app-field>
-    <app-field label="Tipo">{{ viewing.tipo }}</app-field>
-    <app-field label="Estado">{{ viewing.estado }}</app-field>
+    <div class="wifi-secret">
+      <span>SSID</span>
+      <strong>{{ viewing.ssid }}</strong>
+    </div>
+    <div class="wifi-detail-layout">
+      <div class="detail-grid">
+        <app-field label="SSID">{{ viewing.ssid }}</app-field>
+        <app-field label="Clave">{{ viewing.clave }}</app-field>
+        <app-field label="Ubicación">{{ viewing.ubicacion }}</app-field>
+        <app-field label="Tipo">{{ viewing.tipo }}</app-field>
+        <app-field label="Seguridad QR">{{ qrSecurityType(viewing) }}</app-field>
+        <app-field label="Estado">{{ viewing.estado }}</app-field>
+      </div>
+
+      <section class="wifi-qr-panel">
+        <div class="qr-box" [class.loading]="!qrDataUrl && !qrError">
+          <img *ngIf="qrDataUrl" [src]="qrDataUrl" [alt]="'QR para conectar a ' + viewing.ssid" />
+          <span *ngIf="!qrDataUrl && !qrError">Generando QR...</span>
+          <span *ngIf="qrError">{{ qrError }}</span>
+        </div>
+
+        <div class="qr-actions">
+          <button type="button" class="secondary" (click)="copyQrPayload()" [disabled]="!qrDataUrl">
+            {{ qrCopied ? 'Copiado' : 'Copiar texto QR' }}
+          </button>
+          <button type="button" (click)="downloadQr()" [disabled]="!qrDataUrl">
+            Descargar PNG
+          </button>
+        </div>
+      </section>
+    </div>
   </ng-container>
 </app-modal>
 

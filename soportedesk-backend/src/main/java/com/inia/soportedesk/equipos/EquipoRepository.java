@@ -5,10 +5,15 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface EquipoRepository extends JpaRepository<Equipo, Long> {
 
     List<Equipo> findByTipoIn(List<String> tipos);
+
+    Optional<Equipo> findFirstByNumeroSerieIgnoreCase(String numeroSerie);
+
+    Optional<Equipo> findFirstByHostIgnoreCase(String host);
 
     @Query("SELECT e FROM Equipo e LEFT JOIN e.usuarioRed u LEFT JOIN e.sede s LEFT JOIN e.dependencia d WHERE " +
            "LOWER(e.numeroSerie) LIKE LOWER(CONCAT('%', :search, '%')) OR " +

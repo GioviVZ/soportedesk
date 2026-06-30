@@ -1,5 +1,6 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../core/auth/auth.service';
 import { GenericTableComponent, TableColumn } from '../../shared/generic-table/generic-table.component';
 import { ModalComponent } from '../../shared/modal/modal.component';
@@ -9,12 +10,14 @@ import { ImpresoraResumenComponent } from './impresora-resumen.component';
 import { Impresora, impresoraEstadoTone } from './impresora.model';
 import { ImpresoraService } from './impresora.service';
 import { StatusBadgeComponent } from '../../shared/status-badge/status-badge.component';
+import * as XLSX from 'xlsx';
 
 @Component({
   selector: 'app-impresoras-list',
   standalone: true,
   imports: [
     CommonModule,
+    FormsModule,
     GenericTableComponent,
     ModalComponent,
     ImpresoraFichaComponent,
@@ -36,22 +39,31 @@ export class ImpresorasListComponent implements OnInit {
     { key: 'tipoImpresora.nombre', label: 'Tipo' },
     { key: 'serie', label: 'Serie' },
     { key: 'ip', label: 'IP' },
-    { key: 'sede.nombre', label: 'Sede' },
     { key: 'dependencia.nombre', label: 'Dependencia' },
-    { key: 'subdependencia.nombre', label: 'Subdependencia' },
   ];
   readonly impresoraEstadoTone = impresoraEstadoTone;
 
   viewing: Impresora | null = null;
   editing: Impresora | null = null;
   formOpen = false;
+  showConsumibles = false;
+  searchTerm = '';
+  mobileSearchTerm = '';
+  filters = {
+    sede: '',
+    dependencia: '',
+    subdependencia: '',
+    ip: '',
+    marca: '',
+    modelo: '',
+  };
 
   get activas(): number {
-    return this.items.filter((item) => item.estado?.toLowerCase() === 'activa').length;
+    return this.filteredItems.filter((item) => item.estado?.toLowerCase() === 'activa').length;
   }
 
   get enMantenimiento(): number {
-    return this.items.filter((item) => item.estado?.toLowerCase().includes('mantenimiento')).length;
+    return this.filteredItems.filter((item) => item.estado?.toLowerCase().includes('mantenimiento')).length;
   }
 
   get canWrite(): boolean {
@@ -62,12 +74,18 @@ export class ImpresorasListComponent implements OnInit {
     this.load();
   }
 
-  load(search?: string): void {
-    this.service.getAll(search).subscribe((data) => (this.items = data));
+  load(): void {
+    this.service.getAll().subscribe((data) => (this.items = data));
   }
 
   onSearch(term: string): void {
-    this.load(term);
+    this.searchTerm = term;
+    this.mobileSearchTerm = term;
+  }
+
+  onMobileSearch(term: string): void {
+    this.searchTerm = term;
+    this.mobileSearchTerm = term;
   }
 
   onView(item: Impresora): void {
@@ -100,5 +118,186 @@ export class ImpresorasListComponent implements OnInit {
   onSaved(): void {
     this.formOpen = false;
     this.load();
+  }
+
+  get filteredItems(): Impresora[] {
+    const search = this.normalize(this.searchTerm);
+    const ip = this.normalize(this.filters.ip);
+
+    return this.items.filter((item) => {
+      const exactFilters =
+        (!this.filters.sede || item.sede?.nombre === this.filters.sede) &&
+        (!this.filters.dependencia || item.dependencia?.nombre === this.filters.dependencia) &&
+        (!this.filters.subdependencia || item.subdependencia?.nombre === this.filters.subdependencia) &&
+        (!this.filters.marca || item.modeloImpresora.marca.nombre === this.filters.marca) &&
+        (!this.filters.modelo || item.modeloImpresora.nombre === this.filters.modelo);
+
+      if (!exactFilters) {
+        return false;
+      }
+
+      if (ip && !this.normalize(item.ip).includes(ip)) {
+        return false;
+      }
+
+      if (!search) {
+        return true;
+      }
+
+      return this.normalize([
+        item.modeloImpresora.marca.nombre,
+        item.modeloImpresora.nombre,
+        item.tipoImpresora?.nombre,
+        item.serie,
+        item.codigoInventario,
+        item.codigoPatrimonial,
+        item.ip,
+        item.sede?.nombre,
+        item.dependencia?.nombre,
+        item.subdependencia?.nombre,
+        item.estado,
+      ].filter(Boolean).join(' ')).includes(search);
+    });
+  }
+
+  get sedes(): string[] {
+    return this.unique(this.items.map((item) => item.sede?.nombre));
+  }
+
+  get dependencias(): string[] {
+    return this.unique(this.items
+      .filter((item) => !this.filters.sede || item.sede?.nombre === this.filters.sede)
+      .map((item) => item.dependencia?.nombre));
+  }
+
+  get subdependencias(): string[] {
+    return this.unique(this.items
+      .filter((item) => !this.filters.dependencia || item.dependencia?.nombre === this.filters.dependencia)
+      .map((item) => item.subdependencia?.nombre));
+  }
+
+  get marcas(): string[] {
+    return this.unique(this.items.map((item) => item.modeloImpresora.marca.nombre));
+  }
+
+  get modelos(): string[] {
+    return this.unique(this.items
+      .filter((item) => !this.filters.marca || item.modeloImpresora.marca.nombre === this.filters.marca)
+      .map((item) => item.modeloImpresora.nombre));
+  }
+
+  get hasActiveFilters(): boolean {
+    return Boolean(
+      this.searchTerm ||
+      this.filters.sede ||
+      this.filters.dependencia ||
+      this.filters.subdependencia ||
+      this.filters.ip ||
+      this.filters.marca ||
+      this.filters.modelo
+    );
+  }
+
+  onSedeFilterChange(): void {
+    this.filters.dependencia = '';
+    this.filters.subdependencia = '';
+  }
+
+  onDependenciaFilterChange(): void {
+    this.filters.subdependencia = '';
+  }
+
+  onMarcaFilterChange(): void {
+    this.filters.modelo = '';
+  }
+
+  clearFilters(): void {
+    this.searchTerm = '';
+    this.mobileSearchTerm = '';
+    this.filters = {
+      sede: '',
+      dependencia: '',
+      subdependencia: '',
+      ip: '',
+      marca: '',
+      modelo: '',
+    };
+  }
+
+  toggleConsumibles(): void {
+    this.showConsumibles = !this.showConsumibles;
+  }
+
+  exportExcel(): void {
+    const rows = this.filteredItems.map((item) => ({
+      Marca: item.modeloImpresora.marca.nombre,
+      Modelo: item.modeloImpresora.nombre,
+      Tipo: item.tipoImpresora?.nombre ?? '',
+      Serie: item.serie ?? '',
+      'Codigo de Inventario': item.codigoInventario ?? '',
+      'Codigo Patrimonial': item.codigoPatrimonial ?? '',
+      Conexion: item.tipoConexion,
+      IP: item.ip ?? '',
+      Sede: item.sede?.nombre ?? '',
+      Dependencia: item.dependencia?.nombre ?? '',
+      Subdependencia: item.subdependencia?.nombre ?? '',
+      Estado: item.estado,
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(rows);
+    worksheet['!cols'] = [
+      { wch: 18 },
+      { wch: 26 },
+      { wch: 30 },
+      { wch: 18 },
+      { wch: 22 },
+      { wch: 22 },
+      { wch: 12 },
+      { wch: 16 },
+      { wch: 18 },
+      { wch: 34 },
+      { wch: 34 },
+      { wch: 18 },
+    ];
+
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Impresoras');
+    XLSX.writeFile(workbook, `impresoras-${this.exportDate()}.xlsx`);
+  }
+
+  printerLocation(item: Impresora): string {
+    return [
+      item.dependencia?.nombre,
+      item.subdependencia?.nombre,
+    ].filter(Boolean).join(' / ') || item.sede?.nombre || 'Sin ubicación';
+  }
+
+  printerIdentifier(item: Impresora): string {
+    return item.serie || item.codigoInventario || item.codigoPatrimonial || 'Sin identificador';
+  }
+
+  printerConnection(item: Impresora): string {
+    return item.tipoConexion === 'IP' && item.ip ? `IP ${item.ip}` : item.tipoConexion;
+  }
+
+  private unique(values: Array<string | null | undefined>): string[] {
+    return [...new Set(values.filter((value): value is string => Boolean(value)))]
+      .sort((a, b) => a.localeCompare(b));
+  }
+
+  private normalize(value: string | null | undefined): string {
+    return (value ?? '')
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase()
+      .trim();
+  }
+
+  private exportDate(): string {
+    const date = new Date();
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
   }
 }

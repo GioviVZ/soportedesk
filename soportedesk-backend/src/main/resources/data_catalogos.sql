@@ -1,5 +1,5 @@
 -- =============================================================
--- SoporteDesk INIA — Catálogos iniciales
+-- Sistema Gestión de Soporte Informático INIA - Catálogos iniciales
 -- Ejecutar en SSMS una sola vez (idempotente con NOT EXISTS)
 -- =============================================================
 

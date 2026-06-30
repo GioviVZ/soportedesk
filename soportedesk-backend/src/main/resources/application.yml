@@ -26,6 +26,9 @@ jwt:
 licencia:
   encryption-key: ${LICENCIA_ENCRYPTION_KEY:CBkkF72fkRZoZLynAdKy0wLsBqZJx2AycpfPEE+9+8o=}
 
+agente:
+  inventario-token: ${AGENTE_INVENTARIO_TOKEN:change-me-agent-token}
+
 uploads:
   drivers-dir: uploads/drivers
 

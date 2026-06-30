@@ -1,4 +1,4 @@
-# SoporteDesk INIA — Arquitectura y Despliegue
+# Sistema Gestión de Soporte Informático INIA — Arquitectura y Despliegue
 
 Documento único y vigente con la arquitectura completa del sistema. Reemplaza la
 lectura dispersa de los specs/plans históricos de `docs/superpowers/historial/`
@@ -9,7 +9,7 @@ actual — para eso está este documento).
 
 ## 1. Resumen
 
-SoporteDesk INIA es un sistema interno de gestión de activos y soporte técnico:
+Sistema Gestión de Soporte Informático INIA es un sistema interno de gestión de activos y soporte informático:
 equipos, impresoras, usuarios de red (AD), correos institucionales, licencias de
 software, credenciales VPN, redes WiFi, un módulo de auditoría de movimientos y
 herramientas de diagnóstico de red — todo con control de acceso por roles y
@@ -97,7 +97,7 @@ SistemadeSoporteTecnicoINIA/
 | VPN | Credenciales de acceso remoto + antivirus | generador de contraseñas integrado en el formulario |
 | WiFi | Redes y claves WiFi | catálogo independiente, sin FKs |
 | Licencias | Licencias de software | activaciones múltiples (cuenta+clave por activación) y serial multivalor; credenciales cifradas (AES/GCM) |
-| Usuarios del Sistema | Cuentas de acceso a SoporteDesk (no confundir con Usuarios de Red) | rol ADMIN/SOPORTE + permisos de escritura por módulo |
+| Usuarios del Sistema | Cuentas de acceso al Sistema Gestión de Soporte Informático (no confundir con Usuarios de Red) | rol ADMIN/SOPORTE + permisos de escritura por módulo |
 | Catálogos | Sedes, dependencias, subdependencias, tipos de contrato/licencia/bien/impresora | solo ADMIN puede mantenerlos |
 | Dashboard | KPIs y gráficos agregados | contadores, usuarios de red por ubicación, licencias por tipo |
 | Auditoría | Bitácora de acciones (login, altas, bajas, ediciones) | búsqueda por módulo/acción/fecha |
@@ -142,7 +142,7 @@ movimientos_auditoria (sin FK — registro plano de eventos)
 | `tipos_licencia` | id, nombre (UNIQUE) | seed: Ofimática, Diseño, Edición de Video, Sistema Operativo, Antivirus, Otro |
 | `tipos_bien` | id, nombre (UNIQUE) | seed: Equipo, Intangible, Servicio |
 | `tipos_impresora` | id, nombre (UNIQUE) | |
-| `usuarios` | id, username (UNIQUE), password_hash (bcrypt), nombre, rol (`ADMIN`\|`SOPORTE`), activo | usuarios del sistema (login a SoporteDesk) |
+| `usuarios` | id, username (UNIQUE), password_hash (bcrypt), nombre, rol (`ADMIN`\|`SOPORTE`), activo | usuarios del sistema (login al Sistema Gestión de Soporte Informático) |
 | `permisos` | id, usuario_id (FK, cascade), modulo | permiso de escritura por módulo para rol SOPORTE |
 | `movimientos_auditoria` | id, fecha, usuario, accion, modulo, metodo, ruta, entidad_id, estado_http, ip, detalle | bitácora; índices por fecha/usuario/modulo+accion |
 | `usuarios_red` | id, usuario (UNIQUE), nombre, apellidos, grupo, unidad_organizativa, ultimo_login, estado, sede_id/dependencia_id/subdependencia_id/tipo_contrato_id (FK, todos obligatorios), fecha_fin_contrato, fecha_creacion, numero_contrato | cuentas AD |

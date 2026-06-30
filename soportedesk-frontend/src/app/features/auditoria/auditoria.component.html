@@ -1,21 +1,33 @@
-<div class="auditoria-page">
-  <div class="page-header">
+<div class="auditoria-page module-page">
+  <div class="module-header">
     <div>
+      <span class="module-eyebrow">Auditoria</span>
       <h2>Movimientos del Sistema</h2>
-      <p>Monitoreo de accesos y cambios realizados en los modulos.</p>
+      <p>Monitoreo de accesos, cambios y operaciones realizadas en los modulos.</p>
     </div>
-    <button type="button" class="btn btn-ghost" (click)="load()" [disabled]="loading">
-      Actualizar
-    </button>
+    <div class="module-stats">
+      <div class="stat-pill">
+        <strong>{{ movimientos.length }}</strong>
+        <span>Eventos</span>
+      </div>
+      <div class="stat-pill">
+        <strong>{{ usuariosUnicos }}</strong>
+        <span>Usuarios</span>
+      </div>
+      <div class="stat-pill">
+        <strong>{{ errores }}</strong>
+        <span>Alertas</span>
+      </div>
+    </div>
   </div>
 
   <section class="filters">
-    <div class="field">
+    <div class="field field-search">
       <label>Buscar</label>
       <input type="text" [(ngModel)]="filters.search" placeholder="Usuario, ruta o detalle" (keyup.enter)="load()" />
     </div>
     <div class="field">
-      <label>Modulo</label>
+      <label>Módulo</label>
       <select [(ngModel)]="filters.modulo">
         <option value="">Todos</option>
         <option *ngFor="let modulo of modulos" [value]="modulo.key">{{ modulo.label }}</option>
@@ -39,10 +51,16 @@
     <div class="filter-actions">
       <button type="button" class="btn btn-primary" (click)="load()">Filtrar</button>
       <button type="button" class="btn btn-ghost" (click)="clearFilters()">Limpiar</button>
+      <button type="button" class="btn btn-ghost" (click)="load()" [disabled]="loading">Actualizar</button>
     </div>
   </section>
 
   <section class="audit-table">
+    <div class="table-meta">
+      <span>Ultima actividad: {{ ultimaActividad }}</span>
+      <span>{{ filters.limit }} max.</span>
+    </div>
+
     <div class="table-state" *ngIf="loading">Cargando movimientos...</div>
     <div class="table-state error" *ngIf="!loading && error">{{ error }}</div>
 
@@ -53,8 +71,8 @@
             <th>Fecha</th>
             <th>Usuario</th>
             <th>Accion</th>
-            <th>Modulo</th>
-            <th>Ruta</th>
+            <th>Módulo</th>
+            <th>Ruta / detalle</th>
             <th>Estado</th>
             <th>IP</th>
           </tr>
@@ -73,7 +91,11 @@
               <span>{{ movimiento.detalle || movimiento.ruta }}</span>
               <small *ngIf="movimiento.entidadId">ID {{ movimiento.entidadId }}</small>
             </td>
-            <td>{{ movimiento.estadoHttp || '-' }}</td>
+            <td>
+              <span class="http-badge" [class.http-badge--error]="(movimiento.estadoHttp || 0) >= 400">
+                {{ movimiento.estadoHttp || '-' }}
+              </span>
+            </td>
             <td>{{ movimiento.ip || '-' }}</td>
           </tr>
           <tr *ngIf="movimientos.length === 0">

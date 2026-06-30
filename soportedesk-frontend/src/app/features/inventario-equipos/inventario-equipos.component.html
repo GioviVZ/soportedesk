@@ -1,0 +1,352 @@
+<div class="inventario-page">
+  <header class="page-heading">
+    <div>
+      <span class="eyebrow">Agente AD</span>
+      <h2>Inventario de equipos</h2>
+      <p>Equipos reportados por el agente, listos para luego enlazarse con usuarios de red, VPN y equipos asignados.</p>
+    </div>
+    <div class="heading-actions">
+      <button type="button" class="secondary-btn" (click)="rematchAll()" [disabled]="loading || matching">
+        Match
+      </button>
+      <button type="button" class="refresh-btn" (click)="load()" [disabled]="loading">
+        <span aria-hidden="true">R</span>
+        Actualizar
+      </button>
+    </div>
+  </header>
+
+  <section class="summary-grid" aria-label="Resumen de inventario">
+    <article class="summary-card">
+      <span>Total</span>
+      <strong>{{ items.length }}</strong>
+      <small>equipos recibidos</small>
+    </article>
+    <article class="summary-card success">
+      <span>Actualizados</span>
+      <strong>{{ totalActualizados }}</strong>
+      <small>reportaron en 24 horas</small>
+    </article>
+    <article class="summary-card warning">
+      <span>Sin serial</span>
+      <strong>{{ totalSinSerial }}</strong>
+      <small>requieren revisión</small>
+    </article>
+    <article class="summary-card info">
+      <span>Sin match</span>
+      <strong>{{ totalSinMatch }}</strong>
+      <small>pendientes de enlazar</small>
+    </article>
+  </section>
+
+  <section class="inventory-panel">
+    <div class="table-toolbar">
+      <div class="search-wrap">
+        <span class="search-icon" aria-hidden="true">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        </span>
+        <input
+          type="text"
+          placeholder="Buscar hostname, serial, usuario, modelo o dominio..."
+          [value]="searchTerm"
+          (input)="queueSearch($any($event.target).value)"
+        />
+      </div>
+      <span class="result-count">{{ filteredItems.length }} {{ filteredItems.length === 1 ? 'registro' : 'registros' }}</span>
+    </div>
+
+    <div class="filter-tabs" aria-label="Filtros de inventario">
+      <button type="button" [class.active]="filtro === 'todos'" (click)="setFiltro('todos')">Todos</button>
+      <button type="button" [class.active]="filtro === 'sinSerial'" (click)="setFiltro('sinSerial')">Sin serial</button>
+      <button type="button" [class.active]="filtro === 'sinMatch'" (click)="setFiltro('sinMatch')">Sin match</button>
+      <button type="button" [class.active]="filtro === 'viejos'" (click)="setFiltro('viejos')">Reporte antiguo</button>
+    </div>
+
+    <div class="alert" *ngIf="error">{{ error }}</div>
+    <div class="loading-state" *ngIf="loading">Cargando inventario...</div>
+    <div class="loading-state" *ngIf="matching">Recalculando coincidencias...</div>
+
+    <ng-container *ngIf="!loading">
+      <div class="inventory-table-wrap" *ngIf="filteredItems.length > 0; else emptyState">
+        <table class="inventory-table">
+          <thead>
+            <tr>
+              <th>Equipo</th>
+              <th>Serial</th>
+              <th>Usuario</th>
+              <th>Dominio / OU</th>
+              <th>Modelo</th>
+              <th>Sistema</th>
+              <th>IP</th>
+              <th>Último reporte</th>
+              <th>Match</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let row of filteredItems">
+              <td>
+                <div class="device-cell">
+                  <strong>{{ primaryIdentity(row) }}</strong>
+                  <span>{{ row.fabricante || 'Fabricante no registrado' }}</span>
+                </div>
+              </td>
+              <td>{{ row.serialEquipo || 'Sin serial' }}</td>
+              <td>{{ row.usuarioActual || 'Sin usuario' }}</td>
+              <td>
+                <div class="stacked">
+                  <strong>{{ row.dominio || 'Sin dominio' }}</strong>
+                  <span>{{ row.ou || 'OU no registrada' }}</span>
+                </div>
+              </td>
+              <td>{{ row.modelo || 'No registrado' }}</td>
+              <td>{{ row.sistemaOperativo || 'No registrado' }}</td>
+              <td>{{ row.ipPrincipal || 'Sin IP' }}</td>
+              <td>
+                <span class="report-pill" [class.old]="isOldReport(row)">
+                  {{ formatDate(row.ultimoReporte) }}
+                </span>
+              </td>
+              <td>
+                <span class="match-badge" [class]="inventarioMatchTone(row.matchEstado)">
+                  {{ inventarioMatchLabel(row.matchEstado) }}
+                </span>
+              </td>
+              <td>
+                <button class="view-btn" type="button" (click)="openDetail(row)">Ver</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="inventory-cards">
+          <article class="inventory-card" *ngFor="let row of filteredItems">
+            <header>
+              <div>
+                <strong>{{ primaryIdentity(row) }}</strong>
+                <span>{{ row.usuarioActual || 'Sin usuario actual' }}</span>
+              </div>
+              <span class="match-badge" [class]="inventarioMatchTone(row.matchEstado)">
+                {{ inventarioMatchLabel(row.matchEstado) }}
+              </span>
+            </header>
+            <dl>
+              <div>
+                <dt>Serial</dt>
+                <dd>{{ row.serialEquipo || 'Sin serial' }}</dd>
+              </div>
+              <div>
+                <dt>Dominio</dt>
+                <dd>{{ row.dominio || 'Sin dominio' }}</dd>
+              </div>
+              <div>
+                <dt>Modelo</dt>
+                <dd>{{ row.modelo || 'No registrado' }}</dd>
+              </div>
+              <div>
+                <dt>IP</dt>
+                <dd>{{ row.ipPrincipal || 'Sin IP' }}</dd>
+              </div>
+              <div>
+                <dt>Último reporte</dt>
+                <dd>{{ formatDate(row.ultimoReporte) }}</dd>
+              </div>
+            </dl>
+            <button class="view-btn" type="button" (click)="openDetail(row)">Ver detalle</button>
+          </article>
+        </div>
+      </div>
+
+      <ng-template #emptyState>
+        <div class="empty-state">
+          <span>Sin equipos</span>
+          <p *ngIf="searchTerm.trim()">No hay resultados para "{{ searchTerm }}".</p>
+          <p *ngIf="!searchTerm.trim()">Aún no se recibieron reportes del agente.</p>
+        </div>
+      </ng-template>
+    </ng-container>
+  </section>
+</div>
+
+<app-modal title="Detalle de inventario" [open]="selected !== null" (closed)="closeDetail()">
+  <ng-container *ngIf="selected as equipo">
+    <div class="detail-header">
+      <div>
+        <span class="eyebrow">Equipo reportado</span>
+        <h3>{{ primaryIdentity(equipo) }}</h3>
+        <p>{{ equipo.modelo || 'Modelo no registrado' }} - {{ equipo.usuarioActual || 'Sin usuario actual' }}</p>
+      </div>
+      <div class="detail-actions">
+        <span class="match-badge" [class]="inventarioMatchTone(equipo.matchEstado)">
+          {{ inventarioMatchLabel(equipo.matchEstado) }}
+        </span>
+        <button type="button" class="secondary-btn compact" (click)="rematchSelected()" [disabled]="matching">
+          Match
+        </button>
+      </div>
+    </div>
+
+    <nav class="detail-tabs" aria-label="Detalle del equipo">
+      <button type="button" [class.active]="activeTab === 'resumen'" (click)="setTab('resumen')">Resumen</button>
+      <button type="button" [class.active]="activeTab === 'hardware'" (click)="setTab('hardware')">Hardware</button>
+      <button type="button" [class.active]="activeTab === 'red'" (click)="setTab('red')">Red</button>
+      <button type="button" [class.active]="activeTab === 'programas'" (click)="setTab('programas')">Programas</button>
+      <button type="button" [class.active]="activeTab === 'match'" (click)="setTab('match')">Match</button>
+    </nav>
+
+    <section class="detail-grid" *ngIf="activeTab === 'resumen'">
+      <div class="detail-card">
+        <span>Hostname</span>
+        <strong>{{ equipo.hostname || 'No registrado' }}</strong>
+      </div>
+      <div class="detail-card">
+        <span>Serial</span>
+        <strong>{{ equipo.serialEquipo || 'Sin serial válido' }}</strong>
+      </div>
+      <div class="detail-card">
+        <span>Dominio</span>
+        <strong>{{ equipo.dominio || 'No registrado' }}</strong>
+      </div>
+      <div class="detail-card">
+        <span>OU</span>
+        <strong>{{ equipo.ou || 'No registrada' }}</strong>
+      </div>
+      <div class="detail-card">
+        <span>Último reporte</span>
+        <strong>{{ formatDate(equipo.ultimoReporte) }}</strong>
+      </div>
+      <div class="detail-card">
+        <span>IP reporte</span>
+        <strong>{{ equipo.ipReporte || 'No registrada' }}</strong>
+      </div>
+    </section>
+
+    <section class="detail-grid" *ngIf="activeTab === 'hardware'">
+      <div class="detail-card wide">
+        <span>Procesador</span>
+        <strong>{{ equipo.procesador || 'No registrado' }}</strong>
+      </div>
+      <div class="detail-card">
+        <span>RAM</span>
+        <strong>{{ formatBytes(equipo.ramTotalBytes) }}</strong>
+      </div>
+      <div class="detail-card">
+        <span>Sistema operativo</span>
+        <strong>{{ equipo.sistemaOperativo || 'No registrado' }}</strong>
+      </div>
+      <div class="detail-card">
+        <span>Version</span>
+        <strong>{{ equipo.versionSistema || 'No registrada' }}</strong>
+      </div>
+      <div class="detail-card">
+        <span>Arquitectura</span>
+        <strong>{{ equipo.arquitectura || 'No registrada' }}</strong>
+      </div>
+      <div class="disk-list wide">
+        <h4>Discos</h4>
+        <article class="disk-row" *ngFor="let disco of equipo.discos">
+          <div>
+            <strong>{{ disco.letra || 'Disco' }} {{ disco.nombre || '' }}</strong>
+            <span>{{ formatBytes(disco.libreBytes) }} libres de {{ formatBytes(disco.totalBytes) }}</span>
+          </div>
+          <div class="meter"><span [style.width.%]="diskUsage(disco)"></span></div>
+        </article>
+        <p class="muted" *ngIf="equipo.discos.length === 0">Sin discos reportados.</p>
+      </div>
+    </section>
+
+    <section class="network-list" *ngIf="activeTab === 'red'">
+      <div class="detail-card">
+        <span>IP principal</span>
+        <strong>{{ equipo.ipPrincipal || 'Sin IP' }}</strong>
+      </div>
+      <div class="detail-card">
+        <span>MAC principal</span>
+        <strong>{{ equipo.macPrincipal || 'Sin MAC' }}</strong>
+      </div>
+      <article class="adapter-card" *ngFor="let red of equipo.redes">
+        <strong>{{ red.descripcion || 'Adaptador de red' }}</strong>
+        <span>{{ red.macAddress || 'Sin MAC' }}</span>
+        <div class="ip-list">
+          <small *ngFor="let ip of red.ipAddresses">{{ ip }}</small>
+        </div>
+      </article>
+      <p class="muted" *ngIf="equipo.redes.length === 0">Sin adaptadores reportados.</p>
+    </section>
+
+    <section class="program-panel" *ngIf="activeTab === 'programas'">
+      <div class="program-summary">
+        <strong>{{ equipo.programas.length }}</strong>
+        <span>programas reportados</span>
+      </div>
+      <div class="program-list" *ngIf="equipo.programas.length > 0; else noPrograms">
+        <article *ngFor="let programa of equipo.programas">
+          <strong>{{ programa.nombre }}</strong>
+          <span>{{ programa.version || 'Sin versión' }} - {{ programa.fabricante || 'Fabricante no registrado' }}</span>
+        </article>
+      </div>
+      <ng-template #noPrograms>
+        <p class="muted">Sin programas reportados.</p>
+      </ng-template>
+    </section>
+
+    <section class="match-panel" *ngIf="activeTab === 'match'">
+      <div class="detail-card">
+        <span>Estado</span>
+        <strong>{{ inventarioMatchLabel(equipo.matchEstado) }}</strong>
+      </div>
+      <div class="detail-card">
+        <span>Score</span>
+        <strong>{{ equipo.matchScore ?? 'Sin calcular' }}</strong>
+      </div>
+      <div class="match-links">
+        <article [class.active]="equipo.equipoRelacionadoId">
+          <span>Equipo asignado</span>
+          <strong>{{ equipo.equipoRelacionadoLabel || equipo.equipoRelacionadoId || 'Pendiente' }}</strong>
+        </article>
+        <article [class.active]="equipo.usuarioRedRelacionadoId">
+          <span>Usuario de red</span>
+          <strong>{{ equipo.usuarioRedRelacionadoLabel || equipo.usuarioRedRelacionadoId || 'Pendiente' }}</strong>
+        </article>
+        <article [class.active]="equipo.vpnRelacionadoId">
+          <span>VPN</span>
+          <strong>{{ equipo.vpnRelacionadoLabel || equipo.vpnRelacionadoId || 'Pendiente' }}</strong>
+        </article>
+      </div>
+      <p class="match-note">{{ equipo.matchNotas || 'Aún no se ejecutó el enlace automático. Primero estamos recolectando datos.' }}</p>
+
+      <div class="manual-match">
+        <h4>Ajuste manual</h4>
+        <div class="manual-grid">
+          <label>
+            <span>ID equipo</span>
+            <input type="number" min="1" [(ngModel)]="manualEquipoId" placeholder="Ej. 15" />
+          </label>
+          <label>
+            <span>ID usuario red</span>
+            <input type="number" min="1" [(ngModel)]="manualUsuarioRedId" placeholder="Ej. 87" />
+          </label>
+          <label>
+            <span>ID VPN</span>
+            <input type="number" min="1" [(ngModel)]="manualVpnId" placeholder="Ej. 4" />
+          </label>
+        </div>
+        <label class="notes-field">
+          <span>Nota</span>
+          <textarea rows="2" maxlength="500" [(ngModel)]="manualNotas" placeholder="Motivo o sustento del ajuste"></textarea>
+        </label>
+        <div class="manual-actions">
+          <button type="button" class="secondary-btn" (click)="saveManualMatch(false, false)" [disabled]="matching">
+            Guardar candidato
+          </button>
+          <button type="button" class="confirm-btn" (click)="saveManualMatch(true, false)" [disabled]="matching">
+            Confirmar match
+          </button>
+          <button type="button" class="ignore-btn" (click)="saveManualMatch(false, true)" [disabled]="matching">
+            Ignorar
+          </button>
+        </div>
+      </div>
+    </section>
+  </ng-container>
+</app-modal>

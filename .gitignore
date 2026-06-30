@@ -7,6 +7,9 @@
 *.log
 *.err.log
 
+# Local agent configuration with real token
+tools/soportedesk-agent/soportedesk-agent.config.json
+
 # Frontend build/cache/dependencies
 soportedesk-frontend/node_modules/
 soportedesk-frontend/dist/
@@ -14,3 +17,6 @@ soportedesk-frontend/.angular/
 
 # Backend build
 soportedesk-backend/target/
+
+# Runtime uploads
+soportedesk-backend/uploads/

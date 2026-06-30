@@ -1,5 +1,6 @@
 .tools-page {
-  max-width: 1280px;
+  width: min(100%, 1320px);
+  margin: 0 auto;
 }
 
 .tools-header {
@@ -13,6 +14,7 @@
     margin: 4px 0 4px;
     font-size: 24px;
     font-weight: 750;
+    color: var(--color-text);
   }
 
   p {
@@ -51,6 +53,7 @@
   border-radius: var(--radius-sm);
   font-weight: 700;
   font-size: 13px;
+  white-space: nowrap;
 }
 
 .primary-btn {
@@ -92,6 +95,8 @@ button:disabled {
     background: var(--color-surface);
     color: var(--color-text);
     text-align: left;
+    min-width: 0;
+    box-shadow: var(--shadow-sm);
 
     &.active {
       border-color: var(--color-accent);
@@ -140,8 +145,9 @@ button:disabled {
 .status-pill {
   display: inline-flex;
   padding: 4px 10px;
-  border-radius: 999px;
+  border-radius: var(--radius-sm);
   background: var(--color-muted);
+  min-width: 0;
   color: var(--color-text-secondary);
   font-size: 12px;
   font-weight: 800;
@@ -209,6 +215,7 @@ button:disabled {
   color: #d1fae5;
   font-size: 12px;
   white-space: pre-wrap;
+  overflow-wrap: anywhere;
 }
 
 .error-text {
@@ -376,6 +383,7 @@ button:disabled {
   gap: 7px;
   overflow-x: auto;
   padding-bottom: 4px;
+  -webkit-overflow-scrolling: touch;
 }
 
 .key-row {
@@ -490,6 +498,7 @@ button:disabled {
   .ghost-btn,
   .ping-box label {
     width: 100%;
+    justify-content: center;
   }
 
   .tool-tabs,
@@ -513,5 +522,13 @@ button:disabled {
 
   .keyboard-summary {
     display: grid;
+  }
+
+  .level-meter {
+    grid-template-columns: 1fr;
+
+    strong {
+      text-align: left;
+    }
   }
 }

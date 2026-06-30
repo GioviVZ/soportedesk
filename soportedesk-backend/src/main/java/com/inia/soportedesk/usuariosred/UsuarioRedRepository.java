@@ -5,8 +5,11 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface UsuarioRedRepository extends JpaRepository<UsuarioRed, Long> {
+
+    Optional<UsuarioRed> findFirstByUsuarioIgnoreCase(String usuario);
 
     @Query("SELECT u FROM UsuarioRed u " +
            "LEFT JOIN u.sede s " +

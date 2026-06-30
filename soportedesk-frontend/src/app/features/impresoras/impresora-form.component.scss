@@ -85,6 +85,21 @@
   .two-col {
     grid-template-columns: 1fr;
   }
+
+  .actions {
+    position: sticky;
+    bottom: 0;
+    z-index: 2;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    padding-top: 10px;
+    background: var(--color-surface);
+
+    button {
+      min-height: 40px;
+      padding-inline: 10px;
+    }
+  }
 }
 
 .toner-preview {
