@@ -3,7 +3,7 @@ spring:
     init:
       mode: never
   datasource:
-    url: jdbc:h2:mem:testdb;MODE=MySQL;DB_CLOSE_DELAY=-1
+    url: jdbc:h2:mem:testdb;MODE=MySQL;INIT=CREATE SCHEMA IF NOT EXISTS GestionTI_INIA;DB_CLOSE_DELAY=-1
     driver-class-name: org.h2.Driver
     username: sa
     password: ""

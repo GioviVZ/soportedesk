@@ -1,7 +1,7 @@
 package com.inia.soportedesk.dashboard;
 
 import com.inia.soportedesk.equipos.EquipoRepository;
-import com.inia.soportedesk.correos.CorreoRepository;
+import com.inia.soportedesk.gestiontiinia.VwGwDashboardRepository;
 import com.inia.soportedesk.impresoras.ImpresoraRepository;
 import com.inia.soportedesk.licencias.LicenciaRepository;
 import com.inia.soportedesk.usuariosred.UsuarioRedRepository;
@@ -27,7 +27,7 @@ class DashboardServiceTest {
     private LicenciaRepository licenciaRepository;
 
     @Mock
-    private CorreoRepository correoRepository;
+    private VwGwDashboardRepository correoRepository;
 
     @Mock
     private UsuarioRedRepository usuarioRedRepository;

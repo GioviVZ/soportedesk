@@ -1,95 +1,120 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { AuthService } from '../../core/auth/auth.service';
-import { GenericTableComponent, TableColumn } from '../../shared/generic-table/generic-table.component';
+import { FormsModule } from '@angular/forms';
 import { ModalComponent } from '../../shared/modal/modal.component';
-import { FieldComponent } from '../../shared/field/field.component';
-import { VencimientoBadgeComponent } from '../../shared/vencimiento-badge/vencimiento-badge.component';
-import { CorreoFormComponent } from './correo-form.component';
-import { Correo } from './correo.model';
+import { Correo, CorreoFiltros, CorreoKpis } from './correo.model';
 import { CorreoService } from './correo.service';
 
 @Component({
   selector: 'app-correos-list',
   standalone: true,
-  imports: [
-    CommonModule,
-    GenericTableComponent,
-    ModalComponent,
-    FieldComponent,
-    VencimientoBadgeComponent,
-    CorreoFormComponent,
-  ],
+  imports: [CommonModule, FormsModule, ModalComponent],
   templateUrl: './correos-list.component.html',
   styleUrl: './correos-list.component.scss',
 })
 export class CorreosListComponent implements OnInit {
   private service = inject(CorreoService);
-  private authService = inject(AuthService);
 
   items: Correo[] = [];
-  columns: TableColumn[] = [
-    { key: 'usuario', label: 'Usuario' },
-    { key: 'nombre', label: 'Nombre' },
-    { key: 'apellidos', label: 'Apellidos' },
-    { key: 'correo', label: 'Correo' },
-    { key: 'sede.nombre', label: 'Sede' },
-    { key: 'dependencia.nombre', label: 'Dependencia' },
-    { key: 'subdependencia.nombre', label: 'Subdependencia' },
-    { key: 'tipoContrato.nombre', label: 'Tipo Contrato' },
-    { key: 'fechaFinContrato', label: 'Fin Contrato' },
-    { key: 'estado', label: 'Estado' },
-  ];
+  kpis: CorreoKpis | null = null;
+  sedes: string[] = [];
+  dependencias: string[] = [];
+  subdependencias: string[] = [];
 
-  viewing: Correo | null = null;
-  editing: Correo | null = null;
-  formOpen = false;
+  filtros: CorreoFiltros = {};
+  searchTerm = '';
+  selectedSede = '';
+  selectedDependencia = '';
+  selectedSubdependencia = '';
+  selectedEstado = '';
+  selectedModalidad = '';
+  sinUso30Dias = false;
+  selectedCorreo: Correo | null = null;
 
-  get canWrite(): boolean {
-    return this.authService.canWrite('correos');
-  }
+  readonly estadoOpciones = ['Activo', 'Suspendido'];
+  readonly modalidadOpciones = ['CAP', 'CAS', 'EXTERNO', 'GENERICO', 'PRACTICANTE'];
 
   ngOnInit(): void {
+    this.service.getKpis().subscribe((kpis) => (this.kpis = kpis));
+    this.service.getSedes().subscribe((sedes) => (this.sedes = sedes));
+    this.service.getDependencias().subscribe((dependencias) => (this.dependencias = dependencias));
+    this.service.getSubdependencias().subscribe((subdependencias) => (this.subdependencias = subdependencias));
     this.load();
   }
 
-  load(search?: string): void {
-    this.service.getAll(search).subscribe((data) => (this.items = data));
+  load(): void {
+    this.filtros = {
+      search: this.searchTerm || undefined,
+      sede: this.selectedSede || undefined,
+      dependencia: this.selectedDependencia || undefined,
+      subdependencia: this.selectedSubdependencia || undefined,
+      estado: this.selectedEstado || undefined,
+      modalidad: this.selectedModalidad || undefined,
+      sinUso30Dias: this.sinUso30Dias || undefined,
+    };
+    this.service.getAll(this.filtros).subscribe((data) => (this.items = data));
   }
 
   onSearch(term: string): void {
-    this.load(term);
-  }
-
-  onView(item: Correo): void {
-    this.viewing = item;
-  }
-
-  closeView(): void {
-    this.viewing = null;
-  }
-
-  onAdd(): void {
-    this.editing = null;
-    this.formOpen = true;
-  }
-
-  onEdit(item: Correo): void {
-    this.editing = item;
-    this.formOpen = true;
-  }
-
-  closeForm(): void {
-    this.formOpen = false;
-  }
-
-  onDelete(item: Correo): void {
-    if (!confirm(`¿Eliminar el correo "${item.correo}"?`)) return;
-    this.service.delete(item.id).subscribe(() => this.load());
-  }
-
-  onSaved(): void {
-    this.formOpen = false;
+    this.searchTerm = term;
     this.load();
+  }
+
+  onFiltroChange(): void {
+    this.load();
+  }
+
+  onDependenciaChange(): void {
+    this.selectedSubdependencia = '';
+    this.service
+      .getSubdependencias(this.selectedDependencia || undefined)
+      .subscribe((subdependencias) => (this.subdependencias = subdependencias));
+    this.load();
+  }
+
+  clearFiltros(): void {
+    this.selectedSede = '';
+    this.selectedDependencia = '';
+    this.selectedSubdependencia = '';
+    this.selectedEstado = '';
+    this.selectedModalidad = '';
+    this.sinUso30Dias = false;
+    this.searchTerm = '';
+    this.service.getSubdependencias().subscribe((subdependencias) => (this.subdependencias = subdependencias));
+    this.load();
+  }
+
+  openDetail(item: Correo): void {
+    this.selectedCorreo = item;
+  }
+
+  closeDetail(): void {
+    this.selectedCorreo = null;
+  }
+
+  formatStorage(value: number | null): string {
+    if (value === null || value === undefined) return 'Sin dato';
+    if (value >= 1024) return `${(value / 1024).toFixed(2)} GB`;
+    return `${value.toFixed(2)} MB`;
+  }
+
+  statusClass(value: string | null): string {
+    return value === 'Activo' ? 'success' : value === 'Suspendido' ? 'warning' : 'neutral';
+  }
+
+  twoFactorClass(value: string | null): string {
+    return value === 'Enrolado' ? 'success' : value === 'No Enrolado' ? 'warning' : 'neutral';
+  }
+
+  hasActiveFilters(): boolean {
+    return Boolean(
+      this.searchTerm ||
+        this.selectedSede ||
+        this.selectedDependencia ||
+        this.selectedSubdependencia ||
+        this.selectedEstado ||
+        this.selectedModalidad ||
+        this.sinUso30Dias
+    );
   }
 }

@@ -1,9 +1,7 @@
 package com.inia.soportedesk.correos;
 
-import jakarta.validation.Valid;
+import com.inia.soportedesk.gestiontiinia.VwGwDashboard;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
@@ -18,32 +16,38 @@ public class CorreoController {
 
     @GetMapping
     @PreAuthorize("hasRole('ADMIN') || hasAuthority('READ_correos')")
-    public List<Correo> findAll(@RequestParam(required = false) String search) {
-        return service.findAll(search);
+    public List<VwGwDashboard> findAll(
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) String sede,
+            @RequestParam(required = false) String dependencia,
+            @RequestParam(required = false) String subdependencia,
+            @RequestParam(required = false) String estado,
+            @RequestParam(required = false) String modalidad,
+            @RequestParam(required = false) Boolean sinUso30Dias) {
+        return service.findAll(search, sede, dependencia, subdependencia, estado, modalidad, sinUso30Dias);
     }
 
-    @GetMapping("/{id}")
+    @GetMapping("/kpis")
     @PreAuthorize("hasRole('ADMIN') || hasAuthority('READ_correos')")
-    public Correo findById(@PathVariable Long id) {
-        return service.findById(id);
+    public CorreoKpisDto kpis() {
+        return service.getKpis();
     }
 
-    @PostMapping
-    @PreAuthorize("hasRole('ADMIN') || hasAuthority('WRITE_correos')")
-    public ResponseEntity<Correo> create(@Valid @RequestBody CorreoRequest request) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(service.create(request));
+    @GetMapping("/sedes")
+    @PreAuthorize("hasRole('ADMIN') || hasAuthority('READ_correos')")
+    public List<String> sedes() {
+        return service.getSedes();
     }
 
-    @PutMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN') || hasAuthority('WRITE_correos')")
-    public Correo update(@PathVariable Long id, @Valid @RequestBody CorreoRequest request) {
-        return service.update(id, request);
+    @GetMapping("/dependencias")
+    @PreAuthorize("hasRole('ADMIN') || hasAuthority('READ_correos')")
+    public List<String> dependencias() {
+        return service.getDependencias();
     }
 
-    @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN') || hasAuthority('WRITE_correos')")
-    public ResponseEntity<Void> delete(@PathVariable Long id) {
-        service.delete(id);
-        return ResponseEntity.noContent().build();
+    @GetMapping("/subdependencias")
+    @PreAuthorize("hasRole('ADMIN') || hasAuthority('READ_correos')")
+    public List<String> subdependencias(@RequestParam(required = false) String dependencia) {
+        return service.getSubdependencias(dependencia);
     }
 }

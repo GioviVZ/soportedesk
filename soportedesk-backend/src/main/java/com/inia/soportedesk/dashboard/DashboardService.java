@@ -1,9 +1,9 @@
 package com.inia.soportedesk.dashboard;
 
 import com.inia.soportedesk.equipos.EquipoRepository;
-import com.inia.soportedesk.correos.CorreoRepository;
 import com.inia.soportedesk.impresoras.ImpresoraRepository;
 import com.inia.soportedesk.licencias.LicenciaRepository;
+import com.inia.soportedesk.gestiontiinia.VwGwDashboardRepository;
 import com.inia.soportedesk.usuariosred.UsuarioRedRepository;
 import com.inia.soportedesk.vpn.VpnRepository;
 import com.inia.soportedesk.wifi.WifiRepository;
@@ -20,7 +20,7 @@ import java.util.Map;
 public class DashboardService {
 
     private final LicenciaRepository licenciaRepository;
-    private final CorreoRepository correoRepository;
+    private final VwGwDashboardRepository correoRepository;
     private final UsuarioRedRepository usuarioRedRepository;
     private final VpnRepository vpnRepository;
     private final WifiRepository wifiRepository;

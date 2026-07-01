@@ -1,20 +1,17 @@
 package com.inia.soportedesk.correos;
 
-import com.inia.soportedesk.catalogo.*;
-import com.inia.soportedesk.exception.ResourceNotFoundException;
+import com.inia.soportedesk.gestiontiinia.VwGwDashboard;
+import com.inia.soportedesk.gestiontiinia.VwGwDashboardRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.util.ReflectionTestUtils;
 
-import java.time.LocalDate;
 import java.util.List;
-import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -22,120 +19,78 @@ import static org.mockito.Mockito.when;
 class CorreoServiceTest {
 
     @Mock
-    private CorreoRepository repository;
-
-    @Mock
-    private SedeRepository sedeRepository;
-
-    @Mock
-    private DependenciaRepository dependenciaRepository;
-
-    @Mock
-    private SubdependenciaRepository subdependenciaRepository;
-
-    @Mock
-    private TipoContratoRepository tipoContratoRepository;
+    private VwGwDashboardRepository repository;
 
     @InjectMocks
     private CorreoService service;
 
-    private final Sede sede = new Sede(1L, "Lima");
-    private final Dependencia dependencia = new Dependencia(1L, "TI", sede);
-    private final Subdependencia subdependencia = new Subdependencia(1L, "Soporte", dependencia);
-    private final TipoContrato tipoContrato = new TipoContrato(1L, "CAS");
+    @Test
+    void findAll_normalizesBlankFiltersAndDelegatesToRepository() {
+        VwGwDashboard correo = dashboard("a@inia.gob.pe", "Activo", "Sede Central", 1);
+        when(repository.findFiltered("ana", null, null, null, "Activo", null, null)).thenReturn(List.of(correo));
 
-    private CorreoRequest sampleRequest() {
-        CorreoRequest request = new CorreoRequest();
-        request.setUsuario("jperez");
-        request.setNombre("Juan Pérez");
-        request.setApellidos("Pérez García");
-        request.setCorreo("j.perez@inia.gob.pe");
-        request.setEstado("Activo");
-        request.setSedeId(1L);
-        request.setDependenciaId(1L);
-        request.setSubdependenciaId(1L);
-        request.setTipoContratoId(1L);
-        request.setFechaFinContrato(LocalDate.of(2026, 12, 31));
-        request.setCreado(LocalDate.of(2023, 1, 10));
-        return request;
-    }
+        List<VwGwDashboard> result = service.findAll("ana", " ", "", " ", "Activo", "", false);
 
-    private Correo sampleCorreo() {
-        Correo correo = new Correo();
-        correo.setId(1L);
-        correo.setUsuario("jperez");
-        correo.setNombre("Juan Pérez");
-        correo.setApellidos("Pérez García");
-        correo.setCorreo("j.perez@inia.gob.pe");
-        correo.setEstado("Activo");
-        correo.setSede(sede);
-        correo.setDependencia(dependencia);
-        correo.setSubdependencia(subdependencia);
-        correo.setTipoContrato(tipoContrato);
-        correo.setFechaFinContrato(LocalDate.of(2026, 12, 31));
-        correo.setCreado(LocalDate.of(2023, 1, 10));
-        return correo;
-    }
-
-    private void stubCatalogLookups() {
-        when(sedeRepository.findById(1L)).thenReturn(Optional.of(sede));
-        when(dependenciaRepository.findById(1L)).thenReturn(Optional.of(dependencia));
-        when(subdependenciaRepository.findById(1L)).thenReturn(Optional.of(subdependencia));
-        when(tipoContratoRepository.findById(1L)).thenReturn(Optional.of(tipoContrato));
+        assertThat(result).containsExactly(correo);
+        verify(repository).findFiltered("ana", null, null, null, "Activo", null, null);
     }
 
     @Test
-    void findAll_withoutSearch_returnsAll() {
-        Correo correo = sampleCorreo();
-        when(repository.findAll()).thenReturn(List.of(correo));
+    void getKpis_calculatesCountsFromDashboardRows() {
+        VwGwDashboard activoCentral = dashboard("a@inia.gob.pe", "Activo", "Sede Central", 10);
+        VwGwDashboard suspendidoEea = dashboard("b@inia.gob.pe", "Suspendido", "EEAs", 20);
+        ReflectionTestUtils.setField(activoCentral, "licenciasTotales", 1200);
+        ReflectionTestUtils.setField(activoCentral, "licenciasAsignadas", 1100);
+        ReflectionTestUtils.setField(activoCentral, "licenciasDisponibles", 100);
+        when(repository.findAll()).thenReturn(List.of(activoCentral, suspendidoEea));
 
-        List<Correo> result = service.findAll(null);
+        CorreoKpisDto result = service.getKpis();
 
-        assertThat(result).hasSize(1);
-        verify(repository).findAll();
+        assertThat(result.licenciasTotales()).isEqualTo(1200);
+        assertThat(result.licenciasAsignadas()).isEqualTo(1100);
+        assertThat(result.licenciasDisponibles()).isEqualTo(100);
+        assertThat(result.activasCount()).isEqualTo(1);
+        assertThat(result.suspendidasCount()).isEqualTo(1);
+        assertThat(result.sedeCentralCount()).isEqualTo(10);
+        assertThat(result.eeasCount()).isEqualTo(20);
     }
 
     @Test
-    void findById_whenNotFound_throwsResourceNotFoundException() {
-        when(repository.findById(99L)).thenReturn(Optional.empty());
+    void getKpis_withoutRows_returnsZeroes() {
+        when(repository.findAll()).thenReturn(List.of());
 
-        assertThatThrownBy(() -> service.findById(99L))
-                .isInstanceOf(ResourceNotFoundException.class);
+        CorreoKpisDto result = service.getKpis();
+
+        assertThat(result).isEqualTo(new CorreoKpisDto(0, 0, 0, 0, 0, 0, 0));
     }
 
     @Test
-    void create_resolvesCatalogsAndSaves() {
-        stubCatalogLookups();
-        when(repository.save(any(Correo.class))).thenAnswer(inv -> inv.getArgument(0));
+    void getSedes_returnsDistinctSedes() {
+        when(repository.findDistinctSedes()).thenReturn(List.of("Lima", "Cusco"));
 
-        Correo result = service.create(sampleRequest());
-
-        assertThat(result.getUsuario()).isEqualTo("jperez");
-        assertThat(result.getSede()).isEqualTo(sede);
-        assertThat(result.getDependencia()).isEqualTo(dependencia);
-        assertThat(result.getSubdependencia()).isEqualTo(subdependencia);
-        assertThat(result.getTipoContrato()).isEqualTo(tipoContrato);
-        assertThat(result.getFechaFinContrato()).isEqualTo(LocalDate.of(2026, 12, 31));
+        assertThat(service.getSedes()).containsExactly("Lima", "Cusco");
     }
 
     @Test
-    void create_withUnknownSedeId_throwsResourceNotFoundException() {
-        when(sedeRepository.findById(99L)).thenReturn(Optional.empty());
+    void getDependencias_returnsDistinctDependencias() {
+        when(repository.findDistinctDependencias()).thenReturn(List.of("DGA", "OTI"));
 
-        CorreoRequest request = sampleRequest();
-        request.setSedeId(99L);
-
-        assertThatThrownBy(() -> service.create(request))
-                .isInstanceOf(ResourceNotFoundException.class);
+        assertThat(service.getDependencias()).containsExactly("DGA", "OTI");
     }
 
     @Test
-    void delete_removesExistingCorreo() {
-        Correo correo = sampleCorreo();
-        when(repository.findById(1L)).thenReturn(Optional.of(correo));
+    void getSubdependencias_normalizesDependencia() {
+        when(repository.findDistinctSubdependencias("OTI")).thenReturn(List.of("Soporte"));
 
-        service.delete(1L);
+        assertThat(service.getSubdependencias("OTI")).containsExactly("Soporte");
+    }
 
-        verify(repository).delete(correo);
+    private VwGwDashboard dashboard(String email, String estado, String categoria, int totalUsuariosCategoria) {
+        VwGwDashboard value = new VwGwDashboard();
+        ReflectionTestUtils.setField(value, "email", email);
+        ReflectionTestUtils.setField(value, "estado", estado);
+        ReflectionTestUtils.setField(value, "categoria", categoria);
+        ReflectionTestUtils.setField(value, "totalUsuariosCategoria", totalUsuariosCategoria);
+        return value;
     }
 }

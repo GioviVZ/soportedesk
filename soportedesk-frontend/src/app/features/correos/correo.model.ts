@@ -1,29 +1,36 @@
-import { Dependencia, Sede, Subdependencia, TipoContrato } from '../../core/models/catalogo.model';
-
 export interface Correo {
-  id: number;
-  usuario: string;
-  nombre: string;
-  apellidos: string;
-  correo: string;
+  email: string;
+  nombreCompleto: string | null;
+  sede: string;
+  oficinaPadre: string;
+  oficina: string;
+  modalidad: string;
   estado: string;
-  sede: Sede;
-  dependencia: Dependencia;
-  subdependencia: Subdependencia;
-  tipoContrato: TipoContrato;
-  fechaFinContrato: string | null;
-  creado: string;
+  verificacion2Pasos: string;
+  ultimoInicioSesion: string | null;
+  emailUsageMB: number | null;
+  driveUsageMB: number | null;
+  storageUsedMB: number | null;
+  totalUsoMB: number | null;
+  employeeId: string | null;
 }
 
-export interface CorreoRequest {
-  usuario: string;
-  nombre: string;
-  apellidos: string;
-  correo: string;
-  estado: string;
-  sedeId: number;
-  dependenciaId: number;
-  subdependenciaId: number;
-  tipoContratoId: number;
-  fechaFinContrato: string | null;
+export interface CorreoKpis {
+  licenciasTotales: number;
+  licenciasAsignadas: number;
+  licenciasDisponibles: number;
+  activasCount: number;
+  suspendidasCount: number;
+  sedeCentralCount: number;
+  eeasCount: number;
+}
+
+export interface CorreoFiltros {
+  search?: string;
+  sede?: string;
+  dependencia?: string;
+  subdependencia?: string;
+  estado?: string;
+  modalidad?: string;
+  sinUso30Dias?: boolean;
 }

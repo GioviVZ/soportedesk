@@ -1,68 +1,94 @@
 package com.inia.soportedesk.correos;
 
-import com.inia.soportedesk.catalogo.*;
-import com.inia.soportedesk.exception.ResourceNotFoundException;
+import com.inia.soportedesk.gestiontiinia.VwGwDashboard;
+import com.inia.soportedesk.gestiontiinia.VwGwDashboardRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
 @RequiredArgsConstructor
 public class CorreoService {
 
-    private final CorreoRepository repository;
-    private final SedeRepository sedeRepository;
-    private final DependenciaRepository dependenciaRepository;
-    private final SubdependenciaRepository subdependenciaRepository;
-    private final TipoContratoRepository tipoContratoRepository;
+    private final VwGwDashboardRepository repository;
 
-    public List<Correo> findAll(String search) {
-        if (search == null || search.isBlank()) {
-            return repository.findAll();
+    @Transactional(readOnly = true)
+    public List<VwGwDashboard> findAll(
+            String search,
+            String sede,
+            String dependencia,
+            String subdependencia,
+            String estado,
+            String modalidad,
+            Boolean sinUso30Dias) {
+        return repository.findFiltered(
+                normalize(search),
+                normalize(sede),
+                normalize(dependencia),
+                normalize(subdependencia),
+                normalize(estado),
+                normalize(modalidad),
+                Boolean.TRUE.equals(sinUso30Dias) ? LocalDateTime.now().minusDays(30) : null
+        );
+    }
+
+    @Transactional(readOnly = true)
+    public CorreoKpisDto getKpis() {
+        List<VwGwDashboard> all = repository.findAll();
+        if (all.isEmpty()) {
+            return new CorreoKpisDto(0, 0, 0, 0, 0, 0, 0);
         }
-        return repository.search(search);
+
+        VwGwDashboard first = all.get(0);
+        int licenciasTotales = first.getLicenciasTotales();
+        int licenciasAsignadas = first.getLicenciasAsignadas() != null ? first.getLicenciasAsignadas() : 0;
+        int licenciasDisponibles = first.getLicenciasDisponibles() != null ? first.getLicenciasDisponibles() : 0;
+
+        long activas = all.stream().filter(v -> "Activo".equals(v.getEstado())).count();
+        long suspendidas = all.stream().filter(v -> "Suspendido".equals(v.getEstado())).count();
+
+        int sedeCentral = all.stream()
+                .filter(v -> "Sede Central".equals(v.getCategoria()) && v.getTotalUsuariosCategoria() != null)
+                .mapToInt(VwGwDashboard::getTotalUsuariosCategoria)
+                .findFirst()
+                .orElse(0);
+
+        int eeas = all.stream()
+                .filter(v -> "EEAs".equals(v.getCategoria()) && v.getTotalUsuariosCategoria() != null)
+                .mapToInt(VwGwDashboard::getTotalUsuariosCategoria)
+                .findFirst()
+                .orElse(0);
+
+        return new CorreoKpisDto(
+                licenciasTotales,
+                licenciasAsignadas,
+                licenciasDisponibles,
+                activas,
+                suspendidas,
+                sedeCentral,
+                eeas
+        );
     }
 
-    public Correo findById(Long id) {
-        return repository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Correo no encontrado: " + id));
+    @Transactional(readOnly = true)
+    public List<String> getSedes() {
+        return repository.findDistinctSedes();
     }
 
-    @Transactional
-    public Correo create(CorreoRequest request) {
-        Correo correo = new Correo();
-        copyFields(correo, request);
-        return repository.save(correo);
+    @Transactional(readOnly = true)
+    public List<String> getDependencias() {
+        return repository.findDistinctDependencias();
     }
 
-    @Transactional
-    public Correo update(Long id, CorreoRequest request) {
-        Correo correo = findById(id);
-        copyFields(correo, request);
-        return repository.save(correo);
+    @Transactional(readOnly = true)
+    public List<String> getSubdependencias(String dependencia) {
+        return repository.findDistinctSubdependencias(normalize(dependencia));
     }
 
-    public void delete(Long id) {
-        repository.delete(findById(id));
-    }
-
-    private void copyFields(Correo correo, CorreoRequest request) {
-        correo.setUsuario(request.getUsuario());
-        correo.setNombre(request.getNombre());
-        correo.setApellidos(request.getApellidos());
-        correo.setCorreo(request.getCorreo());
-        correo.setEstado(request.getEstado());
-        correo.setFechaFinContrato(request.getFechaFinContrato());
-        correo.setCreado(request.getCreado());
-        correo.setSede(sedeRepository.findById(request.getSedeId())
-                .orElseThrow(() -> new ResourceNotFoundException("Sede no encontrada: " + request.getSedeId())));
-        correo.setDependencia(dependenciaRepository.findById(request.getDependenciaId())
-                .orElseThrow(() -> new ResourceNotFoundException("Dependencia no encontrada: " + request.getDependenciaId())));
-        correo.setSubdependencia(subdependenciaRepository.findById(request.getSubdependenciaId())
-                .orElseThrow(() -> new ResourceNotFoundException("Subdependencia no encontrada: " + request.getSubdependenciaId())));
-        correo.setTipoContrato(tipoContratoRepository.findById(request.getTipoContratoId())
-                .orElseThrow(() -> new ResourceNotFoundException("Tipo de contrato no encontrado: " + request.getTipoContratoId())));
+    private String normalize(String value) {
+        return value != null && !value.isBlank() ? value : null;
     }
 }

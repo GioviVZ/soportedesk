@@ -15,7 +15,10 @@ export const jwtInterceptor: HttpInterceptorFn = (req, next) => {
 
   return next(authReq).pipe(
     catchError((error) => {
-      if (error.status === 401) {
+      const isAuthFormRequest =
+        authReq.url.includes('/auth/login') || authReq.url.includes('/auth/cambiar-password');
+
+      if (error.status === 401 && token && !isAuthFormRequest) {
         authService.logout();
         router.navigate(['/login']);
       }

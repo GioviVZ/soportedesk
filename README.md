@@ -16,7 +16,7 @@ rutas y guía de despliegue):** [`docs/ARQUITECTURA.md`](docs/ARQUITECTURA.md)
 | Capa | Tecnología |
 |------|-----------|
 | Backend | Spring Boot 3.2.5 · Java 17 · Spring Security + JWT |
-| Base de datos | SQL Server 2016+ — base `ssti` |
+| Base de datos | SQL Server 2016+ — base `ssti` e integración de lectura con `GestionTI_INIA` |
 | Frontend | Angular 17.3 · TypeScript 5.4 · SCSS |
 | Build | Maven (backend) · Angular CLI / npm (frontend) |
 
@@ -53,6 +53,34 @@ ver [`docs/ARQUITECTURA.md`](docs/ARQUITECTURA.md#3-estructura-del-proyecto).
 
 El backend usa `ddl-auto: none` — Hibernate no crea ni modifica tablas
 automáticamente; `schema.sql` es la única fuente de verdad del esquema.
+
+### Integración GestionTI / Google Workspace
+
+El módulo **Correos Institucionales** ya no administra registros locales de
+correo. Ahora consume en modo lectura la vista
+`GestionTI_INIA.dbo.vw_GW_Dashboard`, que centraliza estado de cuentas,
+licencias, sedes, dependencias, subdependencias, modalidad, verificación en dos
+pasos, uso de almacenamiento y último inicio de sesión de Google Workspace.
+
+Filtros disponibles en la pantalla de Correos:
+
+- Búsqueda por correo o nombre.
+- Sede.
+- Dependencia.
+- Subdependencia, actualizada según la dependencia seleccionada.
+- Estado.
+- Modalidad.
+- Cuentas sin uso por más de 30 días.
+
+Endpoints principales:
+
+```text
+GET /api/correos
+GET /api/correos/kpis
+GET /api/correos/sedes
+GET /api/correos/dependencias
+GET /api/correos/subdependencias?dependencia=<nombre>
+```
 
 ### 2. Backend
 

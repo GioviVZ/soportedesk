@@ -2,34 +2,40 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { Correo, CorreoRequest } from './correo.model';
+import { Correo, CorreoFiltros, CorreoKpis } from './correo.model';
 
 @Injectable({ providedIn: 'root' })
 export class CorreoService {
   private http = inject(HttpClient);
   private readonly apiUrl = `${environment.apiUrl}/correos`;
 
-  getAll(search?: string): Observable<Correo[]> {
+  getAll(filtros: CorreoFiltros = {}): Observable<Correo[]> {
     let params = new HttpParams();
-    if (search) {
-      params = params.set('search', search);
-    }
+    if (filtros.search) params = params.set('search', filtros.search);
+    if (filtros.sede) params = params.set('sede', filtros.sede);
+    if (filtros.dependencia) params = params.set('dependencia', filtros.dependencia);
+    if (filtros.subdependencia) params = params.set('subdependencia', filtros.subdependencia);
+    if (filtros.estado) params = params.set('estado', filtros.estado);
+    if (filtros.modalidad) params = params.set('modalidad', filtros.modalidad);
+    if (filtros.sinUso30Dias) params = params.set('sinUso30Dias', true);
     return this.http.get<Correo[]>(this.apiUrl, { params });
   }
 
-  getById(id: number): Observable<Correo> {
-    return this.http.get<Correo>(`${this.apiUrl}/${id}`);
+  getKpis(): Observable<CorreoKpis> {
+    return this.http.get<CorreoKpis>(`${this.apiUrl}/kpis`);
   }
 
-  create(request: CorreoRequest): Observable<Correo> {
-    return this.http.post<Correo>(this.apiUrl, request);
+  getSedes(): Observable<string[]> {
+    return this.http.get<string[]>(`${this.apiUrl}/sedes`);
   }
 
-  update(id: number, request: CorreoRequest): Observable<Correo> {
-    return this.http.put<Correo>(`${this.apiUrl}/${id}`, request);
+  getDependencias(): Observable<string[]> {
+    return this.http.get<string[]>(`${this.apiUrl}/dependencias`);
   }
 
-  delete(id: number): Observable<void> {
-    return this.http.delete<void>(`${this.apiUrl}/${id}`);
+  getSubdependencias(dependencia?: string): Observable<string[]> {
+    let params = new HttpParams();
+    if (dependencia) params = params.set('dependencia', dependencia);
+    return this.http.get<string[]>(`${this.apiUrl}/subdependencias`, { params });
   }
 }
