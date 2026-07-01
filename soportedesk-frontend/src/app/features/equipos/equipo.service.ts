@@ -2,7 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { Equipo, EquipoRequest } from './equipo.model';
+import { Equipo, EquipoDetalleResponse, EquipoKpis, EquipoResumen } from './equipo.model';
 
 @Injectable({ providedIn: 'root' })
 export class EquipoService {
@@ -13,27 +13,33 @@ export class EquipoService {
     return this.http.get<Equipo[]>(`${this.apiUrl}/con-red`);
   }
 
-  getAll(search?: string): Observable<Equipo[]> {
+  getAll(filters: { search?: string; sede?: string; tipo?: string } = {}): Observable<EquipoResumen[]> {
     let params = new HttpParams();
-    if (search) {
-      params = params.set('search', search);
+    if (filters.search) {
+      params = params.set('search', filters.search);
     }
-    return this.http.get<Equipo[]>(this.apiUrl, { params });
+    if (filters.sede) {
+      params = params.set('sede', filters.sede);
+    }
+    if (filters.tipo) {
+      params = params.set('tipo', filters.tipo);
+    }
+    return this.http.get<EquipoResumen[]>(this.apiUrl, { params });
   }
 
-  getById(id: number): Observable<Equipo> {
-    return this.http.get<Equipo>(`${this.apiUrl}/${id}`);
+  getKpis(): Observable<EquipoKpis> {
+    return this.http.get<EquipoKpis>(`${this.apiUrl}/kpis`);
   }
 
-  create(request: EquipoRequest): Observable<Equipo> {
-    return this.http.post<Equipo>(this.apiUrl, request);
+  getSedes(): Observable<string[]> {
+    return this.http.get<string[]>(`${this.apiUrl}/sedes`);
   }
 
-  update(id: number, request: EquipoRequest): Observable<Equipo> {
-    return this.http.put<Equipo>(`${this.apiUrl}/${id}`, request);
+  getTipos(): Observable<string[]> {
+    return this.http.get<string[]>(`${this.apiUrl}/tipos`);
   }
 
-  delete(id: number): Observable<void> {
-    return this.http.delete<void>(`${this.apiUrl}/${id}`);
+  getDetalle(id: number): Observable<EquipoDetalleResponse> {
+    return this.http.get<EquipoDetalleResponse>(`${this.apiUrl}/${id}`);
   }
 }

@@ -24,3 +24,10 @@ agente:
 
 uploads:
   drivers-dir: build/test-uploads/drivers
+
+glpi:
+  datasource:
+    url: jdbc:h2:mem:glpitest;MODE=MySQL;DB_CLOSE_DELAY=-1
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: ""

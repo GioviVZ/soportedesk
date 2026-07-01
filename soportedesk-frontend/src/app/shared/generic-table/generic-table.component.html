@@ -18,7 +18,7 @@
       <tr>
         <th *ngFor="let col of columns">{{ col.label }}</th>
         <th *ngIf="extraColumnLabel">{{ extraColumnLabel }}</th>
-        <th>Acciones</th>
+        <th *ngIf="canView || canEdit">Acciones</th>
       </tr>
     </thead>
     <tbody>
@@ -27,14 +27,14 @@
         <td *ngIf="extraColumnLabel">
           <ng-container *ngTemplateOutlet="extraCellTemplate ?? null; context: { $implicit: row }" />
         </td>
-        <td class="actions">
-          <button class="view-btn" (click)="view.emit(row)">Ver</button>
+        <td *ngIf="canView || canEdit" class="actions">
+          <button *ngIf="canView" class="view-btn" (click)="view.emit(row)">Ver</button>
           <button *ngIf="canEdit" class="edit-btn" (click)="edit.emit(row)">Editar</button>
           <button *ngIf="canEdit" class="del-btn" (click)="delete.emit(row)">Eliminar</button>
         </td>
       </tr>
       <tr *ngIf="data.length === 0">
-        <td [attr.colspan]="columns.length + (extraColumnLabel ? 2 : 1)" class="empty">
+        <td [attr.colspan]="columns.length + (extraColumnLabel ? 1 : 0) + ((canView || canEdit) ? 1 : 0)" class="empty">
           <ng-container *ngIf="searchTerm.trim()">No se encontraron resultados para "{{ searchTerm }}"</ng-container>
           <ng-container *ngIf="!searchTerm.trim()">{{ emptyMessage }}</ng-container>
         </td>

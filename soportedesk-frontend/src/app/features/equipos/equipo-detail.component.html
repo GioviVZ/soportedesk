@@ -1,0 +1,92 @@
+<div class="module-page equipo-detail-page" *ngIf="equipo() as item">
+  <button type="button" class="back-btn" (click)="back()">Volver</button>
+
+  <header class="detail-header">
+    <div>
+      <span class="module-eyebrow">Equipo GLPI</span>
+      <h2>{{ item.nombreEquipo }}</h2>
+    </div>
+    <span class="type-badge">{{ item.tipoEquipo }}</span>
+  </header>
+
+  <section class="section-band">
+    <h3>Asignacion</h3>
+    <div class="info-grid">
+      <div><span>Usuario</span><strong>{{ stripDomain(item.usuarioContacto) }}</strong></div>
+      <div><span>Telefono</span><strong>{{ empty(item.usuarioTelefono) }}</strong></div>
+      <div><span>Sede</span><strong>{{ item.sedeNombre }}</strong></div>
+      <div><span>Dependencia</span><strong>{{ item.oficinaId }}</strong></div>
+      <div><span>Unidad</span><strong>{{ item.unidadId }}</strong></div>
+    </div>
+  </section>
+
+  <section class="section-band">
+    <h3>Hardware</h3>
+    <div class="hardware-grid">
+      <div><span>CPU</span><strong>{{ item.cpuModelos }}</strong><small>{{ item.cpuConteo }} CPU, {{ item.cpuNucleos }} nucleos, {{ item.cpuHilos }} hilos, {{ item.cpuFrecuenciaMax }} MHz</small></div>
+      <div><span>RAM</span><strong>{{ gbLabel(item.ramTotalGb) }}</strong><small>{{ item.ramModulos }} modulos, {{ empty(item.ramFrecuenciaMax) }}, {{ empty(item.ramTipos) }}</small></div>
+      <div><span>Disco</span><strong>{{ gbLabel(item.diskTotalGb) }}</strong><small>{{ item.diskCantidad }} discos, {{ empty(item.diskTipos) }}</small></div>
+      <div><span>IP</span><strong>{{ empty(item.ipEquipo) }}</strong></div>
+      <div><span>Ultimo encendido</span><strong>{{ empty(item.ultimoEncendido) }}</strong></div>
+      <div><span>UUID</span><strong>{{ empty(item.uuidEquipo) }}</strong></div>
+      <div><span>Nro. serie</span><strong>{{ empty(item.numeroserie) }}</strong></div>
+      <div><span>Codigo interno</span><strong>{{ empty(item.codigoInterno) }}</strong></div>
+    </div>
+  </section>
+
+  <section class="section-band">
+    <h3>Monitores</h3>
+    <div class="simple-table" *ngIf="monitores().length; else sinMonitores">
+      <table>
+        <thead>
+          <tr><th>Nombre</th><th>Modelo</th><th>Fabricante</th><th>Serial</th></tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let monitor of monitores()">
+            <td>{{ monitor.nombre }}</td>
+            <td>{{ monitor.modelo }}</td>
+            <td>{{ monitor.fabricante }}</td>
+            <td>{{ monitor.serial }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <ng-template #sinMonitores><p class="empty-state">Sin monitores registrados</p></ng-template>
+  </section>
+
+  <section class="section-band">
+    <h3>Teclado</h3>
+    <div class="info-grid" *ngIf="teclado() as kb; else sinTeclado">
+      <div><span>Marca</span><strong>{{ empty(kb.marcafield) }}</strong></div>
+      <div><span>Modelo</span><strong>{{ empty(kb.modelofield) }}</strong></div>
+      <div><span>Serial</span><strong>{{ empty(kb.nmerodeseriefield) }}</strong></div>
+      <div><span>Cod. inventario</span><strong>{{ empty(kb.cdigodeinventariofield) }}</strong></div>
+      <div><span>Cod. patrimonial</span><strong>{{ empty(kb.cdigopatrimonialfield) }}</strong></div>
+    </div>
+    <ng-template #sinTeclado><p class="empty-state">No registrado</p></ng-template>
+  </section>
+
+  <section class="section-band">
+    <div class="software-head">
+      <h3>Software instalado <span>{{ software().length }}</span></h3>
+      <input type="text" placeholder="Filtrar software" [ngModel]="softwareFilter()" (ngModelChange)="softwareFilter.set($event)" />
+    </div>
+    <div class="simple-table">
+      <table>
+        <thead>
+          <tr><th>Nombre</th><th>Version</th><th>Fecha instalacion</th></tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let row of filteredSoftware()">
+            <td>{{ row.software }}</td>
+            <td>{{ empty(row.version) }}</td>
+            <td>{{ empty(row.fechaInstalacion) }}</td>
+          </tr>
+          <tr *ngIf="filteredSoftware().length === 0">
+            <td colspan="3" class="empty-cell">Sin software para el filtro actual</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+</div>

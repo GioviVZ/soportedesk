@@ -10,11 +10,13 @@ import {
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import * as THREE from 'three';
+import QRCode from 'qrcode';
 import { PingResult } from './herramientas.model';
 import { HerramientasService } from './herramientas.service';
 
-type ToolTab = 'ping' | 'gpu' | 'ram' | 'teclado' | 'mouse' | 'microfono' | 'camara';
+type ToolTab = 'ping' | 'qr' | 'gpu' | 'ram' | 'teclado' | 'mouse' | 'microfono' | 'camara';
 type TestState = 'idle' | 'running' | 'done' | 'error';
+type QrFormat = 'png' | 'jpg' | 'svg';
 
 interface ToolTabItem {
   id: ToolTab;
@@ -129,6 +131,7 @@ export class HerramientasComponent implements AfterViewInit, OnDestroy {
 
   readonly tabs: ToolTabItem[] = [
     { id: 'ping', label: 'Ping', detail: 'Red' },
+    { id: 'qr', label: 'QR', detail: 'Link' },
     { id: 'gpu', label: 'GPU', detail: 'WebGL' },
     { id: 'ram', label: 'RAM', detail: 'Memoria web' },
     { id: 'teclado', label: 'Teclado', detail: 'Entrada' },
@@ -144,6 +147,13 @@ export class HerramientasComponent implements AfterViewInit, OnDestroy {
   pingState: TestState = 'idle';
   pingResult: PingResult | null = null;
   pingError = '';
+
+  qrLink = '';
+  qrFormat: QrFormat = 'png';
+  qrDataUrl = '';
+  qrSvg = '';
+  qrError = '';
+  qrSize = 512;
 
   clientInfo: ClientInfo = this.readClientInfo();
 
@@ -281,6 +291,84 @@ export class HerramientasComponent implements AfterViewInit, OnDestroy {
         this.pingError = err?.error?.message ?? 'No se pudo ejecutar la prueba.';
       },
     });
+  }
+
+  async generateQr(): Promise<void> {
+    const link = this.qrLink.trim();
+    if (!link) {
+      this.qrError = 'Ingresa un link para generar el QR.';
+      this.qrDataUrl = '';
+      this.qrSvg = '';
+      return;
+    }
+
+    this.qrError = '';
+    try {
+      this.qrSvg = await QRCode.toString(link, {
+        type: 'svg',
+        errorCorrectionLevel: 'M',
+        margin: 2,
+        width: this.qrSize,
+        color: {
+          dark: '#0f172a',
+          light: '#ffffff',
+        },
+      });
+      this.qrDataUrl = await QRCode.toDataURL(link, {
+        type: 'image/png',
+        errorCorrectionLevel: 'M',
+        margin: 2,
+        width: this.qrSize,
+        color: {
+          dark: '#0f172a',
+          light: '#ffffff',
+        },
+      });
+      this.addReport('QR', `QR generado para ${link}`);
+    } catch {
+      this.qrError = 'No se pudo generar el QR para este link.';
+      this.qrDataUrl = '';
+      this.qrSvg = '';
+    }
+  }
+
+  clearQr(): void {
+    this.qrLink = '';
+    this.qrDataUrl = '';
+    this.qrSvg = '';
+    this.qrError = '';
+  }
+
+  onQrLinkChange(value: string): void {
+    this.qrLink = value;
+    this.qrDataUrl = '';
+    this.qrSvg = '';
+    this.qrError = '';
+  }
+
+  async downloadQr(): Promise<void> {
+    const link = this.qrLink.trim();
+    if (!link || (!this.qrDataUrl && !this.qrSvg)) {
+      await this.generateQr();
+    }
+    if (this.qrError || (!this.qrDataUrl && !this.qrSvg)) {
+      return;
+    }
+
+    const filename = `qr-${this.safeFileName(this.qrLink)}.${this.qrFormat}`;
+    if (this.qrFormat === 'svg') {
+      this.downloadBlob(new Blob([this.qrSvg], { type: 'image/svg+xml;charset=utf-8' }), filename);
+      return;
+    }
+
+    if (this.qrFormat === 'png') {
+      const blob = await (await fetch(this.qrDataUrl)).blob();
+      this.downloadBlob(blob, filename);
+      return;
+    }
+
+    const jpgBlob = await this.pngDataUrlToJpegBlob(this.qrDataUrl);
+    this.downloadBlob(jpgBlob, filename);
   }
 
   startGpuTest(): void {
@@ -689,6 +777,51 @@ export class HerramientasComponent implements AfterViewInit, OnDestroy {
       this.reportCopied = true;
       window.setTimeout(() => (this.reportCopied = false), 1800);
     });
+  }
+
+  private downloadBlob(blob: Blob, filename: string): void {
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = filename;
+    anchor.click();
+    URL.revokeObjectURL(url);
+  }
+
+  private pngDataUrlToJpegBlob(dataUrl: string): Promise<Blob> {
+    return new Promise((resolve, reject) => {
+      const image = new Image();
+      image.onload = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = image.width;
+        canvas.height = image.height;
+        const context = canvas.getContext('2d');
+        if (!context) {
+          reject(new Error('Canvas no disponible'));
+          return;
+        }
+        context.fillStyle = '#ffffff';
+        context.fillRect(0, 0, canvas.width, canvas.height);
+        context.drawImage(image, 0, 0);
+        canvas.toBlob((blob) => {
+          if (blob) {
+            resolve(blob);
+          } else {
+            reject(new Error('No se pudo crear JPG'));
+          }
+        }, 'image/jpeg', 0.95);
+      };
+      image.onerror = () => reject(new Error('No se pudo cargar el QR'));
+      image.src = dataUrl;
+    });
+  }
+
+  private safeFileName(value: string): string {
+    return (value.trim().toLowerCase() || 'link')
+      .replace(/^https?:\/\//, '')
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '')
+      .slice(0, 48) || 'link';
   }
 
   @HostListener('window:resize')

@@ -1,23 +1,17 @@
 package com.inia.soportedesk.equipos;
 
-import com.inia.soportedesk.catalogo.DependenciaRepository;
-import com.inia.soportedesk.catalogo.SedeRepository;
-import com.inia.soportedesk.catalogo.SubdependenciaRepository;
-import com.inia.soportedesk.exception.ResourceNotFoundException;
-import com.inia.soportedesk.usuariosred.UsuarioRedRepository;
+import com.inia.soportedesk.glpi.GlpiTecladoRepository;
+import com.inia.soportedesk.glpi.VwInvComputerFull;
+import com.inia.soportedesk.glpi.VwInvComputerFullRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.time.LocalDate;
 import java.util.List;
-import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -25,72 +19,47 @@ import static org.mockito.Mockito.when;
 class EquipoServiceTest {
 
     @Mock
-    private EquipoRepository repository;
+    private VwInvComputerFullRepository repository;
 
     @Mock
-    private UsuarioRedRepository usuarioRedRepository;
-
-    @Mock
-    private SedeRepository sedeRepository;
-
-    @Mock
-    private DependenciaRepository dependenciaRepository;
-
-    @Mock
-    private SubdependenciaRepository subdependenciaRepository;
+    private GlpiTecladoRepository tecladoRepository;
 
     @InjectMocks
     private EquipoService service;
 
-    private EquipoRequest sampleRequest() {
-        EquipoRequest request = new EquipoRequest();
-        request.setNumeroSerie("SN-2024-001");
-        request.setTipo("Laptop");
-        request.setMarca("Dell");
-        request.setModelo("Latitude 5540");
-        request.setAsignado(LocalDate.of(2024, 1, 10));
-        request.setEstado("En uso");
-        return request;
+    @Test
+    void findAll_delegatesFiltersToRepository() {
+        VwInvComputerFull equipo = new VwInvComputerFull();
+        equipo.setComputerID(10L);
+        when(repository.findFiltered("ana", "SEDE CENTRAL", "Laptop")).thenReturn(List.of(equipo));
+
+        List<VwInvComputerFull> result = service.findAll("ana", "SEDE CENTRAL", "Laptop");
+
+        assertThat(result).containsExactly(equipo);
+        verify(repository).findFiltered("ana", "SEDE CENTRAL", "Laptop");
     }
 
     @Test
-    void findAll_withoutSearch_returnsAll() {
-        Equipo equipo = new Equipo();
-        equipo.setNumeroSerie("SN-2024-001");
-        when(repository.findAll()).thenReturn(List.of(equipo));
+    void getKpis_calculatesCountsByTypeAndSede() {
+        VwInvComputerFull desktopCentral = equipo("Desktop", "SEDE CENTRAL");
+        VwInvComputerFull laptopEea = equipo("Laptop", "EEA ANDENES");
+        VwInvComputerFull otroEea = equipo("Servidor", "EEA DONOSO");
+        when(repository.findFiltered(null, null, null)).thenReturn(List.of(desktopCentral, laptopEea, otroEea));
 
-        List<Equipo> result = service.findAll(null);
+        EquipoKpisDto result = service.getKpis();
 
-        assertThat(result).hasSize(1);
-        verify(repository).findAll();
+        assertThat(result.totalActivos()).isEqualTo(3);
+        assertThat(result.desktopCount()).isEqualTo(1);
+        assertThat(result.laptopCount()).isEqualTo(1);
+        assertThat(result.otrosCount()).isEqualTo(1);
+        assertThat(result.sedeCentralCount()).isEqualTo(1);
+        assertThat(result.eeasCount()).isEqualTo(2);
     }
 
-    @Test
-    void findById_whenNotFound_throwsResourceNotFoundException() {
-        when(repository.findById(99L)).thenReturn(Optional.empty());
-
-        assertThatThrownBy(() -> service.findById(99L))
-                .isInstanceOf(ResourceNotFoundException.class);
-    }
-
-    @Test
-    void create_savesEquipoFromRequest() {
-        when(repository.save(any(Equipo.class))).thenAnswer(inv -> inv.getArgument(0));
-
-        Equipo result = service.create(sampleRequest());
-
-        assertThat(result.getNumeroSerie()).isEqualTo("SN-2024-001");
-        assertThat(result.getMarca()).isEqualTo("Dell");
-    }
-
-    @Test
-    void delete_removesExistingEquipo() {
-        Equipo existing = new Equipo();
-        existing.setId(1L);
-        when(repository.findById(1L)).thenReturn(Optional.of(existing));
-
-        service.delete(1L);
-
-        verify(repository).delete(existing);
+    private VwInvComputerFull equipo(String tipo, String sede) {
+        VwInvComputerFull equipo = new VwInvComputerFull();
+        equipo.setTipoEquipo(tipo);
+        equipo.setSedeNombre(sede);
+        return equipo;
     }
 }

@@ -18,6 +18,7 @@ export class GenericTableComponent<T = any> implements OnInit, OnChanges {
   @Input({ required: true }) columns: TableColumn[] = [];
   @Input({ required: true }) data: T[] = [];
   @Input() canEdit = false;
+  @Input() canView = true;
   @Input() extraColumnLabel: string | null = null;
   @Input() initialSearch = '';
   @Input() emptyMessage = 'Sin registros aun';

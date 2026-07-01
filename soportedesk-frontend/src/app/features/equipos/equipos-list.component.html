@@ -3,45 +3,104 @@
     <div>
       <span class="module-eyebrow">Asignaciones</span>
       <h2>Equipos Asignados</h2>
-      <p>Equipos, usuarios responsables, ubicación y datos patrimoniales.</p>
+      <p>Inventario GLPI, usuarios responsables, ubicacion y hardware detectado.</p>
     </div>
   </div>
 
-  <app-generic-table
-    [columns]="columns"
-    [data]="items"
-    [canEdit]="canWrite"
-    (searchChange)="onSearch($event)"
-    (add)="onAdd()"
-    (view)="onView($event)"
-    (edit)="onEdit($event)"
-    (delete)="onDelete($event)"
-  />
+  <section class="kpi-grid">
+    <article *ngFor="let card of kpiCards()" class="kpi-card" [class]="'tone-' + card.tone">
+      <span>{{ card.label }}</span>
+      <strong>{{ card.value }}</strong>
+    </article>
+  </section>
+
+  <section class="filter-bar">
+    <label class="mobile-search">
+      <span>Buscar</span>
+      <input
+        type="text"
+        [ngModel]="searchTerm()"
+        (ngModelChange)="onSearch($event)"
+        placeholder="Equipo o usuario"
+      />
+    </label>
+
+    <label>
+      <span>Sede</span>
+      <select [ngModel]="selectedSede()" (ngModelChange)="onSedeChange($event)">
+        <option value="">Todas</option>
+        <option *ngFor="let sede of sedes()" [value]="sede">{{ sede }}</option>
+      </select>
+    </label>
+
+    <label>
+      <span>Tipo</span>
+      <select [ngModel]="selectedTipo()" (ngModelChange)="onTipoChange($event)">
+        <option value="">Todos</option>
+        <option *ngFor="let tipo of tipos()" [value]="tipo">{{ tipo }}</option>
+      </select>
+    </label>
+
+    <button type="button" (click)="clearFilters()">Limpiar filtros</button>
+  </section>
+
+  <div class="desktop-table-shell">
+    <app-generic-table
+      [columns]="columns"
+      [data]="items()"
+      [canEdit]="false"
+      [canView]="true"
+      [initialSearch]="searchTerm()"
+      emptyMessage="Sin equipos activos registrados"
+      (searchChange)="onSearch($event)"
+      (view)="onView($event)"
+    />
+  </div>
+
+  <section class="mobile-equipment-list" aria-label="Equipos">
+    <article *ngFor="let item of items()" class="equipment-card">
+      <div class="card-head">
+        <div>
+          <strong>{{ item.nombreEquipo }}</strong>
+          <span>{{ item.usuarioLimpio || 'Sin usuario' }}</span>
+        </div>
+        <em>{{ item.tipoEquipo || 'Equipo' }}</em>
+      </div>
+
+      <dl>
+        <div>
+          <dt>Sede</dt>
+          <dd>{{ item.sedeNombre || '-' }}</dd>
+        </div>
+        <div>
+          <dt>Dependencia</dt>
+          <dd>{{ item.oficinaId || '-' }}</dd>
+        </div>
+        <div>
+          <dt>Marca / Modelo</dt>
+          <dd>{{ item.fabricanteModelo || '-' }}</dd>
+        </div>
+        <div>
+          <dt>CPU</dt>
+          <dd>{{ item.cpuCorto || '-' }}</dd>
+        </div>
+        <div>
+          <dt>RAM</dt>
+          <dd>{{ item.ramLabel || '-' }}</dd>
+        </div>
+        <div>
+          <dt>Disco</dt>
+          <dd>{{ item.diskLabel || '-' }}</dd>
+        </div>
+        <div>
+          <dt>IP</dt>
+          <dd>{{ item.ipEquipo || '-' }}</dd>
+        </div>
+      </dl>
+
+      <button type="button" (click)="onView(item)">Ver detalle</button>
+    </article>
+
+    <p class="mobile-empty" *ngIf="items().length === 0">Sin equipos activos registrados</p>
+  </section>
 </div>
-
-<app-modal title="Detalle de equipo" [open]="viewing !== null" (closed)="closeView()">
-  <ng-container *ngIf="viewing">
-    <app-field label="Tipo">{{ viewing.tipo }}</app-field>
-    <app-field label="Marca">{{ viewing.marca }}</app-field>
-    <app-field label="Modelo">{{ viewing.modelo }}</app-field>
-    <app-field label="N° de serie">{{ viewing.numeroSerie }}</app-field>
-    <app-field label="Cód. patrimonial">{{ viewing.codigoPatrimonial }}</app-field>
-    <app-field label="Cód. inventario">{{ viewing.codigoInventario }}</app-field>
-    <app-field label="Host" *ngIf="viewing.host">{{ viewing.host }}</app-field>
-    <app-field label="IP" *ngIf="viewing.ip">{{ viewing.ip }}</app-field>
-    <app-field label="Usuario">{{ viewing.usuarioRed?.nombre }} ({{ viewing.usuarioRed?.usuario }})</app-field>
-    <app-field label="Sede">{{ viewing.sede?.nombre }}</app-field>
-    <app-field label="Dependencia">{{ viewing.dependencia?.nombre }}</app-field>
-    <app-field label="Subdependencia">{{ viewing.subdependencia?.nombre }}</app-field>
-    <app-field label="Fecha de asignación">{{ viewing.asignado }}</app-field>
-    <app-field label="Estado">{{ viewing.estado }}</app-field>
-  </ng-container>
-</app-modal>
-
-<app-modal
-  [title]="editing ? 'Editar equipo' : 'Agregar equipo'"
-  [open]="formOpen"
-  (closed)="closeForm()"
->
-  <app-equipo-form [equipo]="editing" (saved)="onSaved()" (cancelled)="closeForm()" />
-</app-modal>

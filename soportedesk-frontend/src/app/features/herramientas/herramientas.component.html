@@ -73,6 +73,60 @@
     <pre class="terminal" *ngIf="pingResult?.output?.length">{{ pingResult?.output?.join('\n') }}</pre>
   </section>
 
+  <section class="tool-panel" [class.active]="activeTab === 'qr'">
+    <div class="panel-heading">
+      <div>
+        <h3>Generador QR</h3>
+        <p>Convierte un link en una imagen QR descargable.</p>
+      </div>
+      <span class="status-pill" [class.ok]="qrDataUrl"> {{ qrDataUrl ? 'Generado' : 'Listo' }} </span>
+    </div>
+
+    <div class="qr-layout">
+      <div class="qr-controls">
+        <label>
+          Link
+          <input type="url" [ngModel]="qrLink" (ngModelChange)="onQrLinkChange($event)" placeholder="https://www.inia.gob.pe" (keyup.enter)="generateQr()" />
+        </label>
+
+        <div class="qr-options">
+          <label>
+            Formato
+            <select [(ngModel)]="qrFormat">
+              <option value="png">PNG</option>
+              <option value="jpg">JPG</option>
+              <option value="svg">SVG</option>
+            </select>
+          </label>
+
+          <label>
+            Tamaño
+            <select [(ngModel)]="qrSize">
+              <option [ngValue]="256">256 px</option>
+              <option [ngValue]="512">512 px</option>
+              <option [ngValue]="1024">1024 px</option>
+            </select>
+          </label>
+        </div>
+
+        <div class="button-row">
+          <button type="button" class="ghost-btn" (click)="clearQr()">Limpiar</button>
+          <button type="button" class="primary-btn" (click)="generateQr()">Generar QR</button>
+          <button type="button" class="primary-btn" (click)="downloadQr()" [disabled]="!qrDataUrl">
+            Descargar
+          </button>
+        </div>
+
+        <p class="error-text" *ngIf="qrError">{{ qrError }}</p>
+      </div>
+
+      <div class="qr-preview" [class.empty]="!qrDataUrl">
+        <img *ngIf="qrDataUrl" [src]="qrDataUrl" alt="QR generado" />
+        <span *ngIf="!qrDataUrl">QR</span>
+      </div>
+    </div>
+  </section>
+
   <section class="tool-panel gpu-panel" [class.active]="activeTab === 'gpu'">
     <div class="panel-heading">
       <div>

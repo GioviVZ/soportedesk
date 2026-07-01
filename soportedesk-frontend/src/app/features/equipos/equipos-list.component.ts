@@ -1,88 +1,139 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { AuthService } from '../../core/auth/auth.service';
+import { Router } from '@angular/router';
+import { FormsModule } from '@angular/forms';
 import { GenericTableComponent, TableColumn } from '../../shared/generic-table/generic-table.component';
-import { ModalComponent } from '../../shared/modal/modal.component';
-import { FieldComponent } from '../../shared/field/field.component';
-import { EquipoFormComponent } from './equipo-form.component';
-import { Equipo } from './equipo.model';
+import { EquipoKpis, EquipoResumen } from './equipo.model';
 import { EquipoService } from './equipo.service';
+
+interface EquipoTableRow extends EquipoResumen {
+  usuarioLimpio: string;
+  fabricanteModelo: string;
+  cpuCorto: string;
+  ramLabel: string;
+  diskLabel: string;
+}
 
 @Component({
   selector: 'app-equipos-list',
   standalone: true,
-  imports: [CommonModule, GenericTableComponent, ModalComponent, FieldComponent, EquipoFormComponent],
+  imports: [CommonModule, FormsModule, GenericTableComponent],
   templateUrl: './equipos-list.component.html',
   styleUrl: './equipos-list.component.scss',
 })
 export class EquiposListComponent implements OnInit {
   private service = inject(EquipoService);
-  private authService = inject(AuthService);
+  private router = inject(Router);
 
-  items: Equipo[] = [];
+  items = signal<EquipoTableRow[]>([]);
+  kpis = signal<EquipoKpis | null>(null);
+  sedes = signal<string[]>([]);
+  tipos = signal<string[]>([]);
+  selectedSede = signal('');
+  selectedTipo = signal('');
+  searchTerm = signal('');
+
+  kpiCards = computed(() => {
+    const k = this.kpis();
+    return [
+      { label: 'Total Activos', value: k?.totalActivos ?? 0, tone: 'blue' },
+      { label: 'Desktop', value: k?.desktopCount ?? 0, tone: 'indigo' },
+      { label: 'Laptop', value: k?.laptopCount ?? 0, tone: 'violet' },
+      { label: 'Otros', value: k?.otrosCount ?? 0, tone: 'gray' },
+      { label: 'Sede Central', value: k?.sedeCentralCount ?? 0, tone: 'green' },
+      { label: 'EEAs', value: k?.eeasCount ?? 0, tone: 'orange' },
+    ];
+  });
+
   columns: TableColumn[] = [
-    { key: 'tipo', label: 'Tipo' },
-    { key: 'marca', label: 'Marca' },
-    { key: 'modelo', label: 'Modelo' },
-    { key: 'numeroSerie', label: 'N° Serie' },
-    { key: 'codigoPatrimonial', label: 'Cód. Patrimonial' },
-    { key: 'usuarioRed.nombre', label: 'Usuario' },
-    { key: 'sede.nombre', label: 'Sede' },
-    { key: 'dependencia.nombre', label: 'Dependencia' },
-    { key: 'estado', label: 'Estado' },
+    { key: 'nombreEquipo', label: 'Equipo' },
+    { key: 'usuarioLimpio', label: 'Usuario' },
+    { key: 'sedeNombre', label: 'Sede' },
+    { key: 'oficinaId', label: 'Dependencia' },
+    { key: 'tipoEquipo', label: 'Tipo' },
+    { key: 'fabricanteModelo', label: 'Fabricante / Modelo' },
+    { key: 'cpuCorto', label: 'CPU' },
+    { key: 'ramLabel', label: 'RAM' },
+    { key: 'diskLabel', label: 'Disco' },
+    { key: 'ipEquipo', label: 'IP' },
   ];
 
-  viewing: Equipo | null = null;
-  editing: Equipo | null = null;
-  formOpen = false;
-
-  get canWrite(): boolean {
-    return this.authService.canWrite('equipos');
-  }
-
   ngOnInit(): void {
+    this.loadKpis();
+    this.loadSedes();
+    this.loadTipos();
     this.load();
   }
 
-  load(search?: string): void {
-    this.service.getAll(search).subscribe((data) => (this.items = data));
+  load(): void {
+    this.service
+      .getAll({
+        search: this.searchTerm(),
+        sede: this.selectedSede(),
+        tipo: this.selectedTipo(),
+      })
+      .subscribe((data) => this.items.set(data.map((item) => this.toTableRow(item))));
   }
 
   onSearch(term: string): void {
-    this.load(term);
-  }
-
-  onView(item: Equipo): void {
-    this.viewing = item;
-  }
-
-  closeView(): void {
-    this.viewing = null;
-  }
-
-  onAdd(): void {
-    this.editing = null;
-    this.formOpen = true;
-  }
-
-  onEdit(item: Equipo): void {
-    this.editing = item;
-    this.formOpen = true;
-  }
-
-  closeForm(): void {
-    this.formOpen = false;
-  }
-
-  onDelete(item: Equipo): void {
-    if (!confirm(`¿Eliminar el equipo "${item.marca} ${item.modelo}"?`)) {
-      return;
-    }
-    this.service.delete(item.id).subscribe(() => this.load());
-  }
-
-  onSaved(): void {
-    this.formOpen = false;
+    this.searchTerm.set(term);
     this.load();
+  }
+
+  onSedeChange(value: string): void {
+    this.selectedSede.set(value);
+    this.load();
+  }
+
+  onTipoChange(value: string): void {
+    this.selectedTipo.set(value);
+    this.load();
+  }
+
+  clearFilters(): void {
+    this.searchTerm.set('');
+    this.selectedSede.set('');
+    this.selectedTipo.set('');
+    this.load();
+  }
+
+  onView(item: EquipoTableRow): void {
+    this.router.navigate(['/equipos', item.computerID]);
+  }
+
+  private loadKpis(): void {
+    this.service.getKpis().subscribe((data) => this.kpis.set(data));
+  }
+
+  private loadSedes(): void {
+    this.service.getSedes().subscribe((data) => this.sedes.set(data));
+  }
+
+  private loadTipos(): void {
+    this.service.getTipos().subscribe((data) => this.tipos.set(data));
+  }
+
+  private toTableRow(item: EquipoResumen): EquipoTableRow {
+    return {
+      ...item,
+      usuarioLimpio: this.stripDomain(item.usuarioContacto),
+      fabricanteModelo: [item.fabricanteEquipo, item.modeloEquipo].filter(Boolean).join(' '),
+      cpuCorto: this.truncate(item.cpuModelos, 30),
+      ramLabel: this.gbLabel(item.ramTotalGb),
+      diskLabel: this.gbLabel(item.diskTotalGb),
+    };
+  }
+
+  private stripDomain(value: string | null | undefined): string {
+    return (value ?? '').replace(/@INIA-RED$/i, '');
+  }
+
+  private truncate(value: string | null | undefined, max: number): string {
+    const text = value ?? '';
+    return text.length > max ? `${text.slice(0, max - 1)}...` : text;
+  }
+
+  private gbLabel(value: number | null | undefined): string {
+    return value == null ? '' : `${value} GB`;
   }
 }

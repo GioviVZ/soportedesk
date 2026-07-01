@@ -38,6 +38,12 @@ export const routes: Routes = [
           import('./features/wifi/wifi-list.component').then((m) => m.WifiListComponent),
       },
       {
+        path: 'equipos/:id',
+        canActivate: [moduloGuard('equipos')],
+        loadComponent: () =>
+          import('./features/equipos/equipo-detail.component').then((m) => m.EquipoDetailComponent),
+      },
+      {
         path: 'equipos',
         canActivate: [moduloGuard('equipos')],
         loadComponent: () =>

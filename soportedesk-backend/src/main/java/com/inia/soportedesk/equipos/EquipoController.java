@@ -1,9 +1,7 @@
 package com.inia.soportedesk.equipos;
 
-import jakarta.validation.Valid;
+import com.inia.soportedesk.glpi.VwInvComputerFull;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
@@ -15,41 +13,44 @@ import java.util.List;
 public class EquipoController {
 
     private final EquipoService service;
+    private final EquipoRepository localEquipoRepository;
 
     @GetMapping
     @PreAuthorize("hasRole('ADMIN') || hasAuthority('READ_equipos')")
-    public List<Equipo> findAll(@RequestParam(required = false) String search) {
-        return service.findAll(search);
+    public List<VwInvComputerFull> findAll(
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) String sede,
+            @RequestParam(required = false) String tipo) {
+        return service.findAll(search, sede, tipo);
+    }
+
+    @GetMapping("/kpis")
+    @PreAuthorize("hasRole('ADMIN') || hasAuthority('READ_equipos')")
+    public EquipoKpisDto getKpis() {
+        return service.getKpis();
+    }
+
+    @GetMapping("/sedes")
+    @PreAuthorize("hasRole('ADMIN') || hasAuthority('READ_equipos')")
+    public List<String> findSedes() {
+        return service.findSedes();
+    }
+
+    @GetMapping("/tipos")
+    @PreAuthorize("hasRole('ADMIN') || hasAuthority('READ_equipos')")
+    public List<String> findTipos() {
+        return service.findTipos();
     }
 
     @GetMapping("/con-red")
     @PreAuthorize("hasRole('ADMIN') || hasAuthority('READ_equipos')")
     public List<Equipo> findConRed() {
-        return service.findConRed();
+        return localEquipoRepository.findByTipoIn(List.of("Laptop", "Computadora"));
     }
 
     @GetMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN') || hasAuthority('READ_equipos')")
-    public Equipo findById(@PathVariable Long id) {
+    public EquipoDetalleResponse findById(@PathVariable Long id) {
         return service.findById(id);
-    }
-
-    @PostMapping
-    @PreAuthorize("hasRole('ADMIN') || hasAuthority('WRITE_equipos')")
-    public ResponseEntity<Equipo> create(@Valid @RequestBody EquipoRequest request) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(service.create(request));
-    }
-
-    @PutMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN') || hasAuthority('WRITE_equipos')")
-    public Equipo update(@PathVariable Long id, @Valid @RequestBody EquipoRequest request) {
-        return service.update(id, request);
-    }
-
-    @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN') || hasAuthority('WRITE_equipos')")
-    public ResponseEntity<Void> delete(@PathVariable Long id) {
-        service.delete(id);
-        return ResponseEntity.noContent().build();
     }
 }
