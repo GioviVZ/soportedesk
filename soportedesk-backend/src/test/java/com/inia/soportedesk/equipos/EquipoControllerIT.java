@@ -33,7 +33,7 @@ class EquipoControllerIT {
         VwInvComputerFull equipo = new VwInvComputerFull();
         equipo.setComputerID(1L);
         equipo.setNombreEquipo("PC-GLPI-01");
-        when(service.findAll(null, null, null)).thenReturn(List.of(equipo));
+        when(service.findAll(null, null, null, null, null, null)).thenReturn(List.of(equipo));
 
         mockMvc.perform(get("/api/equipos"))
                 .andExpect(status().isOk())
