@@ -258,29 +258,50 @@ Sin campos de usuario/contraseña/IP VPN/vence — se eliminan del formulario de
 
 ### `vpn-aprobar-form.component.ts/html` (nuevo)
 
-Modal para el responsable: resumen de solo lectura de los checks marcados por el asistente
-(tipo de equipo, host/IP GLPI si aplica, los 3 checkboxes) + formulario de usuario/contraseña VPN
-(reutiliza `VpnPasswordGeneratorComponent`), IP asignada, vence. Tres botones:
+Modal para el responsable, abierto desde el botón "Aprobar" del modal de detalle: resumen de solo
+lectura de los checks marcados por el asistente (tipo de equipo, host/IP GLPI si aplica, los 3
+checkboxes) + formulario de usuario/contraseña VPN (reutiliza `VpnPasswordGeneratorComponent`), IP
+asignada, vence. Un botón **Aprobar** → `service.aprobar(id, {...})` → emite `saved`.
 
-- **Aprobar** → `service.aprobar(id, {...})`.
-- **Rechazar** / **Observar** → abren un textarea de comentario obligatorio antes de habilitar el
-  botón, luego `service.rechazar(...)` / `service.observar(...)`.
+### `vpn-resolucion-form.component.ts/html` (nuevo)
+
+Modal compartido para Rechazar/Observar, abierto desde los botones correspondientes del modal de
+detalle. `@Input() vpn: Vpn | null`, `@Input() modo: 'RECHAZAR' | 'OBSERVAR'`. Título y texto del
+botón cambian según `modo` ("Rechazar solicitud" / "Observar solicitud"). Un textarea
+`comentarioResponsable` (`Validators.required`) y un botón que llama
+`service.rechazar(id, {...})` o `service.observar(id, {...})` según `modo` → emite `saved`.
 
 ### `vpn-list.component.ts/html`
 
+`GenericTableComponent` liga con un solo flag (`canEdit`) el botón "Agregar" del toolbar **y**
+los botones "Editar"/"Eliminar" de cada fila — no tiene manera de mostrar acciones adicionales por
+fila. Para no reestructurar un componente compartido por todos los módulos, el rediseño reutiliza
+el patrón que el propio `vpn-list` ya usa para "Editar antivirus": esa acción no vive en la tabla,
+vive dentro del modal "Detalle VPN". Aprobar/Rechazar/Observar siguen el mismo patrón.
+
 - Columna nueva "Estado solicitud" (badge de color: gris Pendiente, verde Aprobado, rojo Rechazado,
   ámbar Observado).
-- Botón "Nueva solicitud" visible si `canWrite('solicitar-vpn')` (getter nuevo).
-- Acciones **Aprobar/Rechazar/Observar** (abren `vpn-aprobar-form`) visibles solo si
-  `canWrite('aprobar-vpn')` y `item.estadoSolicitud === 'PENDIENTE'`.
-- Botón **Editar/Reenviar** visible si `canWrite('solicitar-vpn')` y `estadoSolicitud` en
-  `PENDIENTE`/`OBSERVADO`.
+- `canEdit` de `app-generic-table` pasa a ser `canWriteSolicitar` (getter nuevo:
+  `authService.isAdmin() || authService.canWrite('solicitar-vpn')`) en vez de `canWriteVpn` — esto
+  gobierna el botón "Agregar" (ahora "Nueva solicitud") y los botones de fila Editar/Eliminar.
+- `onEdit(item)` agrega una guarda de estado antes de abrir el formulario: si
+  `item.estadoSolicitud` no es `PENDIENTE` ni `OBSERVADO`, muestra
+  `alert('Esta solicitud ya fue resuelta y no se puede editar.')` y no abre el modal (mismo estilo
+  que la guarda con `confirm(...)` que ya usa `onDelete`).
+- Dentro del modal de detalle (`viewing`), sección nueva "Solicitud" (antes de "Credenciales VPN"):
+  quién solicitó (`solicitadoPorNombre`), fecha (`fechaSolicitud`), tipo de equipo, host/IP GLPI si
+  aplica, los 3 checks, y si ya fue resuelta: quién y cuándo (`aprobadoPorNombre`,
+  `fechaResolucion`) más `comentarioResponsable` si lo hay.
+- Botones nuevos dentro del mismo modal, visibles solo si `canWriteAprobar &&
+  viewing.estadoSolicitud === 'PENDIENTE'` (getter `canWriteAprobar`:
+  `authService.isAdmin() || authService.canWrite('aprobar-vpn')`):
+  - **Aprobar** → cierra el modal de detalle y abre `vpn-aprobar-form` (nuevo modal).
+  - **Rechazar** / **Observar** → cierra el modal de detalle y abre `vpn-resolucion-form` (nuevo
+    modal, único componente para ambas acciones vía `@Input() modo: 'RECHAZAR' | 'OBSERVAR'`).
 - `canEditCredenciales` se extiende: `isAdmin() || canWrite('credenciales-vpn') ||
   item.solicitadoPor === authService.getUsername()`. Se agrega el getter
   `getUsername(): string | null` a `AuthService` (hoy solo guarda `username` en `localStorage` al
   hacer login, sin exponer un getter).
-- Modal de detalle (`viewing`) muestra quién solicitó (`solicitadoPorNombre`), fecha, y si fue
-  resuelto: quién y cuándo, más el comentario si lo hay.
 
 ### Dashboard (frontend)
 
@@ -306,7 +327,7 @@ Modal para el responsable: resumen de solo lectura de los checks marcados por el
 ## Archivos
 
 **Nuevos**: `VpnAprobarRequest.java`, `VpnResolucionRequest.java`,
-`vpn-aprobar-form.component.{ts,html,scss}`,
+`vpn-aprobar-form.component.{ts,html,scss}`, `vpn-resolucion-form.component.{ts,html,scss}`,
 `docs/superpowers/migrations/2026-07-07-vpn-solicitudes.sql`.
 
 **Eliminados**: `VpnDatosRequest.java` (backend), `vpn-datos-form.component.{ts,html}` (frontend) —
