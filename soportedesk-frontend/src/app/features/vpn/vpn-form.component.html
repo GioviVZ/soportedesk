@@ -1,24 +1,34 @@
 <form [formGroup]="form" (ngSubmit)="submit()">
 
-  <!-- AD autocomplete selector -->
+  <!-- Titular: búsqueda AD / manual -->
   <div class="section-header ad-header">
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" width="16" height="16">
       <path d="M10 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6ZM3.465 14.493a1.23 1.23 0 0 0 .41 1.412A9.957 9.957 0 0 0 10 18c2.31 0 4.438-.784 6.131-2.1.43-.333.604-.903.408-1.41a7.002 7.002 0 0 0-13.074.003Z" />
     </svg>
-    Seleccionar usuario de red
+    Titular del acceso VPN
   </div>
 
-  <div class="field ad-field">
-    <label>Usuario AD *</label>
-    <select (change)="onAdUserSelected($event)">
-      <option value="">— Buscar usuario —</option>
-      <option *ngFor="let u of usuariosRed" [value]="u.id" [selected]="u.id === selectedAdUserId">
-        {{ u.nombre }} ({{ u.usuario }})
-      </option>
-    </select>
-  </div>
+  <ng-container *ngIf="titularModo === 'buscando'">
+    <div class="field ad-field">
+      <label>Buscar usuario de red (AD) *</label>
+      <input type="text" [value]="adSearchTerm" (input)="onAdSearch($any($event.target).value)" placeholder="Nombre o usuario" />
+      <ul class="equipo-results" *ngIf="adResults.length">
+        <li *ngFor="let u of adResults" (click)="onAdUserSelected(u)">
+          {{ u.nombre }} ({{ u.usuario }})
+        </li>
+      </ul>
+    </div>
 
-  <div class="ad-preview" *ngIf="adUserSelected">
+    <div class="titular-fallback" *ngIf="adBusquedaRealizada && adResults.length === 0">
+      <p>No se encontró en AD. ¿Es personal de INIA sin cuenta AD, o un tercero externo?</p>
+      <div class="actions">
+        <button type="button" class="secondary" (click)="onElegirInternoManual()">Personal de INIA</button>
+        <button type="button" class="secondary" (click)="onElegirExterno()">Tercero externo</button>
+      </div>
+    </div>
+  </ng-container>
+
+  <div class="ad-preview" *ngIf="titularModo === 'ad-seleccionado' && adUserSelected">
     <div class="ad-preview-row">
       <span class="ad-label">Usuario</span>
       <span>{{ adUserSelected.usuario }}</span>
@@ -35,6 +45,76 @@
       <span class="ad-label">Dependencia</span>
       <span>{{ adUserSelected.dependencia.nombre }}</span>
     </div>
+    <button type="button" class="secondary" (click)="onCambiarUsuario()">Cambiar usuario</button>
+  </div>
+
+  <ng-container *ngIf="titularModo === 'interno-manual'">
+    <div class="field">
+      <label>Nombre *</label>
+      <input type="text" formControlName="titularNombre" />
+    </div>
+    <div class="field">
+      <label>Apellidos *</label>
+      <input type="text" formControlName="titularApellidos" />
+    </div>
+    <div class="field">
+      <label>Correo *</label>
+      <input type="email" formControlName="titularCorreo" />
+    </div>
+    <div class="field">
+      <label>Sede *</label>
+      <select [ngModel]="titularSedeId" [ngModelOptions]="{standalone: true}" (change)="onSedeChange($any($event.target).value)">
+        <option value="">Seleccione...</option>
+        <option *ngFor="let sede of sedes" [value]="sede.id">{{ sede.nombre }}</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Dependencia *</label>
+      <select [ngModel]="titularDependenciaId" [ngModelOptions]="{standalone: true}" (change)="onDependenciaChange($any($event.target).value)" [disabled]="!titularSedeId">
+        <option value="">Seleccione...</option>
+        <option *ngFor="let dep of dependencias" [value]="dep.id">{{ dep.nombre }}</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Tipo de contrato *</label>
+      <select [ngModel]="titularTipoContratoId" [ngModelOptions]="{standalone: true}" (change)="onTipoContratoChange($any($event.target).value)">
+        <option value="">Seleccione...</option>
+        <option *ngFor="let tipo of tiposContrato" [value]="tipo.id">{{ tipo.nombre }}</option>
+      </select>
+    </div>
+    <button type="button" class="secondary" (click)="onVolverABuscar()">Volver a buscar en AD</button>
+  </ng-container>
+
+  <ng-container *ngIf="titularModo === 'externo'">
+    <div class="field">
+      <label>Nombre *</label>
+      <input type="text" formControlName="titularNombre" />
+    </div>
+    <div class="field">
+      <label>Apellidos *</label>
+      <input type="text" formControlName="titularApellidos" />
+    </div>
+    <div class="field">
+      <label>Correo *</label>
+      <input type="email" formControlName="titularCorreo" />
+    </div>
+    <div class="field">
+      <label>Empresa *</label>
+      <input type="text" formControlName="titularEmpresa" />
+    </div>
+    <div class="field">
+      <label>Motivo *</label>
+      <input type="text" formControlName="titularMotivo" placeholder="Ej. Consultor externo - Proyecto X" />
+    </div>
+    <button type="button" class="secondary" (click)="onVolverABuscar()">Volver a buscar en AD</button>
+  </ng-container>
+
+  <div class="field">
+    <label>Cargo *</label>
+    <select formControlName="titularCargo">
+      <option value="">Seleccione...</option>
+      <option *ngFor="let cargo of cargos" [value]="cargo">{{ cargo }}</option>
+    </select>
   </div>
 
   <hr class="divider" />
