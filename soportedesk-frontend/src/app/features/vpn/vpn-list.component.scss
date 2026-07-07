@@ -3,6 +3,84 @@
   --color-accent-hover: #dc2626;
 }
 
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.kpi-card {
+  border: 1px solid #e2e8f0;
+  border-left: 4px solid var(--tone);
+  border-radius: 8px;
+  padding: 14px 16px;
+  background: #fff;
+  cursor: pointer;
+}
+
+.kpi-card span {
+  display: block;
+  color: #64748b;
+  font-size: 0.82rem;
+  margin-bottom: 8px;
+}
+
+.kpi-card strong {
+  color: #0f172a;
+  font-size: 1.55rem;
+}
+
+.kpi-card--active {
+  outline: 2px solid var(--tone);
+  outline-offset: -1px;
+}
+
+.tone-orange { --tone: #f97316; }
+.tone-green { --tone: #16a34a; }
+.tone-red { --tone: #dc2626; }
+.tone-yellow { --tone: #d97706; }
+
+.tab-toggle {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.tab-toggle button {
+  position: relative;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  padding: 8px 14px;
+  background: #f8fafc;
+  color: #475569;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.tab-toggle button.active {
+  background: var(--color-accent, #16a34a);
+  color: #fff;
+  border-color: transparent;
+}
+
+.tab-toggle button.has-alert:not(.active) {
+  border-color: #fbbf24;
+}
+
+.alert-count {
+  background: #dc2626;
+  color: #fff;
+  border-radius: 999px;
+  padding: 1px 7px;
+  font-size: 0.75rem;
+  font-weight: 800;
+}
+
 .badge-estado {
   display: inline-flex;
   align-items: center;

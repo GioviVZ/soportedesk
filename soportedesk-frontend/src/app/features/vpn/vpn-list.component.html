@@ -5,11 +5,31 @@
       <h2>VPN</h2>
       <p>Solicitudes, verificaciones de seguridad y credenciales de acceso remoto.</p>
     </div>
+    <div class="tab-toggle" *ngIf="canWriteAprobar">
+      <button type="button" [class.active]="activeTab === 'todas'" (click)="setTab('todas')">
+        Todas
+      </button>
+      <button type="button" [class.active]="activeTab === 'solicitudes'"
+        (click)="setTab('solicitudes')"
+        [class.has-alert]="(kpis?.pendientes ?? 0) > 0">
+        Solicitudes
+        <span class="alert-count" *ngIf="(kpis?.pendientes ?? 0) > 0">{{ kpis?.pendientes }}</span>
+      </button>
+    </div>
   </div>
+
+  <section class="kpi-grid" *ngIf="activeTab === 'solicitudes'">
+    <article *ngFor="let card of kpiCards" class="kpi-card" [class]="'tone-' + card.tone"
+      [class.kpi-card--active]="solicitudFiltro === card.estado"
+      (click)="setFiltro(card.estado)">
+      <span>{{ card.label }}</span>
+      <strong>{{ card.value }}</strong>
+    </article>
+  </section>
 
   <app-generic-table
     [columns]="columns"
-    [data]="items"
+    [data]="displayedItems"
     [canEdit]="canWriteSolicitar"
     extraColumnLabel="Vence VPN"
     (searchChange)="onSearch($event)"

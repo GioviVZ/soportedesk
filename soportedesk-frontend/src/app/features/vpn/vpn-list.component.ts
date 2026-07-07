@@ -9,10 +9,13 @@ import { VpnFormComponent } from './vpn-form.component';
 import { VpnAntivirusFormComponent } from './vpn-antivirus-form.component';
 import { VpnAprobarFormComponent } from './vpn-aprobar-form.component';
 import { VpnResolucionFormComponent } from './vpn-resolucion-form.component';
-import { Vpn } from './vpn.model';
+import { Vpn, VpnKpis } from './vpn.model';
 import { VpnService } from './vpn.service';
 
 const EDITABLE_STATES = new Set(['PENDIENTE', 'OBSERVADO']);
+
+type VpnTab = 'todas' | 'solicitudes';
+type EstadoSolicitud = 'PENDIENTE' | 'APROBADO' | 'RECHAZADO' | 'OBSERVADO';
 
 @Component({
   selector: 'app-vpn-list',
@@ -36,6 +39,9 @@ export class VpnListComponent implements OnInit {
   private authService = inject(AuthService);
 
   items: Vpn[] = [];
+  activeTab: VpnTab = 'todas';
+  kpis: VpnKpis | null = null;
+  solicitudFiltro: EstadoSolicitud | null = null;
   columns: TableColumn[] = [
     { key: 'usuarioRed.nombre', label: 'Nombre' },
     { key: 'usuarioRed.usuario', label: 'Usuario red' },
@@ -75,8 +81,24 @@ export class VpnListComponent implements OnInit {
     return this.viewing?.solicitadoPor === this.authService.getUsername();
   }
 
+  get displayedItems(): Vpn[] {
+    if (this.activeTab !== 'solicitudes' || !this.solicitudFiltro) return this.items;
+    return this.items.filter((v) => v.estadoSolicitud === this.solicitudFiltro);
+  }
+
+  get kpiCards(): { label: string; value: number; estado: EstadoSolicitud; tone: string }[] {
+    const k = this.kpis;
+    return [
+      { label: 'Pendientes', value: k?.pendientes ?? 0, estado: 'PENDIENTE', tone: 'orange' },
+      { label: 'Aprobadas', value: k?.aprobadas ?? 0, estado: 'APROBADO', tone: 'green' },
+      { label: 'Rechazadas', value: k?.rechazadas ?? 0, estado: 'RECHAZADO', tone: 'red' },
+      { label: 'Observadas', value: k?.observadas ?? 0, estado: 'OBSERVADO', tone: 'yellow' },
+    ];
+  }
+
   ngOnInit(): void {
     this.load();
+    this.loadKpis();
   }
 
   load(search?: string): void {
@@ -85,6 +107,18 @@ export class VpnListComponent implements OnInit {
 
   onSearch(term: string): void {
     this.load(term);
+  }
+
+  setTab(tab: VpnTab): void {
+    this.activeTab = tab;
+  }
+
+  setFiltro(estado: EstadoSolicitud): void {
+    this.solicitudFiltro = this.solicitudFiltro === estado ? null : estado;
+  }
+
+  loadKpis(): void {
+    this.service.getKpis().subscribe((data) => (this.kpis = data));
   }
 
   onView(item: Vpn): void {
@@ -122,6 +156,7 @@ export class VpnListComponent implements OnInit {
   onSaved(): void {
     this.formOpen = false;
     this.load();
+    this.loadKpis();
   }
 
   openAntivirus(item: Vpn): void {
@@ -152,6 +187,7 @@ export class VpnListComponent implements OnInit {
   onAprobarSaved(): void {
     this.aprobarOpen = false;
     this.load();
+    this.loadKpis();
   }
 
   openResolucion(item: Vpn, modo: 'RECHAZAR' | 'OBSERVAR'): void {
@@ -168,6 +204,7 @@ export class VpnListComponent implements OnInit {
   onResolucionSaved(): void {
     this.resolucionOpen = false;
     this.load();
+    this.loadKpis();
   }
 
   antivirusLabel(vpn: Vpn | null): string {
