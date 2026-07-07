@@ -87,6 +87,21 @@ class VpnServiceTest {
     }
 
     @Test
+    void getKpis_countsEachEstadoSolicitud() {
+        when(repository.countByEstadoSolicitud("PENDIENTE")).thenReturn(3L);
+        when(repository.countByEstadoSolicitud("APROBADO")).thenReturn(10L);
+        when(repository.countByEstadoSolicitud("RECHAZADO")).thenReturn(2L);
+        when(repository.countByEstadoSolicitud("OBSERVADO")).thenReturn(1L);
+
+        VpnKpisDto result = service.getKpis();
+
+        assertThat(result.pendientes()).isEqualTo(3L);
+        assertThat(result.aprobadas()).isEqualTo(10L);
+        assertThat(result.rechazadas()).isEqualTo(2L);
+        assertThat(result.observadas()).isEqualTo(1L);
+    }
+
+    @Test
     void crearSolicitud_withoutGlpiEquipo_savesPendingRequest() {
         UsuarioRed mockUser = new UsuarioRed();
         mockUser.setId(1L);

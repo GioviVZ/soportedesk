@@ -69,6 +69,24 @@ class VpnControllerIT {
     }
 
     @Test
+    @WithMockUser(authorities = {"ROLE_SOPORTE", "READ_vpn"})
+    void getKpis_withReadAuthority_returnsOk() throws Exception {
+        when(service.getKpis()).thenReturn(new VpnKpisDto(3, 10, 2, 1));
+
+        mockMvc.perform(get("/api/vpn/kpis"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.pendientes", is(3)))
+                .andExpect(jsonPath("$.aprobadas", is(10)));
+    }
+
+    @Test
+    @WithMockUser(roles = "SOPORTE")
+    void getKpis_withoutAnyReadAuthority_returnsForbidden() throws Exception {
+        mockMvc.perform(get("/api/vpn/kpis"))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
     @WithMockUser(roles = "SOPORTE")
     void findAll_withoutAnyReadAuthority_returnsForbidden() throws Exception {
         mockMvc.perform(get("/api/vpn"))

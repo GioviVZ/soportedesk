@@ -38,6 +38,15 @@ public class VpnService {
                 .orElseThrow(() -> new ResourceNotFoundException("Acceso VPN no encontrado: " + id));
     }
 
+    public VpnKpisDto getKpis() {
+        return new VpnKpisDto(
+                repository.countByEstadoSolicitud("PENDIENTE"),
+                repository.countByEstadoSolicitud("APROBADO"),
+                repository.countByEstadoSolicitud("RECHAZADO"),
+                repository.countByEstadoSolicitud("OBSERVADO")
+        );
+    }
+
     @Transactional
     public Vpn crearSolicitud(VpnRequest request, Authentication auth) {
         Vpn vpn = new Vpn();

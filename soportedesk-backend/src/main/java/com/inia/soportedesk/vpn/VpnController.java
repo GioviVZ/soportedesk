@@ -28,6 +28,12 @@ public class VpnController {
         return result;
     }
 
+    @GetMapping("/kpis")
+    @PreAuthorize(CAN_VIEW)
+    public VpnKpisDto getKpis() {
+        return service.getKpis();
+    }
+
     @GetMapping("/{id}")
     @PreAuthorize(CAN_VIEW)
     public Vpn findById(@PathVariable Long id, Authentication auth) {
