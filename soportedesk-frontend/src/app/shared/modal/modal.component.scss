@@ -20,6 +20,10 @@
   overflow-y: auto;
   box-shadow: var(--shadow-lg), 0 0 0 1px rgba(15,23,42,.08);
   animation: slideUp .18s ease;
+
+  &.wide {
+    width: min(980px, calc(100vw - 20px));
+  }
 }
 
 header {

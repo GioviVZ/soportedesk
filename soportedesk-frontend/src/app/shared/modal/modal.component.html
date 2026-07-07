@@ -1,5 +1,5 @@
 <div class="overlay" *ngIf="open" (click)="close()">
-  <div class="dialog" (click)="$event.stopPropagation()">
+  <div class="dialog" [class.wide]="size === 'wide'" (click)="$event.stopPropagation()">
     <header>
       <h2>{{ title }}</h2>
       <button class="close" (click)="close()">×</button>

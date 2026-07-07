@@ -31,7 +31,7 @@ class DependenciaControllerIT {
     private DependenciaService service;
 
     @Test
-    @WithMockUser(roles = "SOPORTE")
+    @WithMockUser(authorities = "READ_catalogos")
     void findAll_filtersBySedeId() throws Exception {
         when(service.findAll(1L, null)).thenReturn(List.of(new Dependencia(1L, "TI", new Sede(1L, "Lima"))));
 
@@ -41,7 +41,7 @@ class DependenciaControllerIT {
     }
 
     @Test
-    @WithMockUser(roles = "SOPORTE")
+    @WithMockUser(authorities = "READ_catalogos")
     void create_withSoporteRole_returnsForbidden() throws Exception {
         DependenciaRequest request = new DependenciaRequest();
         request.setNombre("TI");

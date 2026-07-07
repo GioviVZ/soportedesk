@@ -1,11 +1,13 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
 import { CatalogosComponent } from './catalogos.component';
+import { AuthService } from '../../core/auth/auth.service';
 
 describe('CatalogosComponent', () => {
   let component: CatalogosComponent;
   let fixture: ComponentFixture<CatalogosComponent>;
   let httpMock: HttpTestingController;
+  let authService: jasmine.SpyObj<AuthService>;
 
   function flushLoadAll(sedesData: unknown[] = [], tiposImpresoraData: unknown[] = [], marcasImpresoraData: unknown[] = []): void {
     httpMock.expectOne((req) => req.url.includes('/catalogos/sedes')).flush(sedesData);
@@ -17,11 +19,16 @@ describe('CatalogosComponent', () => {
     httpMock.expectOne((req) => req.url.includes('/catalogos/tipos-impresora')).flush(tiposImpresoraData);
     httpMock.expectOne((req) => req.url.includes('/catalogos/marcas-impresora')).flush(marcasImpresoraData);
     httpMock.expectOne((req) => req.url.includes('/catalogos/modelos-impresora')).flush([]);
+    httpMock.expectOne((req) => req.url.includes('/catalogos/tipo-equipo')).flush([]);
   }
 
   beforeEach(async () => {
+    authService = jasmine.createSpyObj<AuthService>('AuthService', ['canWrite']);
+    authService.canWrite.and.returnValue(true);
+
     await TestBed.configureTestingModule({
       imports: [CatalogosComponent, HttpClientTestingModule],
+      providers: [{ provide: AuthService, useValue: authService }],
     }).compileComponents();
 
     fixture = TestBed.createComponent(CatalogosComponent);
@@ -90,5 +97,16 @@ describe('CatalogosComponent', () => {
     flushLoadAll([], [], [{ id: 1, nombre: 'HP' }]);
 
     expect(component.marcasImpresora.length).toBe(1);
+  });
+
+  it('does not create a sede without catalog edit permission', () => {
+    authService.canWrite.and.returnValue(false);
+    component.activeTab = 'sedes';
+    component.nombreForm = 'Nueva Sede';
+
+    component.submitSimple();
+
+    httpMock.expectNone((req) => req.method === 'POST' && req.url.includes('/catalogos/sedes'));
+    expect(authService.canWrite).toHaveBeenCalledWith('catalogos');
   });
 });

@@ -109,7 +109,7 @@ export const routes: Routes = [
       },
       {
         path: 'catalogos',
-        canActivate: [adminGuard],
+        canActivate: [moduloGuard('catalogos')],
         loadComponent: () =>
           import('./features/catalogos/catalogos.component').then((m) => m.CatalogosComponent),
       },

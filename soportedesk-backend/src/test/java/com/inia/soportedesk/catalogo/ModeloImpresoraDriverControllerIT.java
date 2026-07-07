@@ -66,7 +66,7 @@ class ModeloImpresoraDriverControllerIT {
     }
 
     @Test
-    @WithMockUser(roles = "SOPORTE")
+    @WithMockUser(authorities = "READ_catalogos")
     void uploadDriver_withoutAdminRole_returnsForbidden() throws Exception {
         MockMultipartFile file = new MockMultipartFile("file", "driver-hp.zip", "application/zip", "contenido".getBytes());
 
@@ -78,7 +78,7 @@ class ModeloImpresoraDriverControllerIT {
     }
 
     @Test
-    @WithMockUser(roles = "SOPORTE")
+    @WithMockUser(authorities = "READ_catalogos")
     void downloadDriver_anyAuthenticatedUser_returnsFileBytes() throws Exception {
         Path stored = fileStorageService.load(
                 fileStorageService.store(2L, new MockMultipartFile("file", "driver-canon.zip", "application/zip", "contenido".getBytes())));

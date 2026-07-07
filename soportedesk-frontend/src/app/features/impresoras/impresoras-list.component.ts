@@ -45,6 +45,7 @@ export class ImpresorasListComponent implements OnInit {
 
   viewing: Impresora | null = null;
   editing: Impresora | null = null;
+  deleting: Impresora | null = null;
   formOpen = false;
   showConsumibles = false;
   searchTerm = '';
@@ -97,11 +98,14 @@ export class ImpresorasListComponent implements OnInit {
   }
 
   onAdd(): void {
+    if (!this.canWrite) return;
     this.editing = null;
     this.formOpen = true;
   }
 
   onEdit(item: Impresora): void {
+    if (!this.canWrite) return;
+    this.viewing = null;
     this.editing = item;
     this.formOpen = true;
   }
@@ -111,8 +115,20 @@ export class ImpresorasListComponent implements OnInit {
   }
 
   onDelete(item: Impresora): void {
-    if (!confirm(`¿Eliminar la impresora "${item.modeloImpresora.marca.nombre} ${item.modeloImpresora.nombre}"?`)) return;
-    this.service.delete(item.id).subscribe(() => this.load());
+    if (!this.canWrite) return;
+    this.deleting = item;
+  }
+
+  closeDelete(): void {
+    this.deleting = null;
+  }
+
+  confirmDelete(): void {
+    if (!this.deleting) return;
+    this.service.delete(this.deleting.id).subscribe(() => {
+      this.deleting = null;
+      this.load();
+    });
   }
 
   onSaved(): void {

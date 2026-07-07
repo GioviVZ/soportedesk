@@ -1,7 +1,12 @@
 <div class="resumen-panel">
   <div class="resumen-header" (click)="toggle()">
     <span class="resumen-title">Resumen de consumibles</span>
-    <span class="chevron" [class.collapsed]="collapsed">▾</span>
+    <div class="resumen-actions">
+      <button type="button" class="export-btn" (click)="exportExcel($event)" [disabled]="rows.length === 0">
+        Exportar Excel
+      </button>
+      <span class="chevron" [class.collapsed]="collapsed">v</span>
+    </div>
   </div>
 
   <div class="resumen-body" [class.hidden]="collapsed">
@@ -62,7 +67,7 @@
       </table>
     </ng-container>
     <ng-template #empty>
-      <p class="empty-msg">Sin consumibles registrados para esta selección.</p>
+      <p class="empty-msg">Sin consumibles registrados para esta seleccion.</p>
     </ng-template>
   </div>
 </div>

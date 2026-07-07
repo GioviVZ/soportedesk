@@ -1,6 +1,53 @@
 <h2>Catálogos</h2>
 
-<div class="tabs">
+<div class="catalog-page-header">
+  <div>
+    <span class="module-eyebrow">Administracion</span>
+    <h2>Catalogos</h2>
+    <p>Valores maestros que alimentan formularios, filtros y clasificacion de otros modulos.</p>
+  </div>
+  <div class="catalog-status" [class.catalog-status--readonly]="!canWrite">
+    {{ canWrite ? 'Edicion habilitada' : 'Solo lectura' }}
+  </div>
+</div>
+
+<section class="catalog-impact-map">
+  <article
+    class="impact-group"
+    *ngFor="let group of navGroups; trackBy: trackGroup"
+    [class.active]="isGroupActive(group)"
+  >
+    <button type="button" class="impact-group__button" (click)="setGroup(group)">
+      <span class="impact-icon">{{ group.icon }}</span>
+      <span class="impact-group__copy">
+        <strong>{{ group.title }}</strong>
+        <small>{{ group.description }}</small>
+      </span>
+      <span class="impact-count">{{ groupCount(group) }}</span>
+    </button>
+
+    <div class="impact-items" *ngIf="isGroupActive(group)">
+      <button
+        type="button"
+        class="impact-item"
+        *ngFor="let item of group.items; trackBy: trackItem"
+        [class.active]="activeTab === item.tab"
+        (click)="setTab(item.tab)"
+      >
+        <span class="impact-item__title">
+          {{ item.label }}
+          <small>{{ itemCount(item.tab) }}</small>
+        </span>
+        <span class="impact-item__desc">{{ item.description }}</span>
+        <span class="impact-tags">
+          <small *ngFor="let module of item.affects">{{ module }}</small>
+        </span>
+      </button>
+    </div>
+  </article>
+</section>
+
+<div class="tabs legacy-tabs">
   <button [class.active]="activeTab === 'sedes'" (click)="setTab('sedes')">Sedes</button>
   <button [class.active]="activeTab === 'dependencias'" (click)="setTab('dependencias')">Dependencias</button>
   <button [class.active]="activeTab === 'subdependencias'" (click)="setTab('subdependencias')">Subdependencias</button>
@@ -10,6 +57,16 @@
   <button [class.active]="activeTab === 'tiposImpresora'" (click)="setTab('tiposImpresora')">Tipos de Impresora</button>
   <button [class.active]="activeTab === 'marcasImpresora'" (click)="setTab('marcasImpresora')">Marcas de Impresora</button>
   <button [class.active]="activeTab === 'modelosImpresora'" (click)="setTab('modelosImpresora')">Modelos de Impresora</button>
+  <button [class.active]="activeTab === 'tiposEquipo'" (click)="setTab('tiposEquipo')">Tipos de Equipo (GLPI)</button>
+</div>
+
+<div class="catalog-toolbar">
+  <div class="catalog-context">
+    <span>Gestionando</span>
+    <strong>{{ activeNavItem.label }}</strong>
+    <small>{{ activeGroup.title }} / Afecta a: {{ activeNavItem.affects.join(', ') }}</small>
+  </div>
+  <button *ngIf="canWrite" type="button" (click)="startAdd()">Agregar</button>
 </div>
 
 <!-- Sedes -->
@@ -18,21 +75,21 @@
     <thead>
       <tr>
         <th>Nombre</th>
-        <th>Acciones</th>
+        <th *ngIf="canWrite">Acciones</th>
       </tr>
     </thead>
     <tbody>
       <tr *ngFor="let item of sedes">
         <td>{{ item.nombre }}</td>
-        <td>
+        <td *ngIf="canWrite">
           <button (click)="startEdit(item.id, item.nombre)">Editar</button>
-          <button class="danger" (click)="deleteItem('sedes', item.id)">Eliminar</button>
+          <button class="danger" (click)="requestDelete('sedes', item.id, item.nombre)">Eliminar</button>
         </td>
       </tr>
     </tbody>
   </table>
 
-  <div class="form">
+  <div class="form" *ngIf="canWrite">
     <input [(ngModel)]="nombreForm" placeholder="Nombre de sede" />
     <button (click)="submitSimple()">{{ editingId ? 'Actualizar' : 'Agregar' }}</button>
     <button class="secondary" *ngIf="editingId" (click)="resetForm()">Cancelar</button>
@@ -46,7 +103,7 @@
       <tr>
         <th>Nombre</th>
         <th>Sede</th>
-        <th>Acciones</th>
+        <th *ngIf="canWrite">Acciones</th>
       </tr>
     </thead>
     <tbody>
@@ -55,13 +112,13 @@
         <td>{{ item.sede.nombre }}</td>
         <td>
           <button (click)="startEdit(item.id, item.nombre, item.sede.id)">Editar</button>
-          <button class="danger" (click)="deleteItem('dependencias', item.id)">Eliminar</button>
+          <button class="danger" (click)="requestDelete('dependencias', item.id, item.nombre, item.sede.nombre)">Eliminar</button>
         </td>
       </tr>
     </tbody>
   </table>
 
-  <div class="form">
+  <div class="form" *ngIf="canWrite">
     <select [(ngModel)]="parentIdForm">
       <option [ngValue]="null">Seleccione sede...</option>
       <option *ngFor="let s of sedes" [ngValue]="s.id">{{ s.nombre }}</option>
@@ -79,22 +136,22 @@
       <tr>
         <th>Nombre</th>
         <th>Dependencia</th>
-        <th>Acciones</th>
+        <th *ngIf="canWrite">Acciones</th>
       </tr>
     </thead>
     <tbody>
       <tr *ngFor="let item of subdependencias">
         <td>{{ item.nombre }}</td>
         <td>{{ item.dependencia.nombre }}</td>
-        <td>
+        <td *ngIf="canWrite">
           <button (click)="startEdit(item.id, item.nombre, item.dependencia.id)">Editar</button>
-          <button class="danger" (click)="deleteItem('subdependencias', item.id)">Eliminar</button>
+          <button class="danger" (click)="requestDelete('subdependencias', item.id, item.nombre, item.dependencia.nombre)">Eliminar</button>
         </td>
       </tr>
     </tbody>
   </table>
 
-  <div class="form">
+  <div class="form" *ngIf="canWrite">
     <select [(ngModel)]="parentIdForm">
       <option [ngValue]="null">Seleccione dependencia...</option>
       <option *ngFor="let d of dependencias" [ngValue]="d.id">{{ d.nombre }}</option>
@@ -111,21 +168,21 @@
     <thead>
       <tr>
         <th>Nombre</th>
-        <th>Acciones</th>
+        <th *ngIf="canWrite">Acciones</th>
       </tr>
     </thead>
     <tbody>
       <tr *ngFor="let item of tiposContrato">
         <td>{{ item.nombre }}</td>
-        <td>
+        <td *ngIf="canWrite">
           <button (click)="startEdit(item.id, item.nombre)">Editar</button>
-          <button class="danger" (click)="deleteItem('tiposContrato', item.id)">Eliminar</button>
+          <button class="danger" (click)="requestDelete('tiposContrato', item.id, item.nombre)">Eliminar</button>
         </td>
       </tr>
     </tbody>
   </table>
 
-  <div class="form">
+  <div class="form" *ngIf="canWrite">
     <input [(ngModel)]="nombreForm" placeholder="Nombre de tipo de contrato" />
     <button (click)="submitSimple()">{{ editingId ? 'Actualizar' : 'Agregar' }}</button>
     <button class="secondary" *ngIf="editingId" (click)="resetForm()">Cancelar</button>
@@ -138,21 +195,21 @@
     <thead>
       <tr>
         <th>Nombre</th>
-        <th>Acciones</th>
+        <th *ngIf="canWrite">Acciones</th>
       </tr>
     </thead>
     <tbody>
       <tr *ngFor="let item of tiposLicencia">
         <td>{{ item.nombre }}</td>
-        <td>
+        <td *ngIf="canWrite">
           <button (click)="startEdit(item.id, item.nombre)">Editar</button>
-          <button class="danger" (click)="deleteItem('tiposLicencia', item.id)">Eliminar</button>
+          <button class="danger" (click)="requestDelete('tiposLicencia', item.id, item.nombre)">Eliminar</button>
         </td>
       </tr>
     </tbody>
   </table>
 
-  <div class="form">
+  <div class="form" *ngIf="canWrite">
     <input [(ngModel)]="nombreForm" placeholder="Nombre de tipo de licencia" />
     <button (click)="submitSimple()">{{ editingId ? 'Actualizar' : 'Agregar' }}</button>
     <button class="secondary" *ngIf="editingId" (click)="resetForm()">Cancelar</button>
@@ -165,21 +222,21 @@
     <thead>
       <tr>
         <th>Nombre</th>
-        <th>Acciones</th>
+        <th *ngIf="canWrite">Acciones</th>
       </tr>
     </thead>
     <tbody>
       <tr *ngFor="let item of tiposBien">
         <td>{{ item.nombre }}</td>
-        <td>
+        <td *ngIf="canWrite">
           <button (click)="startEdit(item.id, item.nombre)">Editar</button>
-          <button class="danger" (click)="deleteItem('tiposBien', item.id)">Eliminar</button>
+          <button class="danger" (click)="requestDelete('tiposBien', item.id, item.nombre)">Eliminar</button>
         </td>
       </tr>
     </tbody>
   </table>
 
-  <div class="form">
+  <div class="form" *ngIf="canWrite">
     <input [(ngModel)]="nombreForm" placeholder="Nombre de tipo de bien" />
     <button (click)="submitSimple()">{{ editingId ? 'Actualizar' : 'Agregar' }}</button>
     <button class="secondary" *ngIf="editingId" (click)="resetForm()">Cancelar</button>
@@ -192,21 +249,21 @@
     <thead>
       <tr>
         <th>Nombre</th>
-        <th>Acciones</th>
+        <th *ngIf="canWrite">Acciones</th>
       </tr>
     </thead>
     <tbody>
       <tr *ngFor="let item of tiposImpresora">
         <td>{{ item.nombre }}</td>
-        <td>
+        <td *ngIf="canWrite">
           <button (click)="startEdit(item.id, item.nombre)">Editar</button>
-          <button class="danger" (click)="deleteItem('tiposImpresora', item.id)">Eliminar</button>
+          <button class="danger" (click)="requestDelete('tiposImpresora', item.id, item.nombre)">Eliminar</button>
         </td>
       </tr>
     </tbody>
   </table>
 
-  <div class="form">
+  <div class="form" *ngIf="canWrite">
     <input [(ngModel)]="nombreForm" placeholder="Nombre de tipo de impresora" />
     <button (click)="submitSimple()">{{ editingId ? 'Actualizar' : 'Agregar' }}</button>
     <button class="secondary" *ngIf="editingId" (click)="resetForm()">Cancelar</button>
@@ -219,21 +276,21 @@
     <thead>
       <tr>
         <th>Nombre</th>
-        <th>Acciones</th>
+        <th *ngIf="canWrite">Acciones</th>
       </tr>
     </thead>
     <tbody>
       <tr *ngFor="let item of marcasImpresora">
         <td>{{ item.nombre }}</td>
-        <td>
+        <td *ngIf="canWrite">
           <button (click)="startEdit(item.id, item.nombre)">Editar</button>
-          <button class="danger" (click)="deleteItem('marcasImpresora', item.id)">Eliminar</button>
+          <button class="danger" (click)="requestDelete('marcasImpresora', item.id, item.nombre)">Eliminar</button>
         </td>
       </tr>
     </tbody>
   </table>
 
-  <div class="form">
+  <div class="form" *ngIf="canWrite">
     <input [(ngModel)]="nombreForm" placeholder="Nombre de marca" />
     <button (click)="submitSimple()">{{ editingId ? 'Actualizar' : 'Agregar' }}</button>
     <button class="secondary" *ngIf="editingId" (click)="resetForm()">Cancelar</button>
@@ -249,25 +306,109 @@
         <th>Modelo</th>
         <th>Tóner</th>
         <th>Driver</th>
-        <th>Acciones</th>
+        <th *ngIf="canWrite">Acciones</th>
       </tr>
     </thead>
     <tbody>
       <tr *ngFor="let item of modelosImpresora">
         <td>{{ item.marca.nombre }}</td>
         <td>{{ item.nombre }}</td>
-        <td>
+        <td *ngIf="canWrite">
           <div *ngFor="let toner of item.toners">{{ toner.color }} · {{ toner.variante }} — {{ toner.codigo }}</div>
         </td>
         <td>{{ item.driverNombre || '—' }}</td>
-        <td>
+        <td *ngIf="canWrite">
           <button (click)="onEditModeloImpresora(item)">Editar</button>
-          <button class="danger" (click)="deleteModeloImpresora(item.id)">Eliminar</button>
+          <button class="danger" (click)="requestDeleteModelo(item)">Eliminar</button>
         </td>
       </tr>
     </tbody>
   </table>
 
+</ng-container>
+
+<!-- Tipos de Equipo (GLPI) -->
+<ng-container *ngIf="activeTab === 'tiposEquipo'">
+  <table>
+    <thead>
+      <tr>
+        <th>Valor GLPI</th>
+        <th>Tipo normalizado</th>
+        <th>Activo</th>
+        <th *ngIf="canWrite">Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let item of tiposEquipo">
+        <td>{{ item.glpiValor }}</td>
+        <td>{{ item.tipoNormalizado }}</td>
+        <td>{{ item.activo ? 'Sí' : 'No' }}</td>
+        <td *ngIf="canWrite">
+          <button (click)="startEditTipoEquipo(item)">Editar</button>
+          <button class="danger" (click)="requestDelete('tiposEquipo', item.id, item.glpiValor, item.tipoNormalizado)">Eliminar</button>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</ng-container>
+
+<app-modal *ngIf="canWrite" [title]="simpleFormTitle" [open]="formOpen" (closed)="resetForm()">
+  <div class="catalog-form-modal">
+    <label *ngIf="activeTab === 'dependencias'">
+      Sede
+      <select [(ngModel)]="parentIdForm">
+        <option [ngValue]="null">Seleccione sede...</option>
+        <option *ngFor="let s of sedes" [ngValue]="s.id">{{ s.nombre }}</option>
+      </select>
+    </label>
+
+    <label *ngIf="activeTab === 'subdependencias'">
+      Dependencia
+      <select [(ngModel)]="parentIdForm">
+        <option [ngValue]="null">Seleccione dependencia...</option>
+        <option *ngFor="let d of dependencias" [ngValue]="d.id">{{ d.nombre }}</option>
+      </select>
+    </label>
+
+    <ng-container *ngIf="activeTab !== 'tiposEquipo'">
+      <label>
+        Nombre
+        <input [(ngModel)]="nombreForm" [placeholder]="simpleFormPlaceholder" />
+      </label>
+    </ng-container>
+
+    <ng-container *ngIf="activeTab === 'tiposEquipo'">
+      <label>
+        Valor GLPI (exacto, tal como aparece en GLPI)
+        <input [(ngModel)]="glpiValorForm" placeholder="Ej. Laptop" />
+      </label>
+      <label>
+        Tipo normalizado (nombre a mostrar en SoporteDesk)
+        <input [(ngModel)]="tipoNormalizadoForm" placeholder="Ej. Portátil" />
+      </label>
+    </ng-container>
+
+    <div class="modal-actions">
+      <button type="button" class="secondary" (click)="resetForm()">Cancelar</button>
+      <button *ngIf="activeTab !== 'tiposEquipo'" type="button"
+        (click)="submitSimple()" [disabled]="!nombreForm.trim() || (needsParent && !parentIdForm)">
+        {{ editingId ? 'Actualizar' : 'Agregar' }}
+      </button>
+      <button *ngIf="activeTab === 'tiposEquipo'" type="button"
+        (click)="submitTipoEquipo()" [disabled]="!glpiValorForm.trim() || !tipoNormalizadoForm.trim()">
+        {{ editingId ? 'Actualizar' : 'Agregar' }}
+      </button>
+    </div>
+  </div>
+</app-modal>
+
+<app-modal
+  *ngIf="canWrite"
+  [title]="editingModeloImpresora ? 'Editar modelo de impresora' : 'Agregar modelo de impresora'"
+  [open]="modeloFormOpen"
+  size="wide"
+  (closed)="onModeloImpresoraCancelled()"
+>
   <app-modelo-impresora-form
     [modelo]="editingModeloImpresora"
     [marcas]="marcasImpresora"
@@ -275,4 +416,18 @@
     (cancelled)="onModeloImpresoraCancelled()"
     (driverUploaded)="onModeloImpresoraDriverUploaded($event)"
   />
-</ng-container>
+</app-modal>
+
+<app-modal *ngIf="canWrite" title="Confirmar eliminacion" [open]="pendingDelete !== null" (closed)="closeDelete()">
+  <div class="delete-confirm" *ngIf="pendingDelete as item">
+    <div>
+      <strong>{{ item.title }}</strong>
+      <span>{{ tabLabel(item.tab) }}<ng-container *ngIf="item.detail"> - {{ item.detail }}</ng-container></span>
+    </div>
+    <p>Esta accion eliminara el registro del catalogo. Confirma solo si estas seguro.</p>
+    <div class="modal-actions">
+      <button type="button" class="secondary" (click)="closeDelete()">Cancelar</button>
+      <button type="button" class="danger" (click)="confirmDelete()">Si, eliminar</button>
+    </div>
+  </div>
+</app-modal>

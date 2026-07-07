@@ -180,13 +180,29 @@
 </div>
 
 <app-modal title="Ficha tecnica" [open]="viewing !== null" (closed)="closeView()">
-  <app-impresora-ficha *ngIf="viewing" [impresora]="viewing" />
+  <app-impresora-ficha *ngIf="viewing" [impresora]="viewing" (editRequested)="onEdit($event)" />
 </app-modal>
 
 <app-modal
+  *ngIf="canWrite"
   [title]="editing ? 'Editar impresora' : 'Agregar impresora'"
   [open]="formOpen"
+  size="wide"
   (closed)="closeForm()"
 >
-  <app-impresora-form [impresora]="editing" (saved)="onSaved()" (cancelled)="closeForm()" />
+  <app-impresora-form *ngIf="formOpen" [impresora]="editing" (saved)="onSaved()" (cancelled)="closeForm()" />
+</app-modal>
+
+<app-modal *ngIf="canWrite" title="Confirmar eliminacion" [open]="deleting !== null" (closed)="closeDelete()">
+  <div class="delete-confirm" *ngIf="deleting as item">
+    <div>
+      <strong>{{ item.modeloImpresora.marca.nombre }} {{ item.modeloImpresora.nombre }}</strong>
+      <span>{{ printerIdentifier(item) }} - {{ printerLocation(item) }}</span>
+    </div>
+    <p>Esta accion eliminara el registro de la impresora. Confirma solo si estas seguro.</p>
+    <div class="delete-actions">
+      <button type="button" class="secondary" (click)="closeDelete()">Cancelar</button>
+      <button type="button" class="danger" (click)="confirmDelete()">Si, eliminar</button>
+    </div>
+  </div>
 </app-modal>

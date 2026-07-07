@@ -31,7 +31,7 @@ class TipoContratoControllerIT {
     private TipoContratoService service;
 
     @Test
-    @WithMockUser(roles = "SOPORTE")
+    @WithMockUser(authorities = "READ_catalogos")
     void findAll_allowsAuthenticatedUser() throws Exception {
         when(service.findAll(null)).thenReturn(List.of(new TipoContrato(1L, "CAS")));
 
@@ -55,7 +55,7 @@ class TipoContratoControllerIT {
     }
 
     @Test
-    @WithMockUser(roles = "SOPORTE")
+    @WithMockUser(authorities = "READ_catalogos")
     void create_withSoporteRole_returnsForbidden() throws Exception {
         TipoContratoRequest request = new TipoContratoRequest();
         request.setNombre("CAS");

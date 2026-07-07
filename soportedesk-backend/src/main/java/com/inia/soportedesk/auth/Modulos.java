@@ -9,7 +9,7 @@ public final class Modulos {
 
     public static final Set<String> VALIDOS = Set.of(
             "usuarios-red", "correos", "equipos", "vpn", "credenciales-vpn",
-            "impresoras", "wifi", "licencias",
+            "impresoras", "wifi", "licencias", "catalogos",
             "auditoria", "herramientas", "inventario-equipos");
 
     private Modulos() {

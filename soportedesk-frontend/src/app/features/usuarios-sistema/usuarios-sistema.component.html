@@ -3,7 +3,7 @@
     <div>
       <span class="module-eyebrow">Administracion</span>
       <h2>Usuarios del Sistema</h2>
-      <p>Administra cuentas de soporte, estado de acceso y permisos por modulo.</p>
+      <p>Gestiona cuentas de soporte y confirma el nivel de acceso por modulo.</p>
     </div>
     <div class="module-stats">
       <div class="stat-pill">
@@ -15,78 +15,76 @@
         <span>Activos</span>
       </div>
       <div class="stat-pill">
-        <strong>{{ permisosAsignados }}</strong>
-        <span>Permisos</span>
+        <strong>{{ usuariosConEdicion }}</strong>
+        <span>Con edicion</span>
       </div>
     </div>
   </div>
 
-  <div class="toolbar">
-    <button class="add-btn" (click)="openCreate()">
+  <section class="access-toolbar">
+    <div>
+      <strong>{{ permisosAsignados }}</strong>
+      <span>permisos asignados entre todos los usuarios</span>
+    </div>
+    <button class="add-btn" type="button" (click)="openCreate()">
       <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
         stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
         <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
       </svg>
       Agregar usuario
     </button>
+  </section>
+
+  <div class="users-grid" *ngIf="usuarios.length > 0; else emptyUsuarios">
+    <article class="user-card" *ngFor="let u of usuarios">
+      <div class="user-card__head">
+        <div class="user-cell">
+          <span class="avatar-mini">{{ u.nombre.charAt(0) }}</span>
+          <div>
+            <strong>{{ u.nombre }}</strong>
+            <small>{{ u.username }}</small>
+          </div>
+        </div>
+        <span class="badge" [class.activo]="u.activo" [class.inactivo]="!u.activo">
+          {{ u.activo ? 'Activo' : 'Inactivo' }}
+        </span>
+      </div>
+
+      <div class="access-summary">
+        <span>{{ accesoResumen(u.permisos) }}</span>
+        <small>{{ countByNivel(u.permisos, 'EDIT') }} modulos con escritura</small>
+      </div>
+
+      <div class="permisos-tags">
+        <ng-container *ngIf="permisosOrdenados(u.permisos).length > 0; else sinPermisos">
+          <span class="tag" *ngFor="let p of permisosOrdenados(u.permisos)" [class.tag--view]="u.permisos[p] === 'VIEW'">
+            {{ moduloLabel(p) }} <small>{{ u.permisos[p] === 'EDIT' ? 'Edicion' : 'Vista' }}</small>
+          </span>
+        </ng-container>
+        <ng-template #sinPermisos>
+          <span class="sin-permisos">Sin modulos asignados</span>
+        </ng-template>
+      </div>
+
+      <div class="actions">
+        <button class="edit-btn" type="button" (click)="openEdit(u)">Editar accesos</button>
+        <button class="del-btn" type="button" (click)="delete(u)">Eliminar</button>
+      </div>
+    </article>
   </div>
 
-  <div class="table-wrap">
-  <table>
-    <thead>
-      <tr>
-        <th>Nombre</th>
-        <th>Usuario</th>
-        <th>Estado</th>
-        <th>Permisos asignados</th>
-        <th>Acciones</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr *ngFor="let u of usuarios">
-        <td>
-          <div class="user-cell">
-            <span class="avatar-mini">{{ u.nombre.charAt(0) }}</span>
-            <div>
-              <strong>{{ u.nombre }}</strong>
-              <small>{{ u.rol }}</small>
-            </div>
-          </div>
-        </td>
-        <td class="username">{{ u.username }}</td>
-        <td>
-          <span class="badge" [class.activo]="u.activo" [class.inactivo]="!u.activo">
-            {{ u.activo ? 'Activo' : 'Inactivo' }}
-          </span>
-        </td>
-        <td>
-          <div class="permisos-tags">
-            <ng-container *ngIf="permisoKeys(u.permisos).length > 0; else sinPermisos">
-              <span class="tag" *ngFor="let p of permisoKeys(u.permisos)" [class.tag--view]="u.permisos[p] === 'VIEW'">
-                {{ moduloLabel(p) }} <small>{{ u.permisos[p] === 'EDIT' ? 'Edicion' : 'Vista' }}</small>
-              </span>
-            </ng-container>
-            <ng-template #sinPermisos>
-              <span class="sin-permisos">Sin modulos asignados</span>
-            </ng-template>
-          </div>
-        </td>
-        <td class="actions">
-          <button class="edit-btn" (click)="openEdit(u)">Editar</button>
-          <button class="del-btn" (click)="delete(u)">Eliminar</button>
-        </td>
-      </tr>
-      <tr *ngIf="usuarios.length === 0">
-        <td colspan="5" class="empty">No hay usuarios de soporte registrados</td>
-      </tr>
-    </tbody>
-  </table>
-  </div>
+  <ng-template #emptyUsuarios>
+    <div class="empty-state">
+      <strong>No hay usuarios de soporte registrados</strong>
+      <span>Agrega el primer usuario para asignarle accesos por modulo.</span>
+    </div>
+  </ng-template>
 </div>
 
 <app-modal
   [title]="editingId ? 'Editar usuario' : 'Nuevo usuario de soporte'"
   [open]="formOpen"
+  size="wide"
   (closed)="closeForm()"
 >
   <div class="form">
@@ -118,55 +116,45 @@
       </div>
     </section>
 
-    <div class="permisos-section form-section">
+    <section class="permissions-panel form-section">
       <div class="form-section-title">
-        <h3>Permisos por modulo</h3>
-        <p>Define si el usuario solo visualiza o tambien puede editar cada modulo.</p>
+        <h3>Matriz de accesos</h3>
+        <p>Elige Sin acceso, Vista o Edicion segun lo que debe poder hacer el usuario.</p>
       </div>
 
-      <div class="permisos-subsection">
-        <span class="permisos-subtitle">Permisos de edicion</span>
-        <div class="permisos-rows">
-          <div class="permiso-row" *ngFor="let m of modulosEdicion">
-            <span class="permiso-label">{{ m.label }}</span>
-            <div class="nivel-options">
-              <label class="nivel-option">
+      <div class="permission-groups">
+        <section class="permission-group" *ngFor="let group of moduleGroups; trackBy: trackGroup">
+          <h4>{{ group.name }}</h4>
+          <div class="permission-row" *ngFor="let m of group.modules; trackBy: trackModule">
+            <div class="permission-copy">
+              <strong>{{ m.label }}</strong>
+              <small *ngIf="m.description">{{ m.description }}</small>
+            </div>
+            <div class="segmented-access" [class.segmented-access--view-only]="m.kind === 'view'">
+              <label>
                 <input type="radio" [attr.data-modulo]="m.key" data-nivel="NONE"
                        [checked]="nivelDe(m.key) === null" (change)="setNivel(m.key, null)" />
                 <span>Sin acceso</span>
               </label>
-              <label class="nivel-option">
+              <label>
                 <input type="radio" [attr.data-modulo]="m.key" data-nivel="VIEW"
                        [checked]="nivelDe(m.key) === 'VIEW'" (change)="setNivel(m.key, 'VIEW')" />
                 <span>Vista</span>
               </label>
-              <label class="nivel-option">
+              <label *ngIf="m.kind === 'write'">
                 <input type="radio" [attr.data-modulo]="m.key" data-nivel="EDIT"
                        [checked]="nivelDe(m.key) === 'EDIT'" (change)="setNivel(m.key, 'EDIT')" />
                 <span>Edicion</span>
               </label>
             </div>
           </div>
-        </div>
+        </section>
       </div>
-
-      <div class="permisos-subsection permisos-subsection--view">
-        <span class="permisos-subtitle">Permisos de vista</span>
-        <div class="permisos-grid permisos-grid--view">
-          <label class="permiso-check permiso-check--featured" *ngFor="let m of modulosVista">
-            <input type="checkbox" [checked]="hasVista(m.key)" (change)="toggleVista(m.key)" />
-            <span>
-              {{ m.label }}
-              <small *ngIf="m.description">{{ m.description }}</small>
-            </span>
-          </label>
-        </div>
-      </div>
-    </div>
+    </section>
 
     <div class="form-actions">
       <button type="button" class="secondary" (click)="closeForm()">Cancelar</button>
-      <button type="button" (click)="submit()">Guardar</button>
+      <button type="button" (click)="submit()">Guardar cambios</button>
     </div>
   </div>
 </app-modal>

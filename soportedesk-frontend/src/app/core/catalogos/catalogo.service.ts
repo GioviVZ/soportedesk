@@ -14,6 +14,8 @@ import {
   SubdependenciaRequest,
   TipoBien,
   TipoContrato,
+  TipoEquipoCatalogo,
+  TipoEquipoCatalogoRequest,
   TipoLicencia,
   TipoImpresora,
 } from '../models/catalogo.model';
@@ -189,5 +191,21 @@ export class CatalogoService {
 
   downloadModeloImpresoraDriver(id: number): Observable<Blob> {
     return this.http.get(`${this.apiUrl}/modelos-impresora/${id}/driver`, { responseType: 'blob' });
+  }
+
+  getTiposEquipo(): Observable<TipoEquipoCatalogo[]> {
+    return this.http.get<TipoEquipoCatalogo[]>(`${this.apiUrl}/tipo-equipo`);
+  }
+
+  createTipoEquipo(request: TipoEquipoCatalogoRequest): Observable<TipoEquipoCatalogo> {
+    return this.http.post<TipoEquipoCatalogo>(`${this.apiUrl}/tipo-equipo`, request);
+  }
+
+  updateTipoEquipo(id: number, request: TipoEquipoCatalogoRequest): Observable<TipoEquipoCatalogo> {
+    return this.http.put<TipoEquipoCatalogo>(`${this.apiUrl}/tipo-equipo/${id}`, request);
+  }
+
+  deleteTipoEquipo(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.apiUrl}/tipo-equipo/${id}`);
   }
 }

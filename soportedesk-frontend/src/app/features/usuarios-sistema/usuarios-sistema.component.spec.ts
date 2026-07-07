@@ -42,14 +42,11 @@ describe('UsuariosSistemaComponent', () => {
     editButton.triggerEventHandler('click');
     fixture.detectChanges();
 
-    const auditCheckbox = fixture.debugElement
-      .queryAll(By.css('.permiso-check'))
-      .find((el) => el.nativeElement.textContent.includes('Vista de Movimientos'))
-      ?.query(By.css('input'));
+    const auditCheckbox = fixture.debugElement.query(By.css('input[data-modulo="auditoria"][data-nivel="VIEW"]'));
 
     expect(auditCheckbox).toBeTruthy();
-    auditCheckbox!.nativeElement.checked = true;
-    auditCheckbox!.triggerEventHandler('change');
+    auditCheckbox.nativeElement.checked = true;
+    auditCheckbox.triggerEventHandler('change');
     fixture.detectChanges();
 
     const saveButton = fixture.debugElement
@@ -84,6 +81,28 @@ describe('UsuariosSistemaComponent', () => {
     expect(service.update).toHaveBeenCalledWith(
       7,
       jasmine.objectContaining({ permisos: jasmine.objectContaining({ licencias: 'EDIT' }) }),
+    );
+  });
+
+  it('permite asignar permiso de edicion al modulo Catalogos', () => {
+    const editButton = fixture.debugElement.query(By.css('.edit-btn'));
+    editButton.triggerEventHandler('click');
+    fixture.detectChanges();
+
+    const editRadio = fixture.debugElement.query(By.css('input[data-modulo="catalogos"][data-nivel="EDIT"]'));
+    expect(editRadio).toBeTruthy();
+    editRadio.nativeElement.checked = true;
+    editRadio.triggerEventHandler('change');
+    fixture.detectChanges();
+
+    const saveButton = fixture.debugElement
+      .queryAll(By.css('.form-actions button'))
+      .find((button) => button.nativeElement.textContent.includes('Guardar'));
+    saveButton!.triggerEventHandler('click');
+
+    expect(service.update).toHaveBeenCalledWith(
+      7,
+      jasmine.objectContaining({ permisos: jasmine.objectContaining({ catalogos: 'EDIT' }) }),
     );
   });
 

@@ -23,34 +23,39 @@ export interface ModuloPermiso {
   key: string;
   label: string;
   kind: PermisoKind;
+  group: string;
   description?: string;
 }
 
 export const MODULOS: ModuloPermiso[] = [
-  { key: 'usuarios-red', label: 'Usuarios de Red/AD', kind: 'write' },
-  { key: 'correos', label: 'Correos Institucionales', kind: 'write' },
-  { key: 'equipos', label: 'Equipos Asignados', kind: 'write' },
-  { key: 'vpn', label: 'VPN', kind: 'write' },
-  { key: 'credenciales-vpn', label: 'Credenciales VPN', kind: 'write' },
-  { key: 'impresoras', label: 'Impresoras', kind: 'write' },
-  { key: 'wifi', label: 'Claves WiFi', kind: 'write' },
-  { key: 'licencias', label: 'Licencias', kind: 'write' },
+  { key: 'usuarios-red', label: 'Usuarios de Red/AD', kind: 'write', group: 'Operaciones' },
+  { key: 'correos', label: 'Correos Institucionales', kind: 'write', group: 'Operaciones' },
+  { key: 'equipos', label: 'Equipos Asignados', kind: 'write', group: 'Operaciones' },
+  { key: 'vpn', label: 'VPN', kind: 'write', group: 'Redes y Accesos' },
+  { key: 'credenciales-vpn', label: 'Credenciales VPN', kind: 'write', group: 'Redes y Accesos' },
+  { key: 'impresoras', label: 'Impresoras', kind: 'write', group: 'Inventario' },
+  { key: 'wifi', label: 'Claves WiFi', kind: 'write', group: 'Redes y Accesos' },
+  { key: 'licencias', label: 'Licencias', kind: 'write', group: 'Inventario' },
+  { key: 'catalogos', label: 'Catalogos', kind: 'write', group: 'Administracion' },
   {
     key: 'auditoria',
     label: 'Vista de Movimientos',
     kind: 'view',
+    group: 'Administracion',
     description: 'Permite entrar al modulo Movimientos y revisar la auditoria del sistema.',
   },
   {
     key: 'herramientas',
     label: 'Herramientas',
     kind: 'view',
+    group: 'Diagnostico',
     description: 'Permite usar ping, inventario, GPU, RAM, teclado y mouse.',
   },
   {
     key: 'inventario-equipos',
     label: 'Inventario AD',
     kind: 'view',
+    group: 'Inventario',
     description: 'Permite revisar los equipos reportados por el agente y su estado de enlace.',
   },
 ];

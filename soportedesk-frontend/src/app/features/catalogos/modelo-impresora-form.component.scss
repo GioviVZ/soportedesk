@@ -1,12 +1,13 @@
 .modelo-impresora-form {
   display: grid;
-  gap: 14px;
+  gap: 12px;
+  min-width: 0;
 }
 
 .form-grid,
 .toner-row {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
   gap: 12px;
 }
 
@@ -87,9 +88,16 @@
 }
 
 .actions {
+  position: sticky;
+  bottom: -22px;
+  z-index: 2;
   display: flex;
   justify-content: flex-end;
   gap: 8px;
+  margin: 2px clamp(-22px, -3vw, -16px) -22px;
+  padding: 12px clamp(16px, 3vw, 22px);
+  border-top: 1px solid var(--color-border);
+  background: var(--color-surface);
 }
 
 button {

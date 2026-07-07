@@ -10,7 +10,7 @@ class ModulosTest {
     void validos_containsAllModuleKeys() {
         assertThat(Modulos.VALIDOS).containsExactlyInAnyOrder(
                 "usuarios-red", "correos", "equipos", "vpn", "credenciales-vpn",
-                "impresoras", "wifi", "licencias",
+                "impresoras", "wifi", "licencias", "catalogos",
                 "auditoria", "herramientas", "inventario-equipos");
     }
 

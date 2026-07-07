@@ -31,7 +31,7 @@ class SedeControllerIT {
     private SedeService service;
 
     @Test
-    @WithMockUser(roles = "SOPORTE")
+    @WithMockUser(authorities = "READ_catalogos")
     void findAll_allowsAuthenticatedUser() throws Exception {
         when(service.findAll(null)).thenReturn(List.of(new Sede(1L, "Lima")));
 
@@ -41,7 +41,7 @@ class SedeControllerIT {
     }
 
     @Test
-    @WithMockUser(roles = "SOPORTE")
+    @WithMockUser(authorities = "READ_catalogos")
     void create_withSoporteRole_returnsForbidden() throws Exception {
         SedeRequest request = new SedeRequest();
         request.setNombre("Lima");

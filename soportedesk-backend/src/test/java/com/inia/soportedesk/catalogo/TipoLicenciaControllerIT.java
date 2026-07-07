@@ -38,7 +38,7 @@ class TipoLicenciaControllerIT {
     }
 
     @Test
-    @WithMockUser(roles = "SOPORTE")
+    @WithMockUser(authorities = "READ_catalogos")
     void findAll_allowsAuthenticatedUser() throws Exception {
         when(service.findAll(null)).thenReturn(List.of(sample()));
 
@@ -62,7 +62,7 @@ class TipoLicenciaControllerIT {
     }
 
     @Test
-    @WithMockUser(roles = "SOPORTE")
+    @WithMockUser(authorities = "READ_catalogos")
     void create_withSoporteRole_returnsForbidden() throws Exception {
         TipoLicenciaRequest request = new TipoLicenciaRequest();
         request.setNombre("Ofimática");

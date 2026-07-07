@@ -38,7 +38,7 @@ class TipoBienControllerIT {
     }
 
     @Test
-    @WithMockUser(roles = "SOPORTE")
+    @WithMockUser(authorities = "READ_catalogos")
     void findAll_allowsAuthenticatedUser() throws Exception {
         when(service.findAll(null)).thenReturn(List.of(sample()));
 
@@ -62,7 +62,7 @@ class TipoBienControllerIT {
     }
 
     @Test
-    @WithMockUser(roles = "SOPORTE")
+    @WithMockUser(authorities = "READ_catalogos")
     void create_withSoporteRole_returnsForbidden() throws Exception {
         TipoBienRequest request = new TipoBienRequest();
         request.setNombre("Intangible");

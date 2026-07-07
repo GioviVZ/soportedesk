@@ -38,6 +38,16 @@ describe('SidebarComponent', () => {
     expect(component.canShow(licencias)).toBe(true);
   });
 
+  it('shows catalogos when the user has catalog read access', () => {
+    authService.isAdmin.and.returnValue(false);
+    authService.canRead.and.returnValue(true);
+
+    const catalogos = component.navItems.find((item) => item.path === '/catalogos')!;
+
+    expect(component.canShow(catalogos)).toBe(true);
+    expect(authService.canRead).toHaveBeenCalledWith('catalogos');
+  });
+
   it('shows every item to an admin regardless of canRead', () => {
     authService.isAdmin.and.returnValue(true);
     authService.canRead.and.returnValue(false);

@@ -77,3 +77,15 @@ export interface ModeloImpresoraRequest {
   nombre: string;
   toners: ModeloImpresoraToner[];
 }
+
+export interface TipoEquipoCatalogo {
+  id: number;
+  glpiValor: string;
+  tipoNormalizado: string;
+  activo: boolean;
+}
+
+export interface TipoEquipoCatalogoRequest {
+  glpiValor: string;
+  tipoNormalizado: string;
+}

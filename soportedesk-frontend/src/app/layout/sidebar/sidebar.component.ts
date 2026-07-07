@@ -67,7 +67,7 @@ export class SidebarComponent {
       { path: '/herramientas', label: 'Herramientas', icon: s.bypassSecurityTrustHtml(SVG_ICONS['wrench']), permission: 'herramientas' },
       { path: '/inventario-equipos', label: 'Inventario AD', icon: s.bypassSecurityTrustHtml(SVG_ICONS['server']), permission: 'inventario-equipos' },
       { path: '/usuarios-sistema', label: 'Usuarios del Sistema', icon: s.bypassSecurityTrustHtml(SVG_ICONS['shield']), adminOnly: true },
-      { path: '/catalogos', label: 'Catalogos', icon: s.bypassSecurityTrustHtml(SVG_ICONS['grid']), adminOnly: true },
+      { path: '/catalogos', label: 'Catalogos', icon: s.bypassSecurityTrustHtml(SVG_ICONS['grid']), permission: 'catalogos' },
     ];
   }
 

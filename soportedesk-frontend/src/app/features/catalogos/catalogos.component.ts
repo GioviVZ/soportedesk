@@ -2,7 +2,9 @@ import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { CatalogoService } from '../../core/catalogos/catalogo.service';
+import { AuthService } from '../../core/auth/auth.service';
 import { ModeloImpresoraFormComponent } from './modelo-impresora-form.component';
+import { ModalComponent } from '../../shared/modal/modal.component';
 import {
   Dependencia,
   MarcaImpresora,
@@ -11,6 +13,7 @@ import {
   Subdependencia,
   TipoBien,
   TipoContrato,
+  TipoEquipoCatalogo,
   TipoLicencia,
   TipoImpresora,
 } from '../../core/models/catalogo.model';
@@ -24,17 +27,40 @@ type CatalogoTab =
   | 'tiposBien'
   | 'tiposImpresora'
   | 'marcasImpresora'
-  | 'modelosImpresora';
+  | 'modelosImpresora'
+  | 'tiposEquipo';
+
+type PendingDelete = {
+  tab: CatalogoTab;
+  id: number;
+  title: string;
+  detail?: string;
+};
+
+type CatalogoNavItem = {
+  tab: CatalogoTab;
+  label: string;
+  description: string;
+  affects: string[];
+};
+
+type CatalogoNavGroup = {
+  title: string;
+  description: string;
+  icon: string;
+  items: CatalogoNavItem[];
+};
 
 @Component({
   selector: 'app-catalogos',
   standalone: true,
-  imports: [CommonModule, FormsModule, ModeloImpresoraFormComponent],
+  imports: [CommonModule, FormsModule, ModeloImpresoraFormComponent, ModalComponent],
   templateUrl: './catalogos.component.html',
   styleUrl: './catalogos.component.scss',
 })
 export class CatalogosComponent implements OnInit {
   private service = inject(CatalogoService);
+  private authService = inject(AuthService);
 
   activeTab: CatalogoTab = 'sedes';
 
@@ -47,11 +73,138 @@ export class CatalogosComponent implements OnInit {
   tiposImpresora: TipoImpresora[] = [];
   marcasImpresora: MarcaImpresora[] = [];
   modelosImpresora: ModeloImpresora[] = [];
+  tiposEquipo: TipoEquipoCatalogo[] = [];
 
   editingId: number | null = null;
   nombreForm = '';
+  glpiValorForm = '';
+  tipoNormalizadoForm = '';
   parentIdForm: number | null = null;
   editingModeloImpresora: ModeloImpresora | null = null;
+  formOpen = false;
+  modeloFormOpen = false;
+  pendingDelete: PendingDelete | null = null;
+
+  readonly navGroups: CatalogoNavGroup[] = [
+    {
+      title: 'Ubicacion institucional',
+      description: 'Estructura usada para filtrar y ubicar registros por sede, dependencia y subdependencia.',
+      icon: 'UB',
+      items: [
+        {
+          tab: 'sedes',
+          label: 'Sedes',
+          description: 'Base geografica de usuarios, equipos, impresoras y contratos.',
+          affects: ['Usuarios de Red', 'Equipos', 'Impresoras'],
+        },
+        {
+          tab: 'dependencias',
+          label: 'Dependencias',
+          description: 'Areas principales dentro de cada sede.',
+          affects: ['Usuarios de Red', 'Equipos', 'Impresoras'],
+        },
+        {
+          tab: 'subdependencias',
+          label: 'Subdependencias',
+          description: 'Areas internas para ubicacion fina de activos y usuarios.',
+          affects: ['Usuarios de Red', 'Equipos', 'Impresoras'],
+        },
+      ],
+    },
+    {
+      title: 'Impresoras',
+      description: 'Catalogos que alimentan el inventario, consumibles, modelos y drivers de impresoras.',
+      icon: 'IM',
+      items: [
+        {
+          tab: 'tiposImpresora',
+          label: 'Tipos de impresora',
+          description: 'Clasifica impresoras por funcion o tecnologia.',
+          affects: ['Impresoras'],
+        },
+        {
+          tab: 'marcasImpresora',
+          label: 'Marcas de impresora',
+          description: 'Marcas disponibles para modelos y fichas de impresora.',
+          affects: ['Impresoras'],
+        },
+        {
+          tab: 'modelosImpresora',
+          label: 'Modelos de impresora',
+          description: 'Modelos, toners y driver descargable por marca.',
+          affects: ['Impresoras'],
+        },
+      ],
+    },
+    {
+      title: 'Licencias y bienes',
+      description: 'Opciones que ordenan el registro de licencias, bienes y contratos asociados.',
+      icon: 'LB',
+      items: [
+        {
+          tab: 'tiposLicencia',
+          label: 'Tipos de licencia',
+          description: 'Categorias de licencias de software.',
+          affects: ['Licencias'],
+        },
+        {
+          tab: 'tiposBien',
+          label: 'Tipos de bien',
+          description: 'Naturaleza del bien asociado a una licencia.',
+          affects: ['Licencias'],
+        },
+        {
+          tab: 'tiposContrato',
+          label: 'Tipos de contrato',
+          description: 'Tipos de contrato usados en usuarios, equipos e impresoras.',
+          affects: ['Usuarios de Red', 'Equipos', 'Impresoras'],
+        },
+      ],
+    },
+    {
+      title: 'Equipos GLPI',
+      description: 'Normalizacion de datos importados o consultados desde GLPI.',
+      icon: 'GL',
+      items: [
+        {
+          tab: 'tiposEquipo',
+          label: 'Tipos de equipo (GLPI)',
+          description: 'Mapea valores GLPI a tipos normalizados del sistema.',
+          affects: ['Equipos'],
+        },
+      ],
+    },
+  ];
+
+  get activeTabLabel(): string {
+    return this.tabLabel(this.activeTab);
+  }
+
+  get simpleFormTitle(): string {
+    return `${this.editingId ? 'Editar' : 'Agregar'} ${this.activeTabLabel}`;
+  }
+
+  get simpleFormPlaceholder(): string {
+    return `Nombre de ${this.activeTabLabel.toLowerCase()}`;
+  }
+
+  get needsParent(): boolean {
+    return this.activeTab === 'dependencias' || this.activeTab === 'subdependencias';
+  }
+
+  get canWrite(): boolean {
+    return this.authService.canWrite('catalogos');
+  }
+
+  get activeNavItem(): CatalogoNavItem {
+    return this.navGroups
+      .flatMap((group) => group.items)
+      .find((item) => item.tab === this.activeTab)!;
+  }
+
+  get activeGroup(): CatalogoNavGroup {
+    return this.navGroups.find((group) => group.items.some((item) => item.tab === this.activeTab))!;
+  }
 
   ngOnInit(): void {
     this.loadAll();
@@ -67,25 +220,42 @@ export class CatalogosComponent implements OnInit {
     this.service.getTiposImpresora().subscribe((data) => (this.tiposImpresora = data));
     this.service.getMarcasImpresora().subscribe((data) => (this.marcasImpresora = data));
     this.service.getModelosImpresora().subscribe((data) => (this.modelosImpresora = data));
+    this.service.getTiposEquipo().subscribe((data) => (this.tiposEquipo = data));
   }
 
   setTab(tab: CatalogoTab): void {
     this.activeTab = tab;
     this.editingModeloImpresora = null;
+    this.modeloFormOpen = false;
+    this.formOpen = false;
     this.resetForm();
   }
 
+  startAdd(): void {
+    if (!this.canWrite) return;
+    this.resetForm();
+    if (this.activeTab === 'modelosImpresora') {
+      this.modeloFormOpen = true;
+      return;
+    }
+    this.formOpen = true;
+  }
+
   onEditModeloImpresora(modelo: ModeloImpresora): void {
+    if (!this.canWrite) return;
     this.editingModeloImpresora = modelo;
+    this.modeloFormOpen = true;
   }
 
   onModeloImpresoraSaved(): void {
     this.editingModeloImpresora = null;
+    this.modeloFormOpen = false;
     this.loadAll();
   }
 
   onModeloImpresoraCancelled(): void {
     this.editingModeloImpresora = null;
+    this.modeloFormOpen = false;
   }
 
   onModeloImpresoraDriverUploaded(updated: ModeloImpresora): void {
@@ -94,22 +264,50 @@ export class CatalogosComponent implements OnInit {
   }
 
   deleteModeloImpresora(id: number): void {
+    if (!this.canWrite) return;
     this.service.deleteModeloImpresora(id).subscribe(() => this.loadAll());
   }
 
   startEdit(id: number, nombre: string, parentId?: number): void {
+    if (!this.canWrite) return;
     this.editingId = id;
     this.nombreForm = nombre;
     this.parentIdForm = parentId ?? null;
+    this.formOpen = true;
   }
 
   resetForm(): void {
     this.editingId = null;
     this.nombreForm = '';
     this.parentIdForm = null;
+    this.glpiValorForm = '';
+    this.tipoNormalizadoForm = '';
+    this.formOpen = false;
+  }
+
+  startEditTipoEquipo(item: TipoEquipoCatalogo): void {
+    if (!this.canWrite) return;
+    this.editingId = item.id;
+    this.glpiValorForm = item.glpiValor;
+    this.tipoNormalizadoForm = item.tipoNormalizado;
+    this.formOpen = true;
+  }
+
+  submitTipoEquipo(): void {
+    if (!this.canWrite) return;
+    if (!this.glpiValorForm.trim() || !this.tipoNormalizadoForm.trim()) return;
+    const req = { glpiValor: this.glpiValorForm.trim(), tipoNormalizado: this.tipoNormalizadoForm.trim() };
+    const obs = this.editingId
+      ? this.service.updateTipoEquipo(this.editingId, req)
+      : this.service.createTipoEquipo(req);
+    obs.subscribe(() => {
+      this.resetForm();
+      this.loadAll();
+    });
   }
 
   submitSimple(): void {
+    if (!this.canWrite) return;
     if (!this.nombreForm.trim()) return;
 
     let obs;
@@ -164,7 +362,42 @@ export class CatalogosComponent implements OnInit {
     });
   }
 
+  requestDelete(tab: CatalogoTab, id: number, title: string, detail?: string): void {
+    if (!this.canWrite) return;
+    this.pendingDelete = { tab, id, title, detail };
+  }
+
+  requestDeleteModelo(modelo: ModeloImpresora): void {
+    if (!this.canWrite) return;
+    this.pendingDelete = {
+      tab: 'modelosImpresora',
+      id: modelo.id,
+      title: `${modelo.marca.nombre} ${modelo.nombre}`,
+      detail: 'Modelo de impresora',
+    };
+  }
+
+  closeDelete(): void {
+    this.pendingDelete = null;
+  }
+
+  confirmDelete(): void {
+    if (!this.canWrite) return;
+    if (!this.pendingDelete) return;
+    const item = this.pendingDelete;
+    if (item.tab === 'modelosImpresora') {
+      this.service.deleteModeloImpresora(item.id).subscribe(() => {
+        this.pendingDelete = null;
+        this.loadAll();
+      });
+      return;
+    }
+    this.deleteItem(item.tab, item.id);
+    this.pendingDelete = null;
+  }
+
   deleteItem(tab: CatalogoTab, id: number): void {
+    if (!this.canWrite) return;
     let obs;
     if (tab === 'sedes') {
       obs = this.service.deleteSede(id);
@@ -180,9 +413,63 @@ export class CatalogosComponent implements OnInit {
       obs = this.service.deleteTipoBien(id);
     } else if (tab === 'marcasImpresora') {
       obs = this.service.deleteMarcaImpresora(id);
+    } else if (tab === 'tiposEquipo') {
+      obs = this.service.deleteTipoEquipo(id);
     } else {
       obs = this.service.deleteTipoImpresora(id);
     }
     obs.subscribe(() => this.loadAll());
+  }
+
+  tabLabel(tab: CatalogoTab): string {
+    const labels: Record<CatalogoTab, string> = {
+      sedes: 'Sede',
+      dependencias: 'Dependencia',
+      subdependencias: 'Subdependencia',
+      tiposContrato: 'Tipo de contrato',
+      tiposLicencia: 'Tipo de licencia',
+      tiposBien: 'Tipo de bien',
+      tiposImpresora: 'Tipo de impresora',
+      marcasImpresora: 'Marca de impresora',
+      modelosImpresora: 'Modelo de impresora',
+      tiposEquipo: 'Tipo de equipo (GLPI)',
+    };
+    return labels[tab];
+  }
+
+  itemCount(tab: CatalogoTab): number {
+    const counts: Record<CatalogoTab, number> = {
+      sedes: this.sedes.length,
+      dependencias: this.dependencias.length,
+      subdependencias: this.subdependencias.length,
+      tiposContrato: this.tiposContrato.length,
+      tiposLicencia: this.tiposLicencia.length,
+      tiposBien: this.tiposBien.length,
+      tiposImpresora: this.tiposImpresora.length,
+      marcasImpresora: this.marcasImpresora.length,
+      modelosImpresora: this.modelosImpresora.length,
+      tiposEquipo: this.tiposEquipo.length,
+    };
+    return counts[tab];
+  }
+
+  groupCount(group: CatalogoNavGroup): number {
+    return group.items.reduce((total, item) => total + this.itemCount(item.tab), 0);
+  }
+
+  isGroupActive(group: CatalogoNavGroup): boolean {
+    return group.items.some((item) => item.tab === this.activeTab);
+  }
+
+  setGroup(group: CatalogoNavGroup): void {
+    this.setTab(group.items[0].tab);
+  }
+
+  trackGroup(_: number, group: CatalogoNavGroup): string {
+    return group.title;
+  }
+
+  trackItem(_: number, item: CatalogoNavItem): string {
+    return item.tab;
   }
 }

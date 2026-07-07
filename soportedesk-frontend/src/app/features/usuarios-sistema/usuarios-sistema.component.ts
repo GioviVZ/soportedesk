@@ -2,7 +2,7 @@ import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ModalComponent } from '../../shared/modal/modal.component';
-import { MODULOS, NivelPermiso, UsuarioSistema, UsuarioSistemaRequest } from './usuario-sistema.model';
+import { MODULOS, ModuloPermiso, NivelPermiso, UsuarioSistema, UsuarioSistemaRequest } from './usuario-sistema.model';
 import { UsuarioSistemaService } from './usuario-sistema.service';
 
 @Component({
@@ -15,9 +15,8 @@ import { UsuarioSistemaService } from './usuario-sistema.service';
 export class UsuariosSistemaComponent implements OnInit {
   private service = inject(UsuarioSistemaService);
 
-  readonly modulosEdicion = MODULOS.filter((m) => m.kind === 'write');
-  readonly modulosVista = MODULOS.filter((m) => m.kind === 'view');
   readonly modulos = MODULOS;
+  readonly moduleGroups = this.buildGroups(MODULOS);
 
   usuarios: UsuarioSistema[] = [];
   formOpen = false;
@@ -35,6 +34,10 @@ export class UsuariosSistemaComponent implements OnInit {
 
   get permisosAsignados(): number {
     return this.usuarios.reduce((total, u) => total + this.permisoKeys(u.permisos).length, 0);
+  }
+
+  get usuariosConEdicion(): number {
+    return this.usuarios.filter((u) => this.countByNivel(u.permisos, 'EDIT') > 0).length;
   }
 
   ngOnInit(): void {
@@ -95,8 +98,33 @@ export class UsuariosSistemaComponent implements OnInit {
     return Object.keys(permisos);
   }
 
+  permisosOrdenados(permisos: Record<string, NivelPermiso>): string[] {
+    const ordered = this.modulos.map((m) => m.key).filter((key) => key in permisos);
+    const unknown = Object.keys(permisos).filter((key) => !this.modulos.some((m) => m.key === key));
+    return [...ordered, ...unknown];
+  }
+
   moduloLabel(key: string): string {
     return this.modulos.find((m) => m.key === key)?.label ?? key;
+  }
+
+  countByNivel(permisos: Record<string, NivelPermiso>, nivel: NivelPermiso): number {
+    return Object.values(permisos).filter((value) => value === nivel).length;
+  }
+
+  accesoResumen(permisos: Record<string, NivelPermiso>): string {
+    const vista = this.countByNivel(permisos, 'VIEW');
+    const edicion = this.countByNivel(permisos, 'EDIT');
+    if (vista === 0 && edicion === 0) return 'Sin accesos asignados';
+    return `${edicion} edicion / ${vista} vista`;
+  }
+
+  trackGroup(_: number, group: { name: string }): string {
+    return group.name;
+  }
+
+  trackModule(_: number, modulo: ModuloPermiso): string {
+    return modulo.key;
   }
 
   submit(): void {
@@ -119,5 +147,13 @@ export class UsuariosSistemaComponent implements OnInit {
 
   private emptyForm(): UsuarioSistemaRequest {
     return { username: '', nombre: '', password: '', activo: true, permisos: {} };
+  }
+
+  private buildGroups(modulos: ModuloPermiso[]): Array<{ name: string; modules: ModuloPermiso[] }> {
+    const groups = new Map<string, ModuloPermiso[]>();
+    modulos.forEach((modulo) => {
+      groups.set(modulo.group, [...(groups.get(modulo.group) ?? []), modulo]);
+    });
+    return Array.from(groups.entries()).map(([name, modules]) => ({ name, modules }));
   }
 }

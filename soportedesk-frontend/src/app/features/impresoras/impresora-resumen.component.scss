@@ -27,6 +27,29 @@
   letter-spacing: 0.04em;
 }
 
+.resumen-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.export-btn {
+  min-height: 32px;
+  padding: 6px 12px;
+  border: 1px solid rgba(37, 99, 235, .24);
+  border-radius: var(--radius-sm);
+  background: var(--color-info-light);
+  color: var(--color-info);
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: .55;
+  }
+}
+
 .chevron {
   font-size: 18px;
   color: var(--color-gray);
@@ -127,6 +150,16 @@
 
   .resumen-header {
     padding: 12px 14px;
+    gap: 10px;
+    align-items: stretch;
+  }
+
+  .resumen-actions {
+    justify-content: space-between;
+  }
+
+  .export-btn {
+    flex: 1;
   }
 
   .resumen-body {
