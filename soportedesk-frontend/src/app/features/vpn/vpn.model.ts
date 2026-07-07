@@ -24,10 +24,41 @@ export interface Vpn {
   aprobadoPor: string | null;
   aprobadoPorNombre: string | null;
   fechaResolucion: string | null;
+  titularTipo: 'AD' | 'INTERNO_MANUAL' | 'EXTERNO';
+  titularNombre: string | null;
+  titularApellidos: string | null;
+  titularCorreo: string | null;
+  titularSede: { id: number; nombre: string } | null;
+  titularDependencia: { id: number; nombre: string } | null;
+  titularTipoContrato: { id: number; nombre: string } | null;
+  titularEmpresa: string | null;
+  titularMotivo: string | null;
+  titularCargo: string;
+  titularNombreCompleto: string;
+  titularOrigenLabel: string;
 }
 
+export const CARGOS_VPN = [
+  'Director',
+  'Secretaria',
+  'Profesional',
+  'Gerente',
+  'Presidente Ejecutivo',
+  'Practicante',
+] as const;
+
 export interface VpnSolicitudRequest {
-  usuarioRedId: number;
+  usuarioRedId: number | null;
+  titularTipo: 'INTERNO_MANUAL' | 'EXTERNO' | null;
+  titularNombre: string | null;
+  titularApellidos: string | null;
+  titularCorreo: string | null;
+  titularSedeId: number | null;
+  titularDependenciaId: number | null;
+  titularTipoContratoId: number | null;
+  titularEmpresa: string | null;
+  titularMotivo: string | null;
+  titularCargo: string;
   tipoEquipo: 'INIA' | 'PERSONAL';
   glpiComputerId: number | null;
   antivirusVerificado: boolean;
