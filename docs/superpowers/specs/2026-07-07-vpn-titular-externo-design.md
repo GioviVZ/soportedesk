@@ -38,6 +38,14 @@ encuentra resultados.
   ("para permitir datos existentes") — no requiere una nueva migración para esa columna.
   `VpnRequest.usuarioRedId` deja de tener `@NotNull`; la validación de "debe venir uno u otro" se
   mueve a `VpnService`.
+- **Campo "cargo"**: se agrega un campo `cargo` obligatorio a la solicitud, aplicable por igual a
+  los 3 tipos de titular (AD, `INTERNO_MANUAL`, `EXTERNO`) — hoy ningún usuario de red tiene cargo
+  registrado en `UsuarioRed`, así que se captura siempre en el formulario de VPN, sin importar el
+  origen. Lista cerrada de 6 valores: `Director`, `Secretaria`, `Profesional`, `Gerente`,
+  `Presidente Ejecutivo`, `Practicante`. Se modela como `String` con `@NotBlank` (no como un
+  catálogo/tabla nueva ni un enum Java) — mismo tratamiento liviano que ya usa `tipoEquipo` en este
+  mismo formulario: la lista cerrada vive en el `<select>` del frontend, el backend solo exige que
+  no venga vacío.
 
 ## Modelo de datos
 
@@ -53,17 +61,20 @@ Nuevas columnas en `vpn` (además de las ya existentes del rediseño de solicitu
 | `titular_dependencia_id` | `BIGINT NULL` | FK a `dependencias(id)` — solo `INTERNO_MANUAL` |
 | `titular_empresa` | `NVARCHAR(150) NULL` | Solo `EXTERNO` |
 | `titular_motivo` | `NVARCHAR(500) NULL` | Solo `EXTERNO` |
+| `titular_cargo` | `NVARCHAR(30) NOT NULL DEFAULT 'Profesional'` | Uno de los 6 valores fijos, para los 3 tipos de titular |
 
-Cuando `titular_tipo = 'AD'`, todas las columnas `titular_*` (excepto `titular_tipo` mismo) quedan
-`NULL` y `usuario_red_id` tiene el valor real — sin cambios respecto al comportamiento actual.
+Cuando `titular_tipo = 'AD'`, todas las columnas `titular_*` quedan `NULL` **excepto**
+`titular_tipo` y `titular_cargo` (este último siempre se captura, sin importar el origen del
+titular) — `usuario_red_id` tiene el valor real, sin cambios respecto al comportamiento actual.
 
 ## Backend
 
 ### `Vpn.java`
 
-Se agregan los 8 campos de la tabla anterior (`titularTipo: String`, `titularNombre: String`,
+Se agregan los 9 campos de la tabla anterior (`titularTipo: String`, `titularNombre: String`,
 `titularApellidos: String`, `titularCorreo: String`, `titularSede: Sede` `@ManyToOne`,
-`titularDependencia: Dependencia` `@ManyToOne`, `titularEmpresa: String`, `titularMotivo: String`).
+`titularDependencia: Dependencia` `@ManyToOne`, `titularEmpresa: String`, `titularMotivo: String`,
+`titularCargo: String`).
 
 Se agregan dos getters `@Transient` (Jackson los serializa como campos planos adicionales en el
 JSON de respuesta, igual que cualquier otro getter — no se introduce una capa de DTO nueva):
@@ -88,8 +99,9 @@ public String getTitularOrigenLabel() {
 
 ### `VpnRequest.java`
 
-`usuarioRedId` pierde `@NotNull` (pasa a ser opcional). Se agregan (todos opcionales a nivel de
-Bean Validation — la obligatoriedad condicional se valida en `VpnService`):
+`usuarioRedId` pierde `@NotNull` (pasa a ser opcional). Se agrega `titularCargo` con `@NotBlank`
+(obligatorio para los 3 tipos de titular). El resto de campos `titular*` quedan opcionales a nivel
+de Bean Validation — la obligatoriedad condicional de esos se valida en `VpnService`:
 
 ```java
 private Long usuarioRedId;
@@ -101,6 +113,9 @@ private Long titularSedeId;       // solo INTERNO_MANUAL
 private Long titularDependenciaId; // solo INTERNO_MANUAL
 private String titularEmpresa;    // solo EXTERNO
 private String titularMotivo;     // solo EXTERNO
+
+@NotBlank
+private String titularCargo;      // Director | Secretaria | Profesional | Gerente | Presidente Ejecutivo | Practicante
 ```
 
 ### `VpnService.java`
@@ -113,9 +128,12 @@ UsuarioRed usuarioRed = usuarioRedRepository.findById(request.getUsuarioRedId())
 vpn.setUsuarioRed(usuarioRed);
 ```
 
-a una rama condicional:
+a una rama condicional. `titularCargo` se asigna una sola vez, antes de la rama, porque aplica a
+los 3 tipos de titular por igual:
 
 ```java
+vpn.setTitularCargo(request.getTitularCargo());
+
 if (request.getUsuarioRedId() != null) {
     UsuarioRed usuarioRed = usuarioRedRepository.findById(request.getUsuarioRedId())
             .orElseThrow(() -> new ResourceNotFoundException("Usuario de red no encontrado: " + request.getUsuarioRedId()));
@@ -175,11 +193,25 @@ inyectadas: `SedeRepository`, `DependenciaRepository` (ambos ya existen en
 `titularApellidos: string | null`, `titularCorreo: string | null`,
 `titularSede: { id: number; nombre: string } | null`,
 `titularDependencia: { id: number; nombre: string } | null`, `titularEmpresa: string | null`,
-`titularMotivo: string | null`, `titularNombreCompleto: string`, `titularOrigenLabel: string`.
+`titularMotivo: string | null`, `titularCargo: string`, `titularNombreCompleto: string`,
+`titularOrigenLabel: string`.
+
+Se agrega la constante exportada:
+
+```typescript
+export const CARGOS_VPN = [
+  'Director',
+  'Secretaria',
+  'Profesional',
+  'Gerente',
+  'Presidente Ejecutivo',
+  'Practicante',
+] as const;
+```
 
 `VpnSolicitudRequest.usuarioRedId` pasa a `number | null`; se agregan los mismos 7 campos
 `titular*` que en `VpnRequest.java` (con los mismos nombres, `titularSedeId`/`titularDependenciaId`
-en vez de objetos).
+en vez de objetos) más `titularCargo: string`.
 
 ### `vpn-form.component.ts`
 
@@ -194,7 +226,9 @@ en vez de objetos).
   `externo`) reciben `Validators.required` dinámicamente vía `setValidators` +
   `updateValueAndValidity` al cambiar `titularModo`, y se limpian al volver a buscar en AD.
 - `submit()` arma el request con `usuarioRedId` o los campos `titular*` según `titularModo`, nunca
-  ambos.
+  ambos — `titularCargo` siempre viaja, sin importar el modo.
+- Se agrega un `<select formControlName="titularCargo">` con `Validators.required`, poblado desde
+  la constante `CARGOS_VPN` de `vpn.model.ts`, visible siempre (no depende de `titularModo`).
 
 ### `vpn-list.component.html`
 
@@ -202,7 +236,8 @@ en vez de objetos).
 - Columna "Usuario red": cambia de `usuarioRed.usuario` a `titularOrigenLabel` (muestra "AD",
   "Interno (manual)" o "Externo" sin importar el origen — antes quedaba en blanco para registros
   sin `usuarioRed`).
-- Modal de detalle: agrega, condicionalmente sobre `viewing.titularTipo`:
+- Modal de detalle: agrega siempre "Cargo" (`viewing.titularCargo`), y condicionalmente sobre
+  `viewing.titularTipo`:
   - `!= 'AD'` → campo "Correo" (`viewing.titularCorreo`).
   - `== 'INTERNO_MANUAL'` → "Sede"/"Dependencia" (`viewing.titularSede?.nombre` /
     `viewing.titularDependencia?.nombre`).
@@ -210,10 +245,12 @@ en vez de objetos).
 
 ## Testing
 
-- **`VpnServiceTest`**: crear solicitud con `usuarioRedId` (comportamiento AD sin cambios), crear
-  con `titularTipo=INTERNO_MANUAL` (válido y con campos faltantes → 400/409), crear con
-  `titularTipo=EXTERNO` (válido y con campos faltantes), crear sin `usuarioRedId` ni `titularTipo`
-  válido → `IllegalArgumentException`.
+- **`VpnServiceTest`**: crear solicitud con `usuarioRedId` (comportamiento AD sin cambios, ahora
+  incluyendo `titularCargo`), crear con `titularTipo=INTERNO_MANUAL` (válido y con campos faltantes
+  → 400/409), crear con `titularTipo=EXTERNO` (válido y con campos faltantes), crear sin
+  `usuarioRedId` ni `titularTipo` válido → `IllegalArgumentException`. `titularCargo` faltante ya
+  queda cubierto por la validación `@NotBlank` de `VpnRequest` (400 de Bean Validation, no requiere
+  lógica adicional en el servicio).
 - **`VpnControllerIT`**: al menos un caso end-to-end de creación con `titularTipo=EXTERNO` vía
   `POST /api/vpn` confirmando 201 y los campos en la respuesta.
 - **Manual**: verificar en el navegador que buscar un usuario inexistente muestra el prompt, que
