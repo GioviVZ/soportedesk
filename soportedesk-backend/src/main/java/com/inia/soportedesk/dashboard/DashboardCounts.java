@@ -5,6 +5,7 @@ public record DashboardCounts(
         long correos,
         long usuariosRed,
         long vpn,
+        long vpnPendientes,
         long wifi,
         long impresoras,
         long equipos,

@@ -53,6 +53,7 @@ class DashboardServiceTest {
         when(correoRepository.count()).thenReturn(12L);
         when(usuarioRedRepository.count()).thenReturn(20L);
         when(vpnRepository.count()).thenReturn(3L);
+        when(vpnRepository.countByEstadoSolicitud("PENDIENTE")).thenReturn(2L);
         when(wifiRepository.count()).thenReturn(4L);
         when(impresoraRepository.count()).thenReturn(7L);
         when(equipoRepository.count()).thenReturn(15L);
@@ -64,6 +65,7 @@ class DashboardServiceTest {
         assertThat(counts.correos()).isEqualTo(12L);
         assertThat(counts.usuariosRed()).isEqualTo(20L);
         assertThat(counts.vpn()).isEqualTo(3L);
+        assertThat(counts.vpnPendientes()).isEqualTo(2L);
         assertThat(counts.wifi()).isEqualTo(4L);
         assertThat(counts.impresoras()).isEqualTo(7L);
         assertThat(counts.equipos()).isEqualTo(15L);

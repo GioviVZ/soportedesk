@@ -3,6 +3,7 @@ export interface DashboardCounts {
   correos: number;
   usuariosRed: number;
   vpn: number;
+  vpnPendientes: number;
   wifi: number;
   impresoras: number;
   equipos: number;

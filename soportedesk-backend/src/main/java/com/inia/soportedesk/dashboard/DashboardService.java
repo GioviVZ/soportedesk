@@ -33,6 +33,7 @@ public class DashboardService {
                 correoRepository.count(),
                 usuarioRedRepository.count(),
                 vpnRepository.count(),
+                vpnRepository.countByEstadoSolicitud("PENDIENTE"),
                 wifiRepository.count(),
                 impresoraRepository.count(),
                 equipoRepository.count(),
