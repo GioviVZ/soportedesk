@@ -51,3 +51,10 @@ export interface VpnAntivirusRequest {
   tieneAntivirus: boolean | null;
   vencimientoAntivirus: string | null;
 }
+
+export interface VpnKpis {
+  pendientes: number;
+  aprobadas: number;
+  rechazadas: number;
+  observadas: number;
+}

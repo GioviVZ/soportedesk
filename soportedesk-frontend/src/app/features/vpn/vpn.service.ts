@@ -6,6 +6,7 @@ import {
   Vpn,
   VpnAntivirusRequest,
   VpnAprobarRequest,
+  VpnKpis,
   VpnResolucionRequest,
   VpnSolicitudRequest,
 } from './vpn.model';
@@ -25,6 +26,10 @@ export class VpnService {
 
   getById(id: number): Observable<Vpn> {
     return this.http.get<Vpn>(`${this.apiUrl}/${id}`);
+  }
+
+  getKpis(): Observable<VpnKpis> {
+    return this.http.get<VpnKpis>(`${this.apiUrl}/kpis`);
   }
 
   create(request: VpnSolicitudRequest): Observable<Vpn> {
