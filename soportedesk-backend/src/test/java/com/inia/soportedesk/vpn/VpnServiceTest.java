@@ -40,6 +40,15 @@ class VpnServiceTest {
     @Mock
     private UsuarioRepository usuarioRepository;
 
+    @Mock
+    private com.inia.soportedesk.catalogo.SedeRepository sedeRepository;
+
+    @Mock
+    private com.inia.soportedesk.catalogo.DependenciaRepository dependenciaRepository;
+
+    @Mock
+    private com.inia.soportedesk.catalogo.TipoContratoRepository tipoContratoRepository;
+
     @InjectMocks
     private VpnService service;
 
@@ -49,6 +58,7 @@ class VpnServiceTest {
         request.setTipoEquipo("PERSONAL");
         request.setAntivirusVerificado(true);
         request.setAnalisisAntivirusRealizado(true);
+        request.setTitularCargo("Profesional");
         return request;
     }
 
@@ -157,6 +167,132 @@ class VpnServiceTest {
 
         assertThatThrownBy(() -> service.crearSolicitud(request, authAs("jasistente")))
                 .isInstanceOf(ResourceNotFoundException.class);
+    }
+
+    @Test
+    void crearSolicitud_withTitularInternoManual_savesManualFieldsAndClearsUsuarioRed() {
+        when(usuarioRepository.findByUsername(any())).thenReturn(Optional.empty());
+        when(repository.save(any(Vpn.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        com.inia.soportedesk.catalogo.Sede sede = new com.inia.soportedesk.catalogo.Sede();
+        sede.setId(2L);
+        sede.setNombre("Sede Central");
+        when(sedeRepository.findById(2L)).thenReturn(Optional.of(sede));
+
+        com.inia.soportedesk.catalogo.Dependencia dependencia = new com.inia.soportedesk.catalogo.Dependencia();
+        dependencia.setId(3L);
+        dependencia.setNombre("TI");
+        when(dependenciaRepository.findById(3L)).thenReturn(Optional.of(dependencia));
+
+        com.inia.soportedesk.catalogo.TipoContrato tipoContrato = new com.inia.soportedesk.catalogo.TipoContrato();
+        tipoContrato.setId(4L);
+        tipoContrato.setNombre("CAS");
+        when(tipoContratoRepository.findById(4L)).thenReturn(Optional.of(tipoContrato));
+
+        VpnRequest request = new VpnRequest();
+        request.setTitularTipo("INTERNO_MANUAL");
+        request.setTitularNombre("Ana");
+        request.setTitularApellidos("Gómez");
+        request.setTitularCorreo("ana.gomez@inia.gob.pe");
+        request.setTitularSedeId(2L);
+        request.setTitularDependenciaId(3L);
+        request.setTitularTipoContratoId(4L);
+        request.setTitularCargo("Practicante");
+        request.setTipoEquipo("PERSONAL");
+        request.setAntivirusVerificado(true);
+        request.setAnalisisAntivirusRealizado(true);
+
+        Vpn result = service.crearSolicitud(request, authAs("jasistente"));
+
+        assertThat(result.getUsuarioRed()).isNull();
+        assertThat(result.getTitularTipo()).isEqualTo("INTERNO_MANUAL");
+        assertThat(result.getTitularNombre()).isEqualTo("Ana");
+        assertThat(result.getTitularSede().getNombre()).isEqualTo("Sede Central");
+        assertThat(result.getTitularDependencia().getNombre()).isEqualTo("TI");
+        assertThat(result.getTitularTipoContrato().getNombre()).isEqualTo("CAS");
+        assertThat(result.getTitularCargo()).isEqualTo("Practicante");
+        assertThat(result.getTitularNombreCompleto()).isEqualTo("Ana Gómez");
+        assertThat(result.getTitularOrigenLabel()).isEqualTo("Interno (manual)");
+    }
+
+    @Test
+    void crearSolicitud_withTitularInternoManual_missingTipoContrato_throwsIllegalArgumentException() {
+        VpnRequest request = new VpnRequest();
+        request.setTitularTipo("INTERNO_MANUAL");
+        request.setTitularNombre("Ana");
+        request.setTitularApellidos("Gómez");
+        request.setTitularCorreo("ana.gomez@inia.gob.pe");
+        request.setTitularSedeId(2L);
+        request.setTitularDependenciaId(3L);
+        request.setTitularCargo("Practicante");
+        request.setTipoEquipo("PERSONAL");
+
+        assertThatThrownBy(() -> service.crearSolicitud(request, authAs("jasistente")))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void crearSolicitud_withTitularExterno_savesManualFieldsAndClearsCatalogRefs() {
+        when(usuarioRepository.findByUsername(any())).thenReturn(Optional.empty());
+        when(repository.save(any(Vpn.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        VpnRequest request = new VpnRequest();
+        request.setTitularTipo("EXTERNO");
+        request.setTitularNombre("Juan");
+        request.setTitularApellidos("Pérez");
+        request.setTitularCorreo("juan@externo.com");
+        request.setTitularEmpresa("ACME SAC");
+        request.setTitularMotivo("Consultoria - Proyecto X");
+        request.setTitularCargo("Gerente");
+        request.setTipoEquipo("PERSONAL");
+        request.setAntivirusVerificado(true);
+        request.setAnalisisAntivirusRealizado(true);
+
+        Vpn result = service.crearSolicitud(request, authAs("jasistente"));
+
+        assertThat(result.getUsuarioRed()).isNull();
+        assertThat(result.getTitularTipo()).isEqualTo("EXTERNO");
+        assertThat(result.getTitularEmpresa()).isEqualTo("ACME SAC");
+        assertThat(result.getTitularMotivo()).isEqualTo("Consultoria - Proyecto X");
+        assertThat(result.getTitularSede()).isNull();
+        assertThat(result.getTitularNombreCompleto()).isEqualTo("Juan Pérez");
+        assertThat(result.getTitularOrigenLabel()).isEqualTo("Externo");
+    }
+
+    @Test
+    void crearSolicitud_withTitularExterno_missingMotivo_throwsIllegalArgumentException() {
+        VpnRequest request = new VpnRequest();
+        request.setTitularTipo("EXTERNO");
+        request.setTitularNombre("Juan");
+        request.setTitularApellidos("Pérez");
+        request.setTitularCorreo("juan@externo.com");
+        request.setTitularEmpresa("ACME SAC");
+        request.setTitularCargo("Gerente");
+        request.setTipoEquipo("PERSONAL");
+
+        assertThatThrownBy(() -> service.crearSolicitud(request, authAs("jasistente")))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void crearSolicitud_withoutUsuarioRedIdOrValidTitularTipo_throwsIllegalArgumentException() {
+        VpnRequest request = new VpnRequest();
+        request.setTipoEquipo("PERSONAL");
+        request.setTitularCargo("Profesional");
+
+        assertThatThrownBy(() -> service.crearSolicitud(request, authAs("jasistente")))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void getTitularNombreCompleto_forAdTitular_returnsUsuarioRedNombre() {
+        Vpn vpn = new Vpn();
+        UsuarioRed usuarioRed = new UsuarioRed();
+        usuarioRed.setNombre("Carlos Ruiz");
+        vpn.setUsuarioRed(usuarioRed);
+
+        assertThat(vpn.getTitularNombreCompleto()).isEqualTo("Carlos Ruiz");
+        assertThat(vpn.getTitularOrigenLabel()).isEqualTo("AD");
     }
 
     @Test

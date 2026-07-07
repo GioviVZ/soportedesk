@@ -2,6 +2,12 @@ package com.inia.soportedesk.vpn;
 
 import com.inia.soportedesk.auth.Usuario;
 import com.inia.soportedesk.auth.UsuarioRepository;
+import com.inia.soportedesk.catalogo.Dependencia;
+import com.inia.soportedesk.catalogo.DependenciaRepository;
+import com.inia.soportedesk.catalogo.Sede;
+import com.inia.soportedesk.catalogo.SedeRepository;
+import com.inia.soportedesk.catalogo.TipoContrato;
+import com.inia.soportedesk.catalogo.TipoContratoRepository;
 import com.inia.soportedesk.exception.ResourceNotFoundException;
 import com.inia.soportedesk.glpi.VwInvComputerFull;
 import com.inia.soportedesk.glpi.VwInvComputerFullRepository;
@@ -25,6 +31,9 @@ public class VpnService {
     private final UsuarioRedRepository usuarioRedRepository;
     private final VwInvComputerFullRepository glpiRepository;
     private final UsuarioRepository usuarioRepository;
+    private final SedeRepository sedeRepository;
+    private final DependenciaRepository dependenciaRepository;
+    private final TipoContratoRepository tipoContratoRepository;
 
     public List<Vpn> findAll(String search) {
         if (search == null || search.isBlank()) {
@@ -145,12 +154,64 @@ public class VpnService {
     }
 
     private void copySolicitudFields(Vpn vpn, VpnRequest request) {
-        UsuarioRed usuarioRed = usuarioRedRepository.findById(request.getUsuarioRedId())
-                .orElseThrow(() -> new ResourceNotFoundException("Usuario de red no encontrado: " + request.getUsuarioRedId()));
-        vpn.setUsuarioRed(usuarioRed);
         vpn.setTipoEquipo(request.getTipoEquipo());
         vpn.setAntivirusVerificado(request.getAntivirusVerificado());
         vpn.setAnalisisAntivirusRealizado(request.getAnalisisAntivirusRealizado());
+        vpn.setTitularCargo(request.getTitularCargo());
+
+        if (request.getUsuarioRedId() != null) {
+            UsuarioRed usuarioRed = usuarioRedRepository.findById(request.getUsuarioRedId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Usuario de red no encontrado: " + request.getUsuarioRedId()));
+            vpn.setUsuarioRed(usuarioRed);
+            vpn.setTitularTipo("AD");
+            vpn.setTitularNombre(null);
+            vpn.setTitularApellidos(null);
+            vpn.setTitularCorreo(null);
+            vpn.setTitularSede(null);
+            vpn.setTitularDependencia(null);
+            vpn.setTitularTipoContrato(null);
+            vpn.setTitularEmpresa(null);
+            vpn.setTitularMotivo(null);
+        } else {
+            String tipo = request.getTitularTipo();
+            if (!"INTERNO_MANUAL".equals(tipo) && !"EXTERNO".equals(tipo)) {
+                throw new IllegalArgumentException("Debe seleccionar un usuario de red o indicar los datos del titular manual");
+            }
+            if (isBlank(request.getTitularNombre()) || isBlank(request.getTitularApellidos()) || isBlank(request.getTitularCorreo())) {
+                throw new IllegalArgumentException("Nombre, apellidos y correo del titular son obligatorios");
+            }
+            vpn.setUsuarioRed(null);
+            vpn.setTitularTipo(tipo);
+            vpn.setTitularNombre(request.getTitularNombre());
+            vpn.setTitularApellidos(request.getTitularApellidos());
+            vpn.setTitularCorreo(request.getTitularCorreo());
+            if ("INTERNO_MANUAL".equals(tipo)) {
+                if (request.getTitularSedeId() == null || request.getTitularDependenciaId() == null
+                        || request.getTitularTipoContratoId() == null) {
+                    throw new IllegalArgumentException("Sede, dependencia y tipo de contrato son obligatorios para personal INIA sin cuenta AD");
+                }
+                Sede sede = sedeRepository.findById(request.getTitularSedeId())
+                        .orElseThrow(() -> new ResourceNotFoundException("Sede no encontrada: " + request.getTitularSedeId()));
+                Dependencia dependencia = dependenciaRepository.findById(request.getTitularDependenciaId())
+                        .orElseThrow(() -> new ResourceNotFoundException("Dependencia no encontrada: " + request.getTitularDependenciaId()));
+                TipoContrato tipoContrato = tipoContratoRepository.findById(request.getTitularTipoContratoId())
+                        .orElseThrow(() -> new ResourceNotFoundException("Tipo de contrato no encontrado: " + request.getTitularTipoContratoId()));
+                vpn.setTitularSede(sede);
+                vpn.setTitularDependencia(dependencia);
+                vpn.setTitularTipoContrato(tipoContrato);
+                vpn.setTitularEmpresa(null);
+                vpn.setTitularMotivo(null);
+            } else {
+                if (isBlank(request.getTitularEmpresa()) || isBlank(request.getTitularMotivo())) {
+                    throw new IllegalArgumentException("Empresa y motivo son obligatorios para un tercero externo");
+                }
+                vpn.setTitularSede(null);
+                vpn.setTitularDependencia(null);
+                vpn.setTitularTipoContrato(null);
+                vpn.setTitularEmpresa(request.getTitularEmpresa());
+                vpn.setTitularMotivo(request.getTitularMotivo());
+            }
+        }
 
         if (request.getGlpiComputerId() != null) {
             VwInvComputerFull equipo = glpiRepository.findById(request.getGlpiComputerId())
@@ -165,6 +226,10 @@ public class VpnService {
             vpn.setGlpiIpEquipo(null);
             vpn.setHostActualizado(null);
         }
+    }
+
+    private static boolean isBlank(String s) {
+        return s == null || s.isBlank();
     }
 
     private boolean canViewCredenciales(Vpn vpn, Authentication auth) {
