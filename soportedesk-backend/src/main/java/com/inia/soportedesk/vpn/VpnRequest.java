@@ -5,8 +5,6 @@ import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.time.LocalDate;
-
 @Getter
 @Setter
 public class VpnRequest {
@@ -14,16 +12,14 @@ public class VpnRequest {
     @NotNull
     private Long usuarioRedId;
 
-    private Long equipoId;
-
-    private String ipAsignada;
-
-    private LocalDate vence;
-
     @NotBlank
-    private String estado;
+    private String tipoEquipo;
 
-    private String usuarioVpn;
+    private Long glpiComputerId;
 
-    private String credencialVpn;
+    private Boolean antivirusVerificado;
+
+    private Boolean analisisAntivirusRealizado;
+
+    private Boolean hostActualizado;
 }
