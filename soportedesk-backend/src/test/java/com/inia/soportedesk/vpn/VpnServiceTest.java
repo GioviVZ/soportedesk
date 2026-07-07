@@ -98,6 +98,7 @@ class VpnServiceTest {
         Vpn result = service.crearSolicitud(sampleRequest(), authAs("jasistente"));
 
         assertThat(result.getEstadoSolicitud()).isEqualTo("PENDIENTE");
+        assertThat(result.getEstado()).isEqualTo("Inactivo");
         assertThat(result.getSolicitadoPor()).isEqualTo("jasistente");
         assertThat(result.getTipoEquipo()).isEqualTo("PERSONAL");
         assertThat(result.getGlpiComputerId()).isNull();

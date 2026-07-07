@@ -42,6 +42,9 @@ public class VpnService {
     public Vpn crearSolicitud(VpnRequest request, Authentication auth) {
         Vpn vpn = new Vpn();
         vpn.setEstadoSolicitud("PENDIENTE");
+        // "estado" (Activo/Inactivo) es NOT NULL en la BD y solo cobra sentido una vez
+        // aprobada la solicitud; hasta entonces el acceso VPN no está activo.
+        vpn.setEstado("Inactivo");
         vpn.setSolicitadoPor(auth.getName());
         vpn.setSolicitadoPorNombre(nombreDe(auth.getName()));
         vpn.setFechaSolicitud(LocalDateTime.now());
