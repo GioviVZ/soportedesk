@@ -9,6 +9,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "vpn")
@@ -49,4 +50,49 @@ public class Vpn {
 
     @Column(name = "credencial_vpn")
     private String credencialVpn;
+
+    @Column(name = "estado_solicitud", nullable = false)
+    private String estadoSolicitud = "PENDIENTE";
+
+    @Column(name = "tipo_equipo")
+    private String tipoEquipo;
+
+    @Column(name = "glpi_computer_id")
+    private Long glpiComputerId;
+
+    @Column(name = "glpi_nombre_equipo")
+    private String glpiNombreEquipo;
+
+    @Column(name = "glpi_ip_equipo")
+    private String glpiIpEquipo;
+
+    @Column(name = "antivirus_verificado")
+    private Boolean antivirusVerificado;
+
+    @Column(name = "analisis_antivirus_realizado")
+    private Boolean analisisAntivirusRealizado;
+
+    @Column(name = "host_actualizado")
+    private Boolean hostActualizado;
+
+    @Column(name = "comentario_responsable", length = 500)
+    private String comentarioResponsable;
+
+    @Column(name = "solicitado_por", nullable = false)
+    private String solicitadoPor;
+
+    @Column(name = "solicitado_por_nombre")
+    private String solicitadoPorNombre;
+
+    @Column(name = "fecha_solicitud", nullable = false)
+    private LocalDateTime fechaSolicitud;
+
+    @Column(name = "aprobado_por")
+    private String aprobadoPor;
+
+    @Column(name = "aprobado_por_nombre")
+    private String aprobadoPorNombre;
+
+    @Column(name = "fecha_resolucion")
+    private LocalDateTime fechaResolucion;
 }
