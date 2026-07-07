@@ -45,6 +45,10 @@ export class AuthService {
     return localStorage.getItem('nombre');
   }
 
+  getUsername(): string | null {
+    return localStorage.getItem('username');
+  }
+
   isLoggedIn(): boolean {
     return this.getToken() !== null;
   }
