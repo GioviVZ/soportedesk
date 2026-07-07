@@ -22,9 +22,14 @@ encuentra resultados.
   selecciona uno (comportamiento actual sin cambios). Si no hay resultados, aparece un prompt con
   dos botones: **"Personal de INIA"** y **"Tercero externo"**.
 - **Personal de INIA (manual)**: pide nombre, apellidos, correo, y Sede/Dependencia/Tipo de
-  contrato — reutilizando el componente compartido `UbicacionSelectComponent`
-  (`soportedesk-frontend/src/app/shared/ubicacion-select/ubicacion-select.component.ts`) con
-  `[showTipoContrato]="true"`. **Sin** campo de motivo.
+  contrato. **No** se reutiliza `UbicacionSelectComponent`
+  (`soportedesk-frontend/src/app/shared/ubicacion-select/ubicacion-select.component.ts`) porque ese
+  componente siempre incluye un selector de Subdependencia sin forma de ocultarlo, y este flujo no
+  lo pide — usarlo dejaría un campo visible cuyo valor se ignoraría al enviar, una fuente de
+  confusión. En su lugar, el formulario arma su propio selector Sede→Dependencia (cascada) + Tipo de
+  contrato usando `CatalogoService` directamente (`getSedes()`, `getDependencias(sedeId)`,
+  `getTiposContrato()`, ya existen en `soportedesk-frontend/src/app/core/catalogos/catalogo.service.ts`).
+  **Sin** campo de motivo.
 - **Tercero externo**: pide nombre, apellidos, correo, empresa, motivo. **Sin** Sede/Dependencia.
 - **Sede/Dependencia** se capturan como FK reales a los catálogos existentes (`Sede`/`Dependencia`,
   paquete `com.inia.soportedesk.catalogo`), no como texto libre — consistente con cómo ya se
@@ -53,8 +58,8 @@ encuentra resultados.
   **solo** al titular `INTERNO_MANUAL`: los usuarios AD ya traen su `tipoContrato` en el registro
   `UsuarioRed` (no se duplica), y los terceros externos no tienen contrato INIA (usan
   `titularEmpresa`/`titularMotivo` en su lugar). Se captura como FK real a `TipoContrato`, igual
-  patrón que `titularSede`/`titularDependencia`, reutilizando `UbicacionSelectComponent` con
-  `[showTipoContrato]="true"` (el componente ya soporta este input/output, no se modifica).
+  patrón que `titularSede`/`titularDependencia`, vía el selector propio descrito arriba (no
+  `UbicacionSelectComponent`).
 
 ## Modelo de datos
 
@@ -238,11 +243,10 @@ que en `VpnRequest.java` (con los mismos nombres, `titularSedeId`/`titularDepend
   patrón de debounce 300ms que `onEquipoSearch`.
 - Estado `titularModo: 'buscando' | 'ad-seleccionado' | 'interno-manual' | 'externo'`.
 - Cuando `adResults` queda vacío tras una búsqueda con texto, se muestra el prompt de fallback.
-- Para `interno-manual`, además de nombre/apellidos/correo se muestra
-  `<app-ubicacion-select [sedeId]="..." [dependenciaId]="..." [tipoContratoId]="..."
-  [showTipoContrato]="true" (sedeIdChange)="..." (dependenciaIdChange)="..."
-  (tipoContratoIdChange)="...">` (mismo componente que ya usa `usuario-red-form.component.ts`, sin
-  modificarlo).
+- Para `interno-manual`, además de nombre/apellidos/correo se muestran 3 `<select>` propios (Sede,
+  Dependencia en cascada, Tipo de contrato) poblados vía `CatalogoService.getSedes()`/
+  `getDependencias(sedeId)`/`getTiposContrato()` inyectado directamente en el componente — no se
+  reutiliza `UbicacionSelectComponent` (ver "Decisiones confirmadas").
 - Los controles `titularNombre`/`titularApellidos`/`titularCorreo`/`titularSedeId`/
   `titularDependenciaId`/`titularTipoContratoId` (para `interno-manual`) o `.../titularEmpresa`/
   `titularMotivo` (para `externo`) reciben `Validators.required` dinámicamente vía `setValidators`
@@ -288,5 +292,6 @@ que en `VpnRequest.java` (con los mismos nombres, `titularSedeId`/`titularDepend
 `vpn-list.component.html`, migración SQL nueva en `docs/superpowers/migrations/`.
 
 **Sin cambios**: `VpnController.java` (ningún endpoint nuevo, solo cambia el shape del request que
-ya aceptan `POST`/`PUT`), `UbicacionSelectComponent` (se reutiliza tal cual), `UsuarioRedService`
-(el endpoint de búsqueda ya existe).
+ya aceptan `POST`/`PUT`), `UsuarioRedService` (el endpoint de búsqueda ya existe), `CatalogoService`
+(sus métodos de Sede/Dependencia/TipoContrato ya existen, solo se consumen desde un componente
+nuevo).
