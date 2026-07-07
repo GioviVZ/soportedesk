@@ -13,12 +13,15 @@ public interface VpnRepository extends JpaRepository<Vpn, Long> {
 
     Optional<Vpn> findFirstByUsuarioRedId(Long usuarioRedId);
 
+    long countByEstadoSolicitud(String estadoSolicitud);
+
     @Query("SELECT v FROM Vpn v LEFT JOIN v.usuarioRed u LEFT JOIN v.equipo e WHERE " +
            "LOWER(u.nombre) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
            "LOWER(u.usuario) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
            "LOWER(e.marca) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
            "LOWER(e.modelo) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
            "LOWER(v.ipAsignada) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
-           "LOWER(v.usuarioVpn) LIKE LOWER(CONCAT('%', :search, '%'))")
+           "LOWER(v.usuarioVpn) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
+           "LOWER(v.solicitadoPorNombre) LIKE LOWER(CONCAT('%', :search, '%'))")
     List<Vpn> search(@Param("search") String search);
 }
