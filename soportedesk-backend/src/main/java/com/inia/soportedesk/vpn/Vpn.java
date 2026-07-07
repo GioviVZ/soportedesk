@@ -1,5 +1,8 @@
 package com.inia.soportedesk.vpn;
 
+import com.inia.soportedesk.catalogo.Dependencia;
+import com.inia.soportedesk.catalogo.Sede;
+import com.inia.soportedesk.catalogo.TipoContrato;
 import com.inia.soportedesk.equipos.Equipo;
 import com.inia.soportedesk.usuariosred.UsuarioRed;
 import jakarta.persistence.*;
@@ -95,4 +98,53 @@ public class Vpn {
 
     @Column(name = "fecha_resolucion")
     private LocalDateTime fechaResolucion;
+
+    @Column(name = "titular_tipo", nullable = false)
+    private String titularTipo = "AD";
+
+    @Column(name = "titular_nombre")
+    private String titularNombre;
+
+    @Column(name = "titular_apellidos")
+    private String titularApellidos;
+
+    @Column(name = "titular_correo")
+    private String titularCorreo;
+
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "titular_sede_id")
+    private Sede titularSede;
+
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "titular_dependencia_id")
+    private Dependencia titularDependencia;
+
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "titular_tipo_contrato_id")
+    private TipoContrato titularTipoContrato;
+
+    @Column(name = "titular_empresa")
+    private String titularEmpresa;
+
+    @Column(name = "titular_motivo", length = 500)
+    private String titularMotivo;
+
+    @Column(name = "titular_cargo", nullable = false)
+    private String titularCargo;
+
+    @Transient
+    public String getTitularNombreCompleto() {
+        if (usuarioRed != null) return usuarioRed.getNombre();
+        String apellidos = titularApellidos == null ? "" : " " + titularApellidos;
+        return (titularNombre == null ? "" : titularNombre) + apellidos;
+    }
+
+    @Transient
+    public String getTitularOrigenLabel() {
+        return switch (titularTipo) {
+            case "INTERNO_MANUAL" -> "Interno (manual)";
+            case "EXTERNO" -> "Externo";
+            default -> "AD";
+        };
+    }
 }
