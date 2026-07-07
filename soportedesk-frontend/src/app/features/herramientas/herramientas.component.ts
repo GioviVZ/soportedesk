@@ -14,7 +14,7 @@ import QRCode from 'qrcode';
 import { PingResult } from './herramientas.model';
 import { HerramientasService } from './herramientas.service';
 
-type ToolTab = 'ping' | 'qr' | 'gpu' | 'ram' | 'teclado' | 'mouse' | 'microfono' | 'camara';
+type ToolTab = 'ping' | 'qr' | 'vencimientos' | 'gpu' | 'ram' | 'teclado' | 'mouse' | 'microfono' | 'camara';
 type TestState = 'idle' | 'running' | 'done' | 'error';
 type QrFormat = 'png' | 'jpg' | 'svg';
 
@@ -86,6 +86,15 @@ interface CamStats {
   message: string;
 }
 
+interface DeadlineEntry {
+  id: string;
+  titulo: string;
+  fechaNotificacion: string;
+  dias: number;
+  fechaVencimiento: string;
+  creadoEn: string;
+}
+
 const KEY_ROWS = [
   ['Escape', 'F1', 'F2', 'F3', 'F4', 'F5', 'F6', 'F7', 'F8', 'F9', 'F10', 'F11', 'F12'],
   ['Backquote', 'Digit1', 'Digit2', 'Digit3', 'Digit4', 'Digit5', 'Digit6', 'Digit7', 'Digit8', 'Digit9', 'Digit0', 'Minus', 'Equal', 'Backspace'],
@@ -132,6 +141,7 @@ export class HerramientasComponent implements AfterViewInit, OnDestroy {
   readonly tabs: ToolTabItem[] = [
     { id: 'ping', label: 'Ping', detail: 'Red' },
     { id: 'qr', label: 'QR', detail: 'Link' },
+    { id: 'vencimientos', label: 'Vencimientos', detail: 'Informes' },
     { id: 'gpu', label: 'GPU', detail: 'WebGL' },
     { id: 'ram', label: 'RAM', detail: 'Memoria web' },
     { id: 'teclado', label: 'Teclado', detail: 'Entrada' },
@@ -154,6 +164,12 @@ export class HerramientasComponent implements AfterViewInit, OnDestroy {
   qrSvg = '';
   qrError = '';
   qrSize = 512;
+
+  deadlineTitle = '';
+  deadlineStartDate = this.todayInputValue();
+  deadlineDays = 10;
+  deadlineError = '';
+  deadlineSaved: DeadlineEntry[] = this.loadDeadlines();
 
   clientInfo: ClientInfo = this.readClientInfo();
 
@@ -337,6 +353,106 @@ export class HerramientasComponent implements AfterViewInit, OnDestroy {
     this.qrDataUrl = '';
     this.qrSvg = '';
     this.qrError = '';
+  }
+
+  get deadlineResultDate(): string {
+    return this.calculateDeadlineDate(this.deadlineStartDate, this.deadlineDays);
+  }
+
+  get sortedDeadlines(): DeadlineEntry[] {
+    return [...this.deadlineSaved].sort((a, b) => {
+      const remainingDiff = this.daysUntil(a.fechaVencimiento) - this.daysUntil(b.fechaVencimiento);
+      return remainingDiff || a.fechaVencimiento.localeCompare(b.fechaVencimiento);
+    });
+  }
+
+  calculateDeadline(): void {
+    this.deadlineError = this.deadlineResultDate ? '' : 'Selecciona una fecha valida e ingresa una cantidad de dias.';
+  }
+
+  saveDeadline(): void {
+    const fechaVencimiento = this.deadlineResultDate;
+    const dias = Number(this.deadlineDays);
+    if (!fechaVencimiento || !this.deadlineStartDate || !Number.isFinite(dias) || dias < 0) {
+      this.deadlineError = 'Selecciona una fecha valida e ingresa una cantidad de dias.';
+      return;
+    }
+
+    const entry: DeadlineEntry = {
+      id: `${Date.now()}-${Math.round(Math.random() * 1000)}`,
+      titulo: this.deadlineTitle.trim() || 'Informe de actividades',
+      fechaNotificacion: this.deadlineStartDate,
+      dias: Math.round(dias),
+      fechaVencimiento,
+      creadoEn: new Date().toISOString(),
+    };
+
+    this.deadlineSaved = [entry, ...this.deadlineSaved];
+    this.persistDeadlines();
+    this.deadlineTitle = '';
+    this.deadlineError = '';
+    this.addReport('Vencimientos', `${entry.titulo}: vence el ${this.formatDate(entry.fechaVencimiento)}`);
+  }
+
+  deleteDeadline(id: string): void {
+    this.deadlineSaved = this.deadlineSaved.filter((entry) => entry.id !== id);
+    this.persistDeadlines();
+  }
+
+  clearDeadlineForm(): void {
+    this.deadlineTitle = '';
+    this.deadlineStartDate = this.todayInputValue();
+    this.deadlineDays = 10;
+    this.deadlineError = '';
+  }
+
+  daysUntil(dateValue: string): number {
+    const today = this.dateOnly(new Date());
+    const target = this.parseInputDate(dateValue);
+    if (!target) {
+      return 0;
+    }
+    return Math.ceil((target.getTime() - today.getTime()) / 86400000);
+  }
+
+  deadlineStatus(entry: DeadlineEntry): string {
+    const days = this.daysUntil(entry.fechaVencimiento);
+    if (days > 1) {
+      return `Faltan ${days} dias`;
+    }
+    if (days === 1) {
+      return 'Falta 1 dia';
+    }
+    if (days === 0) {
+      return 'Vence hoy';
+    }
+    if (days === -1) {
+      return 'Vencio ayer';
+    }
+    return `Vencido hace ${Math.abs(days)} dias`;
+  }
+
+  deadlineStatusClass(entry: DeadlineEntry): 'ok' | 'warn' | 'bad' {
+    const days = this.daysUntil(entry.fechaVencimiento);
+    if (days < 0) {
+      return 'bad';
+    }
+    if (days <= 2) {
+      return 'warn';
+    }
+    return 'ok';
+  }
+
+  formatDate(dateValue: string): string {
+    const date = this.parseInputDate(dateValue);
+    if (!date) {
+      return '-';
+    }
+    return new Intl.DateTimeFormat('es-PE', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+    }).format(date);
   }
 
   onQrLinkChange(value: string): void {
@@ -822,6 +938,64 @@ export class HerramientasComponent implements AfterViewInit, OnDestroy {
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/^-+|-+$/g, '')
       .slice(0, 48) || 'link';
+  }
+
+  private calculateDeadlineDate(startDate: string, days: number): string {
+    const start = this.parseInputDate(startDate);
+    const safeDays = Number(days);
+    if (!start || !Number.isFinite(safeDays) || safeDays < 0) {
+      return '';
+    }
+    const result = new Date(start);
+    result.setDate(result.getDate() + Math.round(safeDays));
+    return this.toInputDate(result);
+  }
+
+  private loadDeadlines(): DeadlineEntry[] {
+    try {
+      const raw = localStorage.getItem('soportedesk.deadlines');
+      if (!raw) {
+        return [];
+      }
+      const parsed = JSON.parse(raw) as DeadlineEntry[];
+      if (!Array.isArray(parsed)) {
+        return [];
+      }
+      return parsed.filter((entry) => entry.id && entry.fechaNotificacion && entry.fechaVencimiento);
+    } catch {
+      return [];
+    }
+  }
+
+  private persistDeadlines(): void {
+    localStorage.setItem('soportedesk.deadlines', JSON.stringify(this.deadlineSaved));
+  }
+
+  private todayInputValue(): string {
+    return this.toInputDate(new Date());
+  }
+
+  private parseInputDate(value: string): Date | null {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+      return null;
+    }
+    const [year, month, day] = value.split('-').map(Number);
+    const date = new Date(year, month - 1, day);
+    if (date.getFullYear() !== year || date.getMonth() !== month - 1 || date.getDate() !== day) {
+      return null;
+    }
+    return this.dateOnly(date);
+  }
+
+  private dateOnly(date: Date): Date {
+    return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  }
+
+  private toInputDate(date: Date): string {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
   }
 
   @HostListener('window:resize')

@@ -1,5 +1,10 @@
 package com.inia.soportedesk.equipos;
 
+import com.inia.soportedesk.catalogo.TipoEquipoCatalogo;
+import com.inia.soportedesk.catalogo.TipoEquipoCatalogoRepository;
+import com.inia.soportedesk.equipos.enrichment.EquipoEnrichment;
+import com.inia.soportedesk.equipos.enrichment.EquipoEnrichmentRepository;
+import com.inia.soportedesk.equipos.enrichment.EquipoEnrichmentService;
 import com.inia.soportedesk.glpi.GlpiTecladoRepository;
 import com.inia.soportedesk.glpi.VwInvComputerFull;
 import com.inia.soportedesk.glpi.VwInvComputerFullRepository;
@@ -9,20 +14,22 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class EquipoServiceTest {
 
-    @Mock
-    private VwInvComputerFullRepository repository;
-
-    @Mock
-    private GlpiTecladoRepository tecladoRepository;
+    @Mock private VwInvComputerFullRepository repository;
+    @Mock private GlpiTecladoRepository tecladoRepository;
+    @Mock private TipoEquipoCatalogoRepository catalogoRepository;
+    @Mock private EquipoEnrichmentRepository enrichmentRepository;
+    @Mock private EquipoEnrichmentService enrichmentService;
 
     @InjectMocks
     private EquipoService service;
@@ -31,12 +38,12 @@ class EquipoServiceTest {
     void findAll_delegatesFiltersToRepository() {
         VwInvComputerFull equipo = new VwInvComputerFull();
         equipo.setComputerID(10L);
-        when(repository.findFiltered("ana", "SEDE CENTRAL", "Laptop")).thenReturn(List.of(equipo));
+        when(repository.findFiltered("ana", "SEDE CENTRAL", "Laptop", null, null, null)).thenReturn(List.of(equipo));
 
-        List<VwInvComputerFull> result = service.findAll("ana", "SEDE CENTRAL", "Laptop");
+        List<VwInvComputerFull> result = service.findAll("ana", "SEDE CENTRAL", "Laptop", null, null, null);
 
         assertThat(result).containsExactly(equipo);
-        verify(repository).findFiltered("ana", "SEDE CENTRAL", "Laptop");
+        verify(repository).findFiltered("ana", "SEDE CENTRAL", "Laptop", null, null, null);
     }
 
     @Test
@@ -44,7 +51,7 @@ class EquipoServiceTest {
         VwInvComputerFull desktopCentral = equipo("Desktop", "SEDE CENTRAL");
         VwInvComputerFull laptopEea = equipo("Laptop", "EEA ANDENES");
         VwInvComputerFull otroEea = equipo("Servidor", "EEA DONOSO");
-        when(repository.findFiltered(null, null, null)).thenReturn(List.of(desktopCentral, laptopEea, otroEea));
+        when(repository.findFiltered(null, null, null, null, null, null)).thenReturn(List.of(desktopCentral, laptopEea, otroEea));
 
         EquipoKpisDto result = service.getKpis();
 
@@ -54,6 +61,104 @@ class EquipoServiceTest {
         assertThat(result.otrosCount()).isEqualTo(1);
         assertThat(result.sedeCentralCount()).isEqualTo(1);
         assertThat(result.eeasCount()).isEqualTo(2);
+    }
+
+    @Test
+    void findById_tipoOverride_winsOverGlpiAndCatalog() {
+        VwInvComputerFull glpiEquipo = equipo("Laptop", "SEDE CENTRAL");
+        glpiEquipo.setComputerID(1L);
+        glpiEquipo.setEliminado(0);
+
+        EquipoEnrichment enrichment = new EquipoEnrichment();
+        enrichment.setComputerId(1L);
+        enrichment.setTipoOverride("Workstation");
+
+        when(repository.findById(1L)).thenReturn(Optional.of(glpiEquipo));
+        when(enrichmentRepository.findByComputerId(1L)).thenReturn(Optional.of(enrichment));
+        when(repository.findSoftwareByComputerId(1L)).thenReturn(List.of());
+        when(tecladoRepository.findByItemsId(1L)).thenReturn(Optional.empty());
+        when(enrichmentService.toDto(enrichment)).thenReturn(null);
+
+        EquipoDetalleResponse result = service.findById(1L);
+
+        assertThat(result.tipoEfectivo()).isEqualTo("Workstation");
+        verify(catalogoRepository, never()).findByGlpiValorAndActivoTrue(any());
+    }
+
+    @Test
+    void findById_catalogMapping_appliedWhenNoOverride() {
+        VwInvComputerFull glpiEquipo = equipo("Laptop", "SEDE CENTRAL");
+        glpiEquipo.setComputerID(2L);
+        glpiEquipo.setEliminado(0);
+
+        TipoEquipoCatalogo catalogo = new TipoEquipoCatalogo();
+        catalogo.setTipoNormalizado("Portátil");
+
+        when(repository.findById(2L)).thenReturn(Optional.of(glpiEquipo));
+        when(enrichmentRepository.findByComputerId(2L)).thenReturn(Optional.empty());
+        when(catalogoRepository.findByGlpiValorAndActivoTrue("Laptop")).thenReturn(Optional.of(catalogo));
+        when(repository.findSoftwareByComputerId(2L)).thenReturn(List.of());
+        when(tecladoRepository.findByItemsId(2L)).thenReturn(Optional.empty());
+
+        EquipoDetalleResponse result = service.findById(2L);
+
+        assertThat(result.tipoEfectivo()).isEqualTo("Portátil");
+    }
+
+    @Test
+    void findById_rawGlpiValue_whenNoCatalogMatch() {
+        VwInvComputerFull glpiEquipo = equipo("ServidorRaro", "EEA DONOSO");
+        glpiEquipo.setComputerID(3L);
+        glpiEquipo.setEliminado(0);
+
+        when(repository.findById(3L)).thenReturn(Optional.of(glpiEquipo));
+        when(enrichmentRepository.findByComputerId(3L)).thenReturn(Optional.empty());
+        when(catalogoRepository.findByGlpiValorAndActivoTrue("ServidorRaro")).thenReturn(Optional.empty());
+        when(repository.findSoftwareByComputerId(3L)).thenReturn(List.of());
+        when(tecladoRepository.findByItemsId(3L)).thenReturn(Optional.empty());
+
+        EquipoDetalleResponse result = service.findById(3L);
+
+        assertThat(result.tipoEfectivo()).isEqualTo("ServidorRaro");
+    }
+
+    @Test
+    void getSalud_rojoWhenSinEncendidoMasDe12Meses() {
+        VwInvComputerFull viejo = equipo("Desktop", "SEDE CENTRAL");
+        viejo.setComputerID(5L);
+        viejo.setNombreEquipo("PC-VIEJA");
+        viejo.setUsuarioContacto("juanito");
+        viejo.setUltimoEncendido(LocalDateTime.now().minusMonths(14));
+        viejo.setUltimaActualizacion(LocalDateTime.now().minusMonths(1));
+
+        when(repository.findFiltered(null, null, null, null, null, null)).thenReturn(List.of(viejo));
+        when(enrichmentRepository.findByComputerIdIn(List.of(5L))).thenReturn(List.of());
+
+        List<EquipoSaludDto> result = service.getSalud();
+
+        assertThat(result).hasSize(1);
+        assertThat(result.get(0).nivelAlerta()).isEqualTo("ROJO");
+    }
+
+    @Test
+    void getSalud_okEquiposExcluded_unlessDataMissing() {
+        VwInvComputerFull bueno = equipo("Desktop", "SEDE CENTRAL");
+        bueno.setComputerID(6L);
+        bueno.setNombreEquipo("PC-BUENA");
+        bueno.setUsuarioContacto("maria");
+        bueno.setUltimoEncendido(LocalDateTime.now().minusMonths(1));
+        bueno.setUltimaActualizacion(LocalDateTime.now().minusMonths(1));
+
+        EquipoEnrichment enrich = new EquipoEnrichment();
+        enrich.setComputerId(6L);
+        enrich.setCodigoPatrimonial("PAT-001");
+
+        when(repository.findFiltered(null, null, null, null, null, null)).thenReturn(List.of(bueno));
+        when(enrichmentRepository.findByComputerIdIn(List.of(6L))).thenReturn(List.of(enrich));
+
+        List<EquipoSaludDto> result = service.getSalud();
+
+        assertThat(result).isEmpty();
     }
 
     private VwInvComputerFull equipo(String tipo, String sede) {

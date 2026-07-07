@@ -25,7 +25,7 @@ GO
 -- Los modulos solo-vista nunca tuvieron edicion: corregir su nivel.
 UPDATE dbo.permisos
    SET nivel = N'VIEW'
- WHERE modulo IN (N'auditoria', N'herramientas', N'inventario-equipos');
+ WHERE modulo IN (N'auditoria', N'herramientas');
 GO
 
 -- Backfill: todo usuario SOPORTE que no tenga permiso explicito en modulos

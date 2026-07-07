@@ -1,8 +1,8 @@
 .shell {
+  position: fixed;
+  inset: 0;
   display: flex;
-  min-height: 100dvh;
   background: var(--color-bg);
-  min-width: 0;
 }
 
 .content {
@@ -15,8 +15,11 @@
 
 main {
   flex: 1;
+  min-height: 0;
+  min-width: 0;
+  overflow-x: hidden;
   overflow-y: auto;
-  padding: clamp(16px, 2vw, 24px);
+  padding: 0 clamp(16px, 2vw, 24px) clamp(16px, 2vw, 24px);
 }
 
 /* Mobile overlay backdrop */
@@ -38,5 +41,5 @@ main {
 
 @media (max-width: 768px) {
   .backdrop { display: block; }
-  main { padding: 14px; }
+  main { padding: 0 14px 14px; }
 }

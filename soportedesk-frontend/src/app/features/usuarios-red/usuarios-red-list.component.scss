@@ -6,6 +6,20 @@
   margin: 0 auto;
 }
 
+.page-heading {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  background: var(--color-bg);
+  padding-top: clamp(16px, 2vw, 24px);
+  padding-bottom: 16px;
+  box-shadow: 0 1px 0 var(--color-border), 0 4px 8px -4px rgba(15, 23, 42, .06);
+}
+
 .eyebrow {
   display: inline-block;
   margin-bottom: 6px;
@@ -228,7 +242,7 @@ app-section-card:last-child {
   .summary-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .search-wrap { min-width: 100%; }
   .result-count { order: 3; }
-  .add-btn { margin-left: auto; }
+  .page-heading { flex-wrap: wrap; padding-top: 14px; }
   .users-table { display: none; }
 
   .users-cards {
@@ -283,6 +297,11 @@ app-section-card:last-child {
 
 @media (max-width: 640px) {
   h2 { font-size: 22px; }
+
+  .page-heading {
+    flex-direction: column;
+    align-items: stretch;
+  }
 
   .table-toolbar {
     display: grid;

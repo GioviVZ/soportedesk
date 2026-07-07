@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { ModalComponent } from '../../shared/modal/modal.component';
 import { Correo, CorreoFiltros, CorreoKpis } from './correo.model';
 import { CorreoService } from './correo.service';
+import * as XLSX from 'xlsx';
 
 @Component({
   selector: 'app-correos-list',
@@ -92,6 +93,49 @@ export class CorreosListComponent implements OnInit {
     this.selectedCorreo = null;
   }
 
+  exportExcel(): void {
+    const rows = this.items.map((item) => ({
+      Correo: item.email ?? '',
+      Nombre: item.nombreCompleto ?? '',
+      'Employee ID': item.employeeId ?? '',
+      Sede: item.sede ?? '',
+      Dependencia: item.oficinaPadre ?? '',
+      Subdependencia: item.oficina ?? '',
+      Modalidad: item.modalidad ?? '',
+      Estado: item.estado ?? '',
+      'Verificacion 2 pasos': item.verificacion2Pasos ?? '',
+      'Ultimo acceso': item.ultimoInicioSesion ?? '',
+      'Uso Email (MB)': this.roundMb(item.emailUsageMB),
+      'Uso Drive (MB)': this.roundMb(item.driveUsageMB),
+      'Almacenamiento (MB)': this.roundMb(item.storageUsedMB),
+      'Uso Total (MB)': this.roundMb(item.totalUsoMB),
+      'Uso Total': this.formatStorage(item.totalUsoMB),
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(rows);
+    worksheet['!cols'] = [
+      { wch: 34 },
+      { wch: 38 },
+      { wch: 16 },
+      { wch: 20 },
+      { wch: 42 },
+      { wch: 42 },
+      { wch: 16 },
+      { wch: 14 },
+      { wch: 20 },
+      { wch: 22 },
+      { wch: 16 },
+      { wch: 16 },
+      { wch: 20 },
+      { wch: 16 },
+      { wch: 16 },
+    ];
+
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Correos');
+    XLSX.writeFile(workbook, `correos-${this.exportDate()}.xlsx`);
+  }
+
   formatStorage(value: number | null): string {
     if (value === null || value === undefined) return 'Sin dato';
     if (value >= 1024) return `${(value / 1024).toFixed(2)} GB`;
@@ -116,5 +160,20 @@ export class CorreosListComponent implements OnInit {
         this.selectedModalidad ||
         this.sinUso30Dias
     );
+  }
+
+  private roundMb(value: number | null): number | '' {
+    if (value === null || value === undefined) {
+      return '';
+    }
+    return Math.round(value * 100) / 100;
+  }
+
+  private exportDate(): string {
+    const date = new Date();
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
   }
 }

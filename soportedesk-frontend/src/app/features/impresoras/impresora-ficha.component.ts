@@ -1,4 +1,4 @@
-import { Component, Input, inject } from '@angular/core';
+import { Component, EventEmitter, Input, Output, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { AuthService } from '../../core/auth/auth.service';
 import { CatalogoService } from '../../core/catalogos/catalogo.service';
@@ -21,6 +21,7 @@ export class ImpresoraFichaComponent {
   private catalogoService = inject(CatalogoService);
 
   @Input({ required: true }) impresora!: Impresora;
+  @Output() editRequested = new EventEmitter<Impresora>();
 
   activeTab: FichaTab = 'instalacion';
   readonly impresoraEstadoTone = impresoraEstadoTone;

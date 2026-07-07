@@ -5,102 +5,199 @@
       <h2>Equipos Asignados</h2>
       <p>Inventario GLPI, usuarios responsables, ubicacion y hardware detectado.</p>
     </div>
+    <div class="tab-toggle">
+      <button type="button" [class.active]="activeTab() === 'inventario'" (click)="setTab('inventario')">
+        Inventario
+      </button>
+      <button type="button" [class.active]="activeTab() === 'salud'"
+        (click)="setTab('salud')"
+        [class.has-alert]="salud().length > 0">
+        Salud del inventario
+        <span class="alert-count" *ngIf="salud().length">{{ salud().length }}</span>
+      </button>
+    </div>
   </div>
 
-  <section class="kpi-grid">
-    <article *ngFor="let card of kpiCards()" class="kpi-card" [class]="'tone-' + card.tone">
-      <span>{{ card.label }}</span>
-      <strong>{{ card.value }}</strong>
-    </article>
-  </section>
+  <!-- INVENTARIO TAB -->
+  <ng-container *ngIf="activeTab() === 'inventario'">
+    <section class="kpi-grid">
+      <article *ngFor="let card of kpiCards()" class="kpi-card" [class]="'tone-' + card.tone">
+        <span>{{ card.label }}</span>
+        <strong>{{ card.value }}</strong>
+      </article>
+    </section>
 
-  <section class="filter-bar">
-    <label class="mobile-search">
-      <span>Buscar</span>
-      <input
-        type="text"
-        [ngModel]="searchTerm()"
-        (ngModelChange)="onSearch($event)"
-        placeholder="Equipo o usuario"
+    <section class="filter-bar">
+      <label class="mobile-search">
+        <span>Buscar</span>
+        <input
+          type="text"
+          [ngModel]="searchTerm()"
+          (ngModelChange)="onSearch($event)"
+          placeholder="Equipo o usuario"
+        />
+      </label>
+
+      <label>
+        <span>Sede</span>
+        <select [ngModel]="selectedSede()" (ngModelChange)="onSedeChange($event)">
+          <option value="">Todas</option>
+          <option *ngFor="let sede of sedes()" [value]="sede">{{ sede }}</option>
+        </select>
+      </label>
+
+      <label>
+        <span>Dependencia</span>
+        <select [ngModel]="selectedDependencia()" (ngModelChange)="onDependenciaChange($event)">
+          <option value="">Todas</option>
+          <option *ngFor="let dep of dependencias()" [value]="dep">{{ dep }}</option>
+        </select>
+      </label>
+
+      <label>
+        <span>Subdependencia</span>
+        <select [ngModel]="selectedSubdependencia()" (ngModelChange)="onSubdependenciaChange($event)"
+                [disabled]="!selectedDependencia()">
+          <option value="">Todas</option>
+          <option *ngFor="let sub of subdependencias()" [value]="sub">{{ sub }}</option>
+        </select>
+      </label>
+
+      <label>
+        <span>Tipo</span>
+        <select [ngModel]="selectedTipo()" (ngModelChange)="onTipoChange($event)">
+          <option value="">Todos</option>
+          <option *ngFor="let tipo of tipos()" [value]="tipo">{{ tipo }}</option>
+        </select>
+      </label>
+
+      <label>
+        <span>Fabricante</span>
+        <select [ngModel]="selectedFabricante()" (ngModelChange)="onFabricanteChange($event)">
+          <option value="">Todos</option>
+          <option *ngFor="let fab of fabricantes()" [value]="fab">{{ fab }}</option>
+        </select>
+      </label>
+
+      <button type="button" (click)="clearFilters()">Limpiar filtros</button>
+    </section>
+
+    <div class="desktop-table-shell">
+      <app-generic-table
+        [columns]="columns"
+        [data]="items()"
+        [canEdit]="false"
+        [canView]="true"
+        [initialSearch]="searchTerm()"
+        emptyMessage="Sin equipos activos registrados"
+        (searchChange)="onSearch($event)"
+        (view)="onView($event)"
       />
-    </label>
+    </div>
 
-    <label>
-      <span>Sede</span>
-      <select [ngModel]="selectedSede()" (ngModelChange)="onSedeChange($event)">
-        <option value="">Todas</option>
-        <option *ngFor="let sede of sedes()" [value]="sede">{{ sede }}</option>
-      </select>
-    </label>
+    <section class="mobile-equipment-list" aria-label="Equipos">
+      <article *ngFor="let item of items()" class="equipment-card">
+        <div class="card-head">
+          <div>
+            <strong>{{ item.nombreEquipo }}</strong>
+            <span>{{ item.usuarioLimpio || 'Sin usuario' }}</span>
+          </div>
+          <em>{{ item.tipoEquipo || 'Equipo' }}</em>
+        </div>
 
-    <label>
-      <span>Tipo</span>
-      <select [ngModel]="selectedTipo()" (ngModelChange)="onTipoChange($event)">
-        <option value="">Todos</option>
-        <option *ngFor="let tipo of tipos()" [value]="tipo">{{ tipo }}</option>
-      </select>
-    </label>
+        <dl>
+          <div>
+            <dt>Sede</dt>
+            <dd>{{ item.sedeNombre || '-' }}</dd>
+          </div>
+          <div>
+            <dt>Dependencia</dt>
+            <dd>{{ item.oficinaId || '-' }}</dd>
+          </div>
+          <div>
+            <dt>Subdependencia</dt>
+            <dd>{{ item.unidadId || '-' }}</dd>
+          </div>
+          <div>
+            <dt>Marca / Modelo</dt>
+            <dd>{{ item.fabricanteModelo || '-' }}</dd>
+          </div>
+          <div>
+            <dt>CPU</dt>
+            <dd>{{ item.cpuCorto || '-' }}</dd>
+          </div>
+          <div>
+            <dt>RAM</dt>
+            <dd>{{ item.ramLabel || '-' }}</dd>
+          </div>
+          <div>
+            <dt>Disco</dt>
+            <dd>{{ item.diskLabel || '-' }}</dd>
+          </div>
+          <div>
+            <dt>IP</dt>
+            <dd>{{ item.ipEquipo || '-' }}</dd>
+          </div>
+        </dl>
 
-    <button type="button" (click)="clearFilters()">Limpiar filtros</button>
-  </section>
+        <button type="button" (click)="onView(item)">Ver detalle</button>
+      </article>
 
-  <div class="desktop-table-shell">
-    <app-generic-table
-      [columns]="columns"
-      [data]="items()"
-      [canEdit]="false"
-      [canView]="true"
-      [initialSearch]="searchTerm()"
-      emptyMessage="Sin equipos activos registrados"
-      (searchChange)="onSearch($event)"
-      (view)="onView($event)"
-    />
-  </div>
+      <p class="mobile-empty" *ngIf="items().length === 0">Sin equipos activos registrados</p>
+    </section>
+  </ng-container>
 
-  <section class="mobile-equipment-list" aria-label="Equipos">
-    <article *ngFor="let item of items()" class="equipment-card">
-      <div class="card-head">
-        <div>
-          <strong>{{ item.nombreEquipo }}</strong>
-          <span>{{ item.usuarioLimpio || 'Sin usuario' }}</span>
-        </div>
-        <em>{{ item.tipoEquipo || 'Equipo' }}</em>
-      </div>
+  <!-- SALUD TAB -->
+  <ng-container *ngIf="activeTab() === 'salud'">
+    <section class="kpi-grid">
+      <article *ngFor="let card of saludKpis()" class="kpi-card" [class]="'tone-' + card.tone">
+        <span>{{ card.label }}</span>
+        <strong>{{ card.value }}</strong>
+      </article>
+    </section>
 
-      <dl>
-        <div>
-          <dt>Sede</dt>
-          <dd>{{ item.sedeNombre || '-' }}</dd>
-        </div>
-        <div>
-          <dt>Dependencia</dt>
-          <dd>{{ item.oficinaId || '-' }}</dd>
-        </div>
-        <div>
-          <dt>Marca / Modelo</dt>
-          <dd>{{ item.fabricanteModelo || '-' }}</dd>
-        </div>
-        <div>
-          <dt>CPU</dt>
-          <dd>{{ item.cpuCorto || '-' }}</dd>
-        </div>
-        <div>
-          <dt>RAM</dt>
-          <dd>{{ item.ramLabel || '-' }}</dd>
-        </div>
-        <div>
-          <dt>Disco</dt>
-          <dd>{{ item.diskLabel || '-' }}</dd>
-        </div>
-        <div>
-          <dt>IP</dt>
-          <dd>{{ item.ipEquipo || '-' }}</dd>
-        </div>
-      </dl>
-
-      <button type="button" (click)="onView(item)">Ver detalle</button>
-    </article>
-
-    <p class="mobile-empty" *ngIf="items().length === 0">Sin equipos activos registrados</p>
-  </section>
+    <div class="salud-table-shell" *ngIf="salud().length; else sinAlertas">
+      <table class="salud-table">
+        <thead>
+          <tr>
+            <th>Alerta</th>
+            <th>Equipo</th>
+            <th>Sede</th>
+            <th>Tipo</th>
+            <th>Usuario</th>
+            <th>Sin encendido</th>
+            <th>Sin actualiz.</th>
+            <th>Problemas</th>
+            <th>Estado dep.</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let s of salud()" [class]="'row-' + s.nivelAlerta.toLowerCase()">
+            <td>
+              <span class="nivel-badge" [class]="'nivel-' + s.nivelAlerta.toLowerCase()">
+                {{ s.nivelAlerta }}
+              </span>
+            </td>
+            <td>{{ s.nombreEquipo }}</td>
+            <td>{{ s.sedeNombre || '-' }}</td>
+            <td>{{ s.tipoEquipo || '-' }}</td>
+            <td>{{ s.usuarioContacto || '-' }}</td>
+            <td>{{ mesesLabel(s.sinEncendidoMeses) }}</td>
+            <td>{{ mesesLabel(s.sinActualizacionMeses) }}</td>
+            <td>
+              <span class="tag-warn" *ngIf="s.sinCodigoPatrimonial">Sin patrimonial</span>
+              <span class="tag-warn" *ngIf="s.sinUsuario">Sin usuario</span>
+              <span class="tag-warn" *ngIf="s.sinSede">Sin sede</span>
+            </td>
+            <td>{{ s.estadoDepuracion || '-' }}</td>
+            <td><button type="button" class="view-link" (click)="onViewSalud(s)">Ver</button></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <ng-template #sinAlertas>
+      <p class="salud-ok">Todo el inventario está al día. No hay alertas.</p>
+    </ng-template>
+  </ng-container>
 </div>

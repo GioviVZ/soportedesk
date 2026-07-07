@@ -1,8 +1,11 @@
 <div class="ficha">
+  <div class="ficha-toolbar">
   <div class="tabs">
     <button [class.active]="activeTab === 'instalacion'" (click)="setTab('instalacion')">Instalación</button>
     <button [class.active]="activeTab === 'consumibles'" (click)="setTab('consumibles')">Consumibles</button>
     <button [class.active]="activeTab === 'driver'" (click)="setTab('driver')">Driver</button>
+  </div>
+  <button *ngIf="isAdmin" type="button" class="edit-btn" (click)="editRequested.emit(impresora)">Editar</button>
   </div>
 
   <div class="content" *ngIf="activeTab === 'instalacion'">

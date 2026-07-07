@@ -4,11 +4,18 @@
 }
 
 .tools-header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: var(--color-bg);
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   align-items: start;
   gap: 18px;
-  margin-bottom: 18px;
+  margin-bottom: 0;
+  padding-top: clamp(16px, 2vw, 24px);
+  padding-bottom: 16px;
+  box-shadow: 0 1px 0 var(--color-border), 0 4px 8px -4px rgba(15, 23, 42, .06);
 
   h2 {
     margin: 4px 0 4px;
@@ -165,7 +172,8 @@ button:disabled {
 
 .ping-box label,
 .range-control label,
-.qr-controls label {
+.qr-controls label,
+.deadline-form label {
   display: grid;
   gap: 6px;
   min-width: min(100%, 360px);
@@ -218,6 +226,123 @@ button:disabled {
   &.empty {
     background: var(--color-muted);
   }
+}
+
+.deadline-layout {
+  display: grid;
+  grid-template-columns: minmax(320px, 430px) minmax(0, 1fr);
+  gap: 18px;
+  align-items: start;
+}
+
+.deadline-form {
+  display: grid;
+  gap: 14px;
+  padding: 14px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-muted);
+}
+
+.deadline-fields {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 150px;
+  gap: 12px;
+}
+
+.deadline-result {
+  display: grid;
+  gap: 4px;
+  padding: 14px;
+  border: 1px solid rgba(22, 163, 74, .28);
+  border-radius: var(--radius-sm);
+  background: var(--color-success-light);
+
+  span,
+  small {
+    color: var(--color-text-secondary);
+    font-size: 12px;
+    font-weight: 800;
+  }
+
+  strong {
+    color: var(--color-success);
+    font-size: 28px;
+    line-height: 1.1;
+  }
+
+  &.empty {
+    border-color: var(--color-border);
+    background: var(--color-surface);
+
+    strong {
+      color: var(--color-text-secondary);
+    }
+  }
+}
+
+.deadline-list {
+  display: grid;
+  gap: 10px;
+}
+
+.deadline-empty,
+.deadline-item {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+}
+
+.deadline-empty {
+  display: grid;
+  gap: 4px;
+  padding: 18px;
+  color: var(--color-text-secondary);
+
+  strong {
+    color: var(--color-text);
+  }
+}
+
+.deadline-item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 150px auto;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border-left: 4px solid var(--color-success);
+
+  strong,
+  b {
+    color: var(--color-text);
+  }
+
+  span,
+  small {
+    display: block;
+    margin-top: 3px;
+    color: var(--color-text-secondary);
+    font-size: 12px;
+  }
+
+  &.warn {
+    border-left-color: #d97706;
+    background: #fffbeb;
+  }
+
+  &.bad {
+    border-left-color: var(--color-danger);
+    background: var(--color-danger-light);
+  }
+}
+
+.deadline-count {
+  text-align: right;
+}
+
+.compact {
+  min-height: 32px;
+  padding: 6px 10px;
 }
 
 .metric-grid {
@@ -514,7 +639,8 @@ button:disabled {
 
   .gpu-layout,
   .gpu-controls,
-  .qr-layout {
+  .qr-layout,
+  .deadline-layout {
     grid-template-columns: 1fr;
   }
 
@@ -526,6 +652,10 @@ button:disabled {
   .metric-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+}
+
+@media (max-width: 768px) {
+  .tools-header { padding-top: 14px; }
 }
 
 @media (max-width: 700px) {
@@ -549,13 +679,20 @@ button:disabled {
   .primary-btn,
   .ghost-btn,
   .ping-box label,
-  .qr-controls label {
+  .qr-controls label,
+  .deadline-form label {
     width: 100%;
     justify-content: center;
   }
 
-  .qr-options {
+  .qr-options,
+  .deadline-fields,
+  .deadline-item {
     grid-template-columns: 1fr;
+  }
+
+  .deadline-count {
+    text-align: left;
   }
 
   .tool-tabs,

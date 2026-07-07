@@ -91,7 +91,12 @@
         <span>{{ items.length }} {{ items.length === 1 ? 'cuenta' : 'cuentas' }}</span>
         <strong>{{ hasActiveFilters() ? 'Resultados filtrados' : 'Todas las cuentas' }}</strong>
       </div>
-      <button type="button" *ngIf="hasActiveFilters()" (click)="clearFiltros()">Quitar filtros</button>
+      <div class="results-actions">
+        <button type="button" class="export-btn" (click)="exportExcel()" [disabled]="items.length === 0">
+          Exportar Excel
+        </button>
+        <button type="button" *ngIf="hasActiveFilters()" (click)="clearFiltros()">Quitar filtros</button>
+      </div>
     </div>
 
     <div class="desktop-table">

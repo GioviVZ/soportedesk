@@ -6,7 +6,7 @@
       <span class="module-eyebrow">Equipo GLPI</span>
       <h2>{{ item.nombreEquipo }}</h2>
     </div>
-    <span class="type-badge">{{ item.tipoEquipo }}</span>
+    <span class="type-badge">{{ tipoEfectivo() ?? item.tipoEquipo }}</span>
   </header>
 
   <section class="section-band">
@@ -64,6 +64,92 @@
       <div><span>Cod. patrimonial</span><strong>{{ empty(kb.cdigopatrimonialfield) }}</strong></div>
     </div>
     <ng-template #sinTeclado><p class="empty-state">No registrado</p></ng-template>
+  </section>
+
+  <section class="section-band mantenimiento-section">
+    <h3>Mantenimiento / Enriquecimiento</h3>
+    <div class="info-grid">
+      <div>
+        <span>Código patrimonial</span>
+        <input *ngIf="auth.canWrite('equipos'); else patLabel" type="text"
+          [value]="enrichment().codigoPatrimonial ?? ''"
+          (change)="updateField('codigoPatrimonial', $any($event.target).value)"
+          placeholder="Ej. PAT-2024-001" />
+        <ng-template #patLabel><strong>{{ empty(enrichment().codigoPatrimonial) }}</strong></ng-template>
+      </div>
+      <div>
+        <span>Tipo (override)</span>
+        <input *ngIf="auth.canWrite('equipos'); else tipoLabel" type="text"
+          [value]="enrichment().tipoOverride ?? ''"
+          (change)="updateField('tipoOverride', $any($event.target).value)"
+          placeholder="Ej. Workstation" />
+        <ng-template #tipoLabel><strong>{{ empty(enrichment().tipoOverride) }}</strong></ng-template>
+      </div>
+      <div>
+        <span>Fabricante (override)</span>
+        <input *ngIf="auth.canWrite('equipos'); else fabLabel" type="text"
+          [value]="enrichment().fabricanteOverride ?? ''"
+          (change)="updateField('fabricanteOverride', $any($event.target).value)"
+          placeholder="Ej. Dell" />
+        <ng-template #fabLabel><strong>{{ empty(enrichment().fabricanteOverride) }}</strong></ng-template>
+      </div>
+      <div>
+        <span>Modelo (override)</span>
+        <input *ngIf="auth.canWrite('equipos'); else modLabel" type="text"
+          [value]="enrichment().modeloOverride ?? ''"
+          (change)="updateField('modeloOverride', $any($event.target).value)"
+          placeholder="Ej. OptiPlex 7090" />
+        <ng-template #modLabel><strong>{{ empty(enrichment().modeloOverride) }}</strong></ng-template>
+      </div>
+      <div>
+        <span>Estado depuración</span>
+        <select *ngIf="auth.canWrite('equipos'); else estadoLabel"
+          [value]="enrichment().estadoDepuracion ?? ''"
+          (change)="updateField('estadoDepuracion', $any($event.target).value)">
+          <option value="">-- Sin estado --</option>
+          <option value="PENDIENTE">Pendiente</option>
+          <option value="EN_REVISION">En revisión</option>
+          <option value="DEPURADO">Depurado</option>
+          <option value="ACTIVO">Activo</option>
+        </select>
+        <ng-template #estadoLabel><strong>{{ empty(enrichment().estadoDepuracion) }}</strong></ng-template>
+      </div>
+      <div class="obs-cell">
+        <span>Observaciones</span>
+        <textarea *ngIf="auth.canWrite('equipos'); else obsLabel" rows="3"
+          [value]="enrichment().observaciones ?? ''"
+          (change)="updateField('observaciones', $any($event.target).value)"
+          placeholder="Notas internas..."></textarea>
+        <ng-template #obsLabel><strong>{{ empty(enrichment().observaciones) }}</strong></ng-template>
+      </div>
+    </div>
+    <div class="enrichment-meta" *ngIf="enrichment().revisadoPor">
+      Última revisión por <strong>{{ enrichment().revisadoPor }}</strong> el {{ formatDate(enrichment().fechaRevision) }}
+    </div>
+    <div class="enrichment-actions" *ngIf="auth.canWrite('equipos')">
+      <button type="button" class="save-btn" (click)="saveEnrichment()" [disabled]="savingEnrichment()">
+        {{ savingEnrichment() ? 'Guardando...' : 'Guardar cambios' }}
+      </button>
+      <span class="save-ok" *ngIf="saveSuccess()">Guardado correctamente</span>
+    </div>
+
+    <div class="historial-section" *ngIf="historial().length">
+      <h4>Historial de cambios</h4>
+      <div class="simple-table">
+        <table>
+          <thead><tr><th>Campo</th><th>Anterior</th><th>Nuevo</th><th>Por</th><th>Fecha</th></tr></thead>
+          <tbody>
+            <tr *ngFor="let h of historial()">
+              <td>{{ h.campo }}</td>
+              <td>{{ empty(h.valorAnterior) }}</td>
+              <td>{{ empty(h.valorNuevo) }}</td>
+              <td>{{ h.modificadoPor }}</td>
+              <td>{{ formatDate(h.fechaModificacion) }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
   </section>
 
   <section class="section-band">

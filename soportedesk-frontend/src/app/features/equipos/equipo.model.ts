@@ -51,10 +51,46 @@ export interface EquipoTeclado {
   cdigopatrimonialfield: string;
 }
 
+export interface EquipoEnrichmentDto {
+  tipoOverride: string | null;
+  fabricanteOverride: string | null;
+  modeloOverride: string | null;
+  codigoPatrimonial: string | null;
+  estadoDepuracion: string | null;
+  observaciones: string | null;
+  revisadoPor: string | null;
+  fechaRevision: string | null;
+}
+
+export interface HistorialItem {
+  campo: string;
+  valorAnterior: string | null;
+  valorNuevo: string | null;
+  modificadoPor: string;
+  fechaModificacion: string;
+}
+
+export interface EquipoSaludItem {
+  computerID: number;
+  nombreEquipo: string;
+  sedeNombre: string | null;
+  tipoEquipo: string | null;
+  usuarioContacto: string | null;
+  sinEncendidoMeses: number;
+  sinActualizacionMeses: number;
+  nivelAlerta: 'ROJO' | 'AMARILLO' | 'OK';
+  sinCodigoPatrimonial: boolean;
+  sinUsuario: boolean;
+  sinSede: boolean;
+  estadoDepuracion: string | null;
+}
+
 export interface EquipoDetalleResponse {
   equipo: EquipoDetalle;
   software: EquipoSoftware[];
   teclado: EquipoTeclado | null;
+  tipoEfectivo: string | null;
+  enrichment: EquipoEnrichmentDto | null;
 }
 
 export interface EquipoKpis {

@@ -127,6 +127,85 @@
     </div>
   </section>
 
+  <section class="tool-panel" [class.active]="activeTab === 'vencimientos'">
+    <div class="panel-heading">
+      <div>
+        <h3>Conteo de dias para informes</h3>
+        <p>Calcula la fecha de vencimiento desde la notificacion y guarda el seguimiento.</p>
+      </div>
+      <span class="status-pill" [class.ok]="deadlineSaved.length">
+        {{ deadlineSaved.length ? deadlineSaved.length + ' guardados' : 'Listo' }}
+      </span>
+    </div>
+
+    <div class="deadline-layout">
+      <div class="deadline-form">
+        <label>
+          Nombre o referencia
+          <input type="text" [(ngModel)]="deadlineTitle" placeholder="Informe de actividades - Juan Perez" />
+        </label>
+
+        <div class="deadline-fields">
+          <label>
+            Fecha de notificacion
+            <input type="date" [(ngModel)]="deadlineStartDate" (ngModelChange)="calculateDeadline()" />
+          </label>
+
+          <label>
+            Dias de plazo
+            <input
+              type="number"
+              min="0"
+              step="1"
+              [(ngModel)]="deadlineDays"
+              (ngModelChange)="calculateDeadline()"
+              (keyup.enter)="saveDeadline()"
+            />
+          </label>
+        </div>
+
+        <div class="deadline-result" [class.empty]="!deadlineResultDate">
+          <span>Fecha resultado</span>
+          <strong>{{ deadlineResultDate ? formatDate(deadlineResultDate) : '-' }}</strong>
+          <small *ngIf="deadlineResultDate">{{ deadlineStatus({ id: '', titulo: '', fechaNotificacion: deadlineStartDate, dias: deadlineDays, fechaVencimiento: deadlineResultDate, creadoEn: '' }) }}</small>
+        </div>
+
+        <div class="button-row">
+          <button type="button" class="ghost-btn" (click)="clearDeadlineForm()">Limpiar</button>
+          <button type="button" class="primary-btn" (click)="saveDeadline()" [disabled]="!deadlineResultDate">
+            Guardar fecha
+          </button>
+        </div>
+
+        <p class="error-text" *ngIf="deadlineError">{{ deadlineError }}</p>
+      </div>
+
+      <div class="deadline-list">
+        <div class="deadline-empty" *ngIf="!deadlineSaved.length">
+          <strong>Sin fechas guardadas</strong>
+          <span>Cuando guardes un vencimiento aparecera aqui con la cuenta regresiva.</span>
+        </div>
+
+        <article
+          class="deadline-item"
+          *ngFor="let entry of sortedDeadlines"
+          [class.warn]="deadlineStatusClass(entry) === 'warn'"
+          [class.bad]="deadlineStatusClass(entry) === 'bad'"
+        >
+          <div>
+            <strong>{{ entry.titulo }}</strong>
+            <span>Notificado: {{ formatDate(entry.fechaNotificacion) }} - Plazo: {{ entry.dias }} dias</span>
+          </div>
+          <div class="deadline-count">
+            <b>{{ formatDate(entry.fechaVencimiento) }}</b>
+            <small>{{ deadlineStatus(entry) }}</small>
+          </div>
+          <button type="button" class="ghost-btn compact" (click)="deleteDeadline(entry.id)">Quitar</button>
+        </article>
+      </div>
+    </div>
+  </section>
+
   <section class="tool-panel gpu-panel" [class.active]="activeTab === 'gpu'">
     <div class="panel-heading">
       <div>

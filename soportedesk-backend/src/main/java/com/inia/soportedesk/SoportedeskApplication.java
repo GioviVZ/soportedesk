@@ -15,7 +15,6 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
         "com.inia.soportedesk.correos",
         "com.inia.soportedesk.impresoras",
         "com.inia.soportedesk.auditoria",
-        "com.inia.soportedesk.inventario",
         "com.inia.soportedesk.wifi",
         "com.inia.soportedesk.licencias",
         "com.inia.soportedesk.gestiontiinia"
@@ -29,7 +28,6 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
         "com.inia.soportedesk.correos",
         "com.inia.soportedesk.impresoras",
         "com.inia.soportedesk.auditoria",
-        "com.inia.soportedesk.inventario",
         "com.inia.soportedesk.wifi",
         "com.inia.soportedesk.licencias",
         "com.inia.soportedesk.gestiontiinia"

@@ -1,12 +1,13 @@
 .impresora-form {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 12px;
+  min-width: 0;
 }
 
 .two-col {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
   gap: 12px;
 }
 
@@ -50,12 +51,19 @@
 }
 
 .actions {
+  position: sticky;
+  bottom: -22px;
+  z-index: 2;
   display: flex;
   justify-content: flex-end;
   gap: 8px;
-  margin-top: 2px;
+  margin: 2px clamp(-22px, -3vw, -16px) -22px;
+  padding: 12px clamp(16px, 3vw, 22px);
+  border-top: 1px solid var(--color-border);
+  background: var(--color-surface);
 
   button {
+    min-height: 38px;
     border: none;
     border-radius: var(--radius-sm);
     padding: 8px 16px;
@@ -87,13 +95,8 @@
   }
 
   .actions {
-    position: sticky;
-    bottom: 0;
-    z-index: 2;
     display: grid;
     grid-template-columns: 1fr 1fr;
-    padding-top: 10px;
-    background: var(--color-surface);
 
     button {
       min-height: 40px;

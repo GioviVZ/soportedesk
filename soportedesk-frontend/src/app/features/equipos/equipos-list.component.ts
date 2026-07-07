@@ -3,8 +3,10 @@ import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { GenericTableComponent, TableColumn } from '../../shared/generic-table/generic-table.component';
-import { EquipoKpis, EquipoResumen } from './equipo.model';
+import { EquipoKpis, EquipoResumen, EquipoSaludItem } from './equipo.model';
 import { EquipoService } from './equipo.service';
+
+type Tab = 'inventario' | 'salud';
 
 interface EquipoTableRow extends EquipoResumen {
   usuarioLimpio: string;
@@ -25,13 +27,37 @@ export class EquiposListComponent implements OnInit {
   private service = inject(EquipoService);
   private router = inject(Router);
 
+  activeTab = signal<Tab>('inventario');
   items = signal<EquipoTableRow[]>([]);
   kpis = signal<EquipoKpis | null>(null);
+  salud = signal<EquipoSaludItem[]>([]);
   sedes = signal<string[]>([]);
   tipos = signal<string[]>([]);
+  dependencias = signal<string[]>([]);
+  subdependencias = signal<string[]>([]);
+  fabricantes = signal<string[]>([]);
   selectedSede = signal('');
   selectedTipo = signal('');
+  selectedDependencia = signal('');
+  selectedSubdependencia = signal('');
+  selectedFabricante = signal('');
   searchTerm = signal('');
+
+  saludKpis = computed(() => {
+    const s = this.salud();
+    const rojos = s.filter((x) => x.nivelAlerta === 'ROJO').length;
+    const amarillos = s.filter((x) => x.nivelAlerta === 'AMARILLO').length;
+    const sinPatrimonial = s.filter((x) => x.sinCodigoPatrimonial).length;
+    const sinUsuario = s.filter((x) => x.sinUsuario).length;
+    const sinSede = s.filter((x) => x.sinSede).length;
+    return [
+      { label: 'Críticos (Rojo)', value: rojos, tone: 'red' },
+      { label: 'Advertencia (Amarillo)', value: amarillos, tone: 'yellow' },
+      { label: 'Sin cód. patrimonial', value: sinPatrimonial, tone: 'orange' },
+      { label: 'Sin usuario', value: sinUsuario, tone: 'gray' },
+      { label: 'Sin sede', value: sinSede, tone: 'gray' },
+    ];
+  });
 
   kpiCards = computed(() => {
     const k = this.kpis();
@@ -62,7 +88,14 @@ export class EquiposListComponent implements OnInit {
     this.loadKpis();
     this.loadSedes();
     this.loadTipos();
+    this.loadDependencias();
+    this.loadFabricantes();
     this.load();
+    this.loadSalud();
+  }
+
+  setTab(tab: Tab): void {
+    this.activeTab.set(tab);
   }
 
   load(): void {
@@ -71,8 +104,15 @@ export class EquiposListComponent implements OnInit {
         search: this.searchTerm(),
         sede: this.selectedSede(),
         tipo: this.selectedTipo(),
+        dependencia: this.selectedDependencia(),
+        subdependencia: this.selectedSubdependencia(),
+        fabricante: this.selectedFabricante(),
       })
       .subscribe((data) => this.items.set(data.map((item) => this.toTableRow(item))));
+  }
+
+  loadSalud(): void {
+    this.service.getSalud().subscribe((data) => this.salud.set(data));
   }
 
   onSearch(term: string): void {
@@ -82,6 +122,10 @@ export class EquiposListComponent implements OnInit {
 
   onSedeChange(value: string): void {
     this.selectedSede.set(value);
+    this.selectedDependencia.set('');
+    this.selectedSubdependencia.set('');
+    this.subdependencias.set([]);
+    this.loadDependencias();
     this.load();
   }
 
@@ -90,15 +134,47 @@ export class EquiposListComponent implements OnInit {
     this.load();
   }
 
+  onDependenciaChange(value: string): void {
+    this.selectedDependencia.set(value);
+    this.selectedSubdependencia.set('');
+    this.loadSubdependencias();
+    this.load();
+  }
+
+  onSubdependenciaChange(value: string): void {
+    this.selectedSubdependencia.set(value);
+    this.load();
+  }
+
+  onFabricanteChange(value: string): void {
+    this.selectedFabricante.set(value);
+    this.load();
+  }
+
   clearFilters(): void {
     this.searchTerm.set('');
     this.selectedSede.set('');
     this.selectedTipo.set('');
+    this.selectedDependencia.set('');
+    this.selectedSubdependencia.set('');
+    this.selectedFabricante.set('');
+    this.loadDependencias();
+    this.subdependencias.set([]);
     this.load();
   }
 
   onView(item: EquipoTableRow): void {
     this.router.navigate(['/equipos', item.computerID]);
+  }
+
+  onViewSalud(item: EquipoSaludItem): void {
+    this.router.navigate(['/equipos', item.computerID]);
+  }
+
+  mesesLabel(val: number): string {
+    if (val < 0) return 'Sin dato';
+    if (val === 0) return 'Este mes';
+    return `${val} mes${val === 1 ? '' : 'es'}`;
   }
 
   private loadKpis(): void {
@@ -111,6 +187,22 @@ export class EquiposListComponent implements OnInit {
 
   private loadTipos(): void {
     this.service.getTipos().subscribe((data) => this.tipos.set(data));
+  }
+
+  private loadDependencias(): void {
+    this.service.getDependencias(this.selectedSede() || undefined)
+      .subscribe((data) => this.dependencias.set(data));
+  }
+
+  private loadSubdependencias(): void {
+    this.service.getSubdependencias(
+      this.selectedSede() || undefined,
+      this.selectedDependencia() || undefined
+    ).subscribe((data) => this.subdependencias.set(data));
+  }
+
+  private loadFabricantes(): void {
+    this.service.getFabricantes().subscribe((data) => this.fabricantes.set(data));
   }
 
   private toTableRow(item: EquipoResumen): EquipoTableRow {

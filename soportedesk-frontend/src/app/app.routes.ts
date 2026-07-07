@@ -100,14 +100,6 @@ export const routes: Routes = [
           ),
       },
       {
-        path: 'inventario-equipos',
-        canActivate: [moduloGuard('inventario-equipos')],
-        loadComponent: () =>
-          import('./features/inventario-equipos/inventario-equipos.component').then(
-            (m) => m.InventarioEquiposComponent,
-          ),
-      },
-      {
         path: 'catalogos',
         canActivate: [moduloGuard('catalogos')],
         loadComponent: () =>

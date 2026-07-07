@@ -20,8 +20,11 @@ public class EquipoController {
     public List<VwInvComputerFull> findAll(
             @RequestParam(required = false) String search,
             @RequestParam(required = false) String sede,
-            @RequestParam(required = false) String tipo) {
-        return service.findAll(search, sede, tipo);
+            @RequestParam(required = false) String tipo,
+            @RequestParam(required = false) String dependencia,
+            @RequestParam(required = false) String subdependencia,
+            @RequestParam(required = false) String fabricante) {
+        return service.findAll(search, sede, tipo, dependencia, subdependencia, fabricante);
     }
 
     @GetMapping("/kpis")
@@ -42,10 +45,36 @@ public class EquipoController {
         return service.findTipos();
     }
 
+    @GetMapping("/dependencias")
+    @PreAuthorize("hasRole('ADMIN') || hasAuthority('READ_equipos')")
+    public List<String> findDependencias(@RequestParam(required = false) String sede) {
+        return service.findDependencias(sede);
+    }
+
+    @GetMapping("/subdependencias")
+    @PreAuthorize("hasRole('ADMIN') || hasAuthority('READ_equipos')")
+    public List<String> findSubdependencias(
+            @RequestParam(required = false) String sede,
+            @RequestParam(required = false) String dependencia) {
+        return service.findSubdependencias(sede, dependencia);
+    }
+
+    @GetMapping("/fabricantes")
+    @PreAuthorize("hasRole('ADMIN') || hasAuthority('READ_equipos')")
+    public List<String> findFabricantes() {
+        return service.findFabricantes();
+    }
+
     @GetMapping("/con-red")
     @PreAuthorize("hasRole('ADMIN') || hasAuthority('READ_equipos')")
     public List<Equipo> findConRed() {
         return localEquipoRepository.findByTipoIn(List.of("Laptop", "Computadora"));
+    }
+
+    @GetMapping("/salud")
+    @PreAuthorize("hasRole('ADMIN') || hasAuthority('READ_equipos')")
+    public List<EquipoSaludDto> getSalud() {
+        return service.getSalud();
     }
 
     @GetMapping("/{id}")

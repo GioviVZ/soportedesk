@@ -11,7 +11,7 @@
       <div class="field">
         <label>Marca</label>
         <select [value]="marcaId" (change)="onMarcaChange($any($event.target).value)">
-          <option [ngValue]="null">Seleccione...</option>
+          <option value="">Seleccione...</option>
           <option *ngFor="let m of marcas" [value]="m.id">{{ m.nombre }}</option>
         </select>
       </div>

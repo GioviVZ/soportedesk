@@ -139,6 +139,73 @@ th {
   color: #64748b;
 }
 
+.mantenimiento-section input,
+.mantenimiento-section select,
+.mantenimiento-section textarea {
+  width: 100%;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  padding: 7px 10px;
+  font-size: 0.9rem;
+  background: #f8fafc;
+  box-sizing: border-box;
+  color: #0f172a;
+}
+
+.mantenimiento-section textarea {
+  resize: vertical;
+}
+
+.obs-cell {
+  grid-column: 1 / -1;
+}
+
+.enrichment-meta {
+  margin-top: 10px;
+  font-size: 0.82rem;
+  color: #64748b;
+}
+
+.enrichment-actions {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-top: 14px;
+}
+
+.save-btn {
+  background: var(--color-accent, #4f46e5);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 9px 20px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.save-btn:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.save-ok {
+  color: #166534;
+  font-weight: 600;
+  font-size: 0.87rem;
+}
+
+.historial-section {
+  margin-top: 20px;
+  border-top: 1px dashed #e2e8f0;
+  padding-top: 14px;
+}
+
+.historial-section h4 {
+  margin: 0 0 10px;
+  font-size: 0.9rem;
+  color: #475569;
+}
+
 @media (max-width: 640px) {
   .equipo-detail-page {
     gap: 14px;

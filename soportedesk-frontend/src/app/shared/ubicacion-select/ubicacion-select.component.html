@@ -2,8 +2,8 @@
   <div class="field">
     <label>Sede</label>
     <select [ngModel]="sedeId" (change)="onSedeChange($any($event.target).value)" name="sede">
-      <option [ngValue]="null">Seleccione...</option>
-      <option *ngFor="let sede of sedes" [ngValue]="sede.id">{{ sede.nombre }}</option>
+      <option value="">Seleccione...</option>
+      <option *ngFor="let sede of sedes" [value]="sede.id">{{ sede.nombre }}</option>
     </select>
   </div>
 
@@ -15,8 +15,8 @@
       name="dependencia"
       [disabled]="!sedeId"
     >
-      <option [ngValue]="null">Seleccione...</option>
-      <option *ngFor="let dependencia of dependencias" [ngValue]="dependencia.id">
+      <option value="">Seleccione...</option>
+      <option *ngFor="let dependencia of dependencias" [value]="dependencia.id">
         {{ dependencia.nombre }}
       </option>
     </select>
@@ -30,8 +30,8 @@
       name="subdependencia"
       [disabled]="!dependenciaId"
     >
-      <option [ngValue]="null">Seleccione...</option>
-      <option *ngFor="let subdependencia of subdependencias" [ngValue]="subdependencia.id">
+      <option value="">Seleccione...</option>
+      <option *ngFor="let subdependencia of subdependencias" [value]="subdependencia.id">
         {{ subdependencia.nombre }}
       </option>
     </select>
@@ -40,8 +40,8 @@
   <div class="field" *ngIf="showTipoContrato">
     <label>Tipo de Contrato</label>
     <select [ngModel]="tipoContratoId" (change)="onTipoContratoChange($any($event.target).value)" name="tipoContrato">
-      <option [ngValue]="null">Seleccione...</option>
-      <option *ngFor="let tipo of tiposContrato" [ngValue]="tipo.id">{{ tipo.nombre }}</option>
+      <option value="">Seleccione...</option>
+      <option *ngFor="let tipo of tiposContrato" [value]="tipo.id">{{ tipo.nombre }}</option>
     </select>
   </div>
 </div>
