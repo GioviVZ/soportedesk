@@ -15,6 +15,7 @@ describe('DashboardComponent', () => {
     correos: 12,
     usuariosRed: 20,
     vpn: 3,
+    vpnPendientes: 1,
     wifi: 4,
     impresoras: 7,
     equipos: 15,

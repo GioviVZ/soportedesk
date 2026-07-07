@@ -2,6 +2,7 @@ import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
+import { AuthService } from '../../core/auth/auth.service';
 import { DashboardService } from './dashboard.service';
 import { DashboardCounts } from './dashboard-counts.model';
 import { UsuariosRedPorUbicacionChartComponent } from './usuarios-red-por-ubicacion-chart.component';
@@ -46,6 +47,7 @@ const ICONS: Record<string, string> = {
 })
 export class DashboardComponent implements OnInit {
   private dashboardService = inject(DashboardService);
+  private authService = inject(AuthService);
   private sanitizer = inject(DomSanitizer);
 
   cards: DashboardCard[] = [];
@@ -84,7 +86,7 @@ export class DashboardComponent implements OnInit {
     const accesos = counts.licencias + counts.correos + counts.usuariosRed + counts.vpn + counts.wifi;
     const infraestructura = counts.impresoras + counts.equipos;
 
-    return [
+    const metrics: SummaryMetric[] = [
       {
         label: 'Registros totales',
         value: this.totalRegistros,
@@ -112,5 +114,17 @@ export class DashboardComponent implements OnInit {
         state: counts.usuariosRedInactivos > 0 ? 'warning' : 'success',
       },
     ];
+
+    if (this.authService.isAdmin() || this.authService.canWrite('aprobar-vpn')) {
+      metrics.push({
+        label: 'Solicitudes VPN pendientes',
+        value: counts.vpnPendientes,
+        detail: 'Esperando verificación y aprobación',
+        path: '/vpn',
+        state: counts.vpnPendientes > 0 ? 'warning' : 'success',
+      });
+    }
+
+    return metrics;
   }
 }
