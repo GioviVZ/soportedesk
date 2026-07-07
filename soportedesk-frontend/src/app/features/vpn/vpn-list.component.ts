@@ -43,8 +43,8 @@ export class VpnListComponent implements OnInit {
   kpis: VpnKpis | null = null;
   solicitudFiltro: EstadoSolicitud | null = null;
   columns: TableColumn[] = [
-    { key: 'usuarioRed.nombre', label: 'Nombre' },
-    { key: 'usuarioRed.usuario', label: 'Usuario red' },
+    { key: 'titularNombreCompleto', label: 'Nombre' },
+    { key: 'titularOrigenLabel', label: 'Origen' },
     { key: 'estadoSolicitud', label: 'Estado solicitud' },
     { key: 'ipAsignada', label: 'IP VPN' },
     { key: 'estado', label: 'Estado' },

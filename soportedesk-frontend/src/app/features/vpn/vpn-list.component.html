@@ -48,8 +48,15 @@
 <!-- Modal: detalle -->
 <app-modal title="Detalle VPN" [open]="viewing !== null" (closed)="closeView()">
   <ng-container *ngIf="viewing">
-    <app-field label="Nombre">{{ viewing.usuarioRed?.nombre }}</app-field>
-    <app-field label="Usuario red">{{ viewing.usuarioRed?.usuario }}</app-field>
+    <app-field label="Nombre">{{ viewing.titularNombreCompleto }}</app-field>
+    <app-field label="Origen">{{ viewing.titularOrigenLabel }}</app-field>
+    <app-field label="Cargo">{{ viewing.titularCargo }}</app-field>
+    <app-field label="Correo" *ngIf="viewing.titularTipo !== 'AD'">{{ viewing.titularCorreo }}</app-field>
+    <app-field label="Sede" *ngIf="viewing.titularTipo === 'INTERNO_MANUAL'">{{ viewing.titularSede?.nombre }}</app-field>
+    <app-field label="Dependencia" *ngIf="viewing.titularTipo === 'INTERNO_MANUAL'">{{ viewing.titularDependencia?.nombre }}</app-field>
+    <app-field label="Tipo de contrato" *ngIf="viewing.titularTipo === 'INTERNO_MANUAL'">{{ viewing.titularTipoContrato?.nombre }}</app-field>
+    <app-field label="Empresa" *ngIf="viewing.titularTipo === 'EXTERNO'">{{ viewing.titularEmpresa }}</app-field>
+    <app-field label="Motivo" *ngIf="viewing.titularTipo === 'EXTERNO'">{{ viewing.titularMotivo }}</app-field>
 
     <hr style="margin: 12px 0; border-color: var(--color-border)" />
 
