@@ -1,0 +1,11 @@
+<form [formGroup]="form" (ngSubmit)="submit()" *ngIf="vpn">
+  <div class="field">
+    <label>Comentario *</label>
+    <textarea formControlName="comentarioResponsable" rows="4" placeholder="Explica el motivo para el asistente"></textarea>
+  </div>
+
+  <div class="actions">
+    <button type="button" class="secondary" (click)="cancelled.emit()">Cancelar</button>
+    <button type="submit" [disabled]="form.invalid">{{ titulo }}</button>
+  </div>
+</form>
