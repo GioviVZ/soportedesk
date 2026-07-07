@@ -21,10 +21,10 @@ encuentra resultados.
   busca primero en AD (`GET /api/usuarios-red?search=`, endpoint ya existente). Si hay resultados,
   selecciona uno (comportamiento actual sin cambios). Si no hay resultados, aparece un prompt con
   dos botones: **"Personal de INIA"** y **"Tercero externo"**.
-- **Personal de INIA (manual)**: pide nombre, apellidos, correo, y Sede/Dependencia — reutilizando
-  el componente compartido `UbicacionSelectComponent`
+- **Personal de INIA (manual)**: pide nombre, apellidos, correo, y Sede/Dependencia/Tipo de
+  contrato — reutilizando el componente compartido `UbicacionSelectComponent`
   (`soportedesk-frontend/src/app/shared/ubicacion-select/ubicacion-select.component.ts`) con
-  `[showTipoContrato]="false"`. **Sin** campo de motivo.
+  `[showTipoContrato]="true"`. **Sin** campo de motivo.
 - **Tercero externo**: pide nombre, apellidos, correo, empresa, motivo. **Sin** Sede/Dependencia.
 - **Sede/Dependencia** se capturan como FK reales a los catálogos existentes (`Sede`/`Dependencia`,
   paquete `com.inia.soportedesk.catalogo`), no como texto libre — consistente con cómo ya se
@@ -46,6 +46,15 @@ encuentra resultados.
   catálogo/tabla nueva ni un enum Java) — mismo tratamiento liviano que ya usa `tipoEquipo` en este
   mismo formulario: la lista cerrada vive en el `<select>` del frontend, el backend solo exige que
   no venga vacío.
+- **Campo "tipo de contrato"**: a diferencia de "cargo", **no** es un valor nuevo — el catálogo
+  `TipoContrato` (`com.inia.soportedesk.catalogo.TipoContrato`/`TipoContratoRepository`, tabla
+  `tipos_contrato`) ya existe y ya tiene exactamente los 5 valores pedidos (`CAP`, `CAS`, `OS`,
+  `Practicante`, `Sin Contrato`) — confirmado vía `GET /api/catalogos/tipos-contrato`. Aplica
+  **solo** al titular `INTERNO_MANUAL`: los usuarios AD ya traen su `tipoContrato` en el registro
+  `UsuarioRed` (no se duplica), y los terceros externos no tienen contrato INIA (usan
+  `titularEmpresa`/`titularMotivo` en su lugar). Se captura como FK real a `TipoContrato`, igual
+  patrón que `titularSede`/`titularDependencia`, reutilizando `UbicacionSelectComponent` con
+  `[showTipoContrato]="true"` (el componente ya soporta este input/output, no se modifica).
 
 ## Modelo de datos
 
@@ -59,6 +68,7 @@ Nuevas columnas en `vpn` (además de las ya existentes del rediseño de solicitu
 | `titular_correo` | `NVARCHAR(150) NULL` | ídem |
 | `titular_sede_id` | `BIGINT NULL` | FK a `sedes(id)` — solo `INTERNO_MANUAL` |
 | `titular_dependencia_id` | `BIGINT NULL` | FK a `dependencias(id)` — solo `INTERNO_MANUAL` |
+| `titular_tipo_contrato_id` | `BIGINT NULL` | FK a `tipos_contrato(id)` — solo `INTERNO_MANUAL` |
 | `titular_empresa` | `NVARCHAR(150) NULL` | Solo `EXTERNO` |
 | `titular_motivo` | `NVARCHAR(500) NULL` | Solo `EXTERNO` |
 | `titular_cargo` | `NVARCHAR(30) NOT NULL DEFAULT 'Profesional'` | Uno de los 6 valores fijos, para los 3 tipos de titular |
@@ -71,10 +81,10 @@ titular) — `usuario_red_id` tiene el valor real, sin cambios respecto al compo
 
 ### `Vpn.java`
 
-Se agregan los 9 campos de la tabla anterior (`titularTipo: String`, `titularNombre: String`,
+Se agregan los 10 campos de la tabla anterior (`titularTipo: String`, `titularNombre: String`,
 `titularApellidos: String`, `titularCorreo: String`, `titularSede: Sede` `@ManyToOne`,
-`titularDependencia: Dependencia` `@ManyToOne`, `titularEmpresa: String`, `titularMotivo: String`,
-`titularCargo: String`).
+`titularDependencia: Dependencia` `@ManyToOne`, `titularTipoContrato: TipoContrato` `@ManyToOne`,
+`titularEmpresa: String`, `titularMotivo: String`, `titularCargo: String`).
 
 Se agregan dos getters `@Transient` (Jackson los serializa como campos planos adicionales en el
 JSON de respuesta, igual que cualquier otro getter — no se introduce una capa de DTO nueva):
@@ -111,6 +121,7 @@ private String titularApellidos;
 private String titularCorreo;
 private Long titularSedeId;       // solo INTERNO_MANUAL
 private Long titularDependenciaId; // solo INTERNO_MANUAL
+private Long titularTipoContratoId; // solo INTERNO_MANUAL
 private String titularEmpresa;    // solo EXTERNO
 private String titularMotivo;     // solo EXTERNO
 
@@ -144,6 +155,7 @@ if (request.getUsuarioRedId() != null) {
     vpn.setTitularCorreo(null);
     vpn.setTitularSede(null);
     vpn.setTitularDependencia(null);
+    vpn.setTitularTipoContrato(null);
     vpn.setTitularEmpresa(null);
     vpn.setTitularMotivo(null);
 } else {
@@ -160,13 +172,16 @@ if (request.getUsuarioRedId() != null) {
     vpn.setTitularApellidos(request.getTitularApellidos());
     vpn.setTitularCorreo(request.getTitularCorreo());
     if ("INTERNO_MANUAL".equals(tipo)) {
-        if (request.getTitularSedeId() == null || request.getTitularDependenciaId() == null) {
-            throw new IllegalArgumentException("Sede y dependencia son obligatorias para personal INIA sin cuenta AD");
+        if (request.getTitularSedeId() == null || request.getTitularDependenciaId() == null
+                || request.getTitularTipoContratoId() == null) {
+            throw new IllegalArgumentException("Sede, dependencia y tipo de contrato son obligatorios para personal INIA sin cuenta AD");
         }
         vpn.setTitularSede(sedeRepository.findById(request.getTitularSedeId())
                 .orElseThrow(() -> new ResourceNotFoundException("Sede no encontrada: " + request.getTitularSedeId())));
         vpn.setTitularDependencia(dependenciaRepository.findById(request.getTitularDependenciaId())
                 .orElseThrow(() -> new ResourceNotFoundException("Dependencia no encontrada: " + request.getTitularDependenciaId())));
+        vpn.setTitularTipoContrato(tipoContratoRepository.findById(request.getTitularTipoContratoId())
+                .orElseThrow(() -> new ResourceNotFoundException("Tipo de contrato no encontrado: " + request.getTitularTipoContratoId())));
         vpn.setTitularEmpresa(null);
         vpn.setTitularMotivo(null);
     } else {
@@ -175,15 +190,16 @@ if (request.getUsuarioRedId() != null) {
         }
         vpn.setTitularSede(null);
         vpn.setTitularDependencia(null);
+        vpn.setTitularTipoContrato(null);
         vpn.setTitularEmpresa(request.getTitularEmpresa());
         vpn.setTitularMotivo(request.getTitularMotivo());
     }
 }
 ```
 
-(`isBlank` = helper privado `s == null || s.isBlank()`.) `VpnService` gana dos nuevas dependencias
-inyectadas: `SedeRepository`, `DependenciaRepository` (ambos ya existen en
-`com.inia.soportedesk.catalogo`, mismo datasource `ssti` — no son repositorios nuevos).
+(`isBlank` = helper privado `s == null || s.isBlank()`.) `VpnService` gana tres nuevas dependencias
+inyectadas: `SedeRepository`, `DependenciaRepository`, `TipoContratoRepository` (los tres ya existen
+en `com.inia.soportedesk.catalogo`, mismo datasource `ssti` — no son repositorios nuevos).
 
 ## Frontend
 
@@ -192,7 +208,8 @@ inyectadas: `SedeRepository`, `DependenciaRepository` (ambos ya existen en
 `Vpn` agrega: `titularTipo: 'AD' | 'INTERNO_MANUAL' | 'EXTERNO'`, `titularNombre: string | null`,
 `titularApellidos: string | null`, `titularCorreo: string | null`,
 `titularSede: { id: number; nombre: string } | null`,
-`titularDependencia: { id: number; nombre: string } | null`, `titularEmpresa: string | null`,
+`titularDependencia: { id: number; nombre: string } | null`,
+`titularTipoContrato: { id: number; nombre: string } | null`, `titularEmpresa: string | null`,
 `titularMotivo: string | null`, `titularCargo: string`, `titularNombreCompleto: string`,
 `titularOrigenLabel: string`.
 
@@ -209,9 +226,9 @@ export const CARGOS_VPN = [
 ] as const;
 ```
 
-`VpnSolicitudRequest.usuarioRedId` pasa a `number | null`; se agregan los mismos 7 campos
-`titular*` que en `VpnRequest.java` (con los mismos nombres, `titularSedeId`/`titularDependenciaId`
-en vez de objetos) más `titularCargo: string`.
+`VpnSolicitudRequest.usuarioRedId` pasa a `number | null`; se agregan los mismos campos `titular*`
+que en `VpnRequest.java` (con los mismos nombres, `titularSedeId`/`titularDependenciaId`/
+`titularTipoContratoId` en vez de objetos) más `titularCargo: string`.
 
 ### `vpn-form.component.ts`
 
@@ -221,10 +238,15 @@ en vez de objetos) más `titularCargo: string`.
   patrón de debounce 300ms que `onEquipoSearch`.
 - Estado `titularModo: 'buscando' | 'ad-seleccionado' | 'interno-manual' | 'externo'`.
 - Cuando `adResults` queda vacío tras una búsqueda con texto, se muestra el prompt de fallback.
+- Para `interno-manual`, además de nombre/apellidos/correo se muestra
+  `<app-ubicacion-select [sedeId]="..." [dependenciaId]="..." [tipoContratoId]="..."
+  [showTipoContrato]="true" (sedeIdChange)="..." (dependenciaIdChange)="..."
+  (tipoContratoIdChange)="...">` (mismo componente que ya usa `usuario-red-form.component.ts`, sin
+  modificarlo).
 - Los controles `titularNombre`/`titularApellidos`/`titularCorreo`/`titularSedeId`/
-  `titularDependenciaId` (para `interno-manual`) o `.../titularEmpresa`/`titularMotivo` (para
-  `externo`) reciben `Validators.required` dinámicamente vía `setValidators` +
-  `updateValueAndValidity` al cambiar `titularModo`, y se limpian al volver a buscar en AD.
+  `titularDependenciaId`/`titularTipoContratoId` (para `interno-manual`) o `.../titularEmpresa`/
+  `titularMotivo` (para `externo`) reciben `Validators.required` dinámicamente vía `setValidators`
+  + `updateValueAndValidity` al cambiar `titularModo`, y se limpian al volver a buscar en AD.
 - `submit()` arma el request con `usuarioRedId` o los campos `titular*` según `titularModo`, nunca
   ambos — `titularCargo` siempre viaja, sin importar el modo.
 - Se agrega un `<select formControlName="titularCargo">` con `Validators.required`, poblado desde
@@ -239,23 +261,25 @@ en vez de objetos) más `titularCargo: string`.
 - Modal de detalle: agrega siempre "Cargo" (`viewing.titularCargo`), y condicionalmente sobre
   `viewing.titularTipo`:
   - `!= 'AD'` → campo "Correo" (`viewing.titularCorreo`).
-  - `== 'INTERNO_MANUAL'` → "Sede"/"Dependencia" (`viewing.titularSede?.nombre` /
-    `viewing.titularDependencia?.nombre`).
+  - `== 'INTERNO_MANUAL'` → "Sede"/"Dependencia"/"Tipo de contrato" (`viewing.titularSede?.nombre` /
+    `viewing.titularDependencia?.nombre` / `viewing.titularTipoContrato?.nombre`).
   - `== 'EXTERNO'` → "Empresa"/"Motivo" (`viewing.titularEmpresa` / `viewing.titularMotivo`).
 
 ## Testing
 
 - **`VpnServiceTest`**: crear solicitud con `usuarioRedId` (comportamiento AD sin cambios, ahora
-  incluyendo `titularCargo`), crear con `titularTipo=INTERNO_MANUAL` (válido y con campos faltantes
-  → 400/409), crear con `titularTipo=EXTERNO` (válido y con campos faltantes), crear sin
-  `usuarioRedId` ni `titularTipo` válido → `IllegalArgumentException`. `titularCargo` faltante ya
-  queda cubierto por la validación `@NotBlank` de `VpnRequest` (400 de Bean Validation, no requiere
-  lógica adicional en el servicio).
+  incluyendo `titularCargo`), crear con `titularTipo=INTERNO_MANUAL` (válido con
+  sede/dependencia/tipoContrato, y con cada uno de esos tres campos faltante por separado → 400/409),
+  crear con `titularTipo=EXTERNO` (válido y con campos faltantes), crear sin `usuarioRedId` ni
+  `titularTipo` válido → `IllegalArgumentException`. `titularCargo` faltante ya queda cubierto por
+  la validación `@NotBlank` de `VpnRequest` (400 de Bean Validation, no requiere lógica adicional en
+  el servicio).
 - **`VpnControllerIT`**: al menos un caso end-to-end de creación con `titularTipo=EXTERNO` vía
   `POST /api/vpn` confirmando 201 y los campos en la respuesta.
 - **Manual**: verificar en el navegador que buscar un usuario inexistente muestra el prompt, que
-  cada uno de los dos modos manuales pide sus campos correctos, y que la tabla/modal de detalle
-  muestran bien los tres orígenes (AD, interno manual, externo).
+  "Personal de INIA" pide Sede/Dependencia/Tipo de contrato y "Tercero externo" pide
+  empresa/motivo, y que la tabla/modal de detalle muestran bien los tres orígenes (AD, interno
+  manual, externo) incluyendo el tipo de contrato cuando aplica.
 
 ## Archivos
 
