@@ -1,7 +1,9 @@
 package com.inia.soportedesk.vpn;
 
-import com.inia.soportedesk.equipos.EquipoRepository;
+import com.inia.soportedesk.auth.UsuarioRepository;
 import com.inia.soportedesk.exception.ResourceNotFoundException;
+import com.inia.soportedesk.glpi.VwInvComputerFull;
+import com.inia.soportedesk.glpi.VwInvComputerFullRepository;
 import com.inia.soportedesk.usuariosred.UsuarioRed;
 import com.inia.soportedesk.usuariosred.UsuarioRedRepository;
 import org.junit.jupiter.api.Test;
@@ -10,14 +12,16 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 
-import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -31,7 +35,10 @@ class VpnServiceTest {
     private UsuarioRedRepository usuarioRedRepository;
 
     @Mock
-    private EquipoRepository equipoRepository;
+    private VwInvComputerFullRepository glpiRepository;
+
+    @Mock
+    private UsuarioRepository usuarioRepository;
 
     @InjectMocks
     private VpnService service;
@@ -39,16 +46,30 @@ class VpnServiceTest {
     private VpnRequest sampleRequest() {
         VpnRequest request = new VpnRequest();
         request.setUsuarioRedId(1L);
-        request.setIpAsignada("10.8.0.2");
-        request.setVence(LocalDate.of(2025, 12, 31));
-        request.setEstado("Activo");
+        request.setTipoEquipo("PERSONAL");
+        request.setAntivirusVerificado(true);
+        request.setAnalisisAntivirusRealizado(true);
         return request;
+    }
+
+    private Authentication authAs(String username, String... authorities) {
+        Authentication auth = mock(Authentication.class);
+        List<GrantedAuthority> granted = List.of(authorities).stream()
+                .map(SimpleGrantedAuthority::new)
+                .map(GrantedAuthority.class::cast)
+                .toList();
+        // lenient(): most tests using this helper never call getAuthorities() (only
+        // maskCredencialesIfNeeded does) — MockitoExtension's strict stubbing would otherwise
+        // fail those tests with UnnecessaryStubbingException.
+        org.mockito.Mockito.lenient().when(auth.getName()).thenReturn(username);
+        org.mockito.Mockito.lenient().doReturn(granted).when(auth).getAuthorities();
+        return auth;
     }
 
     @Test
     void findAll_withoutSearch_returnsAll() {
         Vpn vpn = new Vpn();
-        vpn.setEstado("Activo");
+        vpn.setEstadoSolicitud("PENDIENTE");
         when(repository.findAll()).thenReturn(List.of(vpn));
 
         List<Vpn> result = service.findAll(null);
@@ -66,21 +87,154 @@ class VpnServiceTest {
     }
 
     @Test
-    void create_savesVpnFromRequest() {
+    void crearSolicitud_withoutGlpiEquipo_savesPendingRequest() {
         UsuarioRed mockUser = new UsuarioRed();
         mockUser.setId(1L);
         mockUser.setNombre("Juan Pérez");
         when(usuarioRedRepository.findById(1L)).thenReturn(Optional.of(mockUser));
+        when(usuarioRepository.findByUsername("jasistente")).thenReturn(Optional.empty());
         when(repository.save(any(Vpn.class))).thenAnswer(inv -> inv.getArgument(0));
 
-        Authentication auth = org.mockito.Mockito.mock(Authentication.class);
-        when(auth.getAuthorities()).thenReturn(java.util.List.of());
+        Vpn result = service.crearSolicitud(sampleRequest(), authAs("jasistente"));
 
-        Vpn result = service.create(sampleRequest(), auth);
+        assertThat(result.getEstadoSolicitud()).isEqualTo("PENDIENTE");
+        assertThat(result.getSolicitadoPor()).isEqualTo("jasistente");
+        assertThat(result.getTipoEquipo()).isEqualTo("PERSONAL");
+        assertThat(result.getGlpiComputerId()).isNull();
+        assertThat(result.getFechaSolicitud()).isNotNull();
+    }
 
-        assertThat(result.getEstado()).isEqualTo("Activo");
-        assertThat(result.getIpAsignada()).isEqualTo("10.8.0.2");
-        assertThat(result.getVence()).isEqualTo(LocalDate.of(2025, 12, 31));
+    @Test
+    void crearSolicitud_withGlpiEquipo_snapshotsHostAndIp() {
+        UsuarioRed mockUser = new UsuarioRed();
+        mockUser.setId(1L);
+        when(usuarioRedRepository.findById(1L)).thenReturn(Optional.of(mockUser));
+        when(usuarioRepository.findByUsername(any())).thenReturn(Optional.empty());
+
+        VwInvComputerFull equipo = new VwInvComputerFull();
+        equipo.setComputerID(42L);
+        equipo.setNombreEquipo("PC-CONTABILIDAD-01");
+        equipo.setIpEquipo("172.16.10.5");
+        when(glpiRepository.findById(42L)).thenReturn(Optional.of(equipo));
+        when(repository.save(any(Vpn.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        VpnRequest request = sampleRequest();
+        request.setTipoEquipo("INIA");
+        request.setGlpiComputerId(42L);
+        request.setHostActualizado(true);
+
+        Vpn result = service.crearSolicitud(request, authAs("jasistente"));
+
+        assertThat(result.getGlpiComputerId()).isEqualTo(42L);
+        assertThat(result.getGlpiNombreEquipo()).isEqualTo("PC-CONTABILIDAD-01");
+        assertThat(result.getGlpiIpEquipo()).isEqualTo("172.16.10.5");
+        assertThat(result.getHostActualizado()).isTrue();
+    }
+
+    @Test
+    void crearSolicitud_withUnknownGlpiId_throwsResourceNotFoundException() {
+        when(usuarioRedRepository.findById(1L)).thenReturn(Optional.of(new UsuarioRed()));
+        when(glpiRepository.findById(999L)).thenReturn(Optional.empty());
+
+        VpnRequest request = sampleRequest();
+        request.setGlpiComputerId(999L);
+
+        assertThatThrownBy(() -> service.crearSolicitud(request, authAs("jasistente")))
+                .isInstanceOf(ResourceNotFoundException.class);
+    }
+
+    @Test
+    void actualizarSolicitud_whenObservado_savesAndReturnsToPendiente() {
+        Vpn existing = new Vpn();
+        existing.setId(5L);
+        existing.setEstadoSolicitud("OBSERVADO");
+        when(repository.findById(5L)).thenReturn(Optional.of(existing));
+        when(usuarioRedRepository.findById(1L)).thenReturn(Optional.of(new UsuarioRed()));
+        when(repository.save(any(Vpn.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        Vpn result = service.actualizarSolicitud(5L, sampleRequest(), authAs("jasistente"));
+
+        assertThat(result.getEstadoSolicitud()).isEqualTo("PENDIENTE");
+    }
+
+    @Test
+    void actualizarSolicitud_whenAprobado_throwsIllegalArgumentException() {
+        Vpn existing = new Vpn();
+        existing.setId(5L);
+        existing.setEstadoSolicitud("APROBADO");
+        when(repository.findById(5L)).thenReturn(Optional.of(existing));
+
+        assertThatThrownBy(() -> service.actualizarSolicitud(5L, sampleRequest(), authAs("jasistente")))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void aprobar_whenPendiente_setsCredentialsAndMarksAprobado() {
+        Vpn existing = new Vpn();
+        existing.setId(7L);
+        existing.setEstadoSolicitud("PENDIENTE");
+        when(repository.findById(7L)).thenReturn(Optional.of(existing));
+        when(usuarioRepository.findByUsername("mresponsable")).thenReturn(Optional.empty());
+        when(repository.save(any(Vpn.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        VpnAprobarRequest request = new VpnAprobarRequest();
+        request.setUsuarioVpn("vpnuser1");
+        request.setCredencialVpn("Sup3rSecreta!");
+        request.setIpAsignada("10.8.0.5");
+        request.setEstado("Activo");
+
+        Vpn result = service.aprobar(7L, request, authAs("mresponsable"));
+
+        assertThat(result.getEstadoSolicitud()).isEqualTo("APROBADO");
+        assertThat(result.getUsuarioVpn()).isEqualTo("vpnuser1");
+        assertThat(result.getAprobadoPor()).isEqualTo("mresponsable");
+        assertThat(result.getFechaResolucion()).isNotNull();
+    }
+
+    @Test
+    void aprobar_whenNotPendiente_throwsIllegalArgumentException() {
+        Vpn existing = new Vpn();
+        existing.setId(7L);
+        existing.setEstadoSolicitud("RECHAZADO");
+        when(repository.findById(7L)).thenReturn(Optional.of(existing));
+
+        assertThatThrownBy(() -> service.aprobar(7L, new VpnAprobarRequest(), authAs("mresponsable")))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void rechazar_whenPendiente_setsComentarioAndMarksRechazado() {
+        Vpn existing = new Vpn();
+        existing.setId(8L);
+        existing.setEstadoSolicitud("PENDIENTE");
+        when(repository.findById(8L)).thenReturn(Optional.of(existing));
+        when(usuarioRepository.findByUsername(any())).thenReturn(Optional.empty());
+        when(repository.save(any(Vpn.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        VpnResolucionRequest request = new VpnResolucionRequest();
+        request.setComentarioResponsable("Falta análisis de antivirus");
+
+        Vpn result = service.rechazar(8L, request, authAs("mresponsable"));
+
+        assertThat(result.getEstadoSolicitud()).isEqualTo("RECHAZADO");
+        assertThat(result.getComentarioResponsable()).isEqualTo("Falta análisis de antivirus");
+    }
+
+    @Test
+    void observar_whenPendiente_setsComentarioAndMarksObservado() {
+        Vpn existing = new Vpn();
+        existing.setId(9L);
+        existing.setEstadoSolicitud("PENDIENTE");
+        when(repository.findById(9L)).thenReturn(Optional.of(existing));
+        when(usuarioRepository.findByUsername(any())).thenReturn(Optional.empty());
+        when(repository.save(any(Vpn.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        VpnResolucionRequest request = new VpnResolucionRequest();
+        request.setComentarioResponsable("Falta seleccionar equipo GLPI");
+
+        Vpn result = service.observar(9L, request, authAs("mresponsable"));
+
+        assertThat(result.getEstadoSolicitud()).isEqualTo("OBSERVADO");
     }
 
     @Test
@@ -99,13 +253,9 @@ class VpnServiceTest {
         Vpn vpn = new Vpn();
         vpn.setUsuarioVpn("vpnuser1");
         vpn.setCredencialVpn("supersecret");
+        vpn.setSolicitadoPor("otro-usuario");
 
-        Authentication auth = org.mockito.Mockito.mock(Authentication.class);
-        java.util.List<org.springframework.security.core.GrantedAuthority> authorities = java.util.List.of(
-                new org.springframework.security.core.authority.SimpleGrantedAuthority("ROLE_SOPORTE"));
-        org.mockito.Mockito.doReturn(authorities).when(auth).getAuthorities();
-
-        service.maskCredencialesIfNeeded(vpn, auth);
+        service.maskCredencialesIfNeeded(vpn, authAs("jasistente", "ROLE_SOPORTE"));
 
         assertThat(vpn.getUsuarioVpn()).isNull();
         assertThat(vpn.getCredencialVpn()).isNull();
@@ -116,17 +266,11 @@ class VpnServiceTest {
         Vpn vpn = new Vpn();
         vpn.setUsuarioVpn("vpnuser1");
         vpn.setCredencialVpn("supersecret");
+        vpn.setSolicitadoPor("otro-usuario");
 
-        Authentication auth = org.mockito.Mockito.mock(Authentication.class);
-        java.util.List<org.springframework.security.core.GrantedAuthority> authorities = java.util.List.of(
-                new org.springframework.security.core.authority.SimpleGrantedAuthority("ROLE_SOPORTE"),
-                new org.springframework.security.core.authority.SimpleGrantedAuthority("READ_credenciales-vpn"));
-        org.mockito.Mockito.doReturn(authorities).when(auth).getAuthorities();
-
-        service.maskCredencialesIfNeeded(vpn, auth);
+        service.maskCredencialesIfNeeded(vpn, authAs("jasistente", "ROLE_SOPORTE", "READ_credenciales-vpn"));
 
         assertThat(vpn.getUsuarioVpn()).isEqualTo("vpnuser1");
-        assertThat(vpn.getCredencialVpn()).isEqualTo("supersecret");
     }
 
     @Test
@@ -134,14 +278,23 @@ class VpnServiceTest {
         Vpn vpn = new Vpn();
         vpn.setUsuarioVpn("vpnuser1");
         vpn.setCredencialVpn("supersecret");
+        vpn.setSolicitadoPor("otro-usuario");
 
-        Authentication auth = org.mockito.Mockito.mock(Authentication.class);
-        java.util.List<org.springframework.security.core.GrantedAuthority> authorities = java.util.List.of(
-                new org.springframework.security.core.authority.SimpleGrantedAuthority("ROLE_ADMIN"));
-        org.mockito.Mockito.doReturn(authorities).when(auth).getAuthorities();
-
-        service.maskCredencialesIfNeeded(vpn, auth);
+        service.maskCredencialesIfNeeded(vpn, authAs("admin", "ROLE_ADMIN"));
 
         assertThat(vpn.getUsuarioVpn()).isEqualTo("vpnuser1");
+    }
+
+    @Test
+    void maskCredencialesIfNeeded_forOwnRequest_keepsCredentialsWithoutSpecialAuthority() {
+        Vpn vpn = new Vpn();
+        vpn.setUsuarioVpn("vpnuser1");
+        vpn.setCredencialVpn("supersecret");
+        vpn.setSolicitadoPor("jasistente");
+
+        service.maskCredencialesIfNeeded(vpn, authAs("jasistente", "ROLE_SOPORTE", "WRITE_solicitar-vpn"));
+
+        assertThat(vpn.getUsuarioVpn()).isEqualTo("vpnuser1");
+        assertThat(vpn.getCredencialVpn()).isEqualTo("supersecret");
     }
 }

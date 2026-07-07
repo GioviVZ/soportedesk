@@ -1,8 +1,10 @@
 package com.inia.soportedesk.vpn;
 
-import com.inia.soportedesk.equipos.Equipo;
-import com.inia.soportedesk.equipos.EquipoRepository;
+import com.inia.soportedesk.auth.Usuario;
+import com.inia.soportedesk.auth.UsuarioRepository;
 import com.inia.soportedesk.exception.ResourceNotFoundException;
+import com.inia.soportedesk.glpi.VwInvComputerFull;
+import com.inia.soportedesk.glpi.VwInvComputerFullRepository;
 import com.inia.soportedesk.usuariosred.UsuarioRed;
 import com.inia.soportedesk.usuariosred.UsuarioRedRepository;
 import lombok.RequiredArgsConstructor;
@@ -10,15 +12,19 @@ import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
 @RequiredArgsConstructor
 public class VpnService {
 
+    private static final List<String> EDITABLES = List.of("PENDIENTE", "OBSERVADO");
+
     private final VpnRepository repository;
     private final UsuarioRedRepository usuarioRedRepository;
-    private final EquipoRepository equipoRepository;
+    private final VwInvComputerFullRepository glpiRepository;
+    private final UsuarioRepository usuarioRepository;
 
     public List<Vpn> findAll(String search) {
         if (search == null || search.isBlank()) {
@@ -33,17 +39,53 @@ public class VpnService {
     }
 
     @Transactional
-    public Vpn create(VpnRequest request, Authentication auth) {
+    public Vpn crearSolicitud(VpnRequest request, Authentication auth) {
         Vpn vpn = new Vpn();
-        copyFields(vpn, request, auth);
+        vpn.setEstadoSolicitud("PENDIENTE");
+        vpn.setSolicitadoPor(auth.getName());
+        vpn.setSolicitadoPorNombre(nombreDe(auth.getName()));
+        vpn.setFechaSolicitud(LocalDateTime.now());
+        copySolicitudFields(vpn, request);
         return repository.save(vpn);
     }
 
     @Transactional
-    public Vpn update(Long id, VpnRequest request, Authentication auth) {
+    public Vpn actualizarSolicitud(Long id, VpnRequest request, Authentication auth) {
         Vpn vpn = findById(id);
-        copyFields(vpn, request, auth);
+        if (!EDITABLES.contains(vpn.getEstadoSolicitud())) {
+            throw new IllegalArgumentException("Solo se puede editar una solicitud pendiente u observada");
+        }
+        copySolicitudFields(vpn, request);
+        if ("OBSERVADO".equals(vpn.getEstadoSolicitud())) {
+            vpn.setEstadoSolicitud("PENDIENTE");
+        }
         return repository.save(vpn);
+    }
+
+    @Transactional
+    public Vpn aprobar(Long id, VpnAprobarRequest request, Authentication auth) {
+        Vpn vpn = findById(id);
+        if (!"PENDIENTE".equals(vpn.getEstadoSolicitud())) {
+            throw new IllegalArgumentException("Solo se puede aprobar una solicitud pendiente");
+        }
+        vpn.setUsuarioVpn(request.getUsuarioVpn());
+        vpn.setCredencialVpn(request.getCredencialVpn());
+        vpn.setIpAsignada(request.getIpAsignada());
+        vpn.setVence(request.getVence());
+        vpn.setEstado(request.getEstado());
+        vpn.setEstadoSolicitud("APROBADO");
+        marcarResuelto(vpn, auth);
+        return repository.save(vpn);
+    }
+
+    @Transactional
+    public Vpn rechazar(Long id, VpnResolucionRequest request, Authentication auth) {
+        return resolver(id, request, auth, "RECHAZADO");
+    }
+
+    @Transactional
+    public Vpn observar(Long id, VpnResolucionRequest request, Authentication auth) {
+        return resolver(id, request, auth, "OBSERVADO");
     }
 
     @Transactional
@@ -58,37 +100,8 @@ public class VpnService {
         repository.delete(findById(id));
     }
 
-    private void copyFields(Vpn vpn, VpnRequest request, Authentication auth) {
-        UsuarioRed usuarioRed = usuarioRedRepository.findById(request.getUsuarioRedId())
-                .orElseThrow(() -> new ResourceNotFoundException("Usuario de red no encontrado: " + request.getUsuarioRedId()));
-        vpn.setUsuarioRed(usuarioRed);
-
-        if (request.getEquipoId() != null) {
-            Equipo equipo = equipoRepository.findById(request.getEquipoId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Equipo no encontrado: " + request.getEquipoId()));
-            vpn.setEquipo(equipo);
-        } else {
-            vpn.setEquipo(null);
-        }
-
-        vpn.setIpAsignada(request.getIpAsignada());
-        vpn.setVence(request.getVence());
-        vpn.setEstado(request.getEstado());
-
-        if (canEditCredenciales(auth)) {
-            vpn.setUsuarioVpn(request.getUsuarioVpn());
-            vpn.setCredencialVpn(request.getCredencialVpn());
-        }
-    }
-
-    private boolean canEditCredenciales(Authentication auth) {
-        return auth.getAuthorities().stream().anyMatch(a ->
-                a.getAuthority().equals("ROLE_ADMIN") ||
-                a.getAuthority().equals("WRITE_credenciales-vpn"));
-    }
-
     public void maskCredencialesIfNeeded(Vpn vpn, Authentication auth) {
-        if (!canViewCredenciales(auth)) {
+        if (!canViewCredenciales(vpn, auth)) {
             vpn.setUsuarioVpn(null);
             vpn.setCredencialVpn(null);
         }
@@ -98,7 +111,54 @@ public class VpnService {
         vpns.forEach(vpn -> maskCredencialesIfNeeded(vpn, auth));
     }
 
-    private boolean canViewCredenciales(Authentication auth) {
+    private Vpn resolver(Long id, VpnResolucionRequest request, Authentication auth, String nuevoEstado) {
+        Vpn vpn = findById(id);
+        if (!"PENDIENTE".equals(vpn.getEstadoSolicitud())) {
+            throw new IllegalArgumentException("Solo se puede resolver una solicitud pendiente");
+        }
+        vpn.setComentarioResponsable(request.getComentarioResponsable());
+        vpn.setEstadoSolicitud(nuevoEstado);
+        marcarResuelto(vpn, auth);
+        return repository.save(vpn);
+    }
+
+    private void marcarResuelto(Vpn vpn, Authentication auth) {
+        vpn.setAprobadoPor(auth.getName());
+        vpn.setAprobadoPorNombre(nombreDe(auth.getName()));
+        vpn.setFechaResolucion(LocalDateTime.now());
+    }
+
+    private String nombreDe(String username) {
+        return usuarioRepository.findByUsername(username).map(Usuario::getNombre).orElse(username);
+    }
+
+    private void copySolicitudFields(Vpn vpn, VpnRequest request) {
+        UsuarioRed usuarioRed = usuarioRedRepository.findById(request.getUsuarioRedId())
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario de red no encontrado: " + request.getUsuarioRedId()));
+        vpn.setUsuarioRed(usuarioRed);
+        vpn.setTipoEquipo(request.getTipoEquipo());
+        vpn.setAntivirusVerificado(request.getAntivirusVerificado());
+        vpn.setAnalisisAntivirusRealizado(request.getAnalisisAntivirusRealizado());
+
+        if (request.getGlpiComputerId() != null) {
+            VwInvComputerFull equipo = glpiRepository.findById(request.getGlpiComputerId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Equipo GLPI no encontrado: " + request.getGlpiComputerId()));
+            vpn.setGlpiComputerId(equipo.getComputerID());
+            vpn.setGlpiNombreEquipo(equipo.getNombreEquipo());
+            vpn.setGlpiIpEquipo(equipo.getIpEquipo());
+            vpn.setHostActualizado(request.getHostActualizado());
+        } else {
+            vpn.setGlpiComputerId(null);
+            vpn.setGlpiNombreEquipo(null);
+            vpn.setGlpiIpEquipo(null);
+            vpn.setHostActualizado(null);
+        }
+    }
+
+    private boolean canViewCredenciales(Vpn vpn, Authentication auth) {
+        if (vpn.getSolicitadoPor() != null && vpn.getSolicitadoPor().equals(auth.getName())) {
+            return true;
+        }
         return auth.getAuthorities().stream().anyMatch(a ->
                 a.getAuthority().equals("ROLE_ADMIN") ||
                 a.getAuthority().equals("READ_credenciales-vpn"));
