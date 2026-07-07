@@ -36,17 +36,16 @@ class VpnControllerIT {
     private VpnRequest sampleRequest() {
         VpnRequest request = new VpnRequest();
         request.setUsuarioRedId(1L);
-        request.setIpAsignada("10.8.0.2");
-        request.setVence(LocalDate.of(2025, 12, 31));
-        request.setEstado("Activo");
+        request.setTipoEquipo("PERSONAL");
+        request.setAntivirusVerificado(true);
+        request.setAnalisisAntivirusRealizado(true);
         return request;
     }
 
     private Vpn sampleVpn() {
         Vpn vpn = new Vpn();
         vpn.setId(1L);
-        vpn.setIpAsignada("10.8.0.2");
-        vpn.setEstado("Activo");
+        vpn.setEstadoSolicitud("PENDIENTE");
         return vpn;
     }
 
@@ -57,12 +56,21 @@ class VpnControllerIT {
 
         mockMvc.perform(get("/api/vpn"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].estado", is("Activo")));
+                .andExpect(jsonPath("$[0].estadoSolicitud", is("PENDIENTE")));
+    }
+
+    @Test
+    @WithMockUser(authorities = {"ROLE_SOPORTE", "READ_solicitar-vpn"})
+    void findAll_withReadSolicitarAuthority_allowsUser() throws Exception {
+        when(service.findAll(null)).thenReturn(List.of(sampleVpn()));
+
+        mockMvc.perform(get("/api/vpn"))
+                .andExpect(status().isOk());
     }
 
     @Test
     @WithMockUser(roles = "SOPORTE")
-    void findAll_withoutReadAuthority_returnsForbidden() throws Exception {
+    void findAll_withoutAnyReadAuthority_returnsForbidden() throws Exception {
         mockMvc.perform(get("/api/vpn"))
                 .andExpect(status().isForbidden());
     }
@@ -74,9 +82,6 @@ class VpnControllerIT {
         vpn.setUsuarioVpn("vpnuser1");
         vpn.setCredencialVpn("supersecret");
         when(service.findAll(null)).thenReturn(List.of(vpn));
-        // service is a @MockBean, so the real VpnService.maskCredencialesIfNeeded
-        // (covered by VpnServiceTest) never runs here; simulate its effect so this
-        // test can verify the controller actually wires the call through.
         doAnswer(invocation -> {
             List<Vpn> vpns = invocation.getArgument(0);
             vpns.forEach(v -> {
@@ -93,37 +98,105 @@ class VpnControllerIT {
     }
 
     @Test
-    @WithMockUser(authorities = {"ROLE_SOPORTE", "READ_vpn", "READ_credenciales-vpn"})
-    void findAll_withCredencialesAuthority_keepsCredentials() throws Exception {
-        Vpn vpn = sampleVpn();
-        vpn.setUsuarioVpn("vpnuser1");
-        vpn.setCredencialVpn("supersecret");
-        when(service.findAll(null)).thenReturn(List.of(vpn));
-
-        mockMvc.perform(get("/api/vpn"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].usuarioVpn", is("vpnuser1")));
-    }
-
-    @Test
-    @WithMockUser(roles = "ADMIN")
-    void create_withAdminRole_returnsCreated() throws Exception {
-        when(service.create(any(), any())).thenReturn(sampleVpn());
+    @WithMockUser(authorities = {"ROLE_SOPORTE", "WRITE_solicitar-vpn"})
+    void create_withSolicitarAuthority_returnsCreated() throws Exception {
+        when(service.crearSolicitud(any(), any())).thenReturn(sampleVpn());
 
         mockMvc.perform(post("/api/vpn")
                         .contentType("application/json")
                         .content(objectMapper.writeValueAsString(sampleRequest())))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.estado", is("Activo")));
+                .andExpect(jsonPath("$.estadoSolicitud", is("PENDIENTE")));
     }
 
     @Test
     @WithMockUser(roles = "SOPORTE")
-    void create_withSoporteRole_returnsForbidden() throws Exception {
+    void create_withoutSolicitarAuthority_returnsForbidden() throws Exception {
         mockMvc.perform(post("/api/vpn")
                         .contentType("application/json")
                         .content(objectMapper.writeValueAsString(sampleRequest())))
                 .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @WithMockUser(authorities = {"ROLE_SOPORTE", "WRITE_solicitar-vpn"})
+    void update_withSolicitarAuthority_returnsOk() throws Exception {
+        Vpn updated = sampleVpn();
+        when(service.actualizarSolicitud(any(), any(), any())).thenReturn(updated);
+
+        mockMvc.perform(put("/api/vpn/1")
+                        .contentType("application/json")
+                        .content(objectMapper.writeValueAsString(sampleRequest())))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    @WithMockUser(authorities = {"ROLE_SOPORTE", "WRITE_aprobar-vpn"})
+    void aprobar_withAprobarAuthority_returnsOk() throws Exception {
+        Vpn approved = sampleVpn();
+        approved.setEstadoSolicitud("APROBADO");
+        when(service.aprobar(any(), any(), any())).thenReturn(approved);
+
+        VpnAprobarRequest request = new VpnAprobarRequest();
+        request.setUsuarioVpn("vpnuser1");
+        request.setCredencialVpn("Sup3rSecreta!");
+        request.setIpAsignada("10.8.0.5");
+        request.setEstado("Activo");
+
+        mockMvc.perform(patch("/api/vpn/1/aprobar")
+                        .contentType("application/json")
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.estadoSolicitud", is("APROBADO")));
+    }
+
+    @Test
+    @WithMockUser(roles = "SOPORTE")
+    void aprobar_withoutAprobarAuthority_returnsForbidden() throws Exception {
+        VpnAprobarRequest request = new VpnAprobarRequest();
+        request.setUsuarioVpn("vpnuser1");
+        request.setCredencialVpn("Sup3rSecreta!");
+        request.setIpAsignada("10.8.0.5");
+        request.setEstado("Activo");
+
+        mockMvc.perform(patch("/api/vpn/1/aprobar")
+                        .contentType("application/json")
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @WithMockUser(authorities = {"ROLE_SOPORTE", "WRITE_aprobar-vpn"})
+    void rechazar_withAprobarAuthority_returnsOk() throws Exception {
+        Vpn rejected = sampleVpn();
+        rejected.setEstadoSolicitud("RECHAZADO");
+        when(service.rechazar(any(), any(), any())).thenReturn(rejected);
+
+        VpnResolucionRequest request = new VpnResolucionRequest();
+        request.setComentarioResponsable("Antivirus no verificado");
+
+        mockMvc.perform(patch("/api/vpn/1/rechazar")
+                        .contentType("application/json")
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.estadoSolicitud", is("RECHAZADO")));
+    }
+
+    @Test
+    @WithMockUser(authorities = {"ROLE_SOPORTE", "WRITE_aprobar-vpn"})
+    void observar_withAprobarAuthority_returnsOk() throws Exception {
+        Vpn observed = sampleVpn();
+        observed.setEstadoSolicitud("OBSERVADO");
+        when(service.observar(any(), any(), any())).thenReturn(observed);
+
+        VpnResolucionRequest request = new VpnResolucionRequest();
+        request.setComentarioResponsable("Falta equipo GLPI");
+
+        mockMvc.perform(patch("/api/vpn/1/observar")
+                        .contentType("application/json")
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.estadoSolicitud", is("OBSERVADO")));
     }
 
     @Test
@@ -142,5 +215,12 @@ class VpnControllerIT {
                         .content(objectMapper.writeValueAsString(req)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.tieneAntivirus", is(true)));
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    void delete_withAdminRole_returnsNoContent() throws Exception {
+        mockMvc.perform(delete("/api/vpn/1"))
+                .andExpect(status().isNoContent());
     }
 }
