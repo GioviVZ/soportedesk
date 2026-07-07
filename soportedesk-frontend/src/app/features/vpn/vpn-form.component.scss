@@ -75,6 +75,56 @@
   margin: 14px 0;
 }
 
+.radio-group {
+  display: flex;
+  gap: 16px;
+
+  label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 400;
+    color: var(--color-text);
+  }
+}
+
+.checkbox-field label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 400;
+  color: var(--color-text);
+}
+
+.equipo-results {
+  list-style: none;
+  margin: 4px 0 0;
+  padding: 0;
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  max-height: 160px;
+  overflow-y: auto;
+
+  li {
+    padding: 8px;
+    font-size: 13px;
+    cursor: pointer;
+
+    &:hover {
+      background: var(--color-gray-light);
+    }
+  }
+}
+
+.equipo-preview {
+  margin-top: 8px;
+  font-size: 13px;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 6px;
+  padding: 8px 10px;
+}
+
 /* Credential section */
 .credential-card {
   border: 1px solid #a5b4fc;
