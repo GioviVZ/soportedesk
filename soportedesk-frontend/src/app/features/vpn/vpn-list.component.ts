@@ -7,8 +7,12 @@ import { FieldComponent } from '../../shared/field/field.component';
 import { VencimientoBadgeComponent } from '../../shared/vencimiento-badge/vencimiento-badge.component';
 import { VpnFormComponent } from './vpn-form.component';
 import { VpnAntivirusFormComponent } from './vpn-antivirus-form.component';
+import { VpnAprobarFormComponent } from './vpn-aprobar-form.component';
+import { VpnResolucionFormComponent } from './vpn-resolucion-form.component';
 import { Vpn } from './vpn.model';
 import { VpnService } from './vpn.service';
+
+const EDITABLE_STATES = new Set(['PENDIENTE', 'OBSERVADO']);
 
 @Component({
   selector: 'app-vpn-list',
@@ -21,6 +25,8 @@ import { VpnService } from './vpn.service';
     VencimientoBadgeComponent,
     VpnFormComponent,
     VpnAntivirusFormComponent,
+    VpnAprobarFormComponent,
+    VpnResolucionFormComponent,
   ],
   templateUrl: './vpn-list.component.html',
   styleUrl: './vpn-list.component.scss',
@@ -33,7 +39,7 @@ export class VpnListComponent implements OnInit {
   columns: TableColumn[] = [
     { key: 'usuarioRed.nombre', label: 'Nombre' },
     { key: 'usuarioRed.usuario', label: 'Usuario red' },
-    { key: 'equipo.marca', label: 'Equipo' },
+    { key: 'estadoSolicitud', label: 'Estado solicitud' },
     { key: 'ipAsignada', label: 'IP VPN' },
     { key: 'estado', label: 'Estado' },
   ];
@@ -45,16 +51,28 @@ export class VpnListComponent implements OnInit {
   antivirusEditing: Vpn | null = null;
   antivirusOpen = false;
 
+  aprobarEditing: Vpn | null = null;
+  aprobarOpen = false;
+
+  resolucionEditing: Vpn | null = null;
+  resolucionModo: 'RECHAZAR' | 'OBSERVAR' = 'RECHAZAR';
+  resolucionOpen = false;
+
   get isAdmin(): boolean {
     return this.authService.isAdmin();
   }
 
-  get canWriteVpn(): boolean {
-    return this.authService.canWrite('vpn');
+  get canWriteSolicitar(): boolean {
+    return this.authService.isAdmin() || this.authService.canWrite('solicitar-vpn');
+  }
+
+  get canWriteAprobar(): boolean {
+    return this.authService.isAdmin() || this.authService.canWrite('aprobar-vpn');
   }
 
   get canEditCredenciales(): boolean {
-    return this.authService.isAdmin() || this.authService.canWrite('credenciales-vpn');
+    if (this.authService.isAdmin() || this.authService.canWrite('credenciales-vpn')) return true;
+    return this.viewing?.solicitadoPor === this.authService.getUsername();
   }
 
   ngOnInit(): void {
@@ -83,6 +101,10 @@ export class VpnListComponent implements OnInit {
   }
 
   onEdit(item: Vpn): void {
+    if (!EDITABLE_STATES.has(item.estadoSolicitud)) {
+      alert('Esta solicitud ya fue resuelta y no se puede editar.');
+      return;
+    }
     this.editing = item;
     this.formOpen = true;
   }
@@ -114,6 +136,37 @@ export class VpnListComponent implements OnInit {
 
   onAntivirusSaved(): void {
     this.antivirusOpen = false;
+    this.load();
+  }
+
+  openAprobar(item: Vpn): void {
+    this.viewing = null;
+    this.aprobarEditing = item;
+    this.aprobarOpen = true;
+  }
+
+  closeAprobar(): void {
+    this.aprobarOpen = false;
+  }
+
+  onAprobarSaved(): void {
+    this.aprobarOpen = false;
+    this.load();
+  }
+
+  openResolucion(item: Vpn, modo: 'RECHAZAR' | 'OBSERVAR'): void {
+    this.viewing = null;
+    this.resolucionEditing = item;
+    this.resolucionModo = modo;
+    this.resolucionOpen = true;
+  }
+
+  closeResolucion(): void {
+    this.resolucionOpen = false;
+  }
+
+  onResolucionSaved(): void {
+    this.resolucionOpen = false;
     this.load();
   }
 

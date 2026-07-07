@@ -3,14 +3,14 @@
     <div>
       <span class="module-eyebrow">Acceso remoto</span>
       <h2>VPN</h2>
-      <p>Credenciales, equipos asociados, vencimientos VPN y control de antivirus.</p>
+      <p>Solicitudes, verificaciones de seguridad y credenciales de acceso remoto.</p>
     </div>
   </div>
 
   <app-generic-table
     [columns]="columns"
     [data]="items"
-    [canEdit]="canWriteVpn"
+    [canEdit]="canWriteSolicitar"
     extraColumnLabel="Vence VPN"
     (searchChange)="onSearch($event)"
     (add)="onAdd()"
@@ -19,6 +19,7 @@
     (delete)="onDelete($event)"
   >
     <ng-template #extraCell let-row>
+      <span class="badge-estado" [ngClass]="'badge-' + row.estadoSolicitud.toLowerCase()">{{ row.estadoSolicitud }}</span>
       <app-vencimiento-badge [fecha]="row.vence" />
     </ng-template>
   </app-generic-table>
@@ -29,24 +30,35 @@
   <ng-container *ngIf="viewing">
     <app-field label="Nombre">{{ viewing.usuarioRed?.nombre }}</app-field>
     <app-field label="Usuario red">{{ viewing.usuarioRed?.usuario }}</app-field>
-    <app-field label="Equipo">
-      <ng-container *ngIf="viewing.equipo; else sinEquipo">
-        {{ viewing.equipo.tipo }} — {{ viewing.equipo.marca }} {{ viewing.equipo.modelo }}
-        <ng-container *ngIf="viewing.equipo.host"> | Host: {{ viewing.equipo.host }}</ng-container>
-        <ng-container *ngIf="viewing.equipo.ip"> | IP: {{ viewing.equipo.ip }}</ng-container>
-      </ng-container>
-      <ng-template #sinEquipo>—</ng-template>
+
+    <hr style="margin: 12px 0; border-color: var(--color-border)" />
+
+    <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: #4338ca; margin-bottom: 8px;">Solicitud</div>
+    <app-field label="Solicitado por">{{ viewing.solicitadoPorNombre || viewing.solicitadoPor }}</app-field>
+    <app-field label="Fecha de solicitud">{{ viewing.fechaSolicitud }}</app-field>
+    <app-field label="Estado de solicitud">{{ viewing.estadoSolicitud }}</app-field>
+    <app-field label="Tipo de equipo">{{ viewing.tipoEquipo === 'INIA' ? 'Equipo de INIA' : 'Equipo personal' }}</app-field>
+    <app-field label="Equipo GLPI" *ngIf="viewing.glpiNombreEquipo">
+      {{ viewing.glpiNombreEquipo }} <ng-container *ngIf="viewing.glpiIpEquipo">| IP: {{ viewing.glpiIpEquipo }}</ng-container>
     </app-field>
+    <app-field label="Antivirus verificado">{{ viewing.antivirusVerificado ? 'Sí' : 'No' }}</app-field>
+    <app-field label="Análisis de antivirus realizado">{{ viewing.analisisAntivirusRealizado ? 'Sí' : 'No' }}</app-field>
+    <app-field label="Host actualizado" *ngIf="viewing.glpiComputerId">{{ viewing.hostActualizado ? 'Sí' : 'No' }}</app-field>
+    <ng-container *ngIf="viewing.aprobadoPorNombre">
+      <app-field label="Resuelto por">{{ viewing.aprobadoPorNombre }}</app-field>
+      <app-field label="Fecha de resolución">{{ viewing.fechaResolucion }}</app-field>
+    </ng-container>
+    <app-field label="Comentario del responsable" *ngIf="viewing.comentarioResponsable">{{ viewing.comentarioResponsable }}</app-field>
+
+    <hr style="margin: 12px 0; border-color: var(--color-border)" />
+
     <app-field label="IP VPN asignada">{{ viewing.ipAsignada || '—' }}</app-field>
     <app-field label="Vence (VPN)">{{ viewing.vence || '—' }}</app-field>
-    <app-field label="Estado">{{ viewing.estado }}</app-field>
+    <app-field label="Estado">{{ viewing.estado || '—' }}</app-field>
 
     <ng-container *ngIf="canEditCredenciales">
       <hr style="margin: 12px 0; border-color: #a5b4fc; border-style: dashed;" />
       <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: #4338ca; margin-bottom: 8px; display: flex; align-items: center; gap: 6px;">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" width="14" height="14">
-          <path fill-rule="evenodd" d="M8 7a5 5 0 1 1 3.61 4.804l-1.903 1.903A1 1 0 0 1 9 14H8v1a1 1 0 0 1-1 1H6v1a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1v-2a1 1 0 0 1 .293-.707L7.196 10.39A5.002 5.002 0 0 1 8 7Zm5-3a.75.75 0 0 0 0 1.5A1.5 1.5 0 0 1 14.5 7 .75.75 0 0 0 16 7a3 3 0 0 0-3-3Z" clip-rule="evenodd" />
-        </svg>
         Credenciales VPN
       </div>
       <app-field label="Usuario VPN">{{ viewing.usuarioVpn || '—' }}</app-field>
@@ -55,18 +67,23 @@
 
     <hr style="margin: 12px 0; border-color: var(--color-border)" />
 
-    <app-field label="Antivirus">{{ antivirusLabel(viewing) }}</app-field>
+    <app-field label="Antivirus (monitoreo)">{{ antivirusLabel(viewing) }}</app-field>
     <app-field label="Vence antivirus">{{ viewing.vencimientoAntivirus || '—' }}</app-field>
 
-    <div class="actions" style="margin-top: 16px; display: flex; gap: 8px;">
+    <div class="actions" style="margin-top: 16px; display: flex; gap: 8px; flex-wrap: wrap;">
       <button class="secondary" (click)="openAntivirus(viewing!)">Editar antivirus</button>
+      <ng-container *ngIf="canWriteAprobar && viewing.estadoSolicitud === 'PENDIENTE'">
+        <button (click)="openAprobar(viewing!)">Aprobar</button>
+        <button class="secondary" (click)="openResolucion(viewing!, 'OBSERVAR')">Observar</button>
+        <button class="secondary" (click)="openResolucion(viewing!, 'RECHAZAR')">Rechazar</button>
+      </ng-container>
     </div>
   </ng-container>
 </app-modal>
 
-<!-- Modal: formulario crear/editar registro completo -->
+<!-- Modal: formulario de solicitud -->
 <app-modal
-  [title]="editing ? 'Editar VPN' : 'Agregar VPN'"
+  [title]="editing ? 'Editar solicitud VPN' : 'Nueva solicitud VPN'"
   [open]="formOpen"
   (closed)="closeForm()"
 >
@@ -79,5 +96,24 @@
     [vpn]="antivirusEditing"
     (saved)="onAntivirusSaved()"
     (cancelled)="closeAntivirus()"
+  />
+</app-modal>
+
+<!-- Modal: aprobar -->
+<app-modal title="Aprobar solicitud VPN" [open]="aprobarOpen" (closed)="closeAprobar()">
+  <app-vpn-aprobar-form
+    [vpn]="aprobarEditing"
+    (saved)="onAprobarSaved()"
+    (cancelled)="closeAprobar()"
+  />
+</app-modal>
+
+<!-- Modal: rechazar/observar -->
+<app-modal [title]="resolucionModo === 'RECHAZAR' ? 'Rechazar solicitud VPN' : 'Observar solicitud VPN'" [open]="resolucionOpen" (closed)="closeResolucion()">
+  <app-vpn-resolucion-form
+    [vpn]="resolucionEditing"
+    [modo]="resolucionModo"
+    (saved)="onResolucionSaved()"
+    (cancelled)="closeResolucion()"
   />
 </app-modal>
