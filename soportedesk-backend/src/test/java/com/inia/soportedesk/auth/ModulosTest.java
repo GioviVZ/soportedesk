@@ -10,14 +10,15 @@ class ModulosTest {
     void validos_containsAllModuleKeys() {
         assertThat(Modulos.VALIDOS).containsExactlyInAnyOrder(
                 "usuarios-red", "correos", "equipos", "vpn", "credenciales-vpn",
+                "solicitar-vpn", "aprobar-vpn",
                 "impresoras", "wifi", "licencias", "catalogos",
-                "auditoria", "herramientas", "inventario-equipos");
+                "auditoria", "herramientas");
     }
 
     @Test
     void soloVista_isSubsetOfValidos() {
         assertThat(Modulos.SOLO_VISTA).containsExactlyInAnyOrder(
-                "auditoria", "herramientas", "inventario-equipos");
+                "auditoria", "herramientas");
         assertThat(Modulos.VALIDOS).containsAll(Modulos.SOLO_VISTA);
     }
 }

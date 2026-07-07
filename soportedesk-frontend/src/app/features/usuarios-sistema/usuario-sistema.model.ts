@@ -33,8 +33,22 @@ export const MODULOS: ModuloPermiso[] = [
   { key: 'equipos', label: 'Equipos Asignados', kind: 'write', group: 'Operaciones' },
   { key: 'vpn', label: 'VPN', kind: 'write', group: 'Redes y Accesos' },
   { key: 'credenciales-vpn', label: 'Credenciales VPN', kind: 'write', group: 'Redes y Accesos' },
-  { key: 'impresoras', label: 'Impresoras', kind: 'write', group: 'Inventario' },
+  {
+    key: 'solicitar-vpn',
+    label: 'Solicitar VPN',
+    kind: 'write',
+    group: 'Redes y Accesos',
+    description: 'Permite crear y reenviar solicitudes de acceso VPN (rol asistente).',
+  },
+  {
+    key: 'aprobar-vpn',
+    label: 'Aprobar VPN',
+    kind: 'write',
+    group: 'Redes y Accesos',
+    description: 'Permite aprobar, rechazar u observar solicitudes de acceso VPN (rol responsable).',
+  },
   { key: 'wifi', label: 'Claves WiFi', kind: 'write', group: 'Redes y Accesos' },
+  { key: 'impresoras', label: 'Impresoras', kind: 'write', group: 'Inventario' },
   { key: 'licencias', label: 'Licencias', kind: 'write', group: 'Inventario' },
   { key: 'catalogos', label: 'Catalogos', kind: 'write', group: 'Administracion' },
   {
@@ -50,12 +64,5 @@ export const MODULOS: ModuloPermiso[] = [
     kind: 'view',
     group: 'Diagnostico',
     description: 'Permite usar ping, inventario, GPU, RAM, teclado y mouse.',
-  },
-  {
-    key: 'inventario-equipos',
-    label: 'Inventario AD',
-    kind: 'view',
-    group: 'Inventario',
-    description: 'Permite revisar los equipos reportados por el agente y su estado de enlace.',
   },
 ];
