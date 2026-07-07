@@ -39,6 +39,7 @@ class VpnControllerIT {
         request.setTipoEquipo("PERSONAL");
         request.setAntivirusVerificado(true);
         request.setAnalisisAntivirusRealizado(true);
+        request.setTitularCargo("Profesional");
         return request;
     }
 
@@ -134,6 +135,43 @@ class VpnControllerIT {
                         .contentType("application/json")
                         .content(objectMapper.writeValueAsString(sampleRequest())))
                 .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @WithMockUser(authorities = {"ROLE_SOPORTE", "WRITE_solicitar-vpn"})
+    void create_withTitularExterno_returnsCreated() throws Exception {
+        Vpn saved = sampleVpn();
+        saved.setTitularTipo("EXTERNO");
+        when(service.crearSolicitud(any(), any())).thenReturn(saved);
+
+        VpnRequest request = new VpnRequest();
+        request.setTipoEquipo("PERSONAL");
+        request.setAntivirusVerificado(true);
+        request.setAnalisisAntivirusRealizado(true);
+        request.setTitularCargo("Profesional");
+        request.setTitularTipo("EXTERNO");
+        request.setTitularNombre("Juan");
+        request.setTitularApellidos("Pérez");
+        request.setTitularCorreo("juan@externo.com");
+        request.setTitularEmpresa("ACME SAC");
+        request.setTitularMotivo("Consultoria");
+
+        mockMvc.perform(post("/api/vpn")
+                        .contentType("application/json")
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isCreated());
+    }
+
+    @Test
+    @WithMockUser(authorities = {"ROLE_SOPORTE", "WRITE_solicitar-vpn"})
+    void create_withoutTitularCargo_returnsBadRequest() throws Exception {
+        VpnRequest request = sampleRequest();
+        request.setTitularCargo(null);
+
+        mockMvc.perform(post("/api/vpn")
+                        .contentType("application/json")
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest());
     }
 
     @Test
