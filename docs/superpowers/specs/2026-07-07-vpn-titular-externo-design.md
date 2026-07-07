@@ -1,0 +1,231 @@
+# Módulo VPN — titular externo / personal INIA sin cuenta AD
+
+## Contexto
+
+El formulario de solicitud VPN exige hoy elegir un `usuarioRedId` obligatorio de un `<select>`
+estático que carga **todos** los usuarios de red (`UsuarioRedService.getAll()` sin término de
+búsqueda). Esto excluye a dos tipos de personas reales que también necesitan acceso VPN:
+
+1. **Personal de INIA que no aparece en AD** (cuentas nuevas aún no sincronizadas, cuentas
+   genéricas/compartidas, casos de sincronización incompleta).
+2. **Terceros externos** (consultores, proveedores, visitantes) que nunca tendrán cuenta AD.
+
+Este diseño reemplaza el selector estático por una búsqueda en vivo contra AD (reutilizando el
+patrón de debounce que ya usa el buscador de equipos GLPI en el mismo formulario,
+`vpn-form.component.ts:110-120`) y agrega una ruta de captura manual cuando la búsqueda no
+encuentra resultados.
+
+## Decisiones confirmadas
+
+- **Flujo unificado**: no hay un checkbox "usuario externo" separado. El asistente siempre
+  busca primero en AD (`GET /api/usuarios-red?search=`, endpoint ya existente). Si hay resultados,
+  selecciona uno (comportamiento actual sin cambios). Si no hay resultados, aparece un prompt con
+  dos botones: **"Personal de INIA"** y **"Tercero externo"**.
+- **Personal de INIA (manual)**: pide nombre, apellidos, correo, y Sede/Dependencia — reutilizando
+  el componente compartido `UbicacionSelectComponent`
+  (`soportedesk-frontend/src/app/shared/ubicacion-select/ubicacion-select.component.ts`) con
+  `[showTipoContrato]="false"`. **Sin** campo de motivo.
+- **Tercero externo**: pide nombre, apellidos, correo, empresa, motivo. **Sin** Sede/Dependencia.
+- **Sede/Dependencia** se capturan como FK reales a los catálogos existentes (`Sede`/`Dependencia`,
+  paquete `com.inia.soportedesk.catalogo`), no como texto libre — consistente con cómo ya se
+  capturan en `UsuarioRedRequest`.
+- **Nomenclatura**: los nuevos campos usan el prefijo `titular_*` / `titular*`, deliberadamente
+  distinto de `solicitadoPor`/`solicitadoPorNombre` (que ya existen en `Vpn` y identifican **quién
+  llenó el formulario** — el asistente). "Titular" identifica **a quién pertenece el acceso VPN**
+  (hoy siempre `usuarioRed`; ahora también puede ser una persona sin cuenta AD). No renombrar ni
+  reutilizar `solicitadoPor*` para esto — son conceptos distintos.
+- **`usuario_red_id` ya es nullable** en la BD desde la migración `2026-06-16-vpn-refactor.sql`
+  ("para permitir datos existentes") — no requiere una nueva migración para esa columna.
+  `VpnRequest.usuarioRedId` deja de tener `@NotNull`; la validación de "debe venir uno u otro" se
+  mueve a `VpnService`.
+
+## Modelo de datos
+
+Nuevas columnas en `vpn` (además de las ya existentes del rediseño de solicitudes):
+
+| Columna | Tipo | Uso |
+|---|---|---|
+| `titular_tipo` | `NVARCHAR(20) NOT NULL DEFAULT 'AD'` | `AD` \| `INTERNO_MANUAL` \| `EXTERNO` |
+| `titular_nombre` | `NVARCHAR(150) NULL` | Solo si `titular_tipo != 'AD'` |
+| `titular_apellidos` | `NVARCHAR(150) NULL` | ídem |
+| `titular_correo` | `NVARCHAR(150) NULL` | ídem |
+| `titular_sede_id` | `BIGINT NULL` | FK a `sedes(id)` — solo `INTERNO_MANUAL` |
+| `titular_dependencia_id` | `BIGINT NULL` | FK a `dependencias(id)` — solo `INTERNO_MANUAL` |
+| `titular_empresa` | `NVARCHAR(150) NULL` | Solo `EXTERNO` |
+| `titular_motivo` | `NVARCHAR(500) NULL` | Solo `EXTERNO` |
+
+Cuando `titular_tipo = 'AD'`, todas las columnas `titular_*` (excepto `titular_tipo` mismo) quedan
+`NULL` y `usuario_red_id` tiene el valor real — sin cambios respecto al comportamiento actual.
+
+## Backend
+
+### `Vpn.java`
+
+Se agregan los 8 campos de la tabla anterior (`titularTipo: String`, `titularNombre: String`,
+`titularApellidos: String`, `titularCorreo: String`, `titularSede: Sede` `@ManyToOne`,
+`titularDependencia: Dependencia` `@ManyToOne`, `titularEmpresa: String`, `titularMotivo: String`).
+
+Se agregan dos getters `@Transient` (Jackson los serializa como campos planos adicionales en el
+JSON de respuesta, igual que cualquier otro getter — no se introduce una capa de DTO nueva):
+
+```java
+@Transient
+public String getTitularNombreCompleto() {
+    if (usuarioRed != null) return usuarioRed.getNombre();
+    String apellidos = titularApellidos == null ? "" : " " + titularApellidos;
+    return (titularNombre == null ? "" : titularNombre) + apellidos;
+}
+
+@Transient
+public String getTitularOrigenLabel() {
+    return switch (titularTipo) {
+        case "INTERNO_MANUAL" -> "Interno (manual)";
+        case "EXTERNO" -> "Externo";
+        default -> "AD";
+    };
+}
+```
+
+### `VpnRequest.java`
+
+`usuarioRedId` pierde `@NotNull` (pasa a ser opcional). Se agregan (todos opcionales a nivel de
+Bean Validation — la obligatoriedad condicional se valida en `VpnService`):
+
+```java
+private Long usuarioRedId;
+private String titularTipo;       // "INTERNO_MANUAL" | "EXTERNO", solo si usuarioRedId es null
+private String titularNombre;
+private String titularApellidos;
+private String titularCorreo;
+private Long titularSedeId;       // solo INTERNO_MANUAL
+private Long titularDependenciaId; // solo INTERNO_MANUAL
+private String titularEmpresa;    // solo EXTERNO
+private String titularMotivo;     // solo EXTERNO
+```
+
+### `VpnService.java`
+
+`copySolicitudFields` (usado por `crearSolicitud` y `actualizarSolicitud`) cambia de:
+
+```java
+UsuarioRed usuarioRed = usuarioRedRepository.findById(request.getUsuarioRedId())
+        .orElseThrow(...);
+vpn.setUsuarioRed(usuarioRed);
+```
+
+a una rama condicional:
+
+```java
+if (request.getUsuarioRedId() != null) {
+    UsuarioRed usuarioRed = usuarioRedRepository.findById(request.getUsuarioRedId())
+            .orElseThrow(() -> new ResourceNotFoundException("Usuario de red no encontrado: " + request.getUsuarioRedId()));
+    vpn.setUsuarioRed(usuarioRed);
+    vpn.setTitularTipo("AD");
+    vpn.setTitularNombre(null);
+    vpn.setTitularApellidos(null);
+    vpn.setTitularCorreo(null);
+    vpn.setTitularSede(null);
+    vpn.setTitularDependencia(null);
+    vpn.setTitularEmpresa(null);
+    vpn.setTitularMotivo(null);
+} else {
+    String tipo = request.getTitularTipo();
+    if (!"INTERNO_MANUAL".equals(tipo) && !"EXTERNO".equals(tipo)) {
+        throw new IllegalArgumentException("Debe seleccionar un usuario de red o indicar los datos del titular manual");
+    }
+    if (isBlank(request.getTitularNombre()) || isBlank(request.getTitularApellidos()) || isBlank(request.getTitularCorreo())) {
+        throw new IllegalArgumentException("Nombre, apellidos y correo del titular son obligatorios");
+    }
+    vpn.setUsuarioRed(null);
+    vpn.setTitularTipo(tipo);
+    vpn.setTitularNombre(request.getTitularNombre());
+    vpn.setTitularApellidos(request.getTitularApellidos());
+    vpn.setTitularCorreo(request.getTitularCorreo());
+    if ("INTERNO_MANUAL".equals(tipo)) {
+        if (request.getTitularSedeId() == null || request.getTitularDependenciaId() == null) {
+            throw new IllegalArgumentException("Sede y dependencia son obligatorias para personal INIA sin cuenta AD");
+        }
+        vpn.setTitularSede(sedeRepository.findById(request.getTitularSedeId())
+                .orElseThrow(() -> new ResourceNotFoundException("Sede no encontrada: " + request.getTitularSedeId())));
+        vpn.setTitularDependencia(dependenciaRepository.findById(request.getTitularDependenciaId())
+                .orElseThrow(() -> new ResourceNotFoundException("Dependencia no encontrada: " + request.getTitularDependenciaId())));
+        vpn.setTitularEmpresa(null);
+        vpn.setTitularMotivo(null);
+    } else {
+        if (isBlank(request.getTitularEmpresa()) || isBlank(request.getTitularMotivo())) {
+            throw new IllegalArgumentException("Empresa y motivo son obligatorios para un tercero externo");
+        }
+        vpn.setTitularSede(null);
+        vpn.setTitularDependencia(null);
+        vpn.setTitularEmpresa(request.getTitularEmpresa());
+        vpn.setTitularMotivo(request.getTitularMotivo());
+    }
+}
+```
+
+(`isBlank` = helper privado `s == null || s.isBlank()`.) `VpnService` gana dos nuevas dependencias
+inyectadas: `SedeRepository`, `DependenciaRepository` (ambos ya existen en
+`com.inia.soportedesk.catalogo`, mismo datasource `ssti` — no son repositorios nuevos).
+
+## Frontend
+
+### `vpn.model.ts`
+
+`Vpn` agrega: `titularTipo: 'AD' | 'INTERNO_MANUAL' | 'EXTERNO'`, `titularNombre: string | null`,
+`titularApellidos: string | null`, `titularCorreo: string | null`,
+`titularSede: { id: number; nombre: string } | null`,
+`titularDependencia: { id: number; nombre: string } | null`, `titularEmpresa: string | null`,
+`titularMotivo: string | null`, `titularNombreCompleto: string`, `titularOrigenLabel: string`.
+
+`VpnSolicitudRequest.usuarioRedId` pasa a `number | null`; se agregan los mismos 7 campos
+`titular*` que en `VpnRequest.java` (con los mismos nombres, `titularSedeId`/`titularDependenciaId`
+en vez de objetos).
+
+### `vpn-form.component.ts`
+
+- Se elimina la carga completa (`usuarioRedService.getAll()` sin término) y el `<select>` estático.
+- Se agrega búsqueda en vivo: `adSearchTerm`, `adResults: UsuarioRed[]`, `adBusquedaRealizada:
+  boolean` (para saber si ya se buscó y no hubo resultados vs. aún no se ha escrito nada), mismo
+  patrón de debounce 300ms que `onEquipoSearch`.
+- Estado `titularModo: 'buscando' | 'ad-seleccionado' | 'interno-manual' | 'externo'`.
+- Cuando `adResults` queda vacío tras una búsqueda con texto, se muestra el prompt de fallback.
+- Los controles `titularNombre`/`titularApellidos`/`titularCorreo`/`titularSedeId`/
+  `titularDependenciaId` (para `interno-manual`) o `.../titularEmpresa`/`titularMotivo` (para
+  `externo`) reciben `Validators.required` dinámicamente vía `setValidators` +
+  `updateValueAndValidity` al cambiar `titularModo`, y se limpian al volver a buscar en AD.
+- `submit()` arma el request con `usuarioRedId` o los campos `titular*` según `titularModo`, nunca
+  ambos.
+
+### `vpn-list.component.html`
+
+- Columna "Nombre": cambia de `usuarioRed.nombre` a `titularNombreCompleto`.
+- Columna "Usuario red": cambia de `usuarioRed.usuario` a `titularOrigenLabel` (muestra "AD",
+  "Interno (manual)" o "Externo" sin importar el origen — antes quedaba en blanco para registros
+  sin `usuarioRed`).
+- Modal de detalle: agrega, condicionalmente sobre `viewing.titularTipo`:
+  - `!= 'AD'` → campo "Correo" (`viewing.titularCorreo`).
+  - `== 'INTERNO_MANUAL'` → "Sede"/"Dependencia" (`viewing.titularSede?.nombre` /
+    `viewing.titularDependencia?.nombre`).
+  - `== 'EXTERNO'` → "Empresa"/"Motivo" (`viewing.titularEmpresa` / `viewing.titularMotivo`).
+
+## Testing
+
+- **`VpnServiceTest`**: crear solicitud con `usuarioRedId` (comportamiento AD sin cambios), crear
+  con `titularTipo=INTERNO_MANUAL` (válido y con campos faltantes → 400/409), crear con
+  `titularTipo=EXTERNO` (válido y con campos faltantes), crear sin `usuarioRedId` ni `titularTipo`
+  válido → `IllegalArgumentException`.
+- **`VpnControllerIT`**: al menos un caso end-to-end de creación con `titularTipo=EXTERNO` vía
+  `POST /api/vpn` confirmando 201 y los campos en la respuesta.
+- **Manual**: verificar en el navegador que buscar un usuario inexistente muestra el prompt, que
+  cada uno de los dos modos manuales pide sus campos correctos, y que la tabla/modal de detalle
+  muestran bien los tres orígenes (AD, interno manual, externo).
+
+## Archivos
+
+**Modificados**: `Vpn.java`, `VpnRequest.java`, `VpnService.java`, `VpnServiceTest.java`,
+`VpnControllerIT.java`, `vpn.model.ts`, `vpn-form.component.ts`, `vpn-form.component.html`,
+`vpn-list.component.html`, migración SQL nueva en `docs/superpowers/migrations/`.
+
+**Sin cambios**: `VpnController.java` (ningún endpoint nuevo, solo cambia el shape del request que
+ya aceptan `POST`/`PUT`), `UbicacionSelectComponent` (se reutiliza tal cual), `UsuarioRedService`
+(el endpoint de búsqueda ya existe).
