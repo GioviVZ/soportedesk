@@ -2,7 +2,13 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { Vpn, VpnAntivirusRequest, VpnRequest } from './vpn.model';
+import {
+  Vpn,
+  VpnAntivirusRequest,
+  VpnAprobarRequest,
+  VpnResolucionRequest,
+  VpnSolicitudRequest,
+} from './vpn.model';
 
 @Injectable({ providedIn: 'root' })
 export class VpnService {
@@ -21,12 +27,24 @@ export class VpnService {
     return this.http.get<Vpn>(`${this.apiUrl}/${id}`);
   }
 
-  create(request: VpnRequest): Observable<Vpn> {
+  create(request: VpnSolicitudRequest): Observable<Vpn> {
     return this.http.post<Vpn>(this.apiUrl, request);
   }
 
-  update(id: number, request: VpnRequest): Observable<Vpn> {
+  update(id: number, request: VpnSolicitudRequest): Observable<Vpn> {
     return this.http.put<Vpn>(`${this.apiUrl}/${id}`, request);
+  }
+
+  aprobar(id: number, request: VpnAprobarRequest): Observable<Vpn> {
+    return this.http.patch<Vpn>(`${this.apiUrl}/${id}/aprobar`, request);
+  }
+
+  rechazar(id: number, request: VpnResolucionRequest): Observable<Vpn> {
+    return this.http.patch<Vpn>(`${this.apiUrl}/${id}/rechazar`, request);
+  }
+
+  observar(id: number, request: VpnResolucionRequest): Observable<Vpn> {
+    return this.http.patch<Vpn>(`${this.apiUrl}/${id}/observar`, request);
   }
 
   patchAntivirus(id: number, request: VpnAntivirusRequest): Observable<Vpn> {
