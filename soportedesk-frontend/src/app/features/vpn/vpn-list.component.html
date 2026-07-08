@@ -66,6 +66,8 @@
       {{ viewing.glpiNombreEquipo }} <ng-container *ngIf="viewing.glpiIpEquipo">| IP: {{ viewing.glpiIpEquipo }}</ng-container>
     </app-field>
     <app-field label="Antivirus verificado">{{ viewing.antivirusVerificado ? 'Sí' : 'No' }}</app-field>
+    <app-field label="Sistema operativo actualizado">{{ viewing.sistemaOperativoActualizado ? 'Sí' : 'No' }}</app-field>
+    <app-field label="Forticlient instalado">{{ viewing.forticlientInstalado ? 'Sí' : 'No' }}</app-field>
     <app-field label="Análisis de antivirus realizado">{{ viewing.analisisAntivirusRealizado ? 'Sí' : 'No' }}</app-field>
     <app-field label="Host actualizado" *ngIf="viewing.glpiComputerId">{{ viewing.hostActualizado ? 'Sí' : 'No' }}</app-field>
     <ng-container *ngIf="viewing.aprobadoPorNombre">
