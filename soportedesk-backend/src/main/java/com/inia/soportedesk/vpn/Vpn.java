@@ -72,6 +72,12 @@ public class Vpn {
     @Column(name = "analisis_antivirus_realizado")
     private Boolean analisisAntivirusRealizado;
 
+    @Column(name = "sistema_operativo_actualizado")
+    private Boolean sistemaOperativoActualizado;
+
+    @Column(name = "forticlient_instalado")
+    private Boolean forticlientInstalado;
+
     @Column(name = "host_actualizado")
     private Boolean hostActualizado;
 

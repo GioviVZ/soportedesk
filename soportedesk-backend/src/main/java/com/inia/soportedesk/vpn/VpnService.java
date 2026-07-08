@@ -148,6 +148,9 @@ public class VpnService {
         vpn.setTipoEquipo(request.getTipoEquipo());
         vpn.setAntivirusVerificado(request.getAntivirusVerificado());
         vpn.setAnalisisAntivirusRealizado(request.getAnalisisAntivirusRealizado());
+        vpn.setSistemaOperativoActualizado(request.getSistemaOperativoActualizado());
+        vpn.setForticlientInstalado(request.getForticlientInstalado());
+        vpn.setVencimientoAntivirus(request.getVencimientoAntivirus());
         vpn.setTitularCargo(request.getTitularCargo());
 
         if (request.getUsuarioRedId() != null) {

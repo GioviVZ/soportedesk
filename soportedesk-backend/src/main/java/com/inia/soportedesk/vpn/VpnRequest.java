@@ -4,6 +4,8 @@ import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.time.LocalDate;
+
 @Getter
 @Setter
 public class VpnRequest {
@@ -28,6 +30,12 @@ public class VpnRequest {
     private Boolean antivirusVerificado;
 
     private Boolean analisisAntivirusRealizado;
+
+    private Boolean sistemaOperativoActualizado;
+
+    private Boolean forticlientInstalado;
+
+    private LocalDate vencimientoAntivirus;
 
     private Boolean hostActualizado;
 }

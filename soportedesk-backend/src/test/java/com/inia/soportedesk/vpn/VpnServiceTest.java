@@ -161,6 +161,26 @@ class VpnServiceTest {
     }
 
     @Test
+    void crearSolicitud_copiesSistemaOperativoForticlientAndVencimientoAntivirus() {
+        UsuarioRed mockUser = new UsuarioRed();
+        mockUser.setId(1L);
+        when(usuarioRedRepository.findById(1L)).thenReturn(Optional.of(mockUser));
+        when(usuarioRepository.findByUsername(any())).thenReturn(Optional.empty());
+        when(repository.save(any(Vpn.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        VpnRequest request = sampleRequest();
+        request.setSistemaOperativoActualizado(true);
+        request.setForticlientInstalado(true);
+        request.setVencimientoAntivirus(java.time.LocalDate.of(2027, 1, 15));
+
+        Vpn result = service.crearSolicitud(request, authAs("jasistente"));
+
+        assertThat(result.getSistemaOperativoActualizado()).isTrue();
+        assertThat(result.getForticlientInstalado()).isTrue();
+        assertThat(result.getVencimientoAntivirus()).isEqualTo(java.time.LocalDate.of(2027, 1, 15));
+    }
+
+    @Test
     void crearSolicitud_withTitularExterno_savesManualFieldsAndClearsCatalogRefs() {
         when(usuarioRepository.findByUsername(any())).thenReturn(Optional.empty());
         when(repository.save(any(Vpn.class))).thenAnswer(inv -> inv.getArgument(0));
