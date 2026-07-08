@@ -16,6 +16,8 @@ export interface Vpn {
   glpiIpEquipo: string | null;
   antivirusVerificado: boolean | null;
   analisisAntivirusRealizado: boolean | null;
+  sistemaOperativoActualizado: boolean | null;
+  forticlientInstalado: boolean | null;
   hostActualizado: boolean | null;
   comentarioResponsable: string | null;
   solicitadoPor: string;
@@ -63,7 +65,10 @@ export interface VpnSolicitudRequest {
   glpiComputerId: number | null;
   antivirusVerificado: boolean;
   analisisAntivirusRealizado: boolean;
+  sistemaOperativoActualizado: boolean;
+  forticlientInstalado: boolean;
   hostActualizado: boolean | null;
+  vencimientoAntivirus: string | null;
 }
 
 export interface VpnAprobarRequest {

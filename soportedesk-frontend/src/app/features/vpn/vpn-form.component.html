@@ -113,7 +113,28 @@
   <ng-container *ngIf="esInia">
     <div class="field checkbox-field">
       <label>
-        <input type="checkbox" formControlName="tieneGlpi" (change)="onTieneGlpiChange()" />
+        <input type="checkbox" formControlName="antivirusVerificado" />
+        Antivirus institucional verificado
+      </label>
+    </div>
+
+    <div class="field checkbox-field">
+      <label>
+        <input type="checkbox" formControlName="sistemaOperativoActualizado" [disabled]="!pasoSoActualizadoHabilitado" />
+        Sistema operativo actualizado
+      </label>
+    </div>
+
+    <div class="field checkbox-field">
+      <label>
+        <input type="checkbox" formControlName="forticlientInstalado" [disabled]="!pasoForticlientHabilitado" />
+        Forticlient instalado
+      </label>
+    </div>
+
+    <div class="field checkbox-field">
+      <label>
+        <input type="checkbox" formControlName="tieneGlpi" (change)="onTieneGlpiChange()" [disabled]="!pasoGlpiHabilitado" />
         ¿Tiene GLPI instalado?
       </label>
     </div>
@@ -140,13 +161,6 @@
         Host actualizado
       </label>
     </div>
-
-    <div class="field checkbox-field">
-      <label>
-        <input type="checkbox" formControlName="antivirusVerificado" />
-        Antivirus institucional verificado
-      </label>
-    </div>
   </ng-container>
 
   <ng-container *ngIf="!esInia">
@@ -156,11 +170,30 @@
         Antivirus con protección anti-ransomware verificado
       </label>
     </div>
+
+    <div class="field">
+      <label>Fecha de vencimiento de licencia de antivirus *</label>
+      <input type="date" formControlName="vencimientoAntivirus" [disabled]="!pasoVencimientoHabilitado" />
+    </div>
+
+    <div class="field checkbox-field">
+      <label>
+        <input type="checkbox" formControlName="sistemaOperativoActualizado" [disabled]="!pasoSoActualizadoHabilitado" />
+        Sistema operativo actualizado
+      </label>
+    </div>
+
+    <div class="field checkbox-field">
+      <label>
+        <input type="checkbox" formControlName="forticlientInstalado" [disabled]="!pasoForticlientHabilitado" />
+        Forticlient instalado
+      </label>
+    </div>
   </ng-container>
 
   <div class="field checkbox-field">
     <label>
-      <input type="checkbox" formControlName="analisisAntivirusRealizado" />
+      <input type="checkbox" formControlName="analisisAntivirusRealizado" [disabled]="!pasoAnalisisHabilitado" />
       Análisis de antivirus al equipo realizado
     </label>
   </div>

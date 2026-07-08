@@ -54,9 +54,12 @@ export class VpnFormComponent implements OnChanges {
     tipoEquipo: ['PERSONAL' as 'INIA' | 'PERSONAL', Validators.required],
     tieneGlpi: [false],
     glpiComputerId: [null as number | null],
-    antivirusVerificado: [false],
-    analisisAntivirusRealizado: [false],
+    antivirusVerificado: [false, Validators.requiredTrue],
+    analisisAntivirusRealizado: [false, Validators.requiredTrue],
     hostActualizado: [false],
+    sistemaOperativoActualizado: [false, Validators.requiredTrue],
+    forticlientInstalado: [false, Validators.requiredTrue],
+    vencimientoAntivirus: [null as string | null],
   });
 
   get esInia(): boolean {
@@ -65,6 +68,29 @@ export class VpnFormComponent implements OnChanges {
 
   get tieneGlpi(): boolean {
     return this.form.getRawValue().tieneGlpi;
+  }
+
+  get pasoSoActualizadoHabilitado(): boolean {
+    const raw = this.form.getRawValue();
+    return this.esInia ? raw.antivirusVerificado : (raw.antivirusVerificado && !!raw.vencimientoAntivirus);
+  }
+
+  get pasoForticlientHabilitado(): boolean {
+    return this.pasoSoActualizadoHabilitado && this.form.getRawValue().sistemaOperativoActualizado;
+  }
+
+  get pasoGlpiHabilitado(): boolean {
+    return this.pasoForticlientHabilitado && this.form.getRawValue().forticlientInstalado;
+  }
+
+  get pasoAnalisisHabilitado(): boolean {
+    const raw = this.form.getRawValue();
+    if (this.esInia) return raw.tieneGlpi && raw.hostActualizado;
+    return this.pasoForticlientHabilitado && raw.forticlientInstalado;
+  }
+
+  get pasoVencimientoHabilitado(): boolean {
+    return this.form.getRawValue().antivirusVerificado;
   }
 
   ngOnChanges(): void {
@@ -76,8 +102,12 @@ export class VpnFormComponent implements OnChanges {
         antivirusVerificado: this.vpn.antivirusVerificado ?? false,
         analisisAntivirusRealizado: this.vpn.analisisAntivirusRealizado ?? false,
         hostActualizado: this.vpn.hostActualizado ?? false,
+        sistemaOperativoActualizado: this.vpn.sistemaOperativoActualizado ?? false,
+        forticlientInstalado: this.vpn.forticlientInstalado ?? false,
+        vencimientoAntivirus: this.vpn.vencimientoAntivirus ?? null,
         titularCargo: this.vpn.titularCargo ?? '',
       });
+      this.applyVerificacionValidators();
       if (this.vpn.glpiComputerId && this.vpn.glpiNombreEquipo) {
         this.equipoSeleccionado = {
           computerID: this.vpn.glpiComputerId,
@@ -152,10 +182,13 @@ export class VpnFormComponent implements OnChanges {
   }
 
   onTipoEquipoChange(): void {
-    if (!this.esInia) {
+    if (this.esInia) {
+      this.form.patchValue({ vencimientoAntivirus: null });
+    } else {
       this.form.patchValue({ tieneGlpi: false, glpiComputerId: null, hostActualizado: false });
       this.equipoSeleccionado = null;
     }
+    this.applyVerificacionValidators();
   }
 
   onTieneGlpiChange(): void {
@@ -206,6 +239,9 @@ export class VpnFormComponent implements OnChanges {
       antivirusVerificado: raw.antivirusVerificado,
       analisisAntivirusRealizado: raw.analisisAntivirusRealizado,
       hostActualizado: raw.tieneGlpi ? raw.hostActualizado : null,
+      sistemaOperativoActualizado: raw.sistemaOperativoActualizado,
+      forticlientInstalado: raw.forticlientInstalado,
+      vencimientoAntivirus: raw.tipoEquipo === 'PERSONAL' ? raw.vencimientoAntivirus : null,
     };
     const obs = this.vpn
       ? this.service.update(this.vpn.id, request)
@@ -241,6 +277,26 @@ export class VpnFormComponent implements OnChanges {
     motivo.updateValueAndValidity();
   }
 
+  private applyVerificacionValidators(): void {
+    const tieneGlpiCtrl = this.form.controls.tieneGlpi;
+    const hostActualizadoCtrl = this.form.controls.hostActualizado;
+    const vencimientoCtrl = this.form.controls.vencimientoAntivirus;
+
+    if (this.esInia) {
+      tieneGlpiCtrl.setValidators(Validators.requiredTrue);
+      hostActualizadoCtrl.setValidators(Validators.requiredTrue);
+      vencimientoCtrl.clearValidators();
+    } else {
+      tieneGlpiCtrl.clearValidators();
+      hostActualizadoCtrl.clearValidators();
+      vencimientoCtrl.setValidators(Validators.required);
+    }
+
+    tieneGlpiCtrl.updateValueAndValidity();
+    hostActualizadoCtrl.updateValueAndValidity();
+    vencimientoCtrl.updateValueAndValidity();
+  }
+
   private resetAll(): void {
     this.selectedAdUserId = null;
     this.adUserSelected = null;
@@ -256,8 +312,12 @@ export class VpnFormComponent implements OnChanges {
       antivirusVerificado: false,
       analisisAntivirusRealizado: false,
       hostActualizado: false,
+      sistemaOperativoActualizado: false,
+      forticlientInstalado: false,
+      vencimientoAntivirus: null,
       titularCargo: '',
     });
     this.applyTitularValidators();
+    this.applyVerificacionValidators();
   }
 }
