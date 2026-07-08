@@ -1,7 +1,7 @@
 import { Component, EventEmitter, Input, OnChanges, Output, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
-import { CARGOS_VPN, Vpn } from './vpn.model';
+import { CARGOS_VPN, CARGOS_VPN_EXTERNO, Vpn } from './vpn.model';
 import { VpnService } from './vpn.service';
 import { UsuarioRedService } from '../usuarios-red/usuario-red.service';
 import { EquipoService } from '../equipos/equipo.service';
@@ -28,6 +28,7 @@ export class VpnFormComponent implements OnChanges {
   @Output() cancelled = new EventEmitter<void>();
 
   readonly cargos = CARGOS_VPN;
+  readonly cargosExterno = CARGOS_VPN_EXTERNO;
 
   titularModo: TitularModo = 'buscando';
   adSearchTerm = '';
@@ -142,7 +143,11 @@ export class VpnFormComponent implements OnChanges {
   }
 
   setTitularModo(modo: TitularModo): void {
+    const cruzaFronteraExterno = (this.titularModo === 'externo') !== (modo === 'externo');
     this.titularModo = modo;
+    if (cruzaFronteraExterno) {
+      this.form.patchValue({ titularCargo: '' });
+    }
     this.applyTitularValidators();
   }
 

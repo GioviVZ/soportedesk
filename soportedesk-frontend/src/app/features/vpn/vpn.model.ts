@@ -44,6 +44,12 @@ export const CARGOS_VPN = [
   'Practicante',
 ] as const;
 
+export const CARGOS_VPN_EXTERNO = [
+  'Secretaria',
+  'Profesional',
+  'Otros',
+] as const;
+
 export interface VpnSolicitudRequest {
   usuarioRedId: number | null;
   titularTipo: 'EXTERNO' | null;

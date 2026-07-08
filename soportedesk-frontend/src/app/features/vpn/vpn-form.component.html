@@ -19,10 +19,10 @@
       </ul>
     </div>
 
-    <div class="titular-fallback" *ngIf="adBusquedaRealizada && adResults.length === 0">
-      <p>No se encontró en AD. Indique los datos del tercero externo.</p>
+    <div class="titular-fallback">
+      <p *ngIf="adBusquedaRealizada && adResults.length === 0">No se encontró en AD.</p>
       <div class="actions">
-        <button type="button" class="secondary" (click)="onElegirExterno()">Tercero externo</button>
+        <button type="button" class="secondary" (click)="onElegirExterno()">Externo</button>
       </div>
     </div>
   </ng-container>
@@ -68,10 +68,17 @@
       <label>Motivo *</label>
       <input type="text" formControlName="titularMotivo" placeholder="Ej. Consultor externo - Proyecto X" />
     </div>
+    <div class="field">
+      <label>Cargo *</label>
+      <select formControlName="titularCargo">
+        <option value="">Seleccione...</option>
+        <option *ngFor="let cargo of cargosExterno" [value]="cargo">{{ cargo }}</option>
+      </select>
+    </div>
     <button type="button" class="secondary" (click)="onVolverABuscar()">Volver a buscar en AD</button>
   </ng-container>
 
-  <div class="field">
+  <div class="field" *ngIf="titularModo !== 'externo'">
     <label>Cargo *</label>
     <select formControlName="titularCargo">
       <option value="">Seleccione...</option>
