@@ -14,9 +14,6 @@ public class VpnRequest {
     private String titularNombre;
     private String titularApellidos;
     private String titularCorreo;
-    private Long titularSedeId;
-    private Long titularDependenciaId;
-    private Long titularTipoContratoId;
     private String titularEmpresa;
     private String titularMotivo;
 

@@ -1,8 +1,5 @@
 package com.inia.soportedesk.vpn;
 
-import com.inia.soportedesk.catalogo.Dependencia;
-import com.inia.soportedesk.catalogo.Sede;
-import com.inia.soportedesk.catalogo.TipoContrato;
 import com.inia.soportedesk.equipos.Equipo;
 import com.inia.soportedesk.usuariosred.UsuarioRed;
 import jakarta.persistence.*;
@@ -111,18 +108,6 @@ public class Vpn {
     @Column(name = "titular_correo")
     private String titularCorreo;
 
-    @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "titular_sede_id")
-    private Sede titularSede;
-
-    @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "titular_dependencia_id")
-    private Dependencia titularDependencia;
-
-    @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "titular_tipo_contrato_id")
-    private TipoContrato titularTipoContrato;
-
     @Column(name = "titular_empresa")
     private String titularEmpresa;
 
@@ -141,10 +126,6 @@ public class Vpn {
 
     @Transient
     public String getTitularOrigenLabel() {
-        return switch (titularTipo) {
-            case "INTERNO_MANUAL" -> "Interno (manual)";
-            case "EXTERNO" -> "Externo";
-            default -> "AD";
-        };
+        return "EXTERNO".equals(titularTipo) ? "Externo" : "AD";
     }
 }
