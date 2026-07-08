@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, OnChanges, OnInit, Output, inject } from '@angular/core';
+import { Component, EventEmitter, Input, OnChanges, Output, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { CARGOS_VPN, Vpn } from './vpn.model';
@@ -7,10 +7,8 @@ import { UsuarioRedService } from '../usuarios-red/usuario-red.service';
 import { EquipoService } from '../equipos/equipo.service';
 import { UsuarioRed } from '../usuarios-red/usuario-red.model';
 import { EquipoResumen } from '../equipos/equipo.model';
-import { CatalogoService } from '../../core/catalogos/catalogo.service';
-import { Sede, Dependencia, TipoContrato } from '../../core/models/catalogo.model';
 
-type TitularModo = 'buscando' | 'ad-seleccionado' | 'interno-manual' | 'externo';
+type TitularModo = 'buscando' | 'ad-seleccionado' | 'externo';
 
 @Component({
   selector: 'app-vpn-form',
@@ -19,12 +17,11 @@ type TitularModo = 'buscando' | 'ad-seleccionado' | 'interno-manual' | 'externo'
   templateUrl: './vpn-form.component.html',
   styleUrl: './vpn-form.component.scss',
 })
-export class VpnFormComponent implements OnInit, OnChanges {
+export class VpnFormComponent implements OnChanges {
   private fb = inject(FormBuilder);
   private service = inject(VpnService);
   private usuarioRedService = inject(UsuarioRedService);
   private equipoService = inject(EquipoService);
-  private catalogoService = inject(CatalogoService);
 
   @Input() vpn: Vpn | null = null;
   @Output() saved = new EventEmitter<void>();
@@ -40,13 +37,6 @@ export class VpnFormComponent implements OnInit, OnChanges {
 
   selectedAdUserId: number | null = null;
   adUserSelected: UsuarioRed | null = null;
-
-  sedes: Sede[] = [];
-  dependencias: Dependencia[] = [];
-  tiposContrato: TipoContrato[] = [];
-  titularSedeId: number | null = null;
-  titularDependenciaId: number | null = null;
-  titularTipoContratoId: number | null = null;
 
   equipoResults: EquipoResumen[] = [];
   equipoSeleccionado: EquipoResumen | null = null;
@@ -76,11 +66,6 @@ export class VpnFormComponent implements OnInit, OnChanges {
     return this.form.getRawValue().tieneGlpi;
   }
 
-  ngOnInit(): void {
-    this.catalogoService.getSedes().subscribe((data) => (this.sedes = data));
-    this.catalogoService.getTiposContrato().subscribe((data) => (this.tiposContrato = data));
-  }
-
   ngOnChanges(): void {
     if (this.vpn) {
       this.form.patchValue({
@@ -103,19 +88,6 @@ export class VpnFormComponent implements OnInit, OnChanges {
         this.selectedAdUserId = this.vpn.usuarioRed.id;
         this.adUserSelected = this.vpn.usuarioRed as UsuarioRed;
         this.setTitularModo('ad-seleccionado');
-      } else if (this.vpn.titularTipo === 'INTERNO_MANUAL') {
-        this.form.patchValue({
-          titularNombre: this.vpn.titularNombre ?? '',
-          titularApellidos: this.vpn.titularApellidos ?? '',
-          titularCorreo: this.vpn.titularCorreo ?? '',
-        });
-        this.titularSedeId = this.vpn.titularSede?.id ?? null;
-        this.titularDependenciaId = this.vpn.titularDependencia?.id ?? null;
-        this.titularTipoContratoId = this.vpn.titularTipoContrato?.id ?? null;
-        if (this.titularSedeId) {
-          this.catalogoService.getDependencias(this.titularSedeId).subscribe((data) => (this.dependencias = data));
-        }
-        this.setTitularModo('interno-manual');
       } else if (this.vpn.titularTipo === 'EXTERNO') {
         this.form.patchValue({
           titularNombre: this.vpn.titularNombre ?? '',
@@ -161,38 +133,12 @@ export class VpnFormComponent implements OnInit, OnChanges {
     this.setTitularModo('buscando');
   }
 
-  onElegirInternoManual(): void {
-    this.setTitularModo('interno-manual');
-  }
-
   onElegirExterno(): void {
     this.setTitularModo('externo');
   }
 
   onVolverABuscar(): void {
-    this.titularSedeId = null;
-    this.titularDependenciaId = null;
-    this.titularTipoContratoId = null;
-    this.dependencias = [];
     this.setTitularModo('buscando');
-  }
-
-  onSedeChange(value: string): void {
-    const sedeId = value ? Number(value) : null;
-    this.titularSedeId = sedeId;
-    this.titularDependenciaId = null;
-    this.dependencias = [];
-    if (sedeId) {
-      this.catalogoService.getDependencias(sedeId).subscribe((data) => (this.dependencias = data));
-    }
-  }
-
-  onDependenciaChange(value: string): void {
-    this.titularDependenciaId = value ? Number(value) : null;
-  }
-
-  onTipoContratoChange(value: string): void {
-    this.titularTipoContratoId = value ? Number(value) : null;
   }
 
   setTitularModo(modo: TitularModo): void {
@@ -236,28 +182,19 @@ export class VpnFormComponent implements OnInit, OnChanges {
   submit(): void {
     if (this.form.invalid) return;
     if (this.titularModo === 'buscando') {
-      alert('Debe seleccionar un usuario de red, o indicar si es personal INIA sin cuenta AD o un tercero externo.');
-      return;
-    }
-    if (this.titularModo === 'interno-manual' && (!this.titularSedeId || !this.titularDependenciaId || !this.titularTipoContratoId)) {
-      alert('Complete sede, dependencia y tipo de contrato.');
+      alert('Debe seleccionar un usuario de red o indicar los datos del tercero externo.');
       return;
     }
     const raw = this.form.getRawValue();
-    const esManual = this.titularModo === 'interno-manual' || this.titularModo === 'externo';
+    const esExterno = this.titularModo === 'externo';
     const request = {
       usuarioRedId: this.titularModo === 'ad-seleccionado' ? this.selectedAdUserId : null,
-      titularTipo: this.titularModo === 'interno-manual' ? ('INTERNO_MANUAL' as const)
-        : this.titularModo === 'externo' ? ('EXTERNO' as const)
-        : null,
-      titularNombre: esManual ? raw.titularNombre : null,
-      titularApellidos: esManual ? raw.titularApellidos : null,
-      titularCorreo: esManual ? raw.titularCorreo : null,
-      titularSedeId: this.titularModo === 'interno-manual' ? this.titularSedeId : null,
-      titularDependenciaId: this.titularModo === 'interno-manual' ? this.titularDependenciaId : null,
-      titularTipoContratoId: this.titularModo === 'interno-manual' ? this.titularTipoContratoId : null,
-      titularEmpresa: this.titularModo === 'externo' ? raw.titularEmpresa : null,
-      titularMotivo: this.titularModo === 'externo' ? raw.titularMotivo : null,
+      titularTipo: esExterno ? ('EXTERNO' as const) : null,
+      titularNombre: esExterno ? raw.titularNombre : null,
+      titularApellidos: esExterno ? raw.titularApellidos : null,
+      titularCorreo: esExterno ? raw.titularCorreo : null,
+      titularEmpresa: esExterno ? raw.titularEmpresa : null,
+      titularMotivo: esExterno ? raw.titularMotivo : null,
       titularCargo: raw.titularCargo,
       tipoEquipo: raw.tipoEquipo,
       glpiComputerId: raw.tieneGlpi ? raw.glpiComputerId : null,
@@ -278,20 +215,16 @@ export class VpnFormComponent implements OnInit, OnChanges {
     const empresa = this.form.controls.titularEmpresa;
     const motivo = this.form.controls.titularMotivo;
 
-    if (this.titularModo === 'interno-manual' || this.titularModo === 'externo') {
+    if (this.titularModo === 'externo') {
       nombre.setValidators(Validators.required);
       apellidos.setValidators(Validators.required);
       correo.setValidators(Validators.required);
+      empresa.setValidators(Validators.required);
+      motivo.setValidators(Validators.required);
     } else {
       nombre.clearValidators();
       apellidos.clearValidators();
       correo.clearValidators();
-    }
-
-    if (this.titularModo === 'externo') {
-      empresa.setValidators(Validators.required);
-      motivo.setValidators(Validators.required);
-    } else {
       empresa.clearValidators();
       motivo.clearValidators();
     }
@@ -309,10 +242,6 @@ export class VpnFormComponent implements OnInit, OnChanges {
     this.adSearchTerm = '';
     this.adResults = [];
     this.adBusquedaRealizada = false;
-    this.titularSedeId = null;
-    this.titularDependenciaId = null;
-    this.titularTipoContratoId = null;
-    this.dependencias = [];
     this.equipoSeleccionado = null;
     this.equipoResults = [];
     this.titularModo = 'buscando';

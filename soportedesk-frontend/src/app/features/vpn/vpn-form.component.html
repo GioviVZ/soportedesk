@@ -20,9 +20,8 @@
     </div>
 
     <div class="titular-fallback" *ngIf="adBusquedaRealizada && adResults.length === 0">
-      <p>No se encontró en AD. ¿Es personal de INIA sin cuenta AD, o un tercero externo?</p>
+      <p>No se encontró en AD. Indique los datos del tercero externo.</p>
       <div class="actions">
-        <button type="button" class="secondary" (click)="onElegirInternoManual()">Personal de INIA</button>
         <button type="button" class="secondary" (click)="onElegirExterno()">Tercero externo</button>
       </div>
     </div>
@@ -47,43 +46,6 @@
     </div>
     <button type="button" class="secondary" (click)="onCambiarUsuario()">Cambiar usuario</button>
   </div>
-
-  <ng-container *ngIf="titularModo === 'interno-manual'">
-    <div class="field">
-      <label>Nombre *</label>
-      <input type="text" formControlName="titularNombre" />
-    </div>
-    <div class="field">
-      <label>Apellidos *</label>
-      <input type="text" formControlName="titularApellidos" />
-    </div>
-    <div class="field">
-      <label>Correo *</label>
-      <input type="email" formControlName="titularCorreo" />
-    </div>
-    <div class="field">
-      <label>Sede *</label>
-      <select [ngModel]="titularSedeId" [ngModelOptions]="{standalone: true}" (change)="onSedeChange($any($event.target).value)">
-        <option value="">Seleccione...</option>
-        <option *ngFor="let sede of sedes" [value]="sede.id">{{ sede.nombre }}</option>
-      </select>
-    </div>
-    <div class="field">
-      <label>Dependencia *</label>
-      <select [ngModel]="titularDependenciaId" [ngModelOptions]="{standalone: true}" (change)="onDependenciaChange($any($event.target).value)" [disabled]="!titularSedeId">
-        <option value="">Seleccione...</option>
-        <option *ngFor="let dep of dependencias" [value]="dep.id">{{ dep.nombre }}</option>
-      </select>
-    </div>
-    <div class="field">
-      <label>Tipo de contrato *</label>
-      <select [ngModel]="titularTipoContratoId" [ngModelOptions]="{standalone: true}" (change)="onTipoContratoChange($any($event.target).value)">
-        <option value="">Seleccione...</option>
-        <option *ngFor="let tipo of tiposContrato" [value]="tipo.id">{{ tipo.nombre }}</option>
-      </select>
-    </div>
-    <button type="button" class="secondary" (click)="onVolverABuscar()">Volver a buscar en AD</button>
-  </ng-container>
 
   <ng-container *ngIf="titularModo === 'externo'">
     <div class="field">

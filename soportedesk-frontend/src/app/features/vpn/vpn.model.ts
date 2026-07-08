@@ -24,13 +24,10 @@ export interface Vpn {
   aprobadoPor: string | null;
   aprobadoPorNombre: string | null;
   fechaResolucion: string | null;
-  titularTipo: 'AD' | 'INTERNO_MANUAL' | 'EXTERNO';
+  titularTipo: 'AD' | 'EXTERNO';
   titularNombre: string | null;
   titularApellidos: string | null;
   titularCorreo: string | null;
-  titularSede: { id: number; nombre: string } | null;
-  titularDependencia: { id: number; nombre: string } | null;
-  titularTipoContrato: { id: number; nombre: string } | null;
   titularEmpresa: string | null;
   titularMotivo: string | null;
   titularCargo: string;
@@ -49,13 +46,10 @@ export const CARGOS_VPN = [
 
 export interface VpnSolicitudRequest {
   usuarioRedId: number | null;
-  titularTipo: 'INTERNO_MANUAL' | 'EXTERNO' | null;
+  titularTipo: 'EXTERNO' | null;
   titularNombre: string | null;
   titularApellidos: string | null;
   titularCorreo: string | null;
-  titularSedeId: number | null;
-  titularDependenciaId: number | null;
-  titularTipoContratoId: number | null;
   titularEmpresa: string | null;
   titularMotivo: string | null;
   titularCargo: string;
