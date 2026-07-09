@@ -75,7 +75,7 @@
   </div>
 
   <div class="charts-grid">
-    <app-usuarios-red-por-ubicacion-chart />
-    <app-licencias-por-tipo-chart />
+    <app-usuarios-red-por-ubicacion-chart *ngIf="showUsuariosChart" />
+    <app-licencias-por-tipo-chart *ngIf="showLicenciasChart" />
   </div>
 </div>

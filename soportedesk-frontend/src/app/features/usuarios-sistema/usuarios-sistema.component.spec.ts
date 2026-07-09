@@ -15,7 +15,7 @@ describe('UsuariosSistemaComponent', () => {
     nombre: 'Soporte Uno',
     rol: 'SOPORTE',
     activo: true,
-    permisos: { vpn: 'EDIT' },
+    permisos: { vpn: 'VIEW' },
   };
 
   beforeEach(() => {
@@ -26,7 +26,7 @@ describe('UsuariosSistemaComponent', () => {
       'delete',
     ]);
     service.getAll.and.returnValue(of([usuario]));
-    service.update.and.returnValue(of({ ...usuario, permisos: { vpn: 'EDIT', auditoria: 'VIEW' } }));
+    service.update.and.returnValue(of({ ...usuario, permisos: { vpn: 'VIEW', auditoria: 'VIEW' } }));
 
     TestBed.configureTestingModule({
       imports: [UsuariosSistemaComponent],
@@ -57,7 +57,7 @@ describe('UsuariosSistemaComponent', () => {
     const request = service.update.calls.mostRecent().args[1] as UsuarioSistemaRequest;
     expect(service.update).toHaveBeenCalledWith(
       7,
-      jasmine.objectContaining({ permisos: jasmine.objectContaining({ vpn: 'EDIT', auditoria: 'VIEW' }) }),
+      jasmine.objectContaining({ permisos: jasmine.objectContaining({ vpn: 'VIEW', auditoria: 'VIEW' }) }),
     );
     expect(request.permisos['auditoria']).toBe('VIEW');
   });

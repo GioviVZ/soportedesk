@@ -11,13 +11,13 @@ export class AuthService {
 
   login(request: LoginRequest): Observable<AuthResponse> {
     return this.http.post<AuthResponse>(`${this.apiUrl}/login`, request).pipe(
-      tap((response) => {
-        localStorage.setItem('token', response.token);
-        localStorage.setItem('rol', response.rol);
-        localStorage.setItem('username', response.username);
-        localStorage.setItem('nombre', response.nombre);
-        localStorage.setItem('permisos', JSON.stringify(response.permisos ?? {}));
-      })
+      tap((response) => this.storeSession(response))
+    );
+  }
+
+  refreshSession(): Observable<AuthResponse> {
+    return this.http.get<AuthResponse>(`${this.apiUrl}/me`).pipe(
+      tap((response) => this.storeSession(response))
     );
   }
 
@@ -73,5 +73,15 @@ export class AuthService {
   canWrite(modulo: string): boolean {
     if (this.isAdmin()) return true;
     return this.getPermisos()[modulo] === 'EDIT';
+  }
+
+  private storeSession(response: AuthResponse): void {
+    if (response.token) {
+      localStorage.setItem('token', response.token);
+    }
+    localStorage.setItem('rol', response.rol);
+    localStorage.setItem('username', response.username);
+    localStorage.setItem('nombre', response.nombre);
+    localStorage.setItem('permisos', JSON.stringify(response.permisos ?? {}));
   }
 }

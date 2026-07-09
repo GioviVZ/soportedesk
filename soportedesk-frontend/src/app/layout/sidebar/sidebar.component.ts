@@ -75,6 +75,12 @@ export class SidebarComponent {
       return this.authService.isAdmin();
     }
     if (item.permission) {
+      if (item.permission === 'vpn') {
+        return this.authService.isAdmin()
+          || this.authService.canRead('vpn')
+          || this.authService.canWrite('solicitar-vpn')
+          || this.authService.canWrite('aprobar-vpn');
+      }
       return this.authService.isAdmin() || this.authService.canRead(item.permission);
     }
     return true;

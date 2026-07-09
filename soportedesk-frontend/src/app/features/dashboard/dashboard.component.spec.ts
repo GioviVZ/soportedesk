@@ -27,6 +27,7 @@ describe('DashboardComponent', () => {
       imports: [DashboardComponent, HttpClientTestingModule],
       providers: [provideRouter([]), provideCharts(withDefaultRegisterables())],
     });
+    localStorage.setItem('rol', 'ADMIN');
     fixture = TestBed.createComponent(DashboardComponent);
     httpMock = TestBed.inject(HttpTestingController);
     fixture.detectChanges();
@@ -36,16 +37,19 @@ describe('DashboardComponent', () => {
     httpMock.expectOne((r) => r.url.endsWith('/licencias-por-tipo')).flush([]);
   });
 
-  afterEach(() => httpMock.verify());
+  afterEach(() => {
+    httpMock.verify();
+    localStorage.clear();
+  });
 
-  it('renders a card for usuarios desactivados that links to the filtered list', () => {
+  it('renders a card for usuarios desactivados only for usuarios-red write access', () => {
     const links = fixture.debugElement.queryAll(By.directive(RouterLink));
     const card = links.find((l) => l.nativeElement.textContent.includes('Usuarios Desactivados'));
     expect(card).toBeTruthy();
     expect(card!.nativeElement.textContent).toContain('2');
 
     const routerLink = card!.injector.get(RouterLink);
-    expect(routerLink.queryParams).toEqual({ search: 'Inactivo' });
+    expect(routerLink.href).toBe('/usuarios-red/dashboard');
   });
 
   it('computes totalRegistros from the 7 record categories, excluding usuariosRedInactivos', () => {

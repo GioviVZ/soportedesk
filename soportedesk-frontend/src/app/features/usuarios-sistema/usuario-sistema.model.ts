@@ -29,10 +29,28 @@ export interface ModuloPermiso {
 
 export const MODULOS: ModuloPermiso[] = [
   { key: 'usuarios-red', label: 'Usuarios de Red/AD', kind: 'write', group: 'Operaciones' },
-  { key: 'correos', label: 'Correos Institucionales', kind: 'write', group: 'Operaciones' },
+  {
+    key: 'correos',
+    label: 'Correos Institucionales',
+    kind: 'view',
+    group: 'Operaciones',
+    description: 'Permite consultar cuentas y ver el dashboard de Google Workspace.',
+  },
   { key: 'equipos', label: 'Equipos Asignados', kind: 'write', group: 'Operaciones' },
-  { key: 'vpn', label: 'VPN', kind: 'write', group: 'Redes y Accesos' },
-  { key: 'credenciales-vpn', label: 'Credenciales VPN', kind: 'write', group: 'Redes y Accesos' },
+  {
+    key: 'vpn',
+    label: 'VPN Registros',
+    kind: 'view',
+    group: 'Redes y Accesos',
+    description: 'Permite entrar a la vista de registros VPN en modo consulta.',
+  },
+  {
+    key: 'credenciales-vpn',
+    label: 'Credenciales VPN',
+    kind: 'write',
+    group: 'Redes y Accesos',
+    description: 'Permite ver y gestionar usuario y clave VPN dentro de Administracion.',
+  },
   {
     key: 'solicitar-vpn',
     label: 'Solicitar VPN',
