@@ -12,6 +12,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -25,17 +26,21 @@ public class VpnService {
     private final UsuarioRedRepository usuarioRedRepository;
     private final VwInvComputerFullRepository glpiRepository;
     private final UsuarioRepository usuarioRepository;
+    private final VpnConfigInstitucionalService configInstitucionalService;
 
     public List<Vpn> findAll(String search) {
-        if (search == null || search.isBlank()) {
-            return repository.findAll();
-        }
-        return repository.search(search);
+        List<Vpn> result = search == null || search.isBlank()
+                ? repository.findAll()
+                : repository.search(search);
+        result.forEach(this::aplicarVence);
+        return result;
     }
 
     public Vpn findById(Long id) {
-        return repository.findById(id)
+        Vpn vpn = repository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Acceso VPN no encontrado: " + id));
+        aplicarVence(vpn);
+        return vpn;
     }
 
     public VpnKpisDto getKpis() {
@@ -58,7 +63,7 @@ public class VpnService {
         vpn.setSolicitadoPorNombre(nombreDe(auth.getName()));
         vpn.setFechaSolicitud(LocalDateTime.now());
         copySolicitudFields(vpn, request);
-        return repository.save(vpn);
+        return saveAndApplyVence(vpn);
     }
 
     @Transactional
@@ -71,7 +76,7 @@ public class VpnService {
         if ("OBSERVADO".equals(vpn.getEstadoSolicitud())) {
             vpn.setEstadoSolicitud("PENDIENTE");
         }
-        return repository.save(vpn);
+        return saveAndApplyVence(vpn);
     }
 
     @Transactional
@@ -82,12 +87,10 @@ public class VpnService {
         }
         vpn.setUsuarioVpn(request.getUsuarioVpn());
         vpn.setCredencialVpn(request.getCredencialVpn());
-        vpn.setIpAsignada(request.getIpAsignada());
-        vpn.setVence(request.getVence());
         vpn.setEstado(request.getEstado());
         vpn.setEstadoSolicitud("APROBADO");
         marcarResuelto(vpn, auth);
-        return repository.save(vpn);
+        return saveAndApplyVence(vpn);
     }
 
     @Transactional
@@ -105,7 +108,7 @@ public class VpnService {
         Vpn vpn = findById(id);
         vpn.setTieneAntivirus(request.getTieneAntivirus());
         vpn.setVencimientoAntivirus(request.getVencimientoAntivirus());
-        return repository.save(vpn);
+        return saveAndApplyVence(vpn);
     }
 
     public void delete(Long id) {
@@ -131,7 +134,7 @@ public class VpnService {
         vpn.setComentarioResponsable(request.getComentarioResponsable());
         vpn.setEstadoSolicitud(nuevoEstado);
         marcarResuelto(vpn, auth);
-        return repository.save(vpn);
+        return saveAndApplyVence(vpn);
     }
 
     private void marcarResuelto(Vpn vpn, Authentication auth) {
@@ -199,6 +202,21 @@ public class VpnService {
 
     private static boolean isBlank(String s) {
         return s == null || s.isBlank();
+    }
+
+    private Vpn saveAndApplyVence(Vpn vpn) {
+        Vpn saved = repository.save(vpn);
+        aplicarVence(saved);
+        return saved;
+    }
+
+    private void aplicarVence(Vpn vpn) {
+        if ("INIA".equals(vpn.getTipoEquipo())) {
+            vpn.setVence(configInstitucionalService.getVencimiento());
+            return;
+        }
+        LocalDate vencimiento = vpn.getVencimientoAntivirus();
+        vpn.setVence(vencimiento);
     }
 
     private boolean canViewCredenciales(Vpn vpn, Authentication auth) {

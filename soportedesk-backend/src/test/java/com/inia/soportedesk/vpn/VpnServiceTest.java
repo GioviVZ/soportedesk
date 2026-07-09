@@ -15,6 +15,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
@@ -39,6 +40,9 @@ class VpnServiceTest {
 
     @Mock
     private UsuarioRepository usuarioRepository;
+
+    @Mock
+    private VpnConfigInstitucionalService configInstitucionalService;
 
     @InjectMocks
     private VpnService service;
@@ -77,6 +81,18 @@ class VpnServiceTest {
 
         assertThat(result).hasSize(1);
         verify(repository).findAll();
+    }
+
+    @Test
+    void findAll_forEquipoInia_setsVenceFromConfigInstitucional() {
+        Vpn vpn = new Vpn();
+        vpn.setTipoEquipo("INIA");
+        when(repository.findAll()).thenReturn(List.of(vpn));
+        when(configInstitucionalService.getVencimiento()).thenReturn(LocalDate.of(2027, 12, 31));
+
+        List<Vpn> result = service.findAll(null);
+
+        assertThat(result.get(0).getVence()).isEqualTo(LocalDate.of(2027, 12, 31));
     }
 
     @Test
@@ -171,13 +187,43 @@ class VpnServiceTest {
         VpnRequest request = sampleRequest();
         request.setSistemaOperativoActualizado(true);
         request.setForticlientInstalado(true);
-        request.setVencimientoAntivirus(java.time.LocalDate.of(2027, 1, 15));
+        request.setVencimientoAntivirus(LocalDate.of(2027, 1, 15));
 
         Vpn result = service.crearSolicitud(request, authAs("jasistente"));
 
         assertThat(result.getSistemaOperativoActualizado()).isTrue();
         assertThat(result.getForticlientInstalado()).isTrue();
-        assertThat(result.getVencimientoAntivirus()).isEqualTo(java.time.LocalDate.of(2027, 1, 15));
+        assertThat(result.getVencimientoAntivirus()).isEqualTo(LocalDate.of(2027, 1, 15));
+    }
+
+    @Test
+    void crearSolicitud_forEquipoPersonal_setsVenceFromVencimientoAntivirus() {
+        UsuarioRed mockUser = new UsuarioRed();
+        mockUser.setId(1L);
+        when(usuarioRedRepository.findById(1L)).thenReturn(Optional.of(mockUser));
+        when(usuarioRepository.findByUsername(any())).thenReturn(Optional.empty());
+        when(repository.save(any(Vpn.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        VpnRequest request = sampleRequest();
+        request.setTipoEquipo("PERSONAL");
+        request.setVencimientoAntivirus(LocalDate.of(2027, 2, 20));
+
+        Vpn result = service.crearSolicitud(request, authAs("jasistente"));
+
+        assertThat(result.getVence()).isEqualTo(LocalDate.of(2027, 2, 20));
+    }
+
+    @Test
+    void aplicarVence_forEquipoIniaWithoutConfig_setsVenceNull() {
+        Vpn vpn = new Vpn();
+        vpn.setId(12L);
+        vpn.setTipoEquipo("INIA");
+        when(repository.findById(12L)).thenReturn(Optional.of(vpn));
+        when(configInstitucionalService.getVencimiento()).thenReturn(null);
+
+        Vpn result = service.findById(12L);
+
+        assertThat(result.getVence()).isNull();
     }
 
     @Test
@@ -280,7 +326,6 @@ class VpnServiceTest {
         VpnAprobarRequest request = new VpnAprobarRequest();
         request.setUsuarioVpn("vpnuser1");
         request.setCredencialVpn("Sup3rSecreta!");
-        request.setIpAsignada("10.8.0.5");
         request.setEstado("Activo");
 
         Vpn result = service.aprobar(7L, request, authAs("mresponsable"));

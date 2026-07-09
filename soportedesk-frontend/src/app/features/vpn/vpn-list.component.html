@@ -27,10 +27,26 @@
     </article>
   </section>
 
+  <section class="kpi-grid vencimiento-grid">
+    <article class="kpi-card tone-blue total-card">
+      <span>Total solicitadas</span>
+      <strong>{{ totalSolicitudes }}</strong>
+      <small>Registros VPN pedidos</small>
+    </article>
+    <article *ngFor="let card of vencimientoCards" class="kpi-card" [class]="'tone-' + card.tone"
+      [class.kpi-card--active]="vencimientoFiltro === card.filtro"
+      (click)="setVencimientoFiltro(card.filtro)">
+      <span>{{ card.label }}</span>
+      <strong>{{ card.value }}</strong>
+      <small>{{ card.detail }}</small>
+    </article>
+  </section>
+
   <app-generic-table
     [columns]="columns"
     [data]="displayedItems"
-    [canEdit]="canWriteSolicitar"
+    [canAdd]="canWriteSolicitar"
+    [canEdit]="false"
     extraColumnLabel="Vence VPN"
     (searchChange)="onSearch($event)"
     (add)="onAdd()"
@@ -46,63 +62,167 @@
 </div>
 
 <!-- Modal: detalle -->
-<app-modal title="Detalle VPN" [open]="viewing !== null" (closed)="closeView()">
+<app-modal title="Detalle VPN" [open]="viewing !== null" size="wide" (closed)="closeView()">
   <ng-container *ngIf="viewing">
-    <app-field label="Nombre">{{ viewing.titularNombreCompleto }}</app-field>
-    <app-field label="Origen">{{ viewing.titularOrigenLabel }}</app-field>
-    <app-field label="Cargo">{{ viewing.titularCargo }}</app-field>
-    <app-field label="Correo" *ngIf="viewing.titularTipo !== 'AD'">{{ viewing.titularCorreo }}</app-field>
-    <app-field label="Empresa" *ngIf="viewing.titularTipo === 'EXTERNO'">{{ viewing.titularEmpresa }}</app-field>
-    <app-field label="Motivo" *ngIf="viewing.titularTipo === 'EXTERNO'">{{ viewing.titularMotivo }}</app-field>
+    <section class="vpn-detail">
+      <header class="detail-hero" [ngClass]="'tone-' + estadoTone(viewing.estadoSolicitud)">
+        <div>
+          <span>{{ viewing.titularOrigenLabel }} / {{ viewing.tipoEquipo === 'INIA' ? 'Equipo INIA' : 'Equipo personal' }}</span>
+          <h3>{{ viewing.titularNombreCompleto }}</h3>
+          <p>{{ viewing.titularCargo }}<ng-container *ngIf="viewing.titularCorreo"> / {{ viewing.titularCorreo }}</ng-container></p>
+        </div>
+        <div class="detail-status">
+          <small>Solicitud</small>
+          <strong>{{ viewing.estadoSolicitud }}</strong>
+          <app-vencimiento-badge [fecha]="viewing.vence" />
+        </div>
+      </header>
 
-    <hr style="margin: 12px 0; border-color: var(--color-border)" />
+      <section class="decision-panel" *ngIf="canWriteAprobar && viewing.estadoSolicitud === 'PENDIENTE'">
+        <div>
+          <span>Decision del responsable</span>
+          <strong>Revisa la solicitud y registra el resultado</strong>
+        </div>
+        <div class="decision-actions">
+          <button class="decision-primary" (click)="openAprobar(viewing!)">Aprobar</button>
+          <button class="decision-secondary" (click)="openResolucion(viewing!, 'OBSERVAR')">Observar</button>
+          <button class="decision-danger" (click)="openResolucion(viewing!, 'RECHAZAR')">Rechazar</button>
+        </div>
+      </section>
 
-    <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: #4338ca; margin-bottom: 8px;">Solicitud</div>
-    <app-field label="Solicitado por">{{ viewing.solicitadoPorNombre || viewing.solicitadoPor }}</app-field>
-    <app-field label="Fecha de solicitud">{{ viewing.fechaSolicitud }}</app-field>
-    <app-field label="Estado de solicitud">{{ viewing.estadoSolicitud }}</app-field>
-    <app-field label="Tipo de equipo">{{ viewing.tipoEquipo === 'INIA' ? 'Equipo de INIA' : 'Equipo personal' }}</app-field>
-    <app-field label="Equipo GLPI" *ngIf="viewing.glpiNombreEquipo">
-      {{ viewing.glpiNombreEquipo }} <ng-container *ngIf="viewing.glpiIpEquipo">| IP: {{ viewing.glpiIpEquipo }}</ng-container>
-    </app-field>
-    <app-field label="Antivirus verificado">{{ viewing.antivirusVerificado ? 'Sí' : 'No' }}</app-field>
-    <app-field label="Sistema operativo actualizado">{{ viewing.sistemaOperativoActualizado ? 'Sí' : 'No' }}</app-field>
-    <app-field label="Forticlient instalado">{{ viewing.forticlientInstalado ? 'Sí' : 'No' }}</app-field>
-    <app-field label="Análisis de antivirus realizado">{{ viewing.analisisAntivirusRealizado ? 'Sí' : 'No' }}</app-field>
-    <app-field label="Host actualizado" *ngIf="viewing.glpiComputerId">{{ viewing.hostActualizado ? 'Sí' : 'No' }}</app-field>
-    <ng-container *ngIf="viewing.aprobadoPorNombre">
-      <app-field label="Resuelto por">{{ viewing.aprobadoPorNombre }}</app-field>
-      <app-field label="Fecha de resolución">{{ viewing.fechaResolucion }}</app-field>
-    </ng-container>
-    <app-field label="Comentario del responsable" *ngIf="viewing.comentarioResponsable">{{ viewing.comentarioResponsable }}</app-field>
+      <section class="detail-metrics">
+        <article>
+          <span>Vence VPN</span>
+          <strong>{{ viewing.vence || 'Sin fecha' }}</strong>
+          <small>{{ vencimientoFuente(viewing) }}</small>
+        </article>
+        <article>
+          <span>Estado acceso</span>
+          <strong>{{ viewing.estado || 'Sin estado' }}</strong>
+          <small>{{ viewing.fechaResolucion ? 'Resuelto' : 'En evaluacion' }}</small>
+        </article>
+        <article>
+          <span>Solicitado por</span>
+          <strong>{{ viewing.solicitadoPorNombre || viewing.solicitadoPor }}</strong>
+          <small>{{ viewing.fechaSolicitud }}</small>
+        </article>
+      </section>
 
-    <hr style="margin: 12px 0; border-color: var(--color-border)" />
+      <section class="detail-section">
+        <div class="section-title">
+          <span>Solicitud</span>
+          <small>Datos del titular y equipo asociado.</small>
+        </div>
+        <div class="detail-grid">
+          <div class="detail-cell" *ngIf="viewing.titularTipo === 'EXTERNO'">
+            <span>Empresa</span>
+            <strong>{{ viewing.titularEmpresa || 'No registrado' }}</strong>
+          </div>
+          <div class="detail-cell" *ngIf="viewing.titularTipo === 'EXTERNO'">
+            <span>Motivo</span>
+            <strong>{{ viewing.titularMotivo || 'No registrado' }}</strong>
+          </div>
+          <div class="detail-cell" *ngIf="viewing.glpiNombreEquipo">
+            <span>Equipo GLPI</span>
+            <strong>{{ viewing.glpiNombreEquipo }}</strong>
+            <small *ngIf="viewing.glpiIpEquipo">IP {{ viewing.glpiIpEquipo }}</small>
+          </div>
+          <div class="detail-cell">
+            <span>Tipo de equipo</span>
+            <strong>{{ viewing.tipoEquipo === 'INIA' ? 'Equipo de INIA' : 'Equipo personal' }}</strong>
+          </div>
+        </div>
+      </section>
 
-    <app-field label="IP VPN asignada">{{ viewing.ipAsignada || '—' }}</app-field>
-    <app-field label="Vence (VPN)">{{ viewing.vence || '—' }}</app-field>
-    <app-field label="Estado">{{ viewing.estado || '—' }}</app-field>
+      <section class="detail-section">
+        <div class="section-title">
+          <span>Validacion tecnica</span>
+          <small>Checklist usado antes de aprobar el acceso.</small>
+        </div>
+        <div class="check-grid">
+          <div class="check-item" [class.ok]="viewing.antivirusVerificado">
+            <span>Antivirus verificado</span>
+            <strong>{{ boolLabel(viewing.antivirusVerificado) }}</strong>
+          </div>
+          <div class="check-item" [class.ok]="viewing.analisisAntivirusRealizado">
+            <span>Analisis antivirus</span>
+            <strong>{{ boolLabel(viewing.analisisAntivirusRealizado) }}</strong>
+          </div>
+          <div class="check-item" [class.ok]="viewing.sistemaOperativoActualizado">
+            <span>Sistema operativo</span>
+            <strong>{{ boolLabel(viewing.sistemaOperativoActualizado) }}</strong>
+          </div>
+          <div class="check-item" [class.ok]="viewing.forticlientInstalado">
+            <span>Forticlient</span>
+            <strong>{{ boolLabel(viewing.forticlientInstalado) }}</strong>
+          </div>
+          <div class="check-item" *ngIf="viewing.glpiComputerId" [class.ok]="viewing.hostActualizado">
+            <span>Host actualizado</span>
+            <strong>{{ boolLabel(viewing.hostActualizado) }}</strong>
+          </div>
+        </div>
+      </section>
 
-    <ng-container *ngIf="canEditCredenciales">
-      <hr style="margin: 12px 0; border-color: #a5b4fc; border-style: dashed;" />
-      <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: #4338ca; margin-bottom: 8px; display: flex; align-items: center; gap: 6px;">
-        Credenciales VPN
-      </div>
-      <app-field label="Usuario VPN">{{ viewing.usuarioVpn || '—' }}</app-field>
-      <app-field label="Credencial VPN">{{ viewing.credencialVpn || '—' }}</app-field>
-    </ng-container>
+      <section class="detail-section">
+        <div class="section-title">
+          <span>Antivirus y vencimiento</span>
+          <small>Seguimiento que alimenta la fecha de vencimiento del VPN.</small>
+        </div>
+        <div class="detail-grid">
+          <div class="detail-cell">
+            <span>{{ antivirusOrigenLabel(viewing) }}</span>
+            <strong>{{ antivirusOrigenValor(viewing) }}</strong>
+          </div>
+          <div class="detail-cell">
+            <span>Fecha base</span>
+            <strong>{{ fechaBaseAntivirus(viewing) }}</strong>
+          </div>
+        </div>
+      </section>
 
-    <hr style="margin: 12px 0; border-color: var(--color-border)" />
+      <section class="detail-section" *ngIf="viewing.aprobadoPorNombre || viewing.comentarioResponsable">
+        <div class="section-title">
+          <span>Resolucion</span>
+          <small>Decision registrada por el responsable.</small>
+        </div>
+        <div class="detail-grid">
+          <div class="detail-cell" *ngIf="viewing.aprobadoPorNombre">
+            <span>Responsable</span>
+            <strong>{{ viewing.aprobadoPorNombre }}</strong>
+            <small>{{ viewing.fechaResolucion || '' }}</small>
+          </div>
+          <div class="detail-cell detail-cell--wide" *ngIf="viewing.comentarioResponsable">
+            <span>Comentario</span>
+            <strong>{{ viewing.comentarioResponsable }}</strong>
+          </div>
+        </div>
+      </section>
 
-    <app-field label="Antivirus (monitoreo)">{{ antivirusLabel(viewing) }}</app-field>
-    <app-field label="Vence antivirus">{{ viewing.vencimientoAntivirus || '—' }}</app-field>
+      <section class="credential-box" *ngIf="canEditCredenciales">
+        <div class="section-title">
+          <span>Credenciales VPN</span>
+          <small>Informacion sensible, visible solo para usuarios autorizados.</small>
+        </div>
+        <div class="detail-grid">
+          <div class="detail-cell">
+            <span>Usuario VPN</span>
+            <strong>{{ viewing.usuarioVpn || 'No asignado' }}</strong>
+          </div>
+          <div class="detail-cell">
+            <span>Credencial VPN</span>
+            <strong>{{ viewing.credencialVpn || 'No asignada' }}</strong>
+          </div>
+        </div>
+      </section>
+    </section>
 
-    <div class="actions" style="margin-top: 16px; display: flex; gap: 8px; flex-wrap: wrap;">
-      <button class="secondary" (click)="openAntivirus(viewing!)">Editar antivirus</button>
-      <ng-container *ngIf="canWriteAprobar && viewing.estadoSolicitud === 'PENDIENTE'">
-        <button (click)="openAprobar(viewing!)">Aprobar</button>
-        <button class="secondary" (click)="openResolucion(viewing!, 'OBSERVAR')">Observar</button>
-        <button class="secondary" (click)="openResolucion(viewing!, 'RECHAZAR')">Rechazar</button>
-      </ng-container>
+    <div class="detail-actions">
+      <button *ngIf="canWriteSolicitar && viewing.estadoSolicitud !== 'APROBADO'" class="secondary" (click)="editFromDetail(viewing!)">
+        Editar
+      </button>
+      <button *ngIf="canWriteSolicitar" class="secondary danger-action" (click)="deleteFromDetail(viewing!)">
+        Eliminar
+      </button>
     </div>
   </ng-container>
 </app-modal>

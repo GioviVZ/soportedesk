@@ -27,7 +27,21 @@ const MODULOS: Record<string, string> = {
 export class AuditoriaComponent implements OnInit {
   private service = inject(AuditoriaService);
 
-  readonly acciones = ['LOGIN', 'LOGIN_FALLIDO', 'CREAR', 'ACTUALIZAR', 'ELIMINAR'];
+  readonly acciones = [
+    'LOGIN',
+    'LOGIN_FALLIDO',
+    'CREAR',
+    'ACTUALIZAR',
+    'ELIMINAR',
+    'DESBLOQUEAR_CUENTA',
+    'RESET_PASSWORD',
+    'HABILITAR_CUENTA',
+    'DESHABILITAR_CUENTA',
+    'MOVER_OU',
+    'AGREGAR_GRUPO',
+    'QUITAR_GRUPO',
+    'ACTUALIZAR_INFO',
+  ];
   readonly modulos = Object.entries(MODULOS).map(([key, label]) => ({ key, label }));
 
   movimientos: MovimientoAuditoria[] = [];

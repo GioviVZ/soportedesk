@@ -58,6 +58,7 @@
   <button [class.active]="activeTab === 'marcasImpresora'" (click)="setTab('marcasImpresora')">Marcas de Impresora</button>
   <button [class.active]="activeTab === 'modelosImpresora'" (click)="setTab('modelosImpresora')">Modelos de Impresora</button>
   <button [class.active]="activeTab === 'tiposEquipo'" (click)="setTab('tiposEquipo')">Tipos de Equipo (GLPI)</button>
+  <button [class.active]="activeTab === 'vpnInstitucional'" (click)="setTab('vpnInstitucional')">Antivirus institucional</button>
 </div>
 
 <div class="catalog-toolbar">
@@ -66,7 +67,9 @@
     <strong>{{ activeNavItem.label }}</strong>
     <small>{{ activeGroup.title }} / Afecta a: {{ activeNavItem.affects.join(', ') }}</small>
   </div>
-  <button *ngIf="canWrite" type="button" (click)="startAdd()">Agregar</button>
+  <button *ngIf="canWrite" type="button" (click)="startAdd()">
+    {{ activeTab === 'vpnInstitucional' ? 'Actualizar fecha' : 'Agregar' }}
+  </button>
 </div>
 
 <!-- Sedes -->
@@ -352,6 +355,26 @@
   </table>
 </ng-container>
 
+<!-- Antivirus institucional VPN -->
+<ng-container *ngIf="activeTab === 'vpnInstitucional'">
+  <section class="institutional-config">
+    <div class="institutional-config__icon">VPN</div>
+    <div class="institutional-config__copy">
+      <span>Parametro institucional</span>
+      <strong>Vencimiento del antivirus institucional</strong>
+      <p>
+        Esta fecha se usa automaticamente como vencimiento VPN para todas las solicitudes de equipos INIA.
+        Al cambiarla, los registros aprobados reflejan el nuevo vencimiento al volver a consultarse.
+      </p>
+      <div class="institutional-config__date">
+        <small>Fecha vigente</small>
+        <b>{{ vpnConfigVencimiento || 'Sin configurar' }}</b>
+      </div>
+    </div>
+    <button *ngIf="canWrite" type="button" (click)="startAdd()">Actualizar</button>
+  </section>
+</ng-container>
+
 <app-modal *ngIf="canWrite" [title]="simpleFormTitle" [open]="formOpen" (closed)="resetForm()">
   <div class="catalog-form-modal">
     <label *ngIf="activeTab === 'dependencias'">
@@ -400,6 +423,13 @@
       </button>
     </div>
   </div>
+</app-modal>
+
+<app-modal *ngIf="canWrite" title="Antivirus institucional" [open]="vpnConfigOpen" (closed)="closeVpnConfig()">
+  <app-vpn-config-institucional-form
+    (saved)="onVpnConfigSaved()"
+    (cancelled)="closeVpnConfig()"
+  />
 </app-modal>
 
 <app-modal

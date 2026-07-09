@@ -10,6 +10,7 @@ import { VpnPasswordGeneratorComponent } from './vpn-password-generator.componen
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule, VpnPasswordGeneratorComponent],
   templateUrl: './vpn-aprobar-form.component.html',
+  styleUrl: './vpn-aprobar-form.component.scss',
 })
 export class VpnAprobarFormComponent implements OnChanges {
   private fb = inject(FormBuilder);
@@ -22,8 +23,6 @@ export class VpnAprobarFormComponent implements OnChanges {
   form = this.fb.nonNullable.group({
     usuarioVpn: ['', Validators.required],
     credencialVpn: ['', Validators.required],
-    ipAsignada: ['', Validators.required],
-    vence: [''],
     estado: ['Activo', Validators.required],
   });
 
@@ -41,8 +40,6 @@ export class VpnAprobarFormComponent implements OnChanges {
     this.service.aprobar(this.vpn.id, {
       usuarioVpn: raw.usuarioVpn,
       credencialVpn: raw.credencialVpn,
-      ipAsignada: raw.ipAsignada,
-      vence: raw.vence || null,
       estado: raw.estado,
     }).subscribe(() => this.saved.emit());
   }

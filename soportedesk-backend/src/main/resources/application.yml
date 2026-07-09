@@ -32,6 +32,13 @@ agente:
 uploads:
   drivers-dir: uploads/drivers
 
+ad:
+  url: ${AD_URL:ldaps://SRV-DC02.inia.local:636}
+  base-dn: ${AD_BASE_DN:DC=inia,DC=local}
+  bind-user: ${AD_BIND_USER:svc_appinfra_ad@inia.local}
+  bind-password: ${AD_BIND_PASSWORD:}
+  referral: ${AD_REFERRAL:ignore}
+
 ---
 spring:
   config:

@@ -1,138 +1,212 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ActivatedRoute } from '@angular/router';
+import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../core/auth/auth.service';
 import { ModalComponent } from '../../shared/modal/modal.component';
-import { FieldComponent } from '../../shared/field/field.component';
-import { SectionCardComponent } from '../../shared/section-card/section-card.component';
-import { StatusBadgeComponent } from '../../shared/status-badge/status-badge.component';
-import { VencimientoBadgeComponent } from '../../shared/vencimiento-badge/vencimiento-badge.component';
-import { UsuarioRedFormComponent } from './usuario-red-form.component';
-import { UsuarioRed, usuarioRedEstadoTone } from './usuario-red.model';
-import { UsuarioRedService } from './usuario-red.service';
+import { ActiveDirectoryService } from './active-directory.service';
+import {
+  ActiveDirectoryDashboard,
+  ActiveDirectoryGroup,
+  ActiveDirectoryOu,
+  AdUser,
+  UpdateUserInfoRequest,
+} from './active-directory.model';
+
+type Panel = 'password' | 'groups' | 'ou' | 'info' | null;
 
 @Component({
   selector: 'app-usuarios-red-list',
   standalone: true,
-  imports: [
-    CommonModule,
-    ModalComponent,
-    FieldComponent,
-    SectionCardComponent,
-    StatusBadgeComponent,
-    VencimientoBadgeComponent,
-    UsuarioRedFormComponent,
-  ],
+  imports: [CommonModule, FormsModule, ModalComponent],
   templateUrl: './usuarios-red-list.component.html',
   styleUrl: './usuarios-red-list.component.scss',
 })
 export class UsuariosRedListComponent implements OnInit {
-  private service = inject(UsuarioRedService);
+  private adService = inject(ActiveDirectoryService);
   private authService = inject(AuthService);
-  private route = inject(ActivatedRoute);
 
-  items: UsuarioRed[] = [];
-  readonly usuarioRedEstadoTone = usuarioRedEstadoTone;
+  dashboard: ActiveDirectoryDashboard | null = null;
+  user: AdUser | null = null;
+  groups: ActiveDirectoryGroup[] = [];
+  groupResults: ActiveDirectoryGroup[] = [];
+  ouResults: ActiveDirectoryOu[] = [];
 
-  viewing: UsuarioRed | null = null;
-  editing: UsuarioRed | null = null;
-  formOpen = false;
-  initialSearch = '';
   searchTerm = '';
-  private searchTimeout?: ReturnType<typeof setTimeout>;
+  groupSearch = '';
+  ouSearch = '';
+  selectedGroupDn = '';
+  selectedOuDn = '';
+  newPassword = '';
+  forceChange = true;
+  activePanel: Panel = null;
+  loading = false;
+  working = false;
+  notice: { tone: 'success' | 'error' | 'info'; text: string } | null = null;
+
+  infoForm: UpdateUserInfoRequest = {};
 
   get canWrite(): boolean {
     return this.authService.canWrite('usuarios-red');
   }
 
-  get totalActivos(): number {
-    return this.items.filter((item) => this.isActivo(item)).length;
-  }
-
-  get totalInactivos(): number {
-    return this.items.filter((item) => !this.isActivo(item)).length;
-  }
-
-  get totalPorVencer(): number {
-    return this.items.filter((item) => {
-      const days = this.diasHastaFinContrato(item);
-      return days !== null && days >= 0 && days <= 30;
-    }).length;
-  }
-
   ngOnInit(): void {
-    const search = this.route.snapshot.queryParamMap.get('search');
-    if (search) {
-      this.initialSearch = search;
-      this.searchTerm = search;
-      this.load(search);
-    } else {
-      this.initialSearch = '';
-      this.load();
+    this.loadDashboard();
+  }
+
+  loadDashboard(): void {
+    this.adService.getDashboard().subscribe({
+      next: (dashboard) => (this.dashboard = dashboard),
+      error: () => (this.dashboard = null),
+    });
+  }
+
+  searchUser(): void {
+    const term = this.searchTerm.trim();
+    if (!term) {
+      this.flash('error', 'Ingresa un usuario de red.');
+      return;
     }
+    this.loading = true;
+    this.notice = null;
+    this.adService.getUser(term).subscribe({
+      next: (response) => {
+        this.loading = false;
+        if (!response.success || !response.data) {
+          this.user = null;
+          this.groups = [];
+          this.flash('error', response.message || 'Usuario no encontrado.');
+          return;
+        }
+        this.user = response.data;
+        this.searchTerm = response.data.samAccountName;
+        this.syncInfoForm(response.data);
+        this.loadGroups();
+        this.flash('success', response.message);
+      },
+      error: () => {
+        this.loading = false;
+        this.user = null;
+        this.flash('error', 'No se pudo consultar Active Directory.');
+      },
+    });
   }
 
-  load(search?: string): void {
-    this.service.getAll(search).subscribe((data) => (this.items = data));
+  openPanel(panel: Panel): void {
+    if (!this.canWrite || !this.user) return;
+    this.activePanel = panel;
+    this.notice = null;
   }
 
-  onSearch(term: string): void {
-    this.load(term);
+  closePanel(): void {
+    this.activePanel = null;
+    this.newPassword = '';
+    this.selectedGroupDn = '';
+    this.selectedOuDn = '';
   }
 
-  queueSearch(term: string): void {
-    this.searchTerm = term;
-    clearTimeout(this.searchTimeout);
-    this.searchTimeout = setTimeout(() => this.onSearch(term), 300);
+  unlock(): void {
+    if (!this.user || !this.canWrite) return;
+    this.runAction(this.adService.unlockUser(this.user.samAccountName));
   }
 
-  onView(item: UsuarioRed): void {
-    this.viewing = item;
+  toggleEnabled(): void {
+    if (!this.user || !this.canWrite) return;
+    const request = this.user.enabled
+      ? this.adService.disableUser(this.user.samAccountName)
+      : this.adService.enableUser(this.user.samAccountName);
+    this.runAction(request);
   }
 
-  closeView(): void {
-    this.viewing = null;
-  }
-
-  onAdd(): void {
-    this.editing = null;
-    this.formOpen = true;
-  }
-
-  onEdit(item: UsuarioRed): void {
-    this.editing = item;
-    this.formOpen = true;
-  }
-
-  closeForm(): void {
-    this.formOpen = false;
-  }
-
-  onDelete(item: UsuarioRed): void {
-    if (!confirm(`Eliminar el usuario "${item.usuario}"?`)) return;
-    this.service.delete(item.id).subscribe(() => this.load());
-  }
-
-  onSaved(): void {
-    this.formOpen = false;
-    this.load();
-  }
-
-  fullName(item: UsuarioRed): string {
-    return `${item.nombre} ${item.apellidos}`.trim();
-  }
-
-  isActivo(item: UsuarioRed): boolean {
-    return item.estado?.toLowerCase() === 'activo';
-  }
-
-  diasHastaFinContrato(item: UsuarioRed): number | null {
-    if (!item.fechaFinContrato) {
-      return null;
+  resetPassword(): void {
+    if (!this.user || !this.newPassword.trim()) {
+      this.flash('error', 'Ingresa una contrasena temporal.');
+      return;
     }
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const end = new Date(`${item.fechaFinContrato}T00:00:00`);
-    return Math.ceil((end.getTime() - today.getTime()) / 86400000);
+    this.runAction(this.adService.resetPassword(this.user.samAccountName, this.newPassword.trim(), this.forceChange), true);
+  }
+
+  saveInfo(): void {
+    if (!this.user) return;
+    this.runAction(this.adService.updateInfo(this.user.samAccountName, this.infoForm), true);
+  }
+
+  searchGroups(): void {
+    const term = this.groupSearch.trim();
+    if (term.length < 2) return;
+    this.adService.searchGroups(term).subscribe((groups) => (this.groupResults = groups));
+  }
+
+  addSelectedGroup(groupDn = this.selectedGroupDn): void {
+    if (!this.user || !groupDn) return;
+    this.runAction(this.adService.addGroup(this.user.samAccountName, groupDn), true, () => this.loadGroups());
+  }
+
+  removeGroup(groupDn: string): void {
+    if (!this.user || !groupDn) return;
+    this.runAction(this.adService.removeGroup(this.user.samAccountName, groupDn), false, () => this.loadGroups());
+  }
+
+  searchOus(): void {
+    const term = this.ouSearch.trim();
+    if (term.length < 2) return;
+    this.adService.searchOus(term).subscribe((ous) => (this.ouResults = ous));
+  }
+
+  moveToOu(ouDn = this.selectedOuDn): void {
+    if (!this.user || !ouDn) return;
+    this.runAction(this.adService.moveUser(this.user.samAccountName, ouDn), true);
+  }
+
+  private loadGroups(): void {
+    if (!this.user) return;
+    this.adService.getUserGroups(this.user.samAccountName).subscribe((groups) => (this.groups = groups));
+  }
+
+  private runAction(
+    request: ReturnType<ActiveDirectoryService['unlockUser']>,
+    close = false,
+    after?: () => void,
+  ): void {
+    this.working = true;
+    request.subscribe({
+      next: (response) => {
+        this.working = false;
+        if (response.success) {
+          if (response.data) {
+            this.user = response.data;
+            this.syncInfoForm(response.data);
+          } else {
+            this.searchUser();
+          }
+          after?.();
+          this.loadDashboard();
+          if (close) this.closePanel();
+          this.flash('success', response.message);
+        } else {
+          this.flash('error', response.message);
+        }
+      },
+      error: () => {
+        this.working = false;
+        this.flash('error', 'No se pudo completar la accion.');
+      },
+    });
+  }
+
+  private syncInfoForm(user: AdUser): void {
+    this.infoForm = {
+      displayName: user.displayName,
+      title: user.title,
+      department: user.department,
+      office: user.office,
+      telephoneNumber: user.telephoneNumber,
+      mobile: user.mobile,
+      mail: user.mail,
+      description: user.description,
+    };
+  }
+
+  private flash(tone: 'success' | 'error' | 'info', text: string): void {
+    this.notice = { tone, text };
   }
 }

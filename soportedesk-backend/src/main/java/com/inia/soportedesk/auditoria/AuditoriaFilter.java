@@ -57,6 +57,7 @@ public class AuditoriaFilter extends OncePerRequestFilter {
         String path = request.getRequestURI();
         return path.startsWith("/api/")
                 && !path.startsWith("/api/auditoria")
+                && !path.startsWith("/api/active-directory")
                 && !path.equals("/api/auth/login")
                 && AUDITED_METHODS.contains(request.getMethod())
                 && response.getStatus() < 400;

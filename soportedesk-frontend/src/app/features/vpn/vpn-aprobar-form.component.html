@@ -1,52 +1,51 @@
 <form [formGroup]="form" (ngSubmit)="submit()" *ngIf="vpn">
-  <div class="field">
-    <label>Tipo de equipo</label>
-    <p>{{ vpn.tipoEquipo === 'INIA' ? 'Equipo de INIA' : 'Equipo personal' }}</p>
-  </div>
+  <section class="approval-summary">
+    <div>
+      <span>Solicitud</span>
+      <strong>{{ vpn.titularNombreCompleto }}</strong>
+      <small>{{ vpn.tipoEquipo === 'INIA' ? 'Equipo de INIA' : 'Equipo personal' }}</small>
+    </div>
+    <div class="approval-state">{{ form.controls.estado.value }}</div>
+  </section>
 
-  <div class="field" *ngIf="vpn.glpiNombreEquipo">
-    <label>Equipo GLPI</label>
-    <p>{{ vpn.glpiNombreEquipo }} <ng-container *ngIf="vpn.glpiIpEquipo">| IP: {{ vpn.glpiIpEquipo }}</ng-container></p>
-  </div>
+  <section class="review-grid">
+    <div class="review-item" *ngIf="vpn.glpiNombreEquipo">
+      <span>Equipo GLPI</span>
+      <strong>{{ vpn.glpiNombreEquipo }}</strong>
+      <small *ngIf="vpn.glpiIpEquipo">IP: {{ vpn.glpiIpEquipo }}</small>
+    </div>
+    <div class="review-item">
+      <span>Antivirus</span>
+      <strong>{{ vpn.antivirusVerificado ? 'Verificado' : 'No verificado' }}</strong>
+    </div>
+    <div class="review-item">
+      <span>Analisis</span>
+      <strong>{{ vpn.analisisAntivirusRealizado ? 'Realizado' : 'Pendiente' }}</strong>
+    </div>
+    <div class="review-item" *ngIf="vpn.glpiComputerId">
+      <span>Host</span>
+      <strong>{{ vpn.hostActualizado ? 'Actualizado' : 'Pendiente' }}</strong>
+    </div>
+  </section>
 
-  <div class="field">
-    <label>Antivirus verificado</label>
-    <p>{{ vpn.antivirusVerificado ? 'Sí' : 'No' }}</p>
-  </div>
+  <section class="credential-panel">
+    <div class="panel-title">
+      <span>Credenciales a entregar</span>
+      <small>Estos datos quedan visibles para el solicitante y responsables autorizados.</small>
+    </div>
 
-  <div class="field">
-    <label>Análisis de antivirus realizado</label>
-    <p>{{ vpn.analisisAntivirusRealizado ? 'Sí' : 'No' }}</p>
-  </div>
+    <label class="field">
+      Usuario VPN *
+      <input type="text" formControlName="usuarioVpn" placeholder="Nombre de usuario VPN" />
+    </label>
 
-  <div class="field" *ngIf="vpn.glpiComputerId">
-    <label>Host actualizado</label>
-    <p>{{ vpn.hostActualizado ? 'Sí' : 'No' }}</p>
-  </div>
+    <label class="field">
+      Credencial / Contrasena VPN *
+      <input type="text" formControlName="credencialVpn" placeholder="Contrasena o clave de acceso" />
+    </label>
 
-  <hr class="divider" />
-
-  <div class="field">
-    <label>Usuario VPN *</label>
-    <input type="text" formControlName="usuarioVpn" placeholder="Nombre de usuario VPN" />
-  </div>
-
-  <div class="field">
-    <label>Credencial / Contraseña VPN *</label>
-    <input type="text" formControlName="credencialVpn" placeholder="Contraseña o clave de acceso" />
-  </div>
-
-  <app-vpn-password-generator (passwordSelected)="useGeneratedPassword($event)" />
-
-  <div class="field">
-    <label>IP VPN asignada *</label>
-    <input type="text" formControlName="ipAsignada" placeholder="10.0.0.x" />
-  </div>
-
-  <div class="field">
-    <label>Vence (VPN)</label>
-    <input type="date" formControlName="vence" />
-  </div>
+    <app-vpn-password-generator (passwordSelected)="useGeneratedPassword($event)" />
+  </section>
 
   <div class="actions">
     <button type="button" class="secondary" (click)="cancelled.emit()">Cancelar</button>

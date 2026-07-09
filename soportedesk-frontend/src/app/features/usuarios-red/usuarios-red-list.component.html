@@ -1,169 +1,199 @@
-<div class="usuarios-red-page">
+<div class="ad-console">
   <header class="page-heading">
     <div>
-      <span class="eyebrow">Active Directory</span>
+      <span class="eyebrow">Active Directory en vivo</span>
       <h2>Usuarios de Red/AD</h2>
-      <p>Control de cuentas, ubicación, contratos y estado de acceso.</p>
+      <p>Consulta y mantenimiento directo de cuentas del dominio institucional.</p>
     </div>
-    <button *ngIf="canWrite" class="add-btn" type="button" (click)="onAdd()">
-      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-      Agregar
-    </button>
+    <span class="access-pill" [class.readonly]="!canWrite">{{ canWrite ? 'Mantenimiento habilitado' : 'Solo lectura' }}</span>
   </header>
 
-  <section class="summary-grid" aria-label="Resumen de usuarios de red">
-    <article class="summary-card">
-      <span>Total</span>
-      <strong>{{ items.length }}</strong>
-      <small>usuarios registrados</small>
+  <section class="metrics" *ngIf="dashboard">
+    <article>
+      <span>Habilitados</span>
+      <strong>{{ dashboard.usuariosHabilitados }}</strong>
     </article>
-    <article class="summary-card success">
-      <span>Activos</span>
-      <strong>{{ totalActivos }}</strong>
-      <small>cuentas habilitadas</small>
+    <article>
+      <span>Bloqueados</span>
+      <strong>{{ dashboard.usuariosBloqueados }}</strong>
     </article>
-    <article class="summary-card danger">
-      <span>Inactivos</span>
-      <strong>{{ totalInactivos }}</strong>
-      <small>cuentas deshabilitadas</small>
+    <article>
+      <span>Deshabilitados</span>
+      <strong>{{ dashboard.usuariosDeshabilitados }}</strong>
     </article>
-    <article class="summary-card warning">
-      <span>Por vencer</span>
-      <strong>{{ totalPorVencer }}</strong>
-      <small>contratos en 30 días</small>
+    <article>
+      <span>Controladores</span>
+      <strong>{{ dashboard.controladoresDominio }}</strong>
     </article>
   </section>
 
-  <section class="network-users-panel">
-    <div class="table-toolbar">
-      <div class="search-wrap">
-        <span class="search-icon">
-          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-        </span>
-        <input
-          type="text"
-          placeholder="Buscar usuario, nombre o dependencia..."
-          [value]="searchTerm"
-          (input)="queueSearch($any($event.target).value)"
-        />
-      </div>
-      <span class="result-count">{{ items.length }} {{ items.length === 1 ? 'registro' : 'registros' }}</span>
+  <section class="lookup-panel">
+    <div class="lookup-copy">
+      <strong>Buscar cuenta</strong>
+      <span>sAMAccountName del usuario</span>
     </div>
-
-    <div class="users-table-wrap" *ngIf="items.length > 0; else emptyState">
-      <table class="users-table">
-        <thead>
-          <tr>
-            <th>Usuario</th>
-            <th>Nombre</th>
-            <th>Apellidos</th>
-            <th>Dependencia</th>
-            <th>Subdependencia</th>
-            <th>Acciones</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let row of items">
-            <td>
-              <div class="user-cell">
-                <strong>{{ row.usuario }}</strong>
-                <app-status-badge [label]="row.estado || 'Sin estado'" [tone]="usuarioRedEstadoTone(row.estado)" />
-              </div>
-            </td>
-            <td>{{ row.nombre }}</td>
-            <td>{{ row.apellidos }}</td>
-            <td>{{ row.dependencia.nombre }}</td>
-            <td>{{ row.subdependencia.nombre }}</td>
-            <td>
-              <div class="actions">
-                <button class="view-btn" type="button" (click)="onView(row)">Ver</button>
-                <button *ngIf="canWrite" class="edit-btn" type="button" (click)="onEdit(row)">Editar</button>
-                <button *ngIf="canWrite" class="del-btn" type="button" (click)="onDelete(row)">Eliminar</button>
-              </div>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-
-      <div class="users-cards">
-        <article class="user-card" *ngFor="let row of items">
-          <header>
-            <div>
-              <strong>{{ row.usuario }}</strong>
-              <span>{{ row.nombre }} {{ row.apellidos }}</span>
-            </div>
-            <app-status-badge [label]="row.estado || 'Sin estado'" [tone]="usuarioRedEstadoTone(row.estado)" />
-          </header>
-          <dl>
-            <div>
-              <dt>Dependencia</dt>
-              <dd>{{ row.dependencia.nombre }}</dd>
-            </div>
-            <div>
-              <dt>Subdependencia</dt>
-              <dd>{{ row.subdependencia.nombre }}</dd>
-            </div>
-          </dl>
-          <div class="actions">
-            <button class="view-btn" type="button" (click)="onView(row)">Ver</button>
-            <button *ngIf="canWrite" class="edit-btn" type="button" (click)="onEdit(row)">Editar</button>
-            <button *ngIf="canWrite" class="del-btn" type="button" (click)="onDelete(row)">Eliminar</button>
-          </div>
-        </article>
-      </div>
-    </div>
-
-    <ng-template #emptyState>
-      <div class="empty-state">
-        <span>Sin registros</span>
-        <p *ngIf="searchTerm.trim()">No se encontraron resultados para "{{ searchTerm }}".</p>
-        <p *ngIf="!searchTerm.trim()">Aún no hay usuarios de red registrados.</p>
-      </div>
-    </ng-template>
+    <form class="lookup-form" (ngSubmit)="searchUser()">
+      <input name="sam" [(ngModel)]="searchTerm" placeholder="usuario.apellido" autocomplete="off" />
+      <button type="submit" [disabled]="loading">{{ loading ? 'Buscando...' : 'Buscar' }}</button>
+    </form>
   </section>
+
+  <div class="notice" *ngIf="notice" [class.success]="notice.tone === 'success'" [class.error]="notice.tone === 'error'">
+    {{ notice.text }}
+  </div>
+
+  <section class="empty-state" *ngIf="!user">
+    <strong>Selecciona una cuenta de red</strong>
+    <span>Los datos se leen directamente desde Active Directory.</span>
+  </section>
+
+  <ng-container *ngIf="user">
+    <section class="identity-band">
+      <div class="avatar">{{ user.displayName?.charAt(0) || user.samAccountName.charAt(0) }}</div>
+      <div class="identity-main">
+        <h3>{{ user.displayName || user.samAccountName }}</h3>
+        <span>{{ user.userPrincipalName || user.samAccountName }}</span>
+      </div>
+      <div class="state-chips">
+        <span class="chip" [class.ok]="user.enabled" [class.danger]="!user.enabled">{{ user.enabled ? 'Habilitado' : 'Deshabilitado' }}</span>
+        <span class="chip" [class.warning]="user.locked" [class.ok]="!user.locked">{{ user.locked ? 'Bloqueado' : 'Sin bloqueo' }}</span>
+      </div>
+    </section>
+
+    <section class="workspace">
+      <article class="detail-card wide">
+        <header>
+          <strong>Perfil</strong>
+          <span>{{ user.organizationalUnit || 'OU no registrada' }}</span>
+        </header>
+        <dl class="detail-grid">
+          <div><dt>Correo</dt><dd>{{ user.mail || 'No registrado' }}</dd></div>
+          <div><dt>Area</dt><dd>{{ user.department || 'No registrada' }}</dd></div>
+          <div><dt>Cargo</dt><dd>{{ user.title || 'No registrado' }}</dd></div>
+          <div><dt>Oficina</dt><dd>{{ user.office || 'No registrada' }}</dd></div>
+          <div><dt>Telefono</dt><dd>{{ user.telephoneNumber || 'No registrado' }}</dd></div>
+          <div><dt>Celular</dt><dd>{{ user.mobile || 'No registrado' }}</dd></div>
+          <div><dt>Creado</dt><dd>{{ user.whenCreated || 'Sin registro' }}</dd></div>
+          <div><dt>Actualizado</dt><dd>{{ user.whenChanged || 'Sin registro' }}</dd></div>
+          <div><dt>Ultimo inicio</dt><dd>{{ user.lastLogonTimestamp || 'Sin registro' }}</dd></div>
+          <div><dt>Clave cambiada</dt><dd>{{ user.pwdLastSet || 'Sin registro' }}</dd></div>
+          <div><dt>Vence cuenta</dt><dd>{{ user.accountExpires || 'Sin registro' }}</dd></div>
+          <div><dt>Intentos fallidos</dt><dd>{{ user.badPwdCount || '0' }}</dd></div>
+        </dl>
+      </article>
+
+      <article class="detail-card">
+        <header>
+          <strong>Grupos</strong>
+          <span>{{ groups.length }} asignados</span>
+        </header>
+        <div class="group-list" *ngIf="groups.length; else noGroups">
+          <span *ngFor="let group of groups">{{ group.cn }}</span>
+        </div>
+        <ng-template #noGroups><p class="muted">Sin grupos cargados.</p></ng-template>
+      </article>
+    </section>
+
+    <section class="actions-grid" *ngIf="canWrite">
+      <button type="button" class="action-card" (click)="openPanel('password')">
+        <span class="icon">Key</span>
+        <strong>Restablecer clave</strong>
+        <small>Clave temporal y cambio obligatorio</small>
+      </button>
+      <button type="button" class="action-card" (click)="unlock()" [disabled]="working || !user.locked">
+        <span class="icon">Lock</span>
+        <strong>Desbloquear</strong>
+        <small>Libera bloqueo por intentos fallidos</small>
+      </button>
+      <button type="button" class="action-card" (click)="toggleEnabled()" [disabled]="working">
+        <span class="icon">{{ user.enabled ? 'Off' : 'On' }}</span>
+        <strong>{{ user.enabled ? 'Deshabilitar' : 'Habilitar' }}</strong>
+        <small>Control de acceso al dominio</small>
+      </button>
+      <button type="button" class="action-card" (click)="openPanel('groups')">
+        <span class="icon">Grp</span>
+        <strong>Grupos</strong>
+        <small>Agregar o quitar membresias</small>
+      </button>
+      <button type="button" class="action-card" (click)="openPanel('ou')">
+        <span class="icon">OU</span>
+        <strong>Mover OU</strong>
+        <small>Reubicar la cuenta en AD</small>
+      </button>
+      <button type="button" class="action-card" (click)="openPanel('info')">
+        <span class="icon">Info</span>
+        <strong>Editar datos</strong>
+        <small>Contacto, cargo y descripcion</small>
+      </button>
+    </section>
+  </ng-container>
 </div>
 
-<app-modal title="Detalle de usuario de red" [open]="viewing !== null" (closed)="closeView()">
-  <ng-container *ngIf="viewing">
-    <div class="detail-grid">
-      <app-section-card title="Cuenta">
-        <div icon>AD</div>
-        <div class="identity-line">
-          <span class="user-chip">{{ viewing.usuario }}</span>
-          <app-status-badge [label]="viewing.estado || 'Sin estado'" [tone]="usuarioRedEstadoTone(viewing.estado)" />
-        </div>
-        <app-field label="Nombre completo">{{ fullName(viewing) }}</app-field>
-        <app-field label="Grupo">{{ viewing.grupo }}</app-field>
-        <app-field label="Unidad Organizativa">{{ viewing.unidadOrganizativa || 'No registrada' }}</app-field>
-        <app-field label="Último Login">{{ viewing.ultimoLogin || 'Sin registro' }}</app-field>
-      </app-section-card>
-
-      <app-section-card title="Ubicacion">
-        <div icon>UB</div>
-        <app-field label="Sede">{{ viewing.sede.nombre || 'No registrada' }}</app-field>
-        <app-field label="Dependencia">{{ viewing.dependencia.nombre || 'No registrada' }}</app-field>
-        <app-field label="Subdependencia">{{ viewing.subdependencia.nombre || 'No registrada' }}</app-field>
-      </app-section-card>
-
-      <app-section-card title="Contrato">
-        <div icon>CT</div>
-        <app-field label="Tipo de Contrato">{{ viewing.tipoContrato.nombre || 'No registrado' }}</app-field>
-        <app-field label="Nro. de contrato">{{ viewing.numeroContrato || 'No registrado' }}</app-field>
-        <app-field label="Fecha de creación">{{ viewing.fechaCreacion || 'No registrada' }}</app-field>
-        <app-field label="Fin de Contrato">{{ viewing.fechaFinContrato || 'No registrado' }}</app-field>
-        <div class="vencimiento-row">
-          <span>Vencimiento</span>
-          <app-vencimiento-badge [fecha]="viewing.fechaFinContrato" />
-        </div>
-      </app-section-card>
-    </div>
-  </ng-container>
+<app-modal title="Restablecer contrasena" [open]="activePanel === 'password'" (closed)="closePanel()">
+  <form class="modal-form" (ngSubmit)="resetPassword()">
+    <label>Contrasena temporal
+      <input type="password" name="newPassword" [(ngModel)]="newPassword" minlength="8" required />
+    </label>
+    <label class="check-row">
+      <input type="checkbox" name="forceChange" [(ngModel)]="forceChange" />
+      <span>Exigir cambio al iniciar sesion</span>
+    </label>
+    <footer>
+      <button type="button" class="secondary" (click)="closePanel()">Cancelar</button>
+      <button type="submit" [disabled]="working">Guardar</button>
+    </footer>
+  </form>
 </app-modal>
 
-<app-modal
-  [title]="editing ? 'Editar usuario de red' : 'Agregar usuario de red'"
-  [open]="formOpen"
-  (closed)="closeForm()"
->
-  <app-usuario-red-form [usuarioRed]="editing" (saved)="onSaved()" (cancelled)="closeForm()" />
+<app-modal title="Membresias de grupos" [open]="activePanel === 'groups'" (closed)="closePanel()">
+  <div class="modal-form">
+    <div class="inline-search">
+      <input name="groupSearch" [(ngModel)]="groupSearch" placeholder="Buscar grupo" (keyup.enter)="searchGroups()" />
+      <button type="button" (click)="searchGroups()">Buscar</button>
+    </div>
+    <div class="pick-list" *ngIf="groupResults.length">
+      <button type="button" *ngFor="let group of groupResults" (click)="addSelectedGroup(group.dn)">
+        <strong>{{ group.cn }}</strong>
+        <span>{{ group.description || group.dn }}</span>
+      </button>
+    </div>
+    <div class="assigned-list" *ngIf="groups.length">
+      <div *ngFor="let group of groups">
+        <span>{{ group.cn }}</span>
+        <button type="button" class="link-danger" (click)="removeGroup(group.dn)">Quitar</button>
+      </div>
+    </div>
+  </div>
+</app-modal>
+
+<app-modal title="Mover a unidad organizativa" [open]="activePanel === 'ou'" (closed)="closePanel()">
+  <div class="modal-form">
+    <div class="inline-search">
+      <input name="ouSearch" [(ngModel)]="ouSearch" placeholder="Buscar OU" (keyup.enter)="searchOus()" />
+      <button type="button" (click)="searchOus()">Buscar</button>
+    </div>
+    <div class="pick-list" *ngIf="ouResults.length">
+      <button type="button" *ngFor="let ou of ouResults" (click)="moveToOu(ou.dn)">
+        <strong>{{ ou.name }}</strong>
+        <span>{{ ou.dn }}</span>
+      </button>
+    </div>
+  </div>
+</app-modal>
+
+<app-modal title="Editar informacion AD" [open]="activePanel === 'info'" (closed)="closePanel()">
+  <form class="modal-form form-grid" (ngSubmit)="saveInfo()">
+    <label>Nombre mostrado<input name="displayName" [(ngModel)]="infoForm.displayName" /></label>
+    <label>Cargo<input name="title" [(ngModel)]="infoForm.title" /></label>
+    <label>Area<input name="department" [(ngModel)]="infoForm.department" /></label>
+    <label>Oficina<input name="office" [(ngModel)]="infoForm.office" /></label>
+    <label>Telefono<input name="telephoneNumber" [(ngModel)]="infoForm.telephoneNumber" /></label>
+    <label>Celular<input name="mobile" [(ngModel)]="infoForm.mobile" /></label>
+    <label>Correo<input name="mail" [(ngModel)]="infoForm.mail" /></label>
+    <label class="full">Descripcion<textarea name="description" rows="3" [(ngModel)]="infoForm.description"></textarea></label>
+    <footer class="full">
+      <button type="button" class="secondary" (click)="closePanel()">Cancelar</button>
+      <button type="submit" [disabled]="working">Guardar</button>
+    </footer>
+  </form>
 </app-modal>

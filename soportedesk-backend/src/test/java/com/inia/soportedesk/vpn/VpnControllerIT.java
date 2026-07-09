@@ -196,7 +196,6 @@ class VpnControllerIT {
         VpnAprobarRequest request = new VpnAprobarRequest();
         request.setUsuarioVpn("vpnuser1");
         request.setCredencialVpn("Sup3rSecreta!");
-        request.setIpAsignada("10.8.0.5");
         request.setEstado("Activo");
 
         mockMvc.perform(patch("/api/vpn/1/aprobar")
@@ -212,7 +211,6 @@ class VpnControllerIT {
         VpnAprobarRequest request = new VpnAprobarRequest();
         request.setUsuarioVpn("vpnuser1");
         request.setCredencialVpn("Sup3rSecreta!");
-        request.setIpAsignada("10.8.0.5");
         request.setEstado("Activo");
 
         mockMvc.perform(patch("/api/vpn/1/aprobar")

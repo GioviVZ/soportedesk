@@ -5,3 +5,11 @@
 # Datos reales con informacion de usuarios (no debe ir a git)
 src/main/resources/AD_Usuarios.xlsx
 src/main/resources/inventario_licencias_ofimatica.xlsx
+
+# Codigo muerto sin usar con credencial de AD hardcodeada (reemplazado por
+# com.inia.soportedesk.activedirectory bajo src/main/java)
+src/main/resources/activedirectory/
+src/main/resources/activedirectory.zip
+
+# Archivos de bloqueo temporales de Office
+**/~$*.xlsx

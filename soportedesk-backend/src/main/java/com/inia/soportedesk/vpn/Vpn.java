@@ -31,9 +31,7 @@ public class Vpn {
     @JoinColumn(name = "equipo_id")
     private Equipo equipo;
 
-    @Column(name = "ip_asignada")
-    private String ipAsignada;
-
+    @Transient
     private LocalDate vence;
 
     @Column(nullable = false)

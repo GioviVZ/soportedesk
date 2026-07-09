@@ -18,6 +18,7 @@ export class GenericTableComponent<T = any> implements OnInit, OnChanges {
   @Input({ required: true }) columns: TableColumn[] = [];
   @Input({ required: true }) data: T[] = [];
   @Input() canEdit = false;
+  @Input() canAdd: boolean | null = null;
   @Input() canView = true;
   @Input() extraColumnLabel: string | null = null;
   @Input() initialSearch = '';
@@ -33,6 +34,10 @@ export class GenericTableComponent<T = any> implements OnInit, OnChanges {
 
   searchTerm = '';
   private searchTimeout?: ReturnType<typeof setTimeout>;
+
+  get showAddButton(): boolean {
+    return this.canAdd ?? this.canEdit;
+  }
 
   ngOnInit(): void {
     this.searchTerm = this.initialSearch;

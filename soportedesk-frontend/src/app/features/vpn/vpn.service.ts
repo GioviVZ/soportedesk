@@ -6,6 +6,8 @@ import {
   Vpn,
   VpnAntivirusRequest,
   VpnAprobarRequest,
+  VpnConfigInstitucional,
+  VpnConfigInstitucionalRequest,
   VpnKpis,
   VpnResolucionRequest,
   VpnSolicitudRequest,
@@ -54,6 +56,14 @@ export class VpnService {
 
   patchAntivirus(id: number, request: VpnAntivirusRequest): Observable<Vpn> {
     return this.http.patch<Vpn>(`${this.apiUrl}/${id}/antivirus`, request);
+  }
+
+  getConfigInstitucional(): Observable<VpnConfigInstitucional> {
+    return this.http.get<VpnConfigInstitucional>(`${this.apiUrl}/config-institucional`);
+  }
+
+  actualizarConfigInstitucional(request: VpnConfigInstitucionalRequest): Observable<VpnConfigInstitucional> {
+    return this.http.put<VpnConfigInstitucional>(`${this.apiUrl}/config-institucional`, request);
   }
 
   delete(id: number): Observable<void> {

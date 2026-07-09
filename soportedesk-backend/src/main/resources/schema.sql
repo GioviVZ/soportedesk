@@ -367,8 +367,6 @@ CREATE TABLE dbo.vpn (
     id                    BIGINT        NOT NULL IDENTITY(1,1),
     usuario_red_id        BIGINT        NULL,
     equipo_id             BIGINT        NULL,
-    ip_asignada           NVARCHAR(45)  NULL,
-    vence                 DATE          NULL,
     estado                NVARCHAR(30)  NOT NULL,
     tiene_antivirus       BIT           NULL,
     vencimiento_antivirus DATE          NULL,
@@ -377,6 +375,14 @@ CREATE TABLE dbo.vpn (
     CONSTRAINT PK_vpn             PRIMARY KEY (id),
     CONSTRAINT FK_vpn_usuario_red FOREIGN KEY (usuario_red_id) REFERENCES dbo.usuarios_red (id) ON UPDATE NO ACTION ON DELETE NO ACTION,
     CONSTRAINT FK_vpn_equipo      FOREIGN KEY (equipo_id)      REFERENCES dbo.equipos (id)      ON UPDATE NO ACTION ON DELETE NO ACTION
+);
+GO
+
+IF OBJECT_ID(N'dbo.vpn_config_institucional', N'U') IS NULL
+CREATE TABLE dbo.vpn_config_institucional (
+    id                     BIGINT NOT NULL,
+    vencimiento_antivirus  DATE   NOT NULL,
+    CONSTRAINT PK_vpn_config_institucional PRIMARY KEY (id)
 );
 GO
 
@@ -489,8 +495,6 @@ GO
 IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = N'IX_vpn_equipo_id')             CREATE INDEX IX_vpn_equipo_id             ON dbo.vpn (equipo_id);
 GO
 IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = N'IX_vpn_estado')                CREATE INDEX IX_vpn_estado                ON dbo.vpn (estado);
-GO
-IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = N'IX_vpn_vence')                 CREATE INDEX IX_vpn_vence                 ON dbo.vpn (vence);
 GO
 IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = N'IX_vpn_vencimiento_antivirus') CREATE INDEX IX_vpn_vencimiento_antivirus ON dbo.vpn (vencimiento_antivirus);
 GO

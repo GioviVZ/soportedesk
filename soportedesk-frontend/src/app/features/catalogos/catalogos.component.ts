@@ -5,6 +5,8 @@ import { CatalogoService } from '../../core/catalogos/catalogo.service';
 import { AuthService } from '../../core/auth/auth.service';
 import { ModeloImpresoraFormComponent } from './modelo-impresora-form.component';
 import { ModalComponent } from '../../shared/modal/modal.component';
+import { VpnConfigInstitucionalFormComponent } from '../vpn/vpn-config-institucional-form.component';
+import { VpnService } from '../vpn/vpn.service';
 import {
   Dependencia,
   MarcaImpresora,
@@ -28,7 +30,8 @@ type CatalogoTab =
   | 'tiposImpresora'
   | 'marcasImpresora'
   | 'modelosImpresora'
-  | 'tiposEquipo';
+  | 'tiposEquipo'
+  | 'vpnInstitucional';
 
 type PendingDelete = {
   tab: CatalogoTab;
@@ -54,13 +57,14 @@ type CatalogoNavGroup = {
 @Component({
   selector: 'app-catalogos',
   standalone: true,
-  imports: [CommonModule, FormsModule, ModeloImpresoraFormComponent, ModalComponent],
+  imports: [CommonModule, FormsModule, ModeloImpresoraFormComponent, ModalComponent, VpnConfigInstitucionalFormComponent],
   templateUrl: './catalogos.component.html',
   styleUrl: './catalogos.component.scss',
 })
 export class CatalogosComponent implements OnInit {
   private service = inject(CatalogoService);
   private authService = inject(AuthService);
+  private vpnService = inject(VpnService);
 
   activeTab: CatalogoTab = 'sedes';
 
@@ -83,6 +87,8 @@ export class CatalogosComponent implements OnInit {
   editingModeloImpresora: ModeloImpresora | null = null;
   formOpen = false;
   modeloFormOpen = false;
+  vpnConfigOpen = false;
+  vpnConfigVencimiento: string | null = null;
   pendingDelete: PendingDelete | null = null;
 
   readonly navGroups: CatalogoNavGroup[] = [
@@ -174,6 +180,19 @@ export class CatalogosComponent implements OnInit {
         },
       ],
     },
+    {
+      title: 'VPN y seguridad',
+      description: 'Parametros institucionales usados para calcular vencimientos y validar accesos VPN.',
+      icon: 'VP',
+      items: [
+        {
+          tab: 'vpnInstitucional',
+          label: 'Antivirus institucional',
+          description: 'Fecha anual que define el vencimiento VPN para equipos INIA.',
+          affects: ['VPN'],
+        },
+      ],
+    },
   ];
 
   get activeTabLabel(): string {
@@ -221,24 +240,47 @@ export class CatalogosComponent implements OnInit {
     this.service.getMarcasImpresora().subscribe((data) => (this.marcasImpresora = data));
     this.service.getModelosImpresora().subscribe((data) => (this.modelosImpresora = data));
     this.service.getTiposEquipo().subscribe((data) => (this.tiposEquipo = data));
+    if (this.canWrite) {
+      this.loadVpnConfig();
+    }
   }
 
   setTab(tab: CatalogoTab): void {
     this.activeTab = tab;
     this.editingModeloImpresora = null;
     this.modeloFormOpen = false;
+    this.vpnConfigOpen = false;
     this.formOpen = false;
     this.resetForm();
   }
 
   startAdd(): void {
     if (!this.canWrite) return;
+    if (this.activeTab === 'vpnInstitucional') {
+      this.vpnConfigOpen = true;
+      return;
+    }
     this.resetForm();
     if (this.activeTab === 'modelosImpresora') {
       this.modeloFormOpen = true;
       return;
     }
     this.formOpen = true;
+  }
+
+  loadVpnConfig(): void {
+    this.vpnService
+      .getConfigInstitucional()
+      .subscribe((data) => (this.vpnConfigVencimiento = data.vencimientoAntivirus));
+  }
+
+  closeVpnConfig(): void {
+    this.vpnConfigOpen = false;
+  }
+
+  onVpnConfigSaved(): void {
+    this.vpnConfigOpen = false;
+    this.loadVpnConfig();
   }
 
   onEditModeloImpresora(modelo: ModeloImpresora): void {
@@ -433,6 +475,7 @@ export class CatalogosComponent implements OnInit {
       marcasImpresora: 'Marca de impresora',
       modelosImpresora: 'Modelo de impresora',
       tiposEquipo: 'Tipo de equipo (GLPI)',
+      vpnInstitucional: 'Antivirus institucional',
     };
     return labels[tab];
   }
@@ -449,6 +492,7 @@ export class CatalogosComponent implements OnInit {
       marcasImpresora: this.marcasImpresora.length,
       modelosImpresora: this.modelosImpresora.length,
       tiposEquipo: this.tiposEquipo.length,
+      vpnInstitucional: this.vpnConfigVencimiento ? 1 : 0,
     };
     return counts[tab];
   }

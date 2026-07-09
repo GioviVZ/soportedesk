@@ -2,7 +2,6 @@ export interface Vpn {
   id: number;
   usuarioRed: { id: number; nombre: string; usuario: string } | null;
   equipo: { id: number; marca: string; modelo: string; tipo: string; host: string | null; ip: string | null } | null;
-  ipAsignada: string | null;
   vence: string | null;
   estado: string;
   tieneAntivirus: boolean | null;
@@ -74,8 +73,6 @@ export interface VpnSolicitudRequest {
 export interface VpnAprobarRequest {
   usuarioVpn: string;
   credencialVpn: string;
-  ipAsignada: string;
-  vence: string | null;
   estado: string;
 }
 
@@ -93,4 +90,12 @@ export interface VpnKpis {
   aprobadas: number;
   rechazadas: number;
   observadas: number;
+}
+
+export interface VpnConfigInstitucional {
+  vencimientoAntivirus: string | null;
+}
+
+export interface VpnConfigInstitucionalRequest {
+  vencimientoAntivirus: string;
 }
