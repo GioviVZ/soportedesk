@@ -60,11 +60,17 @@ DTOs: `AdUser`, `ActiveDirectoryResponse`, `ActiveDirectoryGroup`, `ActiveDirect
    (mejor). Nos quedamos con la versión paginada.
 
 ### 2.3 Infraestructura reutilizable ya existente
-- **Auditoría genérica**: `AuditoriaFilter` (`com.inia.soportedesk.auditoria`)
-  auto-registra **todo** POST/PUT/DELETE a `/api/**` con status < 400 en la tabla
-  `movimientos_auditoria` (usuario, acción, módulo, método, ruta, IP, status). Como
-  todas las escrituras AD son POST, quedan auditadas automáticamente. **No creamos una
-  tabla `ad_auditoria` paralela.**
+- **Auditoría**: la tabla `movimientos_auditoria` y su `MovimientoAuditoriaService`
+  (`com.inia.soportedesk.auditoria`) ya existen y se reutilizan — **no se crea una
+  tabla `ad_auditoria` paralela.** El filtro genérico `AuditoriaFilter` solo sabe
+  clasificar por método HTTP (POST → "CREAR"), lo que no distingue "resetear
+  contraseña" de "deshabilitar cuenta" ni registra sobre qué `sAMAccountName` se actuó
+  (su `entidad_id` solo captura segmentos numéricos de la ruta). Por eso, para este
+  módulo, `ActiveDirectoryService` **llama explícitamente**
+  `MovimientoAuditoriaService.registrar(...)` en cada operación de escritura, con la
+  acción real (`RESET_PASSWORD`, `DESBLOQUEAR_CUENTA`, etc.) y el `sAMAccountName`
+  como `entidadId` — ver detalle en 3.1. Las rutas `/api/active-directory/**` se
+  excluyen del `AuditoriaFilter` genérico para no duplicar registros.
 - **Seguridad**: JWT stateless + `@EnableMethodSecurity`. Patrón de autorización
   existente: `@PreAuthorize("hasRole('ADMIN') || hasAuthority('WRITE_<modulo>')")`.
   El módulo `usuarios-red` ya está registrado en el sistema de permisos
@@ -148,8 +154,32 @@ ad:
 **Hardening:** `LdapFilterUtils.escape()` (RFC 4515) se aplica a todo valor que entre
 en un filtro (`sAMAccountName`, `nombre` de grupo/OU). El endpoint de auditoría del
 código origen (`/usuarios/{sam}/auditoria`, que dependía de `AdAuditoria`) se **elimina**;
-si se necesita ver el rastro, se consulta el módulo de auditoría existente filtrando por
-módulo `active-directory`.
+para ver el rastro se consulta el módulo de auditoría existente (`/api/auditoria`)
+filtrando por `modulo=active-directory`.
+
+**Auditoría explícita por acción:**
+`ActiveDirectoryService` recibe `MovimientoAuditoriaService` por constructor y llama
+`registrar(usuario, accion, "active-directory", metodo, ruta, samAccountName,
+estadoHttp, ip, detalle)` en cada operación de escritura, tanto en éxito como en
+fallo (a diferencia del filtro genérico, que solo registra `status < 400`). `usuario`
+e `ip` se obtienen de `SecurityContextHolder` / `HttpServletRequest`, igual que hacía
+el código origen. Acciones registradas (columna `accion`, ≤30 chars):
+
+| Método del service | `accion` |
+|---|---|
+| `desbloquearUsuario` | `DESBLOQUEAR_CUENTA` |
+| `resetPassword` | `RESET_PASSWORD` |
+| `deshabilitarUsuario` | `DESHABILITAR_CUENTA` |
+| `habilitarUsuario` | `HABILITAR_CUENTA` |
+| `moverUsuarioOu` | `MOVER_OU` |
+| `agregarUsuarioGrupo` | `AGREGAR_GRUPO` |
+| `quitarUsuarioGrupo` | `QUITAR_GRUPO` |
+| `actualizarInformacionUsuario` | `ACTUALIZAR_INFO` |
+
+`entidadId` = `sAMAccountName` del usuario objetivo en todos los casos. `detalle`
+incluye un resumen legible (ej. para `MOVER_OU`, la OU destino; para `AGREGAR_GRUPO`/
+`QUITAR_GRUPO`, el DN del grupo). Las lecturas (`GET`) no se auditan, igual que en el
+resto del sistema.
 
 ### 3.2 Frontend — `features/usuarios-red/` reconstruido como consola AD
 
@@ -180,16 +210,19 @@ módulo `active-directory`.
   código origen: las operaciones devuelven `success=false` + `message` legible ante
   usuario no encontrado, error LDAP, o validación (OU/grupo vacío, etc.).
 - El frontend muestra `message` en un aviso y no rompe el flujo.
-- La auditoría automática solo registra respuestas con status < 400 (comportamiento
-  actual del filtro); los fallos LDAP que devuelven HTTP 200 con `success=false`
-  quedarán registrados como acción — aceptable para esta versión.
+- A diferencia del `AuditoriaFilter` genérico, la auditoría explícita del módulo AD
+  (ver 3.1) registra **tanto éxitos como fallos** — un intento fallido de resetear
+  contraseña o desbloquear una cuenta queda igual de trazado que uno exitoso, con el
+  `detalle` describiendo el error.
 
 ## 6. Pruebas
 
 - **Backend unit**: `LdapFilterUtils.escape()` (casos con `*`, `(`, `)`, `\`, NUL);
   `AdProperties` binding; mapeo de `userAccountControl`/`lockoutTime`/fechas FILETIME
   en el service (extraídos a métodos testeables puros donde sea posible, sin conexión
-  LDAP real).
+  LDAP real); que cada operación de escritura invoque `MovimientoAuditoriaService
+  .registrar(...)` con la `accion` correcta tanto en éxito como en fallo (mock del
+  servicio de auditoría).
 - **Backend de integración** (sin AD real): `@WebMvcTest` del controller con el service
   mockeado — verifica rutas, `@PreAuthorize` (403 sin autoridad), y forma de la
   respuesta. Patrón `*ControllerIT` del proyecto (usar `mvn verify`).
@@ -214,7 +247,7 @@ módulo `active-directory`.
 |---|---|
 | Relación con `usuarios-red` | La página se vuelve AD en vivo; la tabla se conserva por ahora (VPN/dashboard). |
 | Alcance de operaciones | Todas (core + avanzadas: OU, grupos, actualizar info). |
-| Auditoría | Reutilizar `AuditoriaFilter` / `movimientos_auditoria`; **no** crear `ad_auditoria`. |
+| Auditoría | Reutilizar `movimientos_auditoria` vía llamadas explícitas por acción (no el `AuditoriaFilter` genérico); **no** crear `ad_auditoria`. |
 | Credenciales | Externalizar a `ad.*` con env vars; rotar `svc_appinfra_ad`. |
 | Dashboard "por ubicación" | Se retira (en sub-proyecto B). |
 | Autorización | `READ_usuarios-red` (GET) / `WRITE_usuarios-red` (POST) + `ADMIN`. |
