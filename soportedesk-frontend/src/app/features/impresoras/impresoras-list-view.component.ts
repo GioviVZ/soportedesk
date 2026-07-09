@@ -1,38 +1,28 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { AuthService } from '../../core/auth/auth.service';
 import { GenericTableComponent, TableColumn } from '../../shared/generic-table/generic-table.component';
-import { ModalComponent } from '../../shared/modal/modal.component';
-import { ImpresoraFichaComponent } from './impresora-ficha.component';
-import { ImpresoraFormComponent } from './impresora-form.component';
+import { StatusBadgeComponent } from '../../shared/status-badge/status-badge.component';
 import { ImpresoraResumenComponent } from './impresora-resumen.component';
 import { Impresora, impresoraEstadoTone } from './impresora.model';
-import { ImpresoraService } from './impresora.service';
-import { StatusBadgeComponent } from '../../shared/status-badge/status-badge.component';
 import * as XLSX from 'xlsx';
 
 @Component({
-  selector: 'app-impresoras-list',
+  selector: 'app-impresoras-list-view',
   standalone: true,
-  imports: [
-    CommonModule,
-    FormsModule,
-    GenericTableComponent,
-    ModalComponent,
-    ImpresoraFichaComponent,
-    ImpresoraFormComponent,
-    ImpresoraResumenComponent,
-    StatusBadgeComponent,
-  ],
-  templateUrl: './impresoras-list.component.html',
-  styleUrl: './impresoras-list.component.scss',
+  imports: [CommonModule, FormsModule, GenericTableComponent, StatusBadgeComponent, ImpresoraResumenComponent],
+  templateUrl: './impresoras-list-view.component.html',
+  styleUrl: './impresoras.shared.scss',
 })
-export class ImpresorasListComponent implements OnInit {
-  private service = inject(ImpresoraService);
-  private authService = inject(AuthService);
+export class ImpresorasListViewComponent {
+  @Input({ required: true }) items: Impresora[] = [];
+  @Input() canManage = false;
 
-  items: Impresora[] = [];
+  @Output() view = new EventEmitter<Impresora>();
+  @Output() add = new EventEmitter<void>();
+  @Output() edit = new EventEmitter<Impresora>();
+  @Output() delete = new EventEmitter<Impresora>();
+
   columns: TableColumn[] = [
     { key: 'modeloImpresora.marca.nombre', label: 'Marca' },
     { key: 'modeloImpresora.nombre', label: 'Modelo' },
@@ -43,10 +33,6 @@ export class ImpresorasListComponent implements OnInit {
   ];
   readonly impresoraEstadoTone = impresoraEstadoTone;
 
-  viewing: Impresora | null = null;
-  editing: Impresora | null = null;
-  deleting: Impresora | null = null;
-  formOpen = false;
   showConsumibles = false;
   searchTerm = '';
   mobileSearchTerm = '';
@@ -59,26 +45,6 @@ export class ImpresorasListComponent implements OnInit {
     modelo: '',
   };
 
-  get activas(): number {
-    return this.filteredItems.filter((item) => item.estado?.toLowerCase() === 'activa').length;
-  }
-
-  get enMantenimiento(): number {
-    return this.filteredItems.filter((item) => item.estado?.toLowerCase().includes('mantenimiento')).length;
-  }
-
-  get canWrite(): boolean {
-    return this.authService.canWrite('impresoras');
-  }
-
-  ngOnInit(): void {
-    this.load();
-  }
-
-  load(): void {
-    this.service.getAll().subscribe((data) => (this.items = data));
-  }
-
   onSearch(term: string): void {
     this.searchTerm = term;
     this.mobileSearchTerm = term;
@@ -87,53 +53,6 @@ export class ImpresorasListComponent implements OnInit {
   onMobileSearch(term: string): void {
     this.searchTerm = term;
     this.mobileSearchTerm = term;
-  }
-
-  onView(item: Impresora): void {
-    this.viewing = item;
-  }
-
-  closeView(): void {
-    this.viewing = null;
-  }
-
-  onAdd(): void {
-    if (!this.canWrite) return;
-    this.editing = null;
-    this.formOpen = true;
-  }
-
-  onEdit(item: Impresora): void {
-    if (!this.canWrite) return;
-    this.viewing = null;
-    this.editing = item;
-    this.formOpen = true;
-  }
-
-  closeForm(): void {
-    this.formOpen = false;
-  }
-
-  onDelete(item: Impresora): void {
-    if (!this.canWrite) return;
-    this.deleting = item;
-  }
-
-  closeDelete(): void {
-    this.deleting = null;
-  }
-
-  confirmDelete(): void {
-    if (!this.deleting) return;
-    this.service.delete(this.deleting.id).subscribe(() => {
-      this.deleting = null;
-      this.load();
-    });
-  }
-
-  onSaved(): void {
-    this.formOpen = false;
-    this.load();
   }
 
   get filteredItems(): Impresora[] {
@@ -262,18 +181,8 @@ export class ImpresorasListComponent implements OnInit {
 
     const worksheet = XLSX.utils.json_to_sheet(rows);
     worksheet['!cols'] = [
-      { wch: 18 },
-      { wch: 26 },
-      { wch: 30 },
-      { wch: 18 },
-      { wch: 22 },
-      { wch: 22 },
-      { wch: 12 },
-      { wch: 16 },
-      { wch: 18 },
-      { wch: 34 },
-      { wch: 34 },
-      { wch: 18 },
+      { wch: 18 }, { wch: 26 }, { wch: 30 }, { wch: 18 }, { wch: 22 }, { wch: 22 },
+      { wch: 12 }, { wch: 16 }, { wch: 18 }, { wch: 34 }, { wch: 34 }, { wch: 18 },
     ];
 
     const workbook = XLSX.utils.book_new();
@@ -285,7 +194,7 @@ export class ImpresorasListComponent implements OnInit {
     return [
       item.dependencia?.nombre,
       item.subdependencia?.nombre,
-    ].filter(Boolean).join(' / ') || item.sede?.nombre || 'Sin ubicación';
+    ].filter(Boolean).join(' / ') || item.sede?.nombre || 'Sin ubicacion';
   }
 
   printerIdentifier(item: Impresora): string {
@@ -304,7 +213,7 @@ export class ImpresorasListComponent implements OnInit {
   private normalize(value: string | null | undefined): string {
     return (value ?? '')
       .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[̀-ͯ]/g, '')
       .toLowerCase()
       .trim();
   }

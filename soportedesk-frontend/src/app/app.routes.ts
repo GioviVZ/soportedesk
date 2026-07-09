@@ -132,11 +132,29 @@ export const routes: Routes = [
       },
       {
         path: 'impresoras',
-        canActivate: [moduloGuard('impresoras')],
         loadComponent: () =>
-          import('./features/impresoras/impresoras-list.component').then(
-            (m) => m.ImpresorasListComponent,
-          ),
+          import('./features/impresoras/impresoras-shell.component').then((m) => m.ImpresorasShellComponent),
+        children: [
+          { path: '', redirectTo: 'consultas', pathMatch: 'full' },
+          {
+            path: 'consultas',
+            canActivate: [moduloGuard('impresoras')],
+            loadComponent: () =>
+              import('./features/impresoras/impresoras-consultas.component').then((m) => m.ImpresorasConsultasComponent),
+          },
+          {
+            path: 'administracion',
+            canActivate: [moduloGuard('impresoras', { write: true })],
+            loadComponent: () =>
+              import('./features/impresoras/impresoras-administracion.component').then((m) => m.ImpresorasAdministracionComponent),
+          },
+          {
+            path: 'dashboard',
+            canActivate: [moduloGuard('impresoras', { write: true })],
+            loadComponent: () =>
+              import('./features/impresoras/impresoras-dashboard.component').then((m) => m.ImpresorasDashboardComponent),
+          },
+        ],
       },
       {
         path: 'usuarios-sistema',

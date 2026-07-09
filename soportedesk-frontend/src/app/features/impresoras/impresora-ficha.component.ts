@@ -21,6 +21,7 @@ export class ImpresoraFichaComponent {
   private catalogoService = inject(CatalogoService);
 
   @Input({ required: true }) impresora!: Impresora;
+  @Input() allowActions = true;
   @Output() editRequested = new EventEmitter<Impresora>();
 
   activeTab: FichaTab = 'instalacion';

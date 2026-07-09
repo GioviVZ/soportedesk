@@ -102,4 +102,29 @@ describe('ImpresoraFichaComponent', () => {
     expect(fixture.nativeElement.textContent).toContain('driver-hp.zip');
     expect(fixture.nativeElement.querySelector('.download-btn')).toBeTruthy();
   });
+
+  it('shows the edit button by default when the user can write', async () => {
+    await TestBed.resetTestingModule().configureTestingModule({
+      imports: [ImpresoraFichaComponent, HttpClientTestingModule],
+      providers: [{ provide: AuthService, useValue: { isAdmin: () => false, canWrite: () => true } }],
+    }).compileComponents();
+    const writableFixture = TestBed.createComponent(ImpresoraFichaComponent);
+    writableFixture.componentInstance.impresora = mockImpresora;
+    writableFixture.detectChanges();
+
+    expect(writableFixture.nativeElement.querySelector('.edit-btn')).toBeTruthy();
+  });
+
+  it('hides the edit button when allowActions is false, even if the user can write', async () => {
+    await TestBed.resetTestingModule().configureTestingModule({
+      imports: [ImpresoraFichaComponent, HttpClientTestingModule],
+      providers: [{ provide: AuthService, useValue: { isAdmin: () => false, canWrite: () => true } }],
+    }).compileComponents();
+    const readOnlyFixture = TestBed.createComponent(ImpresoraFichaComponent);
+    readOnlyFixture.componentInstance.impresora = mockImpresora;
+    readOnlyFixture.componentInstance.allowActions = false;
+    readOnlyFixture.detectChanges();
+
+    expect(readOnlyFixture.nativeElement.querySelector('.edit-btn')).toBeFalsy();
+  });
 });

@@ -5,7 +5,7 @@
     <button [class.active]="activeTab === 'consumibles'" (click)="setTab('consumibles')">Consumibles</button>
     <button [class.active]="activeTab === 'driver'" (click)="setTab('driver')">Driver</button>
   </div>
-  <button *ngIf="isAdmin" type="button" class="edit-btn" (click)="editRequested.emit(impresora)">Editar</button>
+  <button *ngIf="isAdmin && allowActions" type="button" class="edit-btn" (click)="editRequested.emit(impresora)">Editar</button>
   </div>
 
   <div class="content" *ngIf="activeTab === 'instalacion'">

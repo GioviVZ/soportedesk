@@ -2,7 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { Impresora, ImpresoraRequest } from './impresora.model';
+import { Impresora, ImpresoraDashboardCompleto, ImpresoraRequest } from './impresora.model';
 
 @Injectable({ providedIn: 'root' })
 export class ImpresoraService {
@@ -19,6 +19,10 @@ export class ImpresoraService {
 
   getById(id: number): Observable<Impresora> {
     return this.http.get<Impresora>(`${this.apiUrl}/${id}`);
+  }
+
+  getDashboardCompleto(): Observable<ImpresoraDashboardCompleto> {
+    return this.http.get<ImpresoraDashboardCompleto>(`${this.apiUrl}/dashboard/completo`);
   }
 
   create(request: ImpresoraRequest): Observable<Impresora> {

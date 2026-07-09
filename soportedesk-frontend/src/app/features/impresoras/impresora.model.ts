@@ -39,3 +39,31 @@ export const IMPRESORA_ESTADOS: { value: string; tone: BadgeTone }[] = [
 export function impresoraEstadoTone(estado: string): BadgeTone {
   return IMPRESORA_ESTADOS.find((item) => item.value === estado)?.tone ?? 'neutral';
 }
+
+export interface ImpresoraMarcaCount {
+  marca: string;
+  total: number;
+}
+
+export interface ImpresoraSedeCount {
+  sede: string;
+  total: number;
+}
+
+export interface ImpresoraConsumibleCount {
+  color: string;
+  variante: string;
+  codigo: string;
+  cantidad: number;
+}
+
+export interface ImpresoraDashboardCompleto {
+  total: number;
+  activas: number;
+  enMantenimiento: number;
+  deBaja: number;
+  distribucionPorMarca: ImpresoraMarcaCount[];
+  distribucionPorSede: ImpresoraSedeCount[];
+  topConsumibles: ImpresoraConsumibleCount[];
+  totalConsumiblesDistintos: number;
+}

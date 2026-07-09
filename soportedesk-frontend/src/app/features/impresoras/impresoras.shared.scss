@@ -1,3 +1,36 @@
+.ad-tabs {
+  display: flex;
+  gap: 4px;
+  margin-top: 4px;
+  border-bottom: 1px solid var(--color-border);
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.ad-tabs a {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 10px 6px;
+  margin-bottom: -1px;
+  border-bottom: 2px solid transparent;
+  color: var(--color-text-secondary);
+  font-weight: 600;
+  font-size: 13.5px;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: var(--transition);
+
+  svg { flex: 0 0 auto; }
+
+  &:hover { color: var(--color-text); }
+
+  &.active {
+    color: var(--color-accent);
+    border-color: var(--color-accent);
+  }
+}
+
 .impresoras-page {
   --color-accent: var(--color-impresoras);
   --color-accent-hover: #475569;
@@ -188,6 +221,70 @@
     border: 1px solid var(--color-danger);
     background: var(--color-danger);
     color: #fff;
+  }
+}
+
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(300px, .9fr);
+  gap: 14px;
+}
+
+.chart-card { min-height: 340px; padding: 16px; }
+
+.alert-list { display: grid; gap: 12px; align-content: start; }
+
+.alert-card { padding: 14px; }
+
+.alert-card header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.alert-row {
+  display: grid;
+  width: 100%;
+  gap: 2px;
+  padding: 10px 4px;
+  border: none;
+  border-bottom: 1px solid var(--color-border);
+  background: transparent;
+  color: var(--color-text);
+  text-align: left;
+
+  &:last-of-type { border-bottom: none; }
+}
+
+.empty-state {
+  display: grid;
+  place-items: center;
+  gap: 6px;
+  min-height: 180px;
+  padding: 24px;
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-muted);
+  color: var(--color-text-secondary);
+  text-align: center;
+
+  strong { color: var(--color-text); font-size: 15px; }
+  span { font-size: 12.5px; }
+}
+
+.notice {
+  padding: 11px 14px;
+  border-radius: var(--radius-md);
+  background: var(--color-info-light);
+  color: var(--color-info);
+  font-size: 13px;
+  font-weight: 600;
+
+  &.error {
+    background: var(--color-danger-light);
+    color: var(--color-danger);
   }
 }
 
@@ -466,6 +563,8 @@
       color: var(--color-text);
     }
   }
+
+  .dashboard-grid { grid-template-columns: 1fr; }
 }
 
 @media (max-width: 520px) {
