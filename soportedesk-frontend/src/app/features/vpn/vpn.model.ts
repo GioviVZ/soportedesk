@@ -99,3 +99,29 @@ export interface VpnConfigInstitucional {
 export interface VpnConfigInstitucionalRequest {
   vencimientoAntivirus: string;
 }
+
+export interface VpnTipoEquipoCount {
+  tipoEquipo: string;
+  total: number;
+}
+
+export interface VpnVencimientoAlerta {
+  vpnId: number;
+  titular: string;
+  tipoEquipo: string | null;
+  vence: string;
+  detalle: string;
+}
+
+export interface VpnDashboardCompleto {
+  pendientes: number;
+  aprobadas: number;
+  rechazadas: number;
+  observadas: number;
+  total: number;
+  distribucionPorTipoEquipo: VpnTipoEquipoCount[];
+  antivirusVencidos: VpnVencimientoAlerta[];
+  totalAntivirusVencidos: number;
+  antivirusPorVencer: VpnVencimientoAlerta[];
+  totalAntivirusPorVencer: number;
+}

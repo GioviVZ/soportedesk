@@ -8,6 +8,7 @@ import {
   VpnAprobarRequest,
   VpnConfigInstitucional,
   VpnConfigInstitucionalRequest,
+  VpnDashboardCompleto,
   VpnKpis,
   VpnResolucionRequest,
   VpnSolicitudRequest,
@@ -32,6 +33,10 @@ export class VpnService {
 
   getKpis(): Observable<VpnKpis> {
     return this.http.get<VpnKpis>(`${this.apiUrl}/kpis`);
+  }
+
+  getDashboardCompleto(): Observable<VpnDashboardCompleto> {
+    return this.http.get<VpnDashboardCompleto>(`${this.apiUrl}/dashboard/completo`);
   }
 
   create(request: VpnSolicitudRequest): Observable<Vpn> {

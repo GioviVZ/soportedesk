@@ -2,6 +2,7 @@ import { Routes } from '@angular/router';
 import { adminGuard } from './core/auth/admin.guard';
 import { authGuard } from './core/auth/auth.guard';
 import { moduloGuard } from './core/auth/modulo.guard';
+import { vpnAdminGuard } from './core/auth/vpn-admin.guard';
 import { ShellComponent } from './layout/shell/shell.component';
 
 export const routes: Routes = [
@@ -51,9 +52,29 @@ export const routes: Routes = [
       },
       {
         path: 'vpn',
-        canActivate: [moduloGuard('vpn')],
         loadComponent: () =>
-          import('./features/vpn/vpn-list.component').then((m) => m.VpnListComponent),
+          import('./features/vpn/vpn-shell.component').then((m) => m.VpnShellComponent),
+        children: [
+          { path: '', redirectTo: 'registros', pathMatch: 'full' },
+          {
+            path: 'registros',
+            canActivate: [moduloGuard('vpn')],
+            loadComponent: () =>
+              import('./features/vpn/vpn-registros.component').then((m) => m.VpnRegistrosComponent),
+          },
+          {
+            path: 'administracion',
+            canActivate: [vpnAdminGuard],
+            loadComponent: () =>
+              import('./features/vpn/vpn-administracion.component').then((m) => m.VpnAdministracionComponent),
+          },
+          {
+            path: 'dashboard',
+            canActivate: [moduloGuard('aprobar-vpn', { write: true })],
+            loadComponent: () =>
+              import('./features/vpn/vpn-dashboard.component').then((m) => m.VpnDashboardComponent),
+          },
+        ],
       },
       {
         path: 'correos',
@@ -63,11 +84,37 @@ export const routes: Routes = [
       },
       {
         path: 'usuarios-red',
-        canActivate: [moduloGuard('usuarios-red')],
         loadComponent: () =>
-          import('./features/usuarios-red/usuarios-red-list.component').then(
-            (m) => m.UsuariosRedListComponent,
+          import('./features/usuarios-red/usuarios-red-shell.component').then(
+            (m) => m.UsuariosRedShellComponent,
           ),
+        children: [
+          { path: '', redirectTo: 'consultas', pathMatch: 'full' },
+          {
+            path: 'consultas',
+            canActivate: [moduloGuard('usuarios-red')],
+            loadComponent: () =>
+              import('./features/usuarios-red/usuarios-red-consultas.component').then(
+                (m) => m.UsuariosRedConsultasComponent,
+              ),
+          },
+          {
+            path: 'administracion',
+            canActivate: [moduloGuard('usuarios-red', { write: true })],
+            loadComponent: () =>
+              import('./features/usuarios-red/usuarios-red-administracion.component').then(
+                (m) => m.UsuariosRedAdministracionComponent,
+              ),
+          },
+          {
+            path: 'dashboard',
+            canActivate: [moduloGuard('usuarios-red', { write: true })],
+            loadComponent: () =>
+              import('./features/usuarios-red/usuarios-red-dashboard.component').then(
+                (m) => m.UsuariosRedDashboardComponent,
+              ),
+          },
+        ],
       },
       {
         path: 'impresoras',
