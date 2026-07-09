@@ -11,4 +11,20 @@ class LdapFilterUtilsTest {
         assertThat(LdapFilterUtils.escape("adm*(test)\\x\u0000"))
                 .isEqualTo("adm\\2a\\28test\\29\\5cx\\00");
     }
+
+    @Test
+    void combinedUserSearchFilterUsesOnlyTermsWithTwoCharacters() {
+        ActiveDirectoryService service = new ActiveDirectoryService(null, null, null);
+
+        assertThat(service.buildUserSearchFilter("gv", "Gustavo", " "))
+                .isEqualTo("(&(objectCategory=person)(objectClass=user)(sAMAccountName=*gv*)(displayName=*Gustavo*))");
+    }
+
+    @Test
+    void combinedUserSearchFilterEscapesEachTerm() {
+        ActiveDirectoryService service = new ActiveDirectoryService(null, null, null);
+
+        assertThat(service.buildUserSearchFilter("ad*", null, "Lab(1)"))
+                .isEqualTo("(&(objectCategory=person)(objectClass=user)(sAMAccountName=*ad\\2a*)(physicalDeliveryOfficeName=*Lab\\281\\29*))");
+    }
 }

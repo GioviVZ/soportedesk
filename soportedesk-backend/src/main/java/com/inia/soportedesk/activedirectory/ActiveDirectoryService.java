@@ -2,12 +2,17 @@ package com.inia.soportedesk.activedirectory;
 
 import com.inia.soportedesk.activedirectory.config.LdapContextFactory;
 import com.inia.soportedesk.activedirectory.dto.ActiveDirectoryDashboard;
+import com.inia.soportedesk.activedirectory.dto.ActiveDirectoryDashboardCompleto;
 import com.inia.soportedesk.activedirectory.dto.ActiveDirectoryGroup;
 import com.inia.soportedesk.activedirectory.dto.ActiveDirectoryOu;
 import com.inia.soportedesk.activedirectory.dto.ActiveDirectoryResponse;
+import com.inia.soportedesk.activedirectory.dto.AdUserAlerta;
+import com.inia.soportedesk.activedirectory.dto.AdUserSearchResult;
+import com.inia.soportedesk.activedirectory.dto.AdUserSummary;
 import com.inia.soportedesk.activedirectory.dto.AdUser;
 import com.inia.soportedesk.activedirectory.dto.GroupRequest;
 import com.inia.soportedesk.activedirectory.dto.MoveUserRequest;
+import com.inia.soportedesk.activedirectory.dto.OuUsuariosCount;
 import com.inia.soportedesk.activedirectory.dto.ResetPasswordRequest;
 import com.inia.soportedesk.activedirectory.dto.UpdateUserInfoRequest;
 import com.inia.soportedesk.auditoria.MovimientoAuditoriaService;
@@ -42,13 +47,19 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class ActiveDirectoryService {
     private static final Logger log = LoggerFactory.getLogger(ActiveDirectoryService.class);
     private static final int ACCOUNT_DISABLED = 0x0002;
+    private static final int PASSWORD_EXPIRED_DAYS = 90;
+    private static final int INACTIVE_ACCOUNT_DAYS = 60;
     private static final String LDAP_MATCHING_RULE_BIT_AND = "1.2.840.113556.1.4.803";
     private static final String[] USER_ATTRIBUTES = {
             "sAMAccountName", "displayName", "givenName", "sn", "mail", "department", "company", "title",
@@ -60,6 +71,37 @@ public class ActiveDirectoryService {
     private final LdapContextFactory contextFactory;
     private final MovimientoAuditoriaService auditoriaService;
     private final HttpServletRequest request;
+
+    public AdUserSearchResult buscarUsuarios(String usuario, String nombre, String oficina) {
+        if (!hasSearchTerm(usuario) && !hasSearchTerm(nombre) && !hasSearchTerm(oficina)) {
+            return new AdUserSearchResult(List.of(), false);
+        }
+        List<AdUserSummary> users = new ArrayList<>();
+        DirContext context = null;
+        try {
+            context = contextFactory.openDirContext();
+            SearchControls controls = controls(new String[]{
+                    "sAMAccountName", "displayName", "mail", "physicalDeliveryOfficeName",
+                    "distinguishedName", "userAccountControl", "lockoutTime"
+            }, 50);
+            NamingEnumeration<SearchResult> results = context.search(
+                    contextFactory.baseDn(),
+                    buildUserSearchFilter(usuario, nombre, oficina),
+                    controls
+            );
+            while (results.hasMore()) {
+                users.add(toUserSummary(results.next()));
+            }
+            return new AdUserSearchResult(users, users.size() >= 50);
+        } catch (PartialResultException ignored) {
+            return new AdUserSearchResult(users, users.size() >= 50);
+        } catch (Exception e) {
+            log.warn("Error buscando usuarios en Active Directory", e);
+            return new AdUserSearchResult(List.of(), false);
+        } finally {
+            closeQuietly(context);
+        }
+    }
 
     public ActiveDirectoryResponse<AdUser> buscarUsuarioPorSam(String samAccountName) {
         DirContext context = null;
@@ -217,6 +259,60 @@ public class ActiveDirectoryService {
         return new ActiveDirectoryDashboard(enabled, locked, disabled, dcs);
     }
 
+    public ActiveDirectoryDashboardCompleto obtenerDashboardCompleto() {
+        try {
+            List<DashboardUserRow> users = collectDashboardUsers();
+            int enabled = (int) users.stream().filter(DashboardUserRow::enabled).count();
+            int disabled = users.size() - enabled;
+            int locked = (int) users.stream().filter(DashboardUserRow::locked).count();
+            int dcs = countPaged("(&(objectCategory=computer)(userAccountControl:" + LDAP_MATCHING_RULE_BIT_AND + ":=8192))");
+
+            List<OuUsuariosCount> ous = users.stream()
+                    .filter(DashboardUserRow::enabled)
+                    .collect(Collectors.groupingBy(row -> blankToDefault(row.organizationalUnit(), "Sin OU"), HashMap::new, Collectors.counting()))
+                    .entrySet()
+                    .stream()
+                    .sorted(Map.Entry.<String, Long>comparingByValue(Comparator.reverseOrder()).thenComparing(Map.Entry.comparingByKey()))
+                    .map(entry -> new OuUsuariosCount(entry.getKey(), entry.getValue().intValue()))
+                    .toList();
+
+            List<DashboardUserRow> passwords = users.stream()
+                    .filter(row -> row.daysSincePasswordChange() != null && row.daysSincePasswordChange() > PASSWORD_EXPIRED_DAYS)
+                    .sorted(Comparator.comparing(DashboardUserRow::daysSincePasswordChange, Comparator.reverseOrder()))
+                    .toList();
+
+            List<DashboardUserRow> inactive = users.stream()
+                    .filter(row -> row.daysSinceLastLogon() != null && row.daysSinceLastLogon() > INACTIVE_ACCOUNT_DAYS)
+                    .sorted(Comparator.comparing(DashboardUserRow::daysSinceLastLogon, Comparator.reverseOrder()))
+                    .toList();
+
+            List<DashboardUserRow> blocked = users.stream()
+                    .filter(DashboardUserRow::locked)
+                    .sorted(Comparator.comparing(DashboardUserRow::lockoutTime, Comparator.reverseOrder()))
+                    .toList();
+
+            return new ActiveDirectoryDashboardCompleto(
+                    enabled,
+                    disabled,
+                    locked,
+                    dcs,
+                    ous,
+                    topAlerts(passwords, "dias sin cambiar clave", DashboardUserRow::daysSincePasswordChange),
+                    passwords.size(),
+                    topAlerts(inactive, "dias sin iniciar sesion", DashboardUserRow::daysSinceLastLogon),
+                    inactive.size(),
+                    blocked.stream()
+                            .limit(10)
+                            .map(row -> new AdUserAlerta(row.samAccountName(), row.displayName(), lockoutDetail(row.lockoutTime())))
+                            .toList(),
+                    blocked.size()
+            );
+        } catch (Exception e) {
+            log.warn("Error construyendo dashboard completo de Active Directory", e);
+            return emptyDashboardCompleto();
+        }
+    }
+
     private ActiveDirectoryResponse<AdUser> changeEnabled(String samAccountName, boolean enabled) {
         return withUserWrite(samAccountName, enabled ? "HABILITAR_CUENTA" : "DESHABILITAR_CUENTA",
                 enabled ? "Cuenta habilitada correctamente." : "Cuenta deshabilitada correctamente.",
@@ -279,6 +375,69 @@ public class ActiveDirectoryService {
         String filter = "(&(objectCategory=person)(objectClass=user)(sAMAccountName=" + LdapFilterUtils.escape(samAccountName) + "))";
         NamingEnumeration<SearchResult> results = context.search(contextFactory.baseDn(), filter, controls(returningAttributes, 1));
         return results.hasMore() ? results.next() : null;
+    }
+
+    String buildUserSearchFilter(String usuario, String nombre, String oficina) {
+        StringBuilder filter = new StringBuilder("(&(objectCategory=person)(objectClass=user)");
+        appendContainsFilter(filter, "sAMAccountName", usuario);
+        appendContainsFilter(filter, "displayName", nombre);
+        appendContainsFilter(filter, "physicalDeliveryOfficeName", oficina);
+        filter.append(")");
+        return filter.toString();
+    }
+
+    private void appendContainsFilter(StringBuilder filter, String attribute, String value) {
+        if (hasSearchTerm(value)) {
+            filter.append("(")
+                    .append(attribute)
+                    .append("=*")
+                    .append(LdapFilterUtils.escape(value.trim()))
+                    .append("*)");
+        }
+    }
+
+    private boolean hasSearchTerm(String value) {
+        return value != null && value.trim().length() >= 2;
+    }
+
+    private List<DashboardUserRow> collectDashboardUsers() throws Exception {
+        List<DashboardUserRow> users = new ArrayList<>();
+        LdapContext context = null;
+        try {
+            context = contextFactory.openLdapContext();
+            byte[] cookie = null;
+            SearchControls controls = controls(new String[]{
+                    "sAMAccountName", "displayName", "userAccountControl", "lockoutTime",
+                    "badPwdCount", "pwdLastSet", "lastLogonTimestamp", "distinguishedName"
+            }, 0);
+            do {
+                context.setRequestControls(new Control[]{new PagedResultsControl(500, cookie, Control.CRITICAL)});
+                NamingEnumeration<SearchResult> results = context.search(
+                        contextFactory.baseDn(),
+                        "(&(objectCategory=person)(objectClass=user)(sAMAccountName=*))",
+                        controls
+                );
+                try {
+                    while (results.hasMore()) {
+                        users.add(toDashboardUserRow(results.next()));
+                    }
+                } catch (PartialResultException ignored) {
+                    break;
+                }
+                cookie = null;
+                Control[] responseControls = context.getResponseControls();
+                if (responseControls != null) {
+                    for (Control control : responseControls) {
+                        if (control instanceof PagedResultsResponseControl paged) {
+                            cookie = paged.getCookie();
+                        }
+                    }
+                }
+            } while (cookie != null && cookie.length > 0);
+        } finally {
+            closeQuietly(context);
+        }
+        return users;
     }
 
     private List<ActiveDirectoryGroup> searchGroups(String filter, int limit) {
@@ -367,6 +526,54 @@ public class ActiveDirectoryService {
                 daysSinceFileTime(attr(attrs, "pwdLastSet")),
                 groups(attrs)
         );
+    }
+
+    private AdUserSummary toUserSummary(SearchResult result) throws Exception {
+        Attributes attrs = result.getAttributes();
+        return new AdUserSummary(
+                attr(attrs, "sAMAccountName"),
+                attr(attrs, "displayName"),
+                attr(attrs, "mail"),
+                attr(attrs, "physicalDeliveryOfficeName"),
+                extractOus(result.getNameInNamespace()),
+                (parseInt(attr(attrs, "userAccountControl")) & ACCOUNT_DISABLED) == 0,
+                parseLong(attr(attrs, "lockoutTime")) > 0
+        );
+    }
+
+    private DashboardUserRow toDashboardUserRow(SearchResult result) throws Exception {
+        Attributes attrs = result.getAttributes();
+        long lockoutTime = parseLong(attr(attrs, "lockoutTime"));
+        return new DashboardUserRow(
+                attr(attrs, "sAMAccountName"),
+                attr(attrs, "displayName"),
+                (parseInt(attr(attrs, "userAccountControl")) & ACCOUNT_DISABLED) == 0,
+                lockoutTime > 0,
+                lockoutTime,
+                daysSinceFileTime(attr(attrs, "pwdLastSet")),
+                daysSinceFileTime(attr(attrs, "lastLogonTimestamp")),
+                extractOus(result.getNameInNamespace())
+        );
+    }
+
+    private List<AdUserAlerta> topAlerts(List<DashboardUserRow> rows, String suffix, AlertDaysExtractor extractor) {
+        return rows.stream()
+                .limit(10)
+                .map(row -> new AdUserAlerta(row.samAccountName(), row.displayName(), extractor.days(row) + " " + suffix))
+                .toList();
+    }
+
+    private ActiveDirectoryDashboardCompleto emptyDashboardCompleto() {
+        return new ActiveDirectoryDashboardCompleto(0, 0, 0, 0, List.of(), List.of(), 0, List.of(), 0, List.of(), 0);
+    }
+
+    private String blankToDefault(String value, String fallback) {
+        return value == null || value.isBlank() ? fallback : value;
+    }
+
+    private String lockoutDetail(long lockoutTime) {
+        String date = fileTimeToDate(String.valueOf(lockoutTime));
+        return date == null ? "Cuenta bloqueada" : "Bloqueada desde " + date;
     }
 
     private SearchControls controls(String[] attrs, int limit) {
@@ -523,5 +730,22 @@ public class ActiveDirectoryService {
     @FunctionalInterface
     private interface UserWriteOperation {
         void apply(DirContext context, String userDn, SearchResult result) throws Exception;
+    }
+
+    @FunctionalInterface
+    private interface AlertDaysExtractor {
+        Long days(DashboardUserRow row);
+    }
+
+    record DashboardUserRow(
+            String samAccountName,
+            String displayName,
+            boolean enabled,
+            boolean locked,
+            long lockoutTime,
+            Long daysSincePasswordChange,
+            Long daysSinceLastLogon,
+            String organizationalUnit
+    ) {
     }
 }

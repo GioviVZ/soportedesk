@@ -1,9 +1,11 @@
 package com.inia.soportedesk.activedirectory;
 
 import com.inia.soportedesk.activedirectory.dto.ActiveDirectoryDashboard;
+import com.inia.soportedesk.activedirectory.dto.ActiveDirectoryDashboardCompleto;
 import com.inia.soportedesk.activedirectory.dto.ActiveDirectoryGroup;
 import com.inia.soportedesk.activedirectory.dto.ActiveDirectoryOu;
 import com.inia.soportedesk.activedirectory.dto.ActiveDirectoryResponse;
+import com.inia.soportedesk.activedirectory.dto.AdUserSearchResult;
 import com.inia.soportedesk.activedirectory.dto.AdUser;
 import com.inia.soportedesk.activedirectory.dto.GroupRequest;
 import com.inia.soportedesk.activedirectory.dto.MoveUserRequest;
@@ -34,6 +36,14 @@ public class ActiveDirectoryController {
         return service.buscarUsuarioPorSam(samAccountName);
     }
 
+    @GetMapping("/usuarios/buscar")
+    @PreAuthorize("hasRole('ADMIN') || hasAuthority('READ_usuarios-red')")
+    public AdUserSearchResult buscarUsuarios(@RequestParam(required = false) String usuario,
+                                             @RequestParam(required = false) String nombre,
+                                             @RequestParam(required = false) String oficina) {
+        return service.buscarUsuarios(usuario, nombre, oficina);
+    }
+
     @GetMapping("/usuarios/{samAccountName}/grupos")
     @PreAuthorize("hasRole('ADMIN') || hasAuthority('READ_usuarios-red')")
     public List<ActiveDirectoryGroup> obtenerGruposUsuario(@PathVariable String samAccountName) {
@@ -56,6 +66,12 @@ public class ActiveDirectoryController {
     @PreAuthorize("hasRole('ADMIN') || hasAuthority('READ_usuarios-red')")
     public ActiveDirectoryDashboard obtenerDashboard() {
         return service.obtenerDashboard();
+    }
+
+    @GetMapping("/dashboard/completo")
+    @PreAuthorize("hasRole('ADMIN') || hasAuthority('WRITE_usuarios-red')")
+    public ActiveDirectoryDashboardCompleto obtenerDashboardCompleto() {
+        return service.obtenerDashboardCompleto();
     }
 
     @PostMapping("/usuarios/{samAccountName}/desbloquear")
