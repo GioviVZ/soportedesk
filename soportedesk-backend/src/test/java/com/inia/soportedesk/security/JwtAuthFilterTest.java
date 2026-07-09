@@ -15,7 +15,6 @@ import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import java.util.List;
-import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
@@ -54,15 +53,19 @@ class JwtAuthFilterTest {
     }
 
     @Test
-    void doFilterInternal_withEditPermiso_grantsReadAndWriteAuthorities() throws Exception {
+    void doFilterInternal_usesAuthoritiesLoadedFromDatabaseBackedUserDetails() throws Exception {
         UserDetails userDetails = new User("soporte01", "hash", true, true, true, true,
-                List.of(new org.springframework.security.core.authority.SimpleGrantedAuthority("ROLE_SOPORTE")));
+                List.of(
+                        new org.springframework.security.core.authority.SimpleGrantedAuthority("ROLE_SOPORTE"),
+                        new org.springframework.security.core.authority.SimpleGrantedAuthority("READ_licencias"),
+                        new org.springframework.security.core.authority.SimpleGrantedAuthority("WRITE_licencias"),
+                        new org.springframework.security.core.authority.SimpleGrantedAuthority("READ_auditoria")
+                ));
 
         when(request.getHeader("Authorization")).thenReturn("Bearer faketoken");
         when(jwtService.extractUsername("faketoken")).thenReturn("soporte01");
         when(userDetailsService.loadUserByUsername("soporte01")).thenReturn(userDetails);
         when(jwtService.isTokenValid("faketoken", "soporte01")).thenReturn(true);
-        when(jwtService.extractPermisos("faketoken")).thenReturn(Map.of("licencias", "EDIT", "auditoria", "VIEW"));
 
         filter.doFilterInternal(request, response, filterChain);
 

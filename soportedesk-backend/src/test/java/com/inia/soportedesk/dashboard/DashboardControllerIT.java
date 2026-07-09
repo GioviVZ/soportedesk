@@ -6,9 +6,11 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.security.core.Authentication;
 import org.springframework.test.web.servlet.MockMvc;
 
 import static org.hamcrest.Matchers.is;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -27,7 +29,7 @@ class DashboardControllerIT {
     @Test
     @WithMockUser(roles = "SOPORTE")
     void getCounts_allowsAuthenticatedUser() throws Exception {
-        when(service.getCounts()).thenReturn(new DashboardCounts(5, 12, 20, 3, 1, 4, 7, 15, 2));
+        when(service.getCounts(any(Authentication.class))).thenReturn(new DashboardCounts(5, 12, 20, 3, 1, 4, 7, 15, 2));
 
         mockMvc.perform(get("/api/dashboard/counts"))
                 .andExpect(status().isOk())

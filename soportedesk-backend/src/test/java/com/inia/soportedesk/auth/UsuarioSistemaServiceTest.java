@@ -94,4 +94,22 @@ class UsuarioSistemaServiceTest {
         assertThat(captor.getValue().getModulo()).isEqualTo("licencias");
         assertThat(captor.getValue().getNivel()).isEqualTo(NivelPermiso.EDIT);
     }
+
+    @Test
+    void create_withVpnActionPermission_addsBaseVpnView() {
+        when(usuarioRepository.findByUsername("soporte01")).thenReturn(Optional.empty());
+        when(passwordEncoder.encode(any())).thenReturn("hashed");
+
+        UsuarioSistemaRequest request = baseRequest(Map.of("aprobar-vpn", "EDIT"));
+
+        service.create(request);
+
+        ArgumentCaptor<Permiso> captor = ArgumentCaptor.forClass(Permiso.class);
+        verify(permisoRepository, times(2)).save(captor.capture());
+        assertThat(captor.getAllValues())
+                .extracting(Permiso::getModulo, Permiso::getNivel)
+                .containsExactlyInAnyOrder(
+                        org.assertj.core.groups.Tuple.tuple("aprobar-vpn", NivelPermiso.EDIT),
+                        org.assertj.core.groups.Tuple.tuple("vpn", NivelPermiso.VIEW));
+    }
 }

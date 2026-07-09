@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -75,6 +76,7 @@ public class UsuarioSistemaService {
         if (permisos == null) {
             return;
         }
+        Map<String, NivelPermiso> normalizados = new LinkedHashMap<>();
         for (Map.Entry<String, String> entry : permisos.entrySet()) {
             String modulo = entry.getKey();
             if (modulo == null || modulo.isBlank() || !Modulos.VALIDOS.contains(modulo)) {
@@ -83,11 +85,20 @@ public class UsuarioSistemaService {
             NivelPermiso nivel = Modulos.SOLO_VISTA.contains(modulo)
                     ? NivelPermiso.VIEW
                     : parseNivel(entry.getValue());
+            normalizados.put(modulo, nivel);
+        }
 
+        if (normalizados.containsKey("solicitar-vpn")
+                || normalizados.containsKey("aprobar-vpn")
+                || normalizados.containsKey("credenciales-vpn")) {
+            normalizados.putIfAbsent("vpn", NivelPermiso.VIEW);
+        }
+
+        for (Map.Entry<String, NivelPermiso> entry : normalizados.entrySet()) {
             Permiso p = new Permiso();
             p.setUsuario(u);
-            p.setModulo(modulo);
-            p.setNivel(nivel);
+            p.setModulo(entry.getKey());
+            p.setNivel(entry.getValue());
             permisoRepository.save(p);
         }
     }

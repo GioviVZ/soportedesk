@@ -22,10 +22,10 @@ BEGIN
 END;
 GO
 
--- Los modulos solo-vista nunca tuvieron edicion: corregir su nivel.
+-- Los modulos solo-vista o solo-consulta no deben quedar como edicion.
 UPDATE dbo.permisos
    SET nivel = N'VIEW'
- WHERE modulo IN (N'auditoria', N'herramientas');
+ WHERE modulo IN (N'correos', N'vpn', N'auditoria', N'herramientas');
 GO
 
 -- Backfill: todo usuario SOPORTE que no tenga permiso explicito en modulos
@@ -49,6 +49,19 @@ WHERE u.rol = N'SOPORTE'
     FROM dbo.permisos p
     WHERE p.usuario_id = u.id
       AND p.modulo = m.modulo
+  );
+GO
+
+-- Los permisos finos de VPN necesitan acceso base al modulo para entrar a la pantalla.
+INSERT INTO dbo.permisos (usuario_id, modulo, nivel)
+SELECT DISTINCT p.usuario_id, N'vpn', N'VIEW'
+FROM dbo.permisos p
+WHERE p.modulo IN (N'solicitar-vpn', N'aprobar-vpn', N'credenciales-vpn')
+  AND NOT EXISTS (
+    SELECT 1
+    FROM dbo.permisos base
+    WHERE base.usuario_id = p.usuario_id
+      AND base.modulo = N'vpn'
   );
 GO
 

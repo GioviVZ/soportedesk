@@ -8,6 +8,7 @@ import com.inia.soportedesk.usuariosred.UsuarioRedRepository;
 import com.inia.soportedesk.vpn.VpnRepository;
 import com.inia.soportedesk.wifi.WifiRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -38,6 +39,21 @@ public class DashboardService {
                 impresoraRepository.count(),
                 equipoRepository.count(),
                 usuarioRedRepository.countDesactivados()
+        );
+    }
+
+    public DashboardCounts getCounts(Authentication auth) {
+        DashboardCounts counts = getCounts();
+        return new DashboardCounts(
+                canRead(auth, "licencias") ? counts.licencias() : 0,
+                canRead(auth, "correos") ? counts.correos() : 0,
+                canRead(auth, "usuarios-red") ? counts.usuariosRed() : 0,
+                canReadVpn(auth) ? counts.vpn() : 0,
+                canWrite(auth, "aprobar-vpn") ? counts.vpnPendientes() : 0,
+                canRead(auth, "wifi") ? counts.wifi() : 0,
+                canRead(auth, "impresoras") ? counts.impresoras() : 0,
+                canRead(auth, "equipos") ? counts.equipos() : 0,
+                canWrite(auth, "usuarios-red") ? counts.usuariosRedInactivos() : 0
         );
     }
 
@@ -72,5 +88,22 @@ public class DashboardService {
             result.add(new UbicacionUsuariosCount(entry.getKey(), entry.getValue()[0], entry.getValue()[1]));
         }
         return result;
+    }
+
+    private boolean canRead(Authentication auth, String modulo) {
+        return hasAuthority(auth, "ROLE_ADMIN") || hasAuthority(auth, "READ_" + modulo);
+    }
+
+    private boolean canWrite(Authentication auth, String modulo) {
+        return hasAuthority(auth, "ROLE_ADMIN") || hasAuthority(auth, "WRITE_" + modulo);
+    }
+
+    private boolean canReadVpn(Authentication auth) {
+        return canRead(auth, "vpn") || canWrite(auth, "solicitar-vpn") || canWrite(auth, "aprobar-vpn");
+    }
+
+    private boolean hasAuthority(Authentication auth, String authority) {
+        return auth != null && auth.getAuthorities().stream()
+                .anyMatch(a -> authority.equals(a.getAuthority()));
     }
 }
