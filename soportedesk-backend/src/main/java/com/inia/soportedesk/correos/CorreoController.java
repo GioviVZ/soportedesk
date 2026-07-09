@@ -33,6 +33,12 @@ public class CorreoController {
         return service.getKpis();
     }
 
+    @GetMapping("/dashboard/completo")
+    @PreAuthorize("hasRole('ADMIN') || hasAuthority('READ_correos')")
+    public CorreoDashboardCompleto dashboardCompleto() {
+        return service.getDashboardCompleto();
+    }
+
     @GetMapping("/sedes")
     @PreAuthorize("hasRole('ADMIN') || hasAuthority('READ_correos')")
     public List<String> sedes() {

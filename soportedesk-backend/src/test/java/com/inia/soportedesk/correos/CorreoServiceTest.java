@@ -85,6 +85,55 @@ class CorreoServiceTest {
         assertThat(service.getSubdependencias("OTI")).containsExactly("Soporte");
     }
 
+    @Test
+    void getDashboardCompleto_aggregatesDistribution2FAAndInactivity() {
+        VwGwDashboard activoOti = dashboard("a@inia.gob.pe", "Activo", "Sede Central", 10);
+        ReflectionTestUtils.setField(activoOti, "oficinaPadre", "OTI");
+        ReflectionTestUtils.setField(activoOti, "verificacion2Pasos", "Enrolado");
+        ReflectionTestUtils.setField(activoOti, "ultimoInicioSesion", java.time.LocalDateTime.now());
+
+        VwGwDashboard inactivoDga = dashboard("b@inia.gob.pe", "Activo", "EEAs", 20);
+        ReflectionTestUtils.setField(inactivoDga, "oficinaPadre", "DGA");
+        ReflectionTestUtils.setField(inactivoDga, "verificacion2Pasos", "No Enrolado");
+        ReflectionTestUtils.setField(inactivoDga, "nombreCompleto", "Beto Gomez");
+        ReflectionTestUtils.setField(inactivoDga, "ultimoInicioSesion", java.time.LocalDateTime.now().minusDays(90));
+
+        VwGwDashboard sinAcceso = dashboard("c@inia.gob.pe", "Activo", "EEAs", 20);
+        ReflectionTestUtils.setField(sinAcceso, "oficinaPadre", "DGA");
+        ReflectionTestUtils.setField(sinAcceso, "verificacion2Pasos", "No Enrolado");
+        ReflectionTestUtils.setField(sinAcceso, "nombreCompleto", "Cami Ruiz");
+        ReflectionTestUtils.setField(sinAcceso, "ultimoInicioSesion", null);
+
+        when(repository.findAll()).thenReturn(List.of(activoOti, inactivoDga, sinAcceso));
+
+        CorreoDashboardCompleto result = service.getDashboardCompleto();
+
+        assertThat(result.distribucionPorDependencia())
+                .extracting(CorreoDependenciaCount::dependencia, CorreoDependenciaCount::total)
+                .containsExactlyInAnyOrder(
+                        org.assertj.core.groups.Tuple.tuple("OTI", 1L),
+                        org.assertj.core.groups.Tuple.tuple("DGA", 2L)
+                );
+
+        assertThat(result.totalCuentas()).isEqualTo(3);
+        assertThat(result.cuentasCon2FA()).isEqualTo(1);
+        assertThat(result.porcentaje2FA()).isCloseTo(33.33, org.assertj.core.data.Offset.offset(0.1));
+
+        assertThat(result.totalSinUso()).isEqualTo(2);
+        assertThat(result.sinUso()).extracting(CorreoInactividadAlerta::email).containsExactly("c@inia.gob.pe", "b@inia.gob.pe");
+    }
+
+    @Test
+    void getDashboardCompleto_onException_returnsEmptyDashboard() {
+        when(repository.findAll()).thenThrow(new RuntimeException("db down"));
+
+        CorreoDashboardCompleto result = service.getDashboardCompleto();
+
+        assertThat(result.totalCuentas()).isEqualTo(0);
+        assertThat(result.distribucionPorDependencia()).isEmpty();
+        assertThat(result.sinUso()).isEmpty();
+    }
+
     private VwGwDashboard dashboard(String email, String estado, String categoria, int totalUsuariosCategoria) {
         VwGwDashboard value = new VwGwDashboard();
         ReflectionTestUtils.setField(value, "email", email);

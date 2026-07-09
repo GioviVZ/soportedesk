@@ -105,6 +105,25 @@ class CorreoControllerIT {
                 .andExpect(status().isMethodNotAllowed());
     }
 
+    @Test
+    @WithMockUser(authorities = {"ROLE_SOPORTE", "READ_correos"})
+    void dashboardCompleto_withReadAuthority_returnsOk() throws Exception {
+        when(service.getDashboardCompleto()).thenReturn(new CorreoDashboardCompleto(
+                new CorreoKpisDto(1200, 1069, 131, 1069, 131, 500, 700),
+                List.of(), 800, 1200, 66.6, List.of(), 0));
+
+        mockMvc.perform(get("/api/correos/dashboard/completo"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalCuentas", is(1200)));
+    }
+
+    @Test
+    @WithMockUser(roles = "SOPORTE")
+    void dashboardCompleto_withoutReadAuthority_returnsForbidden() throws Exception {
+        mockMvc.perform(get("/api/correos/dashboard/completo"))
+                .andExpect(status().isForbidden());
+    }
+
     private VwGwDashboard dashboard(String email, String nombreCompleto) {
         VwGwDashboard value = new VwGwDashboard();
         ReflectionTestUtils.setField(value, "email", email);

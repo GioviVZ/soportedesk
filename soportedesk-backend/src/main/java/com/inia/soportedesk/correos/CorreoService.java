@@ -91,4 +91,53 @@ public class CorreoService {
     private String normalize(String value) {
         return value != null && !value.isBlank() ? value : null;
     }
+
+    private static final int INACTIVIDAD_DIAS = 30;
+
+    @Transactional(readOnly = true)
+    public CorreoDashboardCompleto getDashboardCompleto() {
+        try {
+            List<VwGwDashboard> all = repository.findAll();
+            CorreoKpisDto kpis = getKpis();
+
+            List<CorreoDependenciaCount> distribucion = all.stream()
+                    .collect(java.util.stream.Collectors.groupingBy(
+                            v -> v.getOficinaPadre() == null || v.getOficinaPadre().isBlank() ? "Sin dependencia" : v.getOficinaPadre(),
+                            java.util.LinkedHashMap::new,
+                            java.util.stream.Collectors.counting()))
+                    .entrySet().stream()
+                    .map(e -> new CorreoDependenciaCount(e.getKey(), e.getValue()))
+                    .sorted(java.util.Comparator.comparing(CorreoDependenciaCount::dependencia))
+                    .toList();
+
+            long con2FA = all.stream().filter(v -> "Enrolado".equals(v.getVerificacion2Pasos())).count();
+            double porcentaje = all.isEmpty() ? 0.0 : (con2FA * 100.0) / all.size();
+
+            LocalDateTime umbral = LocalDateTime.now().minusDays(INACTIVIDAD_DIAS);
+            List<VwGwDashboard> sinUso = all.stream()
+                    .filter(v -> v.getUltimoInicioSesion() == null || v.getUltimoInicioSesion().isBefore(umbral))
+                    .sorted(java.util.Comparator.comparing(
+                            VwGwDashboard::getUltimoInicioSesion,
+                            java.util.Comparator.nullsFirst(java.util.Comparator.naturalOrder())))
+                    .toList();
+
+            return new CorreoDashboardCompleto(
+                    kpis,
+                    distribucion,
+                    con2FA, all.size(), porcentaje,
+                    sinUso.stream().limit(10).map(this::toAlerta).toList(),
+                    sinUso.size()
+            );
+        } catch (Exception e) {
+            return new CorreoDashboardCompleto(
+                    new CorreoKpisDto(0, 0, 0, 0, 0, 0, 0), List.of(), 0, 0, 0.0, List.of(), 0);
+        }
+    }
+
+    private CorreoInactividadAlerta toAlerta(VwGwDashboard v) {
+        String detalle = v.getUltimoInicioSesion() == null
+                ? "Sin acceso registrado"
+                : "Sin acceso desde " + v.getUltimoInicioSesion().toLocalDate();
+        return new CorreoInactividadAlerta(v.getEmail(), v.getNombreCompleto(), detalle);
+    }
 }
