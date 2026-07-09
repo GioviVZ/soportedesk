@@ -56,7 +56,7 @@ export class SidebarComponent {
 
     this.navItems = [
       { path: '/dashboard', label: 'Dashboard', icon: s.bypassSecurityTrustHtml(SVG_ICONS['home']) },
-      { path: '/usuarios-red', label: 'Usuarios de Red/AD', icon: s.bypassSecurityTrustHtml(SVG_ICONS['users']), permission: 'usuarios-red' },
+      { path: '/usuarios-red/consultas', label: 'Usuarios de Red/AD', icon: s.bypassSecurityTrustHtml(SVG_ICONS['users']), permission: 'usuarios-red' },
       { path: '/correos', label: 'Correos Institucionales', icon: s.bypassSecurityTrustHtml(SVG_ICONS['mail']), permission: 'correos' },
       { path: '/equipos', label: 'Equipos Asignados', icon: s.bypassSecurityTrustHtml(SVG_ICONS['monitor']), permission: 'equipos' },
       { path: '/vpn', label: 'VPN', icon: s.bypassSecurityTrustHtml(SVG_ICONS['lock']), permission: 'vpn' },

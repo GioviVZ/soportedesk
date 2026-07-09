@@ -8,7 +8,7 @@ describe('moduloGuard', () => {
   let router: jasmine.SpyObj<Router>;
 
   beforeEach(() => {
-    authService = jasmine.createSpyObj<AuthService>('AuthService', ['isAdmin', 'canRead']);
+    authService = jasmine.createSpyObj<AuthService>('AuthService', ['isAdmin', 'canRead', 'canWrite']);
     router = jasmine.createSpyObj<Router>('Router', ['navigate']);
 
     TestBed.configureTestingModule({
@@ -46,5 +46,18 @@ describe('moduloGuard', () => {
 
     expect(result).toBe(false);
     expect(router.navigate).toHaveBeenCalledWith(['/dashboard']);
+  });
+
+  it('requires write permission when requested', () => {
+    authService.isAdmin.and.returnValue(false);
+    authService.canWrite.and.returnValue(true);
+
+    const result = TestBed.runInInjectionContext(() =>
+      moduloGuard('usuarios-red', { write: true })({} as any, {} as any),
+    );
+
+    expect(result).toBe(true);
+    expect(authService.canWrite).toHaveBeenCalledWith('usuarios-red');
+    expect(authService.canRead).not.toHaveBeenCalled();
   });
 });

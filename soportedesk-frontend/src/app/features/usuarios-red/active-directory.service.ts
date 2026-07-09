@@ -4,9 +4,11 @@ import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import {
   ActiveDirectoryDashboard,
+  ActiveDirectoryDashboardCompleto,
   ActiveDirectoryGroup,
   ActiveDirectoryOu,
   ActiveDirectoryResponse,
+  AdUserSearchResult,
   AdUser,
   UpdateUserInfoRequest,
 } from './active-directory.model';
@@ -18,6 +20,18 @@ export class ActiveDirectoryService {
 
   getDashboard(): Observable<ActiveDirectoryDashboard> {
     return this.http.get<ActiveDirectoryDashboard>(`${this.apiUrl}/dashboard`);
+  }
+
+  getDashboardCompleto(): Observable<ActiveDirectoryDashboardCompleto> {
+    return this.http.get<ActiveDirectoryDashboardCompleto>(`${this.apiUrl}/dashboard/completo`);
+  }
+
+  searchUsers(filters: { usuario?: string; nombre?: string; oficina?: string }): Observable<AdUserSearchResult> {
+    let params = new HttpParams();
+    if (filters.usuario?.trim()) params = params.set('usuario', filters.usuario.trim());
+    if (filters.nombre?.trim()) params = params.set('nombre', filters.nombre.trim());
+    if (filters.oficina?.trim()) params = params.set('oficina', filters.oficina.trim());
+    return this.http.get<AdUserSearchResult>(`${this.apiUrl}/usuarios/buscar`, { params });
   }
 
   getUser(samAccountName: string): Observable<ActiveDirectoryResponse<AdUser>> {

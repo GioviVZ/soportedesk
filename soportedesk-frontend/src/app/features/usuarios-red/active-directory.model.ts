@@ -11,6 +11,42 @@ export interface ActiveDirectoryDashboard {
   controladoresDominio: number;
 }
 
+export interface AdUserSummary {
+  samAccountName: string;
+  displayName: string | null;
+  mail: string | null;
+  office: string | null;
+  organizationalUnit: string | null;
+  enabled: boolean;
+  locked: boolean;
+}
+
+export interface AdUserSearchResult {
+  items: AdUserSummary[];
+  truncated: boolean;
+}
+
+export interface OuUsuariosCount {
+  ou: string;
+  activos: number;
+}
+
+export interface AdUserAlerta {
+  samAccountName: string;
+  displayName: string | null;
+  detalle: string;
+}
+
+export interface ActiveDirectoryDashboardCompleto extends ActiveDirectoryDashboard {
+  distribucionPorOu: OuUsuariosCount[];
+  passwordsVencidas: AdUserAlerta[];
+  totalPasswordsVencidas: number;
+  cuentasInactivas: AdUserAlerta[];
+  totalCuentasInactivas: number;
+  cuentasBloqueadas: AdUserAlerta[];
+  totalCuentasBloqueadas: number;
+}
+
 export interface AdUser {
   samAccountName: string;
   displayName: string | null;
