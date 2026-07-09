@@ -73,8 +73,15 @@ public class VpnController {
     }
 
     @PatchMapping("/{id}/antivirus")
+    @PreAuthorize("hasRole('ADMIN') || hasAuthority('WRITE_solicitar-vpn')")
     public Vpn updateAntivirus(@PathVariable Long id, @RequestBody VpnAntivirusRequest request) {
         return service.updateAntivirus(id, request);
+    }
+
+    @GetMapping("/dashboard/completo")
+    @PreAuthorize("hasRole('ADMIN') || hasAuthority('WRITE_aprobar-vpn')")
+    public VpnDashboardCompleto getDashboardCompleto() {
+        return service.obtenerDashboardCompleto();
     }
 
     @DeleteMapping("/{id}")

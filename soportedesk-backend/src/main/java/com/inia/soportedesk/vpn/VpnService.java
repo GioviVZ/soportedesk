@@ -52,6 +52,59 @@ public class VpnService {
         );
     }
 
+    private static final int VENCIMIENTO_ALERTA_DIAS = 30;
+
+    public VpnDashboardCompleto obtenerDashboardCompleto() {
+        try {
+            List<Vpn> all = repository.findAll();
+            all.forEach(this::aplicarVence);
+
+            long pendientes = all.stream().filter(v -> "PENDIENTE".equals(v.getEstadoSolicitud())).count();
+            long aprobadas = all.stream().filter(v -> "APROBADO".equals(v.getEstadoSolicitud())).count();
+            long rechazadas = all.stream().filter(v -> "RECHAZADO".equals(v.getEstadoSolicitud())).count();
+            long observadas = all.stream().filter(v -> "OBSERVADO".equals(v.getEstadoSolicitud())).count();
+
+            List<VpnTipoEquipoCount> distribucion = all.stream()
+                    .collect(java.util.stream.Collectors.groupingBy(
+                            v -> v.getTipoEquipo() == null ? "SIN_TIPO" : v.getTipoEquipo(),
+                            java.util.LinkedHashMap::new,
+                            java.util.stream.Collectors.counting()))
+                    .entrySet().stream()
+                    .map(e -> new VpnTipoEquipoCount(e.getKey(), e.getValue()))
+                    .sorted(java.util.Comparator.comparing(VpnTipoEquipoCount::tipoEquipo))
+                    .toList();
+
+            LocalDate hoy = LocalDate.now();
+            List<Vpn> vencidos = all.stream()
+                    .filter(v -> v.getVence() != null && v.getVence().isBefore(hoy))
+                    .sorted(java.util.Comparator.comparing(Vpn::getVence))
+                    .toList();
+            List<Vpn> porVencer = all.stream()
+                    .filter(v -> v.getVence() != null && !v.getVence().isBefore(hoy)
+                            && !v.getVence().isAfter(hoy.plusDays(VENCIMIENTO_ALERTA_DIAS)))
+                    .sorted(java.util.Comparator.comparing(Vpn::getVence))
+                    .toList();
+
+            return new VpnDashboardCompleto(
+                    pendientes, aprobadas, rechazadas, observadas, all.size(),
+                    distribucion,
+                    vencidos.stream().limit(10).map(this::toAlerta).toList(),
+                    vencidos.size(),
+                    porVencer.stream().limit(10).map(this::toAlerta).toList(),
+                    porVencer.size()
+            );
+        } catch (Exception e) {
+            return new VpnDashboardCompleto(0, 0, 0, 0, 0, List.of(), List.of(), 0, List.of(), 0);
+        }
+    }
+
+    private VpnVencimientoAlerta toAlerta(Vpn vpn) {
+        String detalle = vpn.getVence().isBefore(LocalDate.now())
+                ? "Vencido el " + vpn.getVence()
+                : "Vence el " + vpn.getVence();
+        return new VpnVencimientoAlerta(vpn.getId(), vpn.getTitularNombreCompleto(), vpn.getTipoEquipo(), vpn.getVence(), detalle);
+    }
+
     @Transactional
     public Vpn crearSolicitud(VpnRequest request, Authentication auth) {
         Vpn vpn = new Vpn();

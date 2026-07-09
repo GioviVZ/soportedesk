@@ -442,4 +442,72 @@ class VpnServiceTest {
         assertThat(vpn.getUsuarioVpn()).isEqualTo("vpnuser1");
         assertThat(vpn.getCredencialVpn()).isEqualTo("supersecret");
     }
+
+    @Test
+    void obtenerDashboardCompleto_aggregatesCountsAndBuckets() {
+        Vpn iniaAprobado = new Vpn();
+        iniaAprobado.setId(1L);
+        iniaAprobado.setEstadoSolicitud("APROBADO");
+        iniaAprobado.setTipoEquipo("INIA");
+        iniaAprobado.setTitularTipo("AD");
+
+        Vpn personalVencido = new Vpn();
+        personalVencido.setId(2L);
+        personalVencido.setEstadoSolicitud("APROBADO");
+        personalVencido.setTipoEquipo("PERSONAL");
+        personalVencido.setTitularTipo("EXTERNO");
+        personalVencido.setTitularNombre("Ana");
+        personalVencido.setTitularApellidos("Lopez");
+        personalVencido.setVencimientoAntivirus(LocalDate.now().minusDays(5));
+
+        Vpn personalPorVencer = new Vpn();
+        personalPorVencer.setId(3L);
+        personalPorVencer.setEstadoSolicitud("PENDIENTE");
+        personalPorVencer.setTipoEquipo("PERSONAL");
+        personalPorVencer.setTitularTipo("EXTERNO");
+        personalPorVencer.setTitularNombre("Luis");
+        personalPorVencer.setTitularApellidos("Ruiz");
+        personalPorVencer.setVencimientoAntivirus(LocalDate.now().plusDays(10));
+
+        Vpn personalVigente = new Vpn();
+        personalVigente.setId(4L);
+        personalVigente.setEstadoSolicitud("RECHAZADO");
+        personalVigente.setTipoEquipo("PERSONAL");
+        personalVigente.setTitularTipo("EXTERNO");
+        personalVigente.setVencimientoAntivirus(LocalDate.now().plusDays(90));
+
+        when(repository.findAll()).thenReturn(List.of(iniaAprobado, personalVencido, personalPorVencer, personalVigente));
+
+        VpnDashboardCompleto result = service.obtenerDashboardCompleto();
+
+        assertThat(result.pendientes()).isEqualTo(1);
+        assertThat(result.aprobadas()).isEqualTo(2);
+        assertThat(result.rechazadas()).isEqualTo(1);
+        assertThat(result.observadas()).isEqualTo(0);
+        assertThat(result.total()).isEqualTo(4);
+
+        assertThat(result.distribucionPorTipoEquipo())
+                .extracting(VpnTipoEquipoCount::tipoEquipo, VpnTipoEquipoCount::total)
+                .containsExactlyInAnyOrder(
+                        org.assertj.core.groups.Tuple.tuple("INIA", 1L),
+                        org.assertj.core.groups.Tuple.tuple("PERSONAL", 3L)
+                );
+
+        assertThat(result.totalAntivirusVencidos()).isEqualTo(1);
+        assertThat(result.antivirusVencidos()).extracting(VpnVencimientoAlerta::vpnId).containsExactly(2L);
+
+        assertThat(result.totalAntivirusPorVencer()).isEqualTo(1);
+        assertThat(result.antivirusPorVencer()).extracting(VpnVencimientoAlerta::vpnId).containsExactly(3L);
+    }
+
+    @Test
+    void obtenerDashboardCompleto_onException_returnsEmptyDashboard() {
+        when(repository.findAll()).thenThrow(new RuntimeException("db down"));
+
+        VpnDashboardCompleto result = service.obtenerDashboardCompleto();
+
+        assertThat(result.total()).isEqualTo(0);
+        assertThat(result.distribucionPorTipoEquipo()).isEmpty();
+        assertThat(result.antivirusVencidos()).isEmpty();
+    }
 }

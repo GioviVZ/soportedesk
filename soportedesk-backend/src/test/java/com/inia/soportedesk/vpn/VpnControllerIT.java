@@ -255,7 +255,20 @@ class VpnControllerIT {
 
     @Test
     @WithMockUser(roles = "SOPORTE")
-    void patchAntivirus_withSoporteRole_returnsOk() throws Exception {
+    void patchAntivirus_withoutSolicitarAuthority_returnsForbidden() throws Exception {
+        VpnAntivirusRequest req = new VpnAntivirusRequest();
+        req.setTieneAntivirus(true);
+        req.setVencimientoAntivirus(LocalDate.of(2026, 12, 31));
+
+        mockMvc.perform(patch("/api/vpn/1/antivirus")
+                        .contentType("application/json")
+                        .content(objectMapper.writeValueAsString(req)))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @WithMockUser(authorities = {"ROLE_SOPORTE", "WRITE_solicitar-vpn"})
+    void patchAntivirus_withSolicitarAuthority_returnsOk() throws Exception {
         VpnAntivirusRequest req = new VpnAntivirusRequest();
         req.setTieneAntivirus(true);
         req.setVencimientoAntivirus(LocalDate.of(2026, 12, 31));
@@ -269,6 +282,24 @@ class VpnControllerIT {
                         .content(objectMapper.writeValueAsString(req)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.tieneAntivirus", is(true)));
+    }
+
+    @Test
+    @WithMockUser(authorities = {"ROLE_SOPORTE", "WRITE_aprobar-vpn"})
+    void dashboardCompleto_withAprobarAuthority_returnsOk() throws Exception {
+        when(service.obtenerDashboardCompleto()).thenReturn(
+                new VpnDashboardCompleto(1, 2, 0, 0, 3, List.of(), List.of(), 0, List.of(), 0));
+
+        mockMvc.perform(get("/api/vpn/dashboard/completo"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.total", is(3)));
+    }
+
+    @Test
+    @WithMockUser(authorities = {"ROLE_SOPORTE", "READ_vpn"})
+    void dashboardCompleto_withOnlyReadAuthority_returnsForbidden() throws Exception {
+        mockMvc.perform(get("/api/vpn/dashboard/completo"))
+                .andExpect(status().isForbidden());
     }
 
     @Test
