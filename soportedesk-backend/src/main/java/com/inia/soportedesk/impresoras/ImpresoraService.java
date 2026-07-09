@@ -35,6 +35,63 @@ public class ImpresoraService {
                 .orElseThrow(() -> new ResourceNotFoundException("Impresora no encontrada: " + id));
     }
 
+    @Transactional(readOnly = true)
+    public ImpresoraDashboardCompleto getDashboardCompleto() {
+        try {
+            List<Impresora> all = repository.findAll();
+
+            long activas = all.stream().filter(i -> "Activa".equals(i.getEstado())).count();
+            long enMantenimiento = all.stream().filter(i -> "En mantenimiento".equals(i.getEstado())).count();
+            long deBaja = all.stream().filter(i -> "De baja".equals(i.getEstado())).count();
+
+            List<ImpresoraMarcaCount> distribucionPorMarca = all.stream()
+                    .collect(java.util.stream.Collectors.groupingBy(
+                            i -> i.getModeloImpresora().getMarca().getNombre(),
+                            java.util.LinkedHashMap::new,
+                            java.util.stream.Collectors.counting()))
+                    .entrySet().stream()
+                    .map(e -> new ImpresoraMarcaCount(e.getKey(), e.getValue()))
+                    .sorted(java.util.Comparator.comparing(ImpresoraMarcaCount::marca))
+                    .toList();
+
+            List<ImpresoraSedeCount> distribucionPorSede = all.stream()
+                    .collect(java.util.stream.Collectors.groupingBy(
+                            i -> i.getSede() == null ? "Sin sede" : i.getSede().getNombre(),
+                            java.util.LinkedHashMap::new,
+                            java.util.stream.Collectors.counting()))
+                    .entrySet().stream()
+                    .map(e -> new ImpresoraSedeCount(e.getKey(), e.getValue()))
+                    .sorted(java.util.Comparator.comparing(ImpresoraSedeCount::sede))
+                    .toList();
+
+            java.util.Map<String, Long> consumibleCounts = new java.util.LinkedHashMap<>();
+            java.util.Map<String, com.inia.soportedesk.catalogo.ModeloImpresoraToner> consumibleSample = new java.util.LinkedHashMap<>();
+            for (Impresora impresora : all) {
+                for (com.inia.soportedesk.catalogo.ModeloImpresoraToner toner : impresora.getModeloImpresora().getToners()) {
+                    String key = toner.getColor() + "|" + toner.getVariante() + "|" + toner.getCodigo();
+                    consumibleCounts.merge(key, 1L, Long::sum);
+                    consumibleSample.putIfAbsent(key, toner);
+                }
+            }
+            List<ImpresoraConsumibleCount> topConsumibles = consumibleCounts.entrySet().stream()
+                    .sorted(java.util.Map.Entry.<String, Long>comparingByValue(java.util.Comparator.reverseOrder()))
+                    .limit(10)
+                    .map(e -> {
+                        com.inia.soportedesk.catalogo.ModeloImpresoraToner t = consumibleSample.get(e.getKey());
+                        return new ImpresoraConsumibleCount(t.getColor(), t.getVariante(), t.getCodigo(), e.getValue());
+                    })
+                    .toList();
+
+            return new ImpresoraDashboardCompleto(
+                    all.size(), activas, enMantenimiento, deBaja,
+                    distribucionPorMarca, distribucionPorSede,
+                    topConsumibles, consumibleCounts.size()
+            );
+        } catch (Exception e) {
+            return new ImpresoraDashboardCompleto(0, 0, 0, 0, List.of(), List.of(), List.of(), 0);
+        }
+    }
+
     @Transactional
     public Impresora create(ImpresoraRequest request) {
         Impresora impresora = new Impresora();

@@ -177,4 +177,92 @@ class ImpresoraServiceTest {
         assertThat(result.getTipoImpresora()).isNotNull();
         assertThat(result.getTipoImpresora().getNombre()).isEqualTo("Láser");
     }
+
+    @Test
+    void getDashboardCompleto_aggregatesCountsDistributionAndConsumibles() {
+        com.inia.soportedesk.catalogo.MarcaImpresora canon = new com.inia.soportedesk.catalogo.MarcaImpresora();
+        canon.setId(2L);
+        canon.setNombre("Canon");
+
+        ModeloImpresora modeloHp = modeloImpresora();
+        modeloHp.setToners(List.of(toner(modeloHp, "Negro", "Estandar", "TN-2380")));
+
+        ModeloImpresora modeloCanon = new ModeloImpresora();
+        modeloCanon.setId(2L);
+        modeloCanon.setMarca(canon);
+        modeloCanon.setNombre("LBP2900");
+        modeloCanon.setToners(List.of(toner(modeloCanon, "Negro", "Estandar", "TN-2380")));
+
+        com.inia.soportedesk.catalogo.Sede central = new com.inia.soportedesk.catalogo.Sede();
+        central.setId(1L);
+        central.setNombre("Sede Central");
+
+        Impresora activa1 = sampleImpresora(1L);
+        activa1.setModeloImpresora(modeloHp);
+        activa1.setSede(central);
+        activa1.setEstado("Activa");
+
+        Impresora activa2 = sampleImpresora(2L);
+        activa2.setModeloImpresora(modeloCanon);
+        activa2.setSede(central);
+        activa2.setEstado("Activa");
+
+        Impresora mantenimiento = sampleImpresora(3L);
+        mantenimiento.setModeloImpresora(modeloHp);
+        mantenimiento.setSede(null);
+        mantenimiento.setEstado("En mantenimiento");
+
+        Impresora deBaja = sampleImpresora(4L);
+        deBaja.setModeloImpresora(modeloHp);
+        deBaja.setSede(central);
+        deBaja.setEstado("De baja");
+
+        when(repository.findAll()).thenReturn(List.of(activa1, activa2, mantenimiento, deBaja));
+
+        ImpresoraDashboardCompleto result = service.getDashboardCompleto();
+
+        assertThat(result.total()).isEqualTo(4);
+        assertThat(result.activas()).isEqualTo(2);
+        assertThat(result.enMantenimiento()).isEqualTo(1);
+        assertThat(result.deBaja()).isEqualTo(1);
+
+        assertThat(result.distribucionPorMarca())
+                .extracting(ImpresoraMarcaCount::marca, ImpresoraMarcaCount::total)
+                .containsExactlyInAnyOrder(
+                        org.assertj.core.groups.Tuple.tuple("HP", 3L),
+                        org.assertj.core.groups.Tuple.tuple("Canon", 1L)
+                );
+
+        assertThat(result.distribucionPorSede())
+                .extracting(ImpresoraSedeCount::sede, ImpresoraSedeCount::total)
+                .containsExactlyInAnyOrder(
+                        org.assertj.core.groups.Tuple.tuple("Sede Central", 3L),
+                        org.assertj.core.groups.Tuple.tuple("Sin sede", 1L)
+                );
+
+        assertThat(result.totalConsumiblesDistintos()).isEqualTo(1);
+        assertThat(result.topConsumibles()).hasSize(1);
+        assertThat(result.topConsumibles().get(0).cantidad()).isEqualTo(4);
+        assertThat(result.topConsumibles().get(0).codigo()).isEqualTo("TN-2380");
+    }
+
+    @Test
+    void getDashboardCompleto_onException_returnsEmptyDashboard() {
+        when(repository.findAll()).thenThrow(new RuntimeException("db down"));
+
+        ImpresoraDashboardCompleto result = service.getDashboardCompleto();
+
+        assertThat(result.total()).isEqualTo(0);
+        assertThat(result.distribucionPorMarca()).isEmpty();
+        assertThat(result.topConsumibles()).isEmpty();
+    }
+
+    private com.inia.soportedesk.catalogo.ModeloImpresoraToner toner(ModeloImpresora modelo, String color, String variante, String codigo) {
+        com.inia.soportedesk.catalogo.ModeloImpresoraToner t = new com.inia.soportedesk.catalogo.ModeloImpresoraToner();
+        t.setModeloImpresora(modelo);
+        t.setColor(color);
+        t.setVariante(variante);
+        t.setCodigo(codigo);
+        return t;
+    }
 }

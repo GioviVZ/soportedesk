@@ -105,4 +105,22 @@ class ImpresoraControllerIT {
                         .content(objectMapper.writeValueAsString(sampleRequest())))
                 .andExpect(status().isForbidden());
     }
+
+    @Test
+    @WithMockUser(authorities = {"ROLE_SOPORTE", "WRITE_impresoras"})
+    void dashboardCompleto_withWriteAuthority_returnsOk() throws Exception {
+        when(service.getDashboardCompleto()).thenReturn(new ImpresoraDashboardCompleto(
+                10, 8, 1, 1, List.of(), List.of(), List.of(), 0));
+
+        mockMvc.perform(get("/api/impresoras/dashboard/completo"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.total", is(10)));
+    }
+
+    @Test
+    @WithMockUser(authorities = {"ROLE_SOPORTE", "READ_impresoras"})
+    void dashboardCompleto_withOnlyReadAuthority_returnsForbidden() throws Exception {
+        mockMvc.perform(get("/api/impresoras/dashboard/completo"))
+                .andExpect(status().isForbidden());
+    }
 }

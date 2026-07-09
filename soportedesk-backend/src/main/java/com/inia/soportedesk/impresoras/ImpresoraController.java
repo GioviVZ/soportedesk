@@ -28,6 +28,12 @@ public class ImpresoraController {
         return service.findById(id);
     }
 
+    @GetMapping("/dashboard/completo")
+    @PreAuthorize("hasRole('ADMIN') || hasAuthority('WRITE_impresoras')")
+    public ImpresoraDashboardCompleto dashboardCompleto() {
+        return service.getDashboardCompleto();
+    }
+
     @PostMapping
     @PreAuthorize("hasRole('ADMIN') || hasAuthority('WRITE_impresoras')")
     public ResponseEntity<Impresora> create(@Valid @RequestBody ImpresoraRequest request) {
