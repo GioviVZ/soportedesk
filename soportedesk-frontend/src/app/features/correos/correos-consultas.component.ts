@@ -2,22 +2,21 @@ import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ModalComponent } from '../../shared/modal/modal.component';
-import { Correo, CorreoFiltros, CorreoKpis } from './correo.model';
+import { Correo, CorreoFiltros } from './correo.model';
 import { CorreoService } from './correo.service';
 import * as XLSX from 'xlsx';
 
 @Component({
-  selector: 'app-correos-list',
+  selector: 'app-correos-consultas',
   standalone: true,
   imports: [CommonModule, FormsModule, ModalComponent],
-  templateUrl: './correos-list.component.html',
-  styleUrl: './correos-list.component.scss',
+  templateUrl: './correos-consultas.component.html',
+  styleUrl: './correos.shared.scss',
 })
-export class CorreosListComponent implements OnInit {
+export class CorreosConsultasComponent implements OnInit {
   private service = inject(CorreoService);
 
   items: Correo[] = [];
-  kpis: CorreoKpis | null = null;
   sedes: string[] = [];
   dependencias: string[] = [];
   subdependencias: string[] = [];
@@ -36,7 +35,6 @@ export class CorreosListComponent implements OnInit {
   readonly modalidadOpciones = ['CAP', 'CAS', 'EXTERNO', 'GENERICO', 'PRACTICANTE'];
 
   ngOnInit(): void {
-    this.service.getKpis().subscribe((kpis) => (this.kpis = kpis));
     this.service.getSedes().subscribe((sedes) => (this.sedes = sedes));
     this.service.getDependencias().subscribe((dependencias) => (this.dependencias = dependencias));
     this.service.getSubdependencias().subscribe((subdependencias) => (this.subdependencias = subdependencias));
@@ -96,14 +94,13 @@ export class CorreosListComponent implements OnInit {
   exportExcel(): void {
     const rows = this.items.map((item) => ({
       Correo: item.email ?? '',
-      Nombre: item.nombreCompleto ?? '',
-      'Employee ID': item.employeeId ?? '',
+      'Nombre Completo': item.nombreCompleto ?? item.employeeId ?? '',
       Sede: item.sede ?? '',
       Dependencia: item.oficinaPadre ?? '',
       Subdependencia: item.oficina ?? '',
       Modalidad: item.modalidad ?? '',
       Estado: item.estado ?? '',
-      'Verificacion 2 pasos': item.verificacion2Pasos ?? '',
+      'Doble Autenticación': item.verificacion2Pasos ?? '',
       'Ultimo acceso': item.ultimoInicioSesion ?? '',
       'Uso Email (MB)': this.roundMb(item.emailUsageMB),
       'Uso Drive (MB)': this.roundMb(item.driveUsageMB),
@@ -114,21 +111,8 @@ export class CorreosListComponent implements OnInit {
 
     const worksheet = XLSX.utils.json_to_sheet(rows);
     worksheet['!cols'] = [
-      { wch: 34 },
-      { wch: 38 },
-      { wch: 16 },
-      { wch: 20 },
-      { wch: 42 },
-      { wch: 42 },
-      { wch: 16 },
-      { wch: 14 },
-      { wch: 20 },
-      { wch: 22 },
-      { wch: 16 },
-      { wch: 16 },
-      { wch: 20 },
-      { wch: 16 },
-      { wch: 16 },
+      { wch: 34 }, { wch: 38 }, { wch: 20 }, { wch: 42 }, { wch: 42 }, { wch: 16 }, { wch: 14 },
+      { wch: 20 }, { wch: 22 }, { wch: 16 }, { wch: 16 }, { wch: 20 }, { wch: 16 }, { wch: 16 },
     ];
 
     const workbook = XLSX.utils.book_new();
@@ -152,20 +136,13 @@ export class CorreosListComponent implements OnInit {
 
   hasActiveFilters(): boolean {
     return Boolean(
-      this.searchTerm ||
-        this.selectedSede ||
-        this.selectedDependencia ||
-        this.selectedSubdependencia ||
-        this.selectedEstado ||
-        this.selectedModalidad ||
-        this.sinUso30Dias
+      this.searchTerm || this.selectedSede || this.selectedDependencia || this.selectedSubdependencia ||
+        this.selectedEstado || this.selectedModalidad || this.sinUso30Dias
     );
   }
 
   private roundMb(value: number | null): number | '' {
-    if (value === null || value === undefined) {
-      return '';
-    }
+    if (value === null || value === undefined) return '';
     return Math.round(value * 100) / 100;
   }
 

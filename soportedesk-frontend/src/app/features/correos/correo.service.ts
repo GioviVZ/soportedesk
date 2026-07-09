@@ -2,7 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { Correo, CorreoFiltros, CorreoKpis } from './correo.model';
+import { Correo, CorreoDashboardCompleto, CorreoFiltros, CorreoKpis } from './correo.model';
 
 @Injectable({ providedIn: 'root' })
 export class CorreoService {
@@ -23,6 +23,10 @@ export class CorreoService {
 
   getKpis(): Observable<CorreoKpis> {
     return this.http.get<CorreoKpis>(`${this.apiUrl}/kpis`);
+  }
+
+  getDashboardCompleto(): Observable<CorreoDashboardCompleto> {
+    return this.http.get<CorreoDashboardCompleto>(`${this.apiUrl}/dashboard/completo`);
   }
 
   getSedes(): Observable<string[]> {

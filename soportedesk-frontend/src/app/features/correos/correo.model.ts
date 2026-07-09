@@ -34,3 +34,24 @@ export interface CorreoFiltros {
   modalidad?: string;
   sinUso30Dias?: boolean;
 }
+
+export interface CorreoDependenciaCount {
+  dependencia: string;
+  total: number;
+}
+
+export interface CorreoInactividadAlerta {
+  email: string;
+  nombreCompleto: string | null;
+  detalle: string;
+}
+
+export interface CorreoDashboardCompleto {
+  kpis: CorreoKpis;
+  distribucionPorDependencia: CorreoDependenciaCount[];
+  cuentasCon2FA: number;
+  totalCuentas: number;
+  porcentaje2FA: number;
+  sinUso: CorreoInactividadAlerta[];
+  totalSinUso: number;
+}

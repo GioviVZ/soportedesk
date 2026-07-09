@@ -1,0 +1,211 @@
+<div class="filtros-bar">
+  <label class="search-field">
+    <span>Buscar</span>
+    <input
+      type="search"
+      placeholder="Correo o nombre"
+      [(ngModel)]="searchTerm"
+      (ngModelChange)="onSearch($event)"
+    />
+  </label>
+
+  <select [(ngModel)]="selectedSede" (ngModelChange)="onFiltroChange()">
+    <option value="">Todas las sedes</option>
+    <option *ngFor="let s of sedes" [value]="s">{{ s }}</option>
+  </select>
+
+  <select [(ngModel)]="selectedDependencia" (ngModelChange)="onDependenciaChange()">
+    <option value="">Todas las dependencias</option>
+    <option *ngFor="let d of dependencias" [value]="d">{{ d }}</option>
+  </select>
+
+  <select [(ngModel)]="selectedSubdependencia" (ngModelChange)="onFiltroChange()">
+    <option value="">Todas las subdependencias</option>
+    <option *ngFor="let s of subdependencias" [value]="s">{{ s }}</option>
+  </select>
+
+  <select [(ngModel)]="selectedEstado" (ngModelChange)="onFiltroChange()">
+    <option value="">Todos los estados</option>
+    <option *ngFor="let e of estadoOpciones" [value]="e">{{ e }}</option>
+  </select>
+
+  <select [(ngModel)]="selectedModalidad" (ngModelChange)="onFiltroChange()">
+    <option value="">Todas las modalidades</option>
+    <option *ngFor="let m of modalidadOpciones" [value]="m">{{ m }}</option>
+  </select>
+
+  <label class="toggle-filter" [class.active]="sinUso30Dias">
+    <input type="checkbox" [(ngModel)]="sinUso30Dias" (ngModelChange)="onFiltroChange()" />
+    <span class="toggle-switch" aria-hidden="true"></span>
+    <span class="toggle-text">Sin uso +30 dias</span>
+  </label>
+
+  <button class="secondary" type="button" (click)="clearFiltros()">Limpiar</button>
+</div>
+
+<section class="results-panel">
+  <div class="results-header">
+    <div>
+      <span>{{ items.length }} {{ items.length === 1 ? 'cuenta' : 'cuentas' }}</span>
+      <strong>{{ hasActiveFilters() ? 'Resultados filtrados' : 'Todas las cuentas' }}</strong>
+    </div>
+    <div class="results-actions">
+      <button type="button" class="export-btn" (click)="exportExcel()" [disabled]="items.length === 0">
+        Exportar Excel
+      </button>
+      <button type="button" *ngIf="hasActiveFilters()" (click)="clearFiltros()">Quitar filtros</button>
+    </div>
+  </div>
+
+  <div class="desktop-table">
+    <table>
+      <thead>
+        <tr>
+          <th>Cuenta</th>
+          <th>Ubicacion</th>
+          <th>Estado</th>
+          <th>Seguridad</th>
+          <th>Uso</th>
+          <th>Ultimo acceso</th>
+          <th>Accion</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let item of items">
+          <td>
+            <div class="account-cell">
+              <strong>{{ item.nombreCompleto || item.employeeId || item.email }}</strong>
+              <span>{{ item.email }}</span>
+            </div>
+          </td>
+          <td>
+            <div class="stacked-cell">
+              <strong>{{ item.sede || 'Sin sede' }}</strong>
+              <span>{{ item.oficinaPadre || 'Sin dependencia' }}</span>
+            </div>
+          </td>
+          <td>
+            <span class="badge" [ngClass]="statusClass(item.estado)">{{ item.estado || 'Sin estado' }}</span>
+          </td>
+          <td>
+            <span class="mini-badge" [ngClass]="twoFactorClass(item.verificacion2Pasos)">{{ item.verificacion2Pasos || 'Sin dato' }}</span>
+          </td>
+          <td>
+            <div class="usage-cell">
+              <strong>{{ formatStorage(item.totalUsoMB) }}</strong>
+              <span>Email {{ formatStorage(item.emailUsageMB) }}</span>
+            </div>
+          </td>
+          <td>
+            <span class="date-cell">{{ item.ultimoInicioSesion || 'Sin acceso' }}</span>
+          </td>
+          <td>
+            <button class="detail-btn" type="button" (click)="openDetail(item)">Ver detalle</button>
+          </td>
+        </tr>
+        <tr *ngIf="items.length === 0">
+          <td colspan="7" class="empty-row">Sin registros para los filtros seleccionados.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="mobile-list">
+    <article class="account-card" *ngFor="let item of items">
+      <header>
+        <div>
+          <strong>{{ item.nombreCompleto || item.employeeId || item.email }}</strong>
+          <span>{{ item.email }}</span>
+        </div>
+        <span class="badge" [ngClass]="statusClass(item.estado)">{{ item.estado || 'Sin estado' }}</span>
+      </header>
+
+      <dl>
+        <div>
+          <dt>Sede</dt>
+          <dd>{{ item.sede || 'Sin dato' }}</dd>
+        </div>
+        <div>
+          <dt>Modalidad</dt>
+          <dd>{{ item.modalidad || 'Sin dato' }}</dd>
+        </div>
+        <div>
+          <dt>Doble Autenticación</dt>
+          <dd><span class="mini-badge" [ngClass]="twoFactorClass(item.verificacion2Pasos)">{{ item.verificacion2Pasos || 'Sin dato' }}</span></dd>
+        </div>
+        <div>
+          <dt>Uso</dt>
+          <dd>{{ formatStorage(item.totalUsoMB) }}</dd>
+        </div>
+      </dl>
+
+      <footer>
+        <span>{{ item.ultimoInicioSesion || 'Sin acceso registrado' }}</span>
+        <button type="button" (click)="openDetail(item)">Ver detalle</button>
+      </footer>
+    </article>
+
+    <div class="mobile-empty" *ngIf="items.length === 0">
+      Sin registros para los filtros seleccionados.
+    </div>
+  </div>
+</section>
+
+<app-modal title="Detalle de cuenta" [open]="selectedCorreo !== null" (closed)="closeDetail()">
+  <ng-container *ngIf="selectedCorreo as item">
+    <section class="detail-hero">
+      <div>
+        <h3>{{ item.nombreCompleto || item.employeeId || item.email }}</h3>
+        <span class="detail-kicker">{{ item.modalidad || 'Sin modalidad' }}</span>
+        <p>{{ item.email }}</p>
+      </div>
+      <span class="badge large" [ngClass]="statusClass(item.estado)">{{ item.estado || 'Sin estado' }}</span>
+    </section>
+
+    <section class="detail-grid">
+      <article>
+        <span>Sede</span>
+        <strong>{{ item.sede || 'Sin dato' }}</strong>
+      </article>
+      <article>
+        <span>Dependencia</span>
+        <strong>{{ item.oficinaPadre || 'Sin dato' }}</strong>
+      </article>
+      <article>
+        <span>Subdependencia</span>
+        <strong>{{ item.oficina || 'Sin dato' }}</strong>
+      </article>
+      <article>
+        <span>Nombre Completo</span>
+        <strong>{{ item.nombreCompleto || item.employeeId || 'Sin dato' }}</strong>
+      </article>
+      <article>
+        <span>Doble Autenticación</span>
+        <strong>{{ item.verificacion2Pasos || 'Sin dato' }}</strong>
+      </article>
+      <article>
+        <span>Ultimo acceso</span>
+        <strong>{{ item.ultimoInicioSesion || 'Sin dato' }}</strong>
+      </article>
+    </section>
+
+    <section class="usage-grid">
+      <article>
+        <span>Email</span>
+        <strong>{{ formatStorage(item.emailUsageMB) }}</strong>
+      </article>
+      <article>
+        <span>Drive</span>
+        <strong>{{ formatStorage(item.driveUsageMB) }}</strong>
+      </article>
+      <article>
+        <span>Almacenamiento</span>
+        <strong>{{ formatStorage(item.storageUsedMB) }}</strong>
+      </article>
+      <article>
+        <span>Total</span>
+        <strong>{{ formatStorage(item.totalUsoMB) }}</strong>
+      </article>
+    </section>
+  </ng-container>
+</app-modal>

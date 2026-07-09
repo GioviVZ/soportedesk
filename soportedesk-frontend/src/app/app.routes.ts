@@ -78,9 +78,23 @@ export const routes: Routes = [
       },
       {
         path: 'correos',
-        canActivate: [moduloGuard('correos')],
         loadComponent: () =>
-          import('./features/correos/correos-list.component').then((m) => m.CorreosListComponent),
+          import('./features/correos/correos-shell.component').then((m) => m.CorreosShellComponent),
+        children: [
+          { path: '', redirectTo: 'consultas', pathMatch: 'full' },
+          {
+            path: 'consultas',
+            canActivate: [moduloGuard('correos')],
+            loadComponent: () =>
+              import('./features/correos/correos-consultas.component').then((m) => m.CorreosConsultasComponent),
+          },
+          {
+            path: 'dashboard',
+            canActivate: [moduloGuard('correos')],
+            loadComponent: () =>
+              import('./features/correos/correos-dashboard.component').then((m) => m.CorreosDashboardComponent),
+          },
+        ],
       },
       {
         path: 'usuarios-red',
