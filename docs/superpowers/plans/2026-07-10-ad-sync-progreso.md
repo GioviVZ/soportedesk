@@ -397,6 +397,7 @@ import com.inia.soportedesk.activedirectory.dto.AdSyncStatus;
 import jakarta.annotation.PreDestroy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
 
@@ -421,6 +422,7 @@ public class AdSyncCoordinator {
     private final ScheduledExecutorService scheduler;
     private volatile ScheduledFuture<?> pendingAutoSync;
 
+    @Autowired
     public AdSyncCoordinator(ActiveDirectoryService activeDirectoryService, AdSyncJobStatus jobStatus) {
         this(activeDirectoryService, jobStatus,
                 Executors.newSingleThreadExecutor(AdSyncCoordinator::newDaemonThread),
@@ -488,6 +490,15 @@ de bloque sin `return` es inequívocamente `Runnable`, forzando el overload corr
     }
 }
 ```
+
+Nota: el `@Autowired` en el constructor público es obligatorio aquí. Como la clase tiene DOS
+constructores (el público de 2 argumentos y el package-private de 4, usado por los tests), Spring
+no puede inferir cuál usar para inyección de dependencias — sin la anotación, intenta un
+constructor sin argumentos que no existe y el arranque del backend falla con
+`NoSuchMethodException: AdSyncCoordinator.<init>()`. Los tests de este archivo (Mockito, Step 4)
+NO detectan este problema porque instancian la clase directamente con el constructor de 4
+argumentos, sin pasar por el contenedor de Spring — el error solo aparece al arrancar la
+aplicación real (descubierto en la verificación manual de la Task 9, no en este test).
 
 - [ ] **Step 4: Confirmar que el test pasa**
 

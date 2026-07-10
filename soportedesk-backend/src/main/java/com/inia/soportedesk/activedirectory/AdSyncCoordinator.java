@@ -5,6 +5,7 @@ import com.inia.soportedesk.activedirectory.dto.AdSyncStatus;
 import jakarta.annotation.PreDestroy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
 
@@ -29,6 +30,7 @@ public class AdSyncCoordinator {
     private final ScheduledExecutorService scheduler;
     private volatile ScheduledFuture<?> pendingAutoSync;
 
+    @Autowired
     public AdSyncCoordinator(ActiveDirectoryService activeDirectoryService, AdSyncJobStatus jobStatus) {
         this(activeDirectoryService, jobStatus,
                 Executors.newSingleThreadExecutor(AdSyncCoordinator::newDaemonThread),
