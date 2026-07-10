@@ -5,8 +5,10 @@ import com.inia.soportedesk.activedirectory.dto.ActiveDirectoryDashboardCompleto
 import com.inia.soportedesk.activedirectory.dto.ActiveDirectoryGroup;
 import com.inia.soportedesk.activedirectory.dto.ActiveDirectoryOu;
 import com.inia.soportedesk.activedirectory.dto.ActiveDirectoryResponse;
+import com.inia.soportedesk.activedirectory.dto.AdSyncStatus;
 import com.inia.soportedesk.activedirectory.dto.AdUserSearchResult;
 import com.inia.soportedesk.activedirectory.dto.AdUser;
+import com.inia.soportedesk.activedirectory.dto.CreateAdUserRequest;
 import com.inia.soportedesk.activedirectory.dto.GroupRequest;
 import com.inia.soportedesk.activedirectory.dto.MoveUserRequest;
 import com.inia.soportedesk.activedirectory.dto.ResetPasswordRequest;
@@ -29,6 +31,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class ActiveDirectoryController {
     private final ActiveDirectoryService service;
+    private final AdSyncCoordinator syncCoordinator;
 
     @GetMapping("/usuarios/{samAccountName}")
     @PreAuthorize("hasRole('ADMIN') || hasAuthority('READ_usuarios-red')")
@@ -72,6 +75,24 @@ public class ActiveDirectoryController {
     @PreAuthorize("hasRole('ADMIN') || hasAuthority('WRITE_usuarios-red')")
     public ActiveDirectoryDashboardCompleto obtenerDashboardCompleto() {
         return service.obtenerDashboardCompleto();
+    }
+
+    @PostMapping("/sync/iniciar")
+    @PreAuthorize("hasRole('ADMIN') || hasAuthority('WRITE_usuarios-red')")
+    public AdSyncStatus iniciarSincronizacion() {
+        return syncCoordinator.iniciar();
+    }
+
+    @GetMapping("/sync/estado")
+    @PreAuthorize("hasRole('ADMIN') || hasAuthority('WRITE_usuarios-red')")
+    public AdSyncStatus estadoSincronizacion() {
+        return syncCoordinator.estado();
+    }
+
+    @PostMapping("/usuarios")
+    @PreAuthorize("hasRole('ADMIN') || hasAuthority('WRITE_usuarios-red')")
+    public ActiveDirectoryResponse<AdUser> crearUsuario(@Valid @RequestBody CreateAdUserRequest request) {
+        return service.crearUsuario(request);
     }
 
     @PostMapping("/usuarios/{samAccountName}/desbloquear")
