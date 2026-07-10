@@ -47,6 +47,22 @@ export interface ActiveDirectoryDashboardCompleto extends ActiveDirectoryDashboa
   totalCuentasBloqueadas: number;
 }
 
+export interface AdSyncResponse {
+  usuariosSincronizados: number;
+  controladoresDominio: number;
+  sincronizadoEn: string;
+}
+
+export interface AdSyncStatus {
+  running: boolean;
+  procesados: number;
+  total: number;
+  iniciadoEn: string | null;
+  finalizadoEn: string | null;
+  ultimoResultado: AdSyncResponse | null;
+  error: string | null;
+}
+
 export interface AdUser {
   samAccountName: string;
   displayName: string | null;
@@ -84,6 +100,25 @@ export interface ActiveDirectoryGroup {
 export interface ActiveDirectoryOu {
   name: string;
   dn: string;
+}
+
+export interface CreateAdUserRequest {
+  samAccountName: string;
+  givenName: string;
+  surname: string;
+  displayName?: string | null;
+  mail?: string | null;
+  userPrincipalName?: string | null;
+  temporaryPassword: string;
+  ouDestinoDn: string;
+  title?: string | null;
+  department?: string | null;
+  office?: string | null;
+  telephoneNumber?: string | null;
+  mobile?: string | null;
+  description?: string | null;
+  enabled: boolean;
+  forceChange: boolean;
 }
 
 export interface UpdateUserInfoRequest {

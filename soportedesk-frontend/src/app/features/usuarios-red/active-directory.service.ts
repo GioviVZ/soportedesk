@@ -8,8 +8,10 @@ import {
   ActiveDirectoryGroup,
   ActiveDirectoryOu,
   ActiveDirectoryResponse,
+  AdSyncStatus,
   AdUserSearchResult,
   AdUser,
+  CreateAdUserRequest,
   UpdateUserInfoRequest,
 } from './active-directory.model';
 
@@ -26,6 +28,14 @@ export class ActiveDirectoryService {
     return this.http.get<ActiveDirectoryDashboardCompleto>(`${this.apiUrl}/dashboard/completo`);
   }
 
+  startSync(): Observable<AdSyncStatus> {
+    return this.http.post<AdSyncStatus>(`${this.apiUrl}/sync/iniciar`, {});
+  }
+
+  getSyncStatus(): Observable<AdSyncStatus> {
+    return this.http.get<AdSyncStatus>(`${this.apiUrl}/sync/estado`);
+  }
+
   searchUsers(filters: { usuario?: string; nombre?: string; oficina?: string }): Observable<AdUserSearchResult> {
     let params = new HttpParams();
     if (filters.usuario?.trim()) params = params.set('usuario', filters.usuario.trim());
@@ -36,6 +46,10 @@ export class ActiveDirectoryService {
 
   getUser(samAccountName: string): Observable<ActiveDirectoryResponse<AdUser>> {
     return this.http.get<ActiveDirectoryResponse<AdUser>>(`${this.apiUrl}/usuarios/${encodeURIComponent(samAccountName)}`);
+  }
+
+  createUser(request: CreateAdUserRequest): Observable<ActiveDirectoryResponse<AdUser>> {
+    return this.http.post<ActiveDirectoryResponse<AdUser>>(`${this.apiUrl}/usuarios`, request);
   }
 
   unlockUser(samAccountName: string): Observable<ActiveDirectoryResponse<AdUser>> {
