@@ -1,5 +1,8 @@
 package com.inia.soportedesk.equipos.enrichment;
 
+import com.inia.soportedesk.catalogo.Dependencia;
+import com.inia.soportedesk.catalogo.Sede;
+import com.inia.soportedesk.catalogo.Subdependencia;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -32,6 +35,21 @@ public class EquipoEnrichment {
 
     @Column(name = "codigo_patrimonial")
     private String codigoPatrimonial;
+
+    @ManyToOne
+    @JoinColumn(name = "sede_id")
+    private Sede sede;
+
+    @ManyToOne
+    @JoinColumn(name = "dependencia_id")
+    private Dependencia dependencia;
+
+    @ManyToOne
+    @JoinColumn(name = "subdependencia_id")
+    private Subdependencia subdependencia;
+
+    @Column(name = "numero_serie_override")
+    private String numeroSerieOverride;
 
     @Column(name = "estado_depuracion")
     private String estadoDepuracion;
