@@ -1,22 +1,27 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnDestroy, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
+import { Observable, Subscription, interval } from 'rxjs';
+import { switchMap, takeWhile } from 'rxjs/operators';
 import { ModalComponent } from '../../shared/modal/modal.component';
 import { ActiveDirectoryService } from './active-directory.service';
 import {
   ActiveDirectoryDashboard,
   ActiveDirectoryGroup,
   ActiveDirectoryOu,
+  ActiveDirectoryResponse,
+  AdSyncStatus,
   AdUser,
   AdUserSummary,
+  CreateAdUserRequest,
   UpdateUserInfoRequest,
 } from './active-directory.model';
 import { AdKpisComponent } from './ad-kpis.component';
 import { AdUserDetailComponent } from './ad-user-detail.component';
 import { AdUserSearchComponent } from './ad-user-search.component';
 
-type Panel = 'password' | 'groups' | 'ou' | 'info' | null;
+type Panel = 'create' | 'password' | 'groups' | 'ou' | 'info' | null;
 
 @Component({
   selector: 'app-usuarios-red-administracion',
@@ -24,7 +29,44 @@ type Panel = 'password' | 'groups' | 'ou' | 'info' | null;
   imports: [CommonModule, FormsModule, ModalComponent, AdKpisComponent, AdUserSearchComponent, AdUserDetailComponent],
   template: `
     <div class="usuarios-red-page">
+      <div class="module-dash-toolbar">
+        <div class="module-dash-title">
+          <strong>Sincronizacion con Active Directory</strong>
+          <span>{{ lastSyncLabel() }}</span>
+        </div>
+        <div class="module-dash-actions">
+          <button type="button" class="module-dash-refresh" (click)="startSync()" [disabled]="syncStatus?.running">
+            <span class="module-dash-refresh-icon" aria-hidden="true"></span>
+            {{ syncStatus?.running ? 'Sincronizando' : 'Sincronizar AD' }}
+          </button>
+        </div>
+      </div>
+
+      <div class="module-dash-progress" *ngIf="syncStatus?.running">
+        <div class="module-dash-progress-row">
+          <span>{{ syncProgressLabel() }}</span>
+          <strong>{{ syncPercent() }}%</strong>
+          <div class="module-dash-track" [class.indeterminate]="!syncStatus!.total">
+            <i [style.width.%]="syncPercent()"></i>
+          </div>
+        </div>
+      </div>
+
       <app-ad-kpis [dashboard]="dashboard" />
+
+      <section class="actions-grid admin-primary-actions">
+        <button type="button" class="action-card create" (click)="openCreatePanel()">
+          <span class="action-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="8.5" cy="7" r="4" />
+              <path d="M20 8v6" /><path d="M23 11h-6" />
+            </svg>
+          </span>
+          <strong>Crear usuario de red</strong>
+          <small>Alta directa en Active Directory</small>
+        </button>
+      </section>
+
       <app-ad-user-search (selected)="selectUser($event)" />
 
       <div class="notice" [class.error]="notice.tone === 'error'" [class.success]="notice.tone === 'success'" *ngIf="notice">
@@ -106,6 +148,99 @@ type Panel = 'password' | 'groups' | 'ou' | 'info' | null;
       </ng-container>
     </div>
 
+    <app-modal title="Crear usuario de red" size="wide" [open]="activePanel === 'create'" (closed)="closePanel()">
+      <form class="modal-form form-grid" (ngSubmit)="createUser()">
+        <div class="notice full" [class.error]="notice.tone === 'error'" [class.success]="notice.tone === 'success'" *ngIf="notice && activePanel === 'create'">
+          <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" />
+          </svg>
+          {{ notice.text }}
+        </div>
+        <div class="field">
+          <label>Usuario</label>
+          <input name="createSam" [(ngModel)]="createForm.samAccountName" (ngModelChange)="onCreateSamChanged($event)" required minlength="2" pattern="[A-Za-z0-9._-]+" />
+        </div>
+        <div class="field">
+          <label>Contrasena temporal</label>
+          <input type="password" name="createPassword" [(ngModel)]="createForm.temporaryPassword" minlength="8" required />
+        </div>
+        <div class="field">
+          <label>Nombres</label>
+          <input name="createGivenName" [(ngModel)]="createForm.givenName" required />
+        </div>
+        <div class="field">
+          <label>Apellidos</label>
+          <input name="createSurname" [(ngModel)]="createForm.surname" required />
+        </div>
+        <div class="field">
+          <label>Nombre mostrado</label>
+          <input name="createDisplayName" [(ngModel)]="createForm.displayName" />
+        </div>
+        <div class="field">
+          <label>Correo</label>
+          <input type="email" name="createMail" [(ngModel)]="createForm.mail" />
+        </div>
+        <div class="field">
+          <label>UPN</label>
+          <input name="createUpn" [(ngModel)]="createForm.userPrincipalName" (ngModelChange)="onCreateUpnChanged($event)" placeholder="usuario@inia.local" />
+        </div>
+        <div class="field">
+          <label>Cargo</label>
+          <input name="createTitle" [(ngModel)]="createForm.title" />
+        </div>
+        <div class="field">
+          <label>Area</label>
+          <input name="createDepartment" [(ngModel)]="createForm.department" />
+        </div>
+        <div class="field">
+          <label>Oficina</label>
+          <input name="createOffice" [(ngModel)]="createForm.office" />
+        </div>
+        <div class="field">
+          <label>Telefono</label>
+          <input name="createPhone" [(ngModel)]="createForm.telephoneNumber" />
+        </div>
+        <div class="field">
+          <label>Celular</label>
+          <input name="createMobile" [(ngModel)]="createForm.mobile" />
+        </div>
+
+        <div class="field full">
+          <label>Unidad organizativa destino</label>
+          <div class="inline-search">
+            <input name="createOuSearch" [(ngModel)]="createOuSearch" placeholder="Buscar OU" (keyup.enter)="searchCreateOus()" />
+            <button type="button" class="btn btn-ghost" (click)="searchCreateOus()">Buscar</button>
+          </div>
+          <div class="selected-dn" *ngIf="createForm.ouDestinoDn">{{ createForm.ouDestinoDn }}</div>
+          <div class="pick-list" *ngIf="createOuResults.length">
+            <button type="button" *ngFor="let ou of createOuResults" (click)="selectCreateOu(ou)">
+              <strong>{{ ou.name }}</strong>
+              <span>{{ ou.dn }}</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="field full">
+          <label>Descripcion</label>
+          <textarea name="createDescription" rows="2" [(ngModel)]="createForm.description"></textarea>
+        </div>
+
+        <label class="checkbox-field">
+          <input type="checkbox" name="createEnabled" [(ngModel)]="createForm.enabled" />
+          Habilitar cuenta al crearla
+        </label>
+        <label class="checkbox-field">
+          <input type="checkbox" name="createForceChange" [(ngModel)]="createForm.forceChange" />
+          Exigir cambio al iniciar sesion
+        </label>
+
+        <footer class="modal-actions full">
+          <button type="button" class="btn btn-ghost" (click)="closePanel()">Cancelar</button>
+          <button type="submit" class="btn btn-primary" [disabled]="working">Crear en AD</button>
+        </footer>
+      </form>
+    </app-modal>
+
     <app-modal title="Restablecer contrasena" [open]="activePanel === 'password'" (closed)="closePanel()">
       <form class="modal-form" (ngSubmit)="resetPassword()">
         <div class="field">
@@ -178,30 +313,42 @@ type Panel = 'password' | 'groups' | 'ou' | 'info' | null;
   `,
   styleUrl: './usuarios-red.shared.scss',
 })
-export class UsuariosRedAdministracionComponent implements OnInit {
+export class UsuariosRedAdministracionComponent implements OnInit, OnDestroy {
   private adService = inject(ActiveDirectoryService);
   private route = inject(ActivatedRoute);
+  private readonly adDomain = 'inia.local';
 
   dashboard: ActiveDirectoryDashboard | null = null;
+  syncStatus: AdSyncStatus | null = null;
   user: AdUser | null = null;
   groups: ActiveDirectoryGroup[] = [];
   groupResults: ActiveDirectoryGroup[] = [];
   ouResults: ActiveDirectoryOu[] = [];
   groupSearch = '';
   ouSearch = '';
+  createOuSearch = '';
   newPassword = '';
   forceChange = true;
   activePanel: Panel = null;
   working = false;
   notice: { tone: 'success' | 'error' | 'info'; text: string } | null = null;
   infoForm: UpdateUserInfoRequest = {};
+  createForm: CreateAdUserRequest = this.emptyCreateForm();
+  createOuResults: ActiveDirectoryOu[] = [];
+  private createUpnEdited = false;
+  private syncPollSub?: Subscription;
 
   ngOnInit(): void {
     this.loadDashboard();
+    this.checkSyncStatus();
     this.route.queryParamMap.subscribe((params) => {
       const sam = params.get('sam');
       if (sam) this.loadUser(sam);
     });
+  }
+
+  ngOnDestroy(): void {
+    this.syncPollSub?.unsubscribe();
   }
 
   loadDashboard(): void {
@@ -211,21 +358,92 @@ export class UsuariosRedAdministracionComponent implements OnInit {
     });
   }
 
+  startSync(): void {
+    this.adService.startSync().subscribe({
+      next: (status) => {
+        this.syncStatus = status;
+        this.pollSyncStatus();
+      },
+      error: () => this.flash('error', 'No se pudo iniciar la sincronizacion.'),
+    });
+  }
+
+  syncPercent(): number {
+    const total = this.syncStatus?.total ?? 0;
+    const procesados = this.syncStatus?.procesados ?? 0;
+    return total > 0 ? Math.min(100, Math.round((procesados / total) * 100)) : 0;
+  }
+
+  syncProgressLabel(): string {
+    const total = this.syncStatus?.total ?? 0;
+    const procesados = this.syncStatus?.procesados ?? 0;
+    return total > 0 ? `${procesados} de ${total} usuarios` : 'Calculando el total de cuentas...';
+  }
+
+  lastSyncLabel(): string {
+    const fecha = this.syncStatus?.ultimoResultado?.sincronizadoEn;
+    return fecha ? `Ultima sincronizacion: ${new Date(fecha).toLocaleString('es-PE')}` : 'Nunca sincronizado en esta sesion.';
+  }
+
+  private checkSyncStatus(): void {
+    this.adService.getSyncStatus().subscribe({
+      next: (status) => {
+        this.syncStatus = status;
+        if (status.running) {
+          this.pollSyncStatus();
+        }
+      },
+      error: () => {},
+    });
+  }
+
+  private pollSyncStatus(): void {
+    this.syncPollSub?.unsubscribe();
+    this.syncPollSub = interval(1500)
+      .pipe(
+        switchMap(() => this.adService.getSyncStatus()),
+        takeWhile((status) => status.running, true),
+      )
+      .subscribe({
+        next: (status) => {
+          this.syncStatus = status;
+          if (!status.running) {
+            this.loadDashboard();
+            if (status.error) {
+              this.flash('error', `Error sincronizando: ${status.error}`);
+            } else if (status.ultimoResultado) {
+              this.flash('success', `${status.ultimoResultado.usuariosSincronizados} usuarios sincronizados desde AD.`);
+            }
+          }
+        },
+        error: () => this.flash('error', 'No se pudo consultar el estado de sincronizacion.'),
+      });
+  }
+
   selectUser(summary: AdUserSummary): void {
     this.loadUser(summary.samAccountName);
   }
 
   openPanel(panel: Panel): void {
-    if (!this.user) return;
+    if (panel !== 'create' && !this.user) return;
     this.activePanel = panel;
     this.notice = null;
   }
 
+  openCreatePanel(): void {
+    this.resetCreateForm();
+    this.openPanel('create');
+  }
+
   closePanel(): void {
+    const panel = this.activePanel;
     this.activePanel = null;
     this.newPassword = '';
     this.groupSearch = '';
     this.ouSearch = '';
+    if (panel === 'create') {
+      this.resetCreateForm();
+    }
   }
 
   unlock(): void {
@@ -247,6 +465,20 @@ export class UsuariosRedAdministracionComponent implements OnInit {
       return;
     }
     this.runAction(this.adService.resetPassword(this.user.samAccountName, this.newPassword.trim(), this.forceChange), true);
+  }
+
+  createUser(): void {
+    this.ensureCreateUpn();
+    const request = this.normalizedCreateRequest();
+    if (!request.samAccountName || !request.givenName || !request.surname || !request.temporaryPassword || !request.ouDestinoDn) {
+      this.flash('error', 'Completa usuario, nombres, apellidos, contrasena temporal y OU destino.');
+      return;
+    }
+    if (request.temporaryPassword.length < 8) {
+      this.flash('error', 'La contrasena temporal debe tener al menos 8 caracteres.');
+      return;
+    }
+    this.runAction(this.adService.createUser(request), true);
   }
 
   saveInfo(): void {
@@ -274,6 +506,30 @@ export class UsuariosRedAdministracionComponent implements OnInit {
     const term = this.ouSearch.trim();
     if (term.length < 2) return;
     this.adService.searchOus(term).subscribe((ous) => (this.ouResults = ous));
+  }
+
+  searchCreateOus(): void {
+    const term = this.createOuSearch.trim();
+    if (term.length < 2) return;
+    this.adService.searchOus(term).subscribe((ous) => (this.createOuResults = ous));
+  }
+
+  selectCreateOu(ou: ActiveDirectoryOu): void {
+    this.createForm.ouDestinoDn = ou.dn;
+    this.createOuSearch = ou.name;
+    this.createOuResults = [];
+  }
+
+  onCreateSamChanged(value: string): void {
+    this.createForm.samAccountName = value;
+    if (!this.createUpnEdited) {
+      this.createForm.userPrincipalName = this.generatedUpn(value);
+    }
+  }
+
+  onCreateUpnChanged(value: string): void {
+    this.createForm.userPrincipalName = value;
+    this.createUpnEdited = !!value?.trim() && value.trim() !== this.generatedUpn(this.createForm.samAccountName);
   }
 
   moveToOu(ouDn: string): void {
@@ -310,7 +566,7 @@ export class UsuariosRedAdministracionComponent implements OnInit {
   }
 
   private runAction(
-    request: ReturnType<ActiveDirectoryService['unlockUser']>,
+    request: Observable<ActiveDirectoryResponse<AdUser>>,
     close = false,
     after?: () => void,
   ): void {
@@ -322,6 +578,7 @@ export class UsuariosRedAdministracionComponent implements OnInit {
           if (response.data) {
             this.user = response.data;
             this.syncInfoForm(response.data);
+            this.loadGroups();
           } else if (this.user) {
             this.loadUser(this.user.samAccountName);
           }
@@ -351,6 +608,70 @@ export class UsuariosRedAdministracionComponent implements OnInit {
       mail: user.mail,
       description: user.description,
     };
+  }
+
+  private emptyCreateForm(): CreateAdUserRequest {
+    return {
+      samAccountName: '',
+      givenName: '',
+      surname: '',
+      displayName: '',
+      mail: '',
+      userPrincipalName: '',
+      temporaryPassword: '',
+      ouDestinoDn: '',
+      title: '',
+      department: '',
+      office: '',
+      telephoneNumber: '',
+      mobile: '',
+      description: '',
+      enabled: true,
+      forceChange: true,
+    };
+  }
+
+  private resetCreateForm(): void {
+    this.createForm = this.emptyCreateForm();
+    this.createOuSearch = '';
+    this.createOuResults = [];
+    this.createUpnEdited = false;
+  }
+
+  private normalizedCreateRequest(): CreateAdUserRequest {
+    return {
+      samAccountName: this.createForm.samAccountName.trim(),
+      givenName: this.createForm.givenName.trim(),
+      surname: this.createForm.surname.trim(),
+      displayName: this.blankToNull(this.createForm.displayName),
+      mail: this.blankToNull(this.createForm.mail),
+      userPrincipalName: this.blankToNull(this.createForm.userPrincipalName),
+      temporaryPassword: this.createForm.temporaryPassword,
+      ouDestinoDn: this.createForm.ouDestinoDn.trim(),
+      title: this.blankToNull(this.createForm.title),
+      department: this.blankToNull(this.createForm.department),
+      office: this.blankToNull(this.createForm.office),
+      telephoneNumber: this.blankToNull(this.createForm.telephoneNumber),
+      mobile: this.blankToNull(this.createForm.mobile),
+      description: this.blankToNull(this.createForm.description),
+      enabled: this.createForm.enabled,
+      forceChange: this.createForm.forceChange,
+    };
+  }
+
+  private blankToNull(value: string | null | undefined): string | null {
+    return value?.trim() ? value.trim() : null;
+  }
+
+  private ensureCreateUpn(): void {
+    if (!this.createForm.userPrincipalName?.trim()) {
+      this.createForm.userPrincipalName = this.generatedUpn(this.createForm.samAccountName);
+    }
+  }
+
+  private generatedUpn(value: string | null | undefined): string {
+    const sam = value?.trim();
+    return sam ? `${sam}@${this.adDomain}` : '';
   }
 
   private flash(tone: 'success' | 'error' | 'info', text: string): void {
