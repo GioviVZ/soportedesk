@@ -12,5 +12,8 @@ public record EquipoSaludDto(
         boolean sinCodigoPatrimonial,
         boolean sinUsuario,
         boolean sinSede,
+        boolean sinDependencia,
+        boolean sinSubdependencia,
+        boolean sinNumeroSerie,
         String estadoDepuracion
 ) {}

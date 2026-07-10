@@ -88,12 +88,16 @@ public class EquipoService {
                 .filter(s -> !s.nivelAlerta().equals("OK")
                           || s.sinCodigoPatrimonial()
                           || s.sinUsuario()
-                          || s.sinSede())
+                          || s.sinSede()
+                          || s.sinDependencia()
+                          || s.sinSubdependencia()
+                          || s.sinNumeroSerie())
                 .toList();
     }
 
     private record SaludCalculo(
             String nivel, boolean sinPatrimonial, boolean sinUsuario, boolean sinSede,
+            boolean sinDependencia, boolean sinSubdependencia, boolean sinNumeroSerie,
             long sinEncendidoMeses, long sinActualizacionMeses) {
     }
 
@@ -108,14 +112,22 @@ public class EquipoService {
         else if (sinEncendido > 6 || sinActualizacion > 3) nivel = "AMARILLO";
         else nivel = "OK";
 
-        boolean sinPatrimonial = enrichment == null || enrichment.getCodigoPatrimonial() == null
-                || enrichment.getCodigoPatrimonial().isBlank();
-        boolean sinUsuario = e.getUsuarioContacto() == null || e.getUsuarioContacto().isBlank();
-        boolean sinSede = e.getSedeNombre() == null || e.getSedeNombre().isBlank();
+        boolean sinPatrimonial = enrichment == null || blank(enrichment.getCodigoPatrimonial());
+        boolean sinUsuario = blank(e.getUsuarioContacto());
+        boolean sinSede = blank(e.getSedeNombre()) && (enrichment == null || enrichment.getSede() == null);
+        boolean sinDependencia = blank(e.getOficinaId()) && (enrichment == null || enrichment.getDependencia() == null);
+        boolean sinSubdependencia = blank(e.getUnidadId()) && (enrichment == null || enrichment.getSubdependencia() == null);
+        boolean sinNumeroSerie = blank(e.getNumeroserie())
+                && (enrichment == null || blank(enrichment.getNumeroSerieOverride()));
 
         return new SaludCalculo(nivel, sinPatrimonial, sinUsuario, sinSede,
+                sinDependencia, sinSubdependencia, sinNumeroSerie,
                 sinEncendido == Long.MAX_VALUE ? -1L : sinEncendido,
                 sinActualizacion == Long.MAX_VALUE ? -1L : sinActualizacion);
+    }
+
+    private boolean blank(String value) {
+        return value == null || value.isBlank();
     }
 
     private EquipoSaludDto buildSaludDto(VwInvComputerFull e, EquipoEnrichment enrichment, LocalDateTime now) {
@@ -127,6 +139,7 @@ public class EquipoService {
                 e.getUsuarioContacto(),
                 calculo.sinEncendidoMeses(), calculo.sinActualizacionMeses(),
                 calculo.nivel(), calculo.sinPatrimonial(), calculo.sinUsuario(), calculo.sinSede(),
+                calculo.sinDependencia(), calculo.sinSubdependencia(), calculo.sinNumeroSerie(),
                 estadoDepuracion);
     }
 

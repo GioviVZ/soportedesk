@@ -1,5 +1,6 @@
 package com.inia.soportedesk.equipos;
 
+import com.inia.soportedesk.catalogo.Dependencia;
 import com.inia.soportedesk.catalogo.TipoEquipoCatalogo;
 import com.inia.soportedesk.catalogo.TipoEquipoCatalogoRepository;
 import com.inia.soportedesk.equipos.enrichment.EquipoEnrichment;
@@ -150,6 +151,9 @@ class EquipoServiceTest {
         bueno.setUsuarioContacto("maria");
         bueno.setUltimoEncendido(LocalDateTime.now().minusMonths(1));
         bueno.setUltimaActualizacion(LocalDateTime.now().minusMonths(1));
+        bueno.setOficinaId("UTI");
+        bueno.setUnidadId("Soporte");
+        bueno.setNumeroserie("SN-BUENA");
 
         EquipoEnrichment enrich = new EquipoEnrichment();
         enrich.setComputerId(6L);
@@ -157,6 +161,152 @@ class EquipoServiceTest {
 
         when(repository.findFiltered(null, null, null, null, null, null)).thenReturn(List.of(bueno));
         when(enrichmentRepository.findByComputerIdIn(List.of(6L))).thenReturn(List.of(enrich));
+
+        List<EquipoSaludDto> result = service.getSalud();
+
+        assertThat(result).isEmpty();
+    }
+
+    @Test
+    void getSalud_sinDependencia_trueWhenGlpiEmptyAndNoOverride() {
+        VwInvComputerFull equipo = equipo("Desktop", "SEDE CENTRAL");
+        equipo.setComputerID(40L);
+        equipo.setUsuarioContacto("ana");
+        equipo.setUnidadId("Soporte");
+        equipo.setNumeroserie("SN-40");
+        equipo.setOficinaId(null);
+        equipo.setUltimoEncendido(LocalDateTime.now());
+        equipo.setUltimaActualizacion(LocalDateTime.now());
+
+        EquipoEnrichment enrich = new EquipoEnrichment();
+        enrich.setComputerId(40L);
+        enrich.setCodigoPatrimonial("PAT-40");
+
+        when(repository.findFiltered(null, null, null, null, null, null)).thenReturn(List.of(equipo));
+        when(enrichmentRepository.findByComputerIdIn(List.of(40L))).thenReturn(List.of(enrich));
+
+        List<EquipoSaludDto> result = service.getSalud();
+
+        assertThat(result).hasSize(1);
+        assertThat(result.get(0).sinDependencia()).isTrue();
+    }
+
+    @Test
+    void getSalud_sinDependencia_falseWhenOverridePresent() {
+        VwInvComputerFull equipo = equipo("Desktop", "SEDE CENTRAL");
+        equipo.setComputerID(41L);
+        equipo.setUsuarioContacto("ana");
+        equipo.setUnidadId("Soporte");
+        equipo.setNumeroserie("SN-41");
+        equipo.setOficinaId(null);
+        equipo.setUltimoEncendido(LocalDateTime.now());
+        equipo.setUltimaActualizacion(LocalDateTime.now());
+
+        Dependencia dependencia = new Dependencia();
+        dependencia.setId(1L);
+        dependencia.setNombre("UTI");
+        EquipoEnrichment enrich = new EquipoEnrichment();
+        enrich.setComputerId(41L);
+        enrich.setCodigoPatrimonial("PAT-41");
+        enrich.setDependencia(dependencia);
+
+        when(repository.findFiltered(null, null, null, null, null, null)).thenReturn(List.of(equipo));
+        when(enrichmentRepository.findByComputerIdIn(List.of(41L))).thenReturn(List.of(enrich));
+
+        List<EquipoSaludDto> result = service.getSalud();
+
+        assertThat(result).isEmpty();
+    }
+
+    @Test
+    void getSalud_sinDependencia_falseWhenGlpiHasData() {
+        VwInvComputerFull equipo = equipo("Desktop", "SEDE CENTRAL");
+        equipo.setComputerID(42L);
+        equipo.setUsuarioContacto("ana");
+        equipo.setOficinaId("UTI");
+        equipo.setUnidadId("Soporte");
+        equipo.setNumeroserie("SN-42");
+        equipo.setUltimoEncendido(LocalDateTime.now());
+        equipo.setUltimaActualizacion(LocalDateTime.now());
+
+        EquipoEnrichment enrich = new EquipoEnrichment();
+        enrich.setComputerId(42L);
+        enrich.setCodigoPatrimonial("PAT-42");
+
+        when(repository.findFiltered(null, null, null, null, null, null)).thenReturn(List.of(equipo));
+        when(enrichmentRepository.findByComputerIdIn(List.of(42L))).thenReturn(List.of(enrich));
+
+        List<EquipoSaludDto> result = service.getSalud();
+
+        assertThat(result).isEmpty();
+    }
+
+    @Test
+    void getSalud_sinSubdependencia_trueWhenGlpiEmptyAndNoOverride() {
+        VwInvComputerFull equipo = equipo("Desktop", "SEDE CENTRAL");
+        equipo.setComputerID(43L);
+        equipo.setUsuarioContacto("ana");
+        equipo.setOficinaId("UTI");
+        equipo.setNumeroserie("SN-43");
+        equipo.setUnidadId(null);
+        equipo.setUltimoEncendido(LocalDateTime.now());
+        equipo.setUltimaActualizacion(LocalDateTime.now());
+
+        EquipoEnrichment enrich = new EquipoEnrichment();
+        enrich.setComputerId(43L);
+        enrich.setCodigoPatrimonial("PAT-43");
+
+        when(repository.findFiltered(null, null, null, null, null, null)).thenReturn(List.of(equipo));
+        when(enrichmentRepository.findByComputerIdIn(List.of(43L))).thenReturn(List.of(enrich));
+
+        List<EquipoSaludDto> result = service.getSalud();
+
+        assertThat(result).hasSize(1);
+        assertThat(result.get(0).sinSubdependencia()).isTrue();
+    }
+
+    @Test
+    void getSalud_sinNumeroSerie_trueWhenGlpiEmptyAndNoOverride() {
+        VwInvComputerFull equipo = equipo("Desktop", "SEDE CENTRAL");
+        equipo.setComputerID(44L);
+        equipo.setUsuarioContacto("ana");
+        equipo.setOficinaId("UTI");
+        equipo.setUnidadId("Soporte");
+        equipo.setNumeroserie(null);
+        equipo.setUltimoEncendido(LocalDateTime.now());
+        equipo.setUltimaActualizacion(LocalDateTime.now());
+
+        EquipoEnrichment enrich = new EquipoEnrichment();
+        enrich.setComputerId(44L);
+        enrich.setCodigoPatrimonial("PAT-44");
+
+        when(repository.findFiltered(null, null, null, null, null, null)).thenReturn(List.of(equipo));
+        when(enrichmentRepository.findByComputerIdIn(List.of(44L))).thenReturn(List.of(enrich));
+
+        List<EquipoSaludDto> result = service.getSalud();
+
+        assertThat(result).hasSize(1);
+        assertThat(result.get(0).sinNumeroSerie()).isTrue();
+    }
+
+    @Test
+    void getSalud_sinNumeroSerie_falseWhenOverridePresent() {
+        VwInvComputerFull equipo = equipo("Desktop", "SEDE CENTRAL");
+        equipo.setComputerID(45L);
+        equipo.setUsuarioContacto("ana");
+        equipo.setOficinaId("UTI");
+        equipo.setUnidadId("Soporte");
+        equipo.setNumeroserie(null);
+        equipo.setUltimoEncendido(LocalDateTime.now());
+        equipo.setUltimaActualizacion(LocalDateTime.now());
+
+        EquipoEnrichment enrich = new EquipoEnrichment();
+        enrich.setComputerId(45L);
+        enrich.setCodigoPatrimonial("PAT-45");
+        enrich.setNumeroSerieOverride("SN-OVERRIDE");
+
+        when(repository.findFiltered(null, null, null, null, null, null)).thenReturn(List.of(equipo));
+        when(enrichmentRepository.findByComputerIdIn(List.of(45L))).thenReturn(List.of(enrich));
 
         List<EquipoSaludDto> result = service.getSalud();
 
