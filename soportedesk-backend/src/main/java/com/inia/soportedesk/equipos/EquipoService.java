@@ -9,6 +9,7 @@ import com.inia.soportedesk.equipos.enrichment.EquipoEnrichmentService;
 import com.inia.soportedesk.exception.ResourceNotFoundException;
 import com.inia.soportedesk.glpi.VwInvComputerFull;
 import com.inia.soportedesk.glpi.VwInvComputerFullRepository;
+import com.inia.soportedesk.glpi.GlpiComputerOficinaRepository;
 import com.inia.soportedesk.glpi.GlpiTecladoRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -29,6 +30,7 @@ public class EquipoService {
 
     private final VwInvComputerFullRepository repository;
     private final GlpiTecladoRepository tecladoRepository;
+    private final GlpiComputerOficinaRepository oficinaRepository;
     private final TipoEquipoCatalogoRepository catalogoRepository;
     private final EquipoEnrichmentRepository enrichmentRepository;
     private final EquipoEnrichmentService enrichmentService;
@@ -70,6 +72,7 @@ public class EquipoService {
                 equipo,
                 repository.findSoftwareByComputerId(id),
                 tecladoRepository.findByItemsId(id).orElse(null),
+                oficinaRepository.findByItemsId(id).orElse(null),
                 tipoEfectivo,
                 enrichmentDto);
     }
@@ -89,7 +92,12 @@ public class EquipoService {
                 .toList();
     }
 
-    private EquipoSaludDto buildSaludDto(VwInvComputerFull e, EquipoEnrichment enrichment, LocalDateTime now) {
+    private record SaludCalculo(
+            String nivel, boolean sinPatrimonial, boolean sinUsuario, boolean sinSede,
+            long sinEncendidoMeses, long sinActualizacionMeses) {
+    }
+
+    private SaludCalculo calcularSalud(VwInvComputerFull e, EquipoEnrichment enrichment, LocalDateTime now) {
         long sinEncendido = e.getUltimoEncendido() == null ? Long.MAX_VALUE :
                 ChronoUnit.MONTHS.between(e.getUltimoEncendido(), now);
         long sinActualizacion = e.getUltimaActualizacion() == null ? Long.MAX_VALUE :
@@ -104,14 +112,85 @@ public class EquipoService {
                 || enrichment.getCodigoPatrimonial().isBlank();
         boolean sinUsuario = e.getUsuarioContacto() == null || e.getUsuarioContacto().isBlank();
         boolean sinSede = e.getSedeNombre() == null || e.getSedeNombre().isBlank();
+
+        return new SaludCalculo(nivel, sinPatrimonial, sinUsuario, sinSede,
+                sinEncendido == Long.MAX_VALUE ? -1L : sinEncendido,
+                sinActualizacion == Long.MAX_VALUE ? -1L : sinActualizacion);
+    }
+
+    private EquipoSaludDto buildSaludDto(VwInvComputerFull e, EquipoEnrichment enrichment, LocalDateTime now) {
+        SaludCalculo calculo = calcularSalud(e, enrichment, now);
         String estadoDepuracion = enrichment != null ? enrichment.getEstadoDepuracion() : null;
 
         return new EquipoSaludDto(
                 e.getComputerID(), e.getNombreEquipo(), e.getSedeNombre(), e.getTipoEquipo(),
                 e.getUsuarioContacto(),
-                sinEncendido == Long.MAX_VALUE ? -1L : sinEncendido,
-                sinActualizacion == Long.MAX_VALUE ? -1L : sinActualizacion,
-                nivel, sinPatrimonial, sinUsuario, sinSede, estadoDepuracion);
+                calculo.sinEncendidoMeses(), calculo.sinActualizacionMeses(),
+                calculo.nivel(), calculo.sinPatrimonial(), calculo.sinUsuario(), calculo.sinSede(),
+                estadoDepuracion);
+    }
+
+    public EquipoDashboardCompleto getDashboardCompleto() {
+        try {
+            List<VwInvComputerFull> equipos = repository.findFiltered(null, null, null, null, null, null);
+
+            long total = equipos.size();
+            long desktopCount = equipos.stream().filter(e -> DESKTOP.equals(e.getTipoEquipo())).count();
+            long laptopCount = equipos.stream().filter(e -> LAPTOP.equals(e.getTipoEquipo())).count();
+            long otrosCount = total - desktopCount - laptopCount;
+            long sedeCentralCount = equipos.stream().filter(e -> SEDE_CENTRAL.equals(e.getSedeNombre())).count();
+            long eeasCount = total - sedeCentralCount;
+
+            List<EquipoFabricanteCount> distribucionPorFabricante = equipos.stream()
+                    .collect(Collectors.groupingBy(
+                            e -> e.getFabricanteEquipo() == null || e.getFabricanteEquipo().isBlank()
+                                    ? "Sin fabricante" : e.getFabricanteEquipo(),
+                            java.util.LinkedHashMap::new,
+                            Collectors.counting()))
+                    .entrySet().stream()
+                    .map(entry -> new EquipoFabricanteCount(entry.getKey(), entry.getValue()))
+                    .sorted(java.util.Comparator.comparing(EquipoFabricanteCount::fabricante))
+                    .toList();
+
+            List<EquipoDependenciaCount> topDependencias = equipos.stream()
+                    .collect(Collectors.groupingBy(
+                            e -> e.getOficinaId() == null || e.getOficinaId().isBlank()
+                                    ? "Sin dependencia" : e.getOficinaId(),
+                            java.util.LinkedHashMap::new,
+                            Collectors.counting()))
+                    .entrySet().stream()
+                    .sorted(java.util.Map.Entry.<String, Long>comparingByValue(java.util.Comparator.reverseOrder()))
+                    .limit(10)
+                    .map(entry -> new EquipoDependenciaCount(entry.getKey(), entry.getValue()))
+                    .toList();
+
+            List<Long> ids = equipos.stream().map(VwInvComputerFull::getComputerID).toList();
+            Map<Long, EquipoEnrichment> enrichmentMap = enrichmentRepository.findByComputerIdIn(ids).stream()
+                    .collect(Collectors.toMap(EquipoEnrichment::getComputerId, e -> e));
+            LocalDateTime now = LocalDateTime.now();
+
+            long rojos = 0, amarillos = 0, ok = 0, sinPatrimonial = 0, sinUsuario = 0, sinSede = 0;
+            for (VwInvComputerFull e : equipos) {
+                SaludCalculo calculo = calcularSalud(e, enrichmentMap.get(e.getComputerID()), now);
+                switch (calculo.nivel()) {
+                    case "ROJO" -> rojos++;
+                    case "AMARILLO" -> amarillos++;
+                    default -> ok++;
+                }
+                if (calculo.sinPatrimonial()) sinPatrimonial++;
+                if (calculo.sinUsuario()) sinUsuario++;
+                if (calculo.sinSede()) sinSede++;
+            }
+
+            EquipoSaludResumen salud = new EquipoSaludResumen(rojos, amarillos, ok, sinPatrimonial, sinUsuario, sinSede);
+
+            return new EquipoDashboardCompleto(
+                    total, desktopCount, laptopCount, otrosCount, sedeCentralCount, eeasCount,
+                    distribucionPorFabricante, topDependencias, salud);
+        } catch (Exception ex) {
+            return new EquipoDashboardCompleto(0, 0, 0, 0, 0, 0, List.of(), List.of(),
+                    new EquipoSaludResumen(0, 0, 0, 0, 0, 0));
+        }
     }
 
     private String resolveTipo(String glpiTipo, EquipoEnrichment enrichment) {

@@ -77,6 +77,12 @@ public class EquipoController {
         return service.getSalud();
     }
 
+    @GetMapping("/dashboard/completo")
+    @PreAuthorize("hasRole('ADMIN') || hasAuthority('WRITE_equipos')")
+    public EquipoDashboardCompleto dashboardCompleto() {
+        return service.getDashboardCompleto();
+    }
+
     @GetMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN') || hasAuthority('READ_equipos')")
     public EquipoDetalleResponse findById(@PathVariable Long id) {

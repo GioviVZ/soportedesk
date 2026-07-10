@@ -5,6 +5,7 @@ import com.inia.soportedesk.catalogo.TipoEquipoCatalogoRepository;
 import com.inia.soportedesk.equipos.enrichment.EquipoEnrichment;
 import com.inia.soportedesk.equipos.enrichment.EquipoEnrichmentRepository;
 import com.inia.soportedesk.equipos.enrichment.EquipoEnrichmentService;
+import com.inia.soportedesk.glpi.GlpiComputerOficinaRepository;
 import com.inia.soportedesk.glpi.GlpiTecladoRepository;
 import com.inia.soportedesk.glpi.VwInvComputerFull;
 import com.inia.soportedesk.glpi.VwInvComputerFullRepository;
@@ -27,6 +28,7 @@ class EquipoServiceTest {
 
     @Mock private VwInvComputerFullRepository repository;
     @Mock private GlpiTecladoRepository tecladoRepository;
+    @Mock private GlpiComputerOficinaRepository oficinaRepository;
     @Mock private TipoEquipoCatalogoRepository catalogoRepository;
     @Mock private EquipoEnrichmentRepository enrichmentRepository;
     @Mock private EquipoEnrichmentService enrichmentService;
@@ -159,6 +161,82 @@ class EquipoServiceTest {
         List<EquipoSaludDto> result = service.getSalud();
 
         assertThat(result).isEmpty();
+    }
+
+    @Test
+    void getDashboardCompleto_aggregatesFabricanteDependenciaAndSaludCounts() {
+        VwInvComputerFull e1 = equipo("Desktop", "SEDE CENTRAL");
+        e1.setComputerID(1L);
+        e1.setFabricanteEquipo("Dell");
+        e1.setOficinaId("UTI");
+        e1.setUsuarioContacto("ana");
+        e1.setUltimoEncendido(LocalDateTime.now());
+        e1.setUltimaActualizacion(LocalDateTime.now());
+
+        VwInvComputerFull e2 = equipo("Laptop", "EEA ANDENES");
+        e2.setComputerID(2L);
+        e2.setFabricanteEquipo("HP");
+        e2.setOficinaId("UTI");
+        e2.setUsuarioContacto(null);
+        e2.setUltimoEncendido(LocalDateTime.now().minusMonths(14));
+        e2.setUltimaActualizacion(LocalDateTime.now());
+
+        VwInvComputerFull e3 = equipo("Servidor", null);
+        e3.setComputerID(3L);
+        e3.setFabricanteEquipo("Dell");
+        e3.setOficinaId("OGRH");
+        e3.setUsuarioContacto("beto");
+        e3.setUltimoEncendido(LocalDateTime.now().minusMonths(7));
+        e3.setUltimaActualizacion(LocalDateTime.now());
+
+        EquipoEnrichment enrichE1 = new EquipoEnrichment();
+        enrichE1.setComputerId(1L);
+        enrichE1.setCodigoPatrimonial("PAT-1");
+
+        when(repository.findFiltered(null, null, null, null, null, null)).thenReturn(List.of(e1, e2, e3));
+        when(enrichmentRepository.findByComputerIdIn(List.of(1L, 2L, 3L))).thenReturn(List.of(enrichE1));
+
+        EquipoDashboardCompleto result = service.getDashboardCompleto();
+
+        assertThat(result.total()).isEqualTo(3);
+        assertThat(result.desktopCount()).isEqualTo(1);
+        assertThat(result.laptopCount()).isEqualTo(1);
+        assertThat(result.otrosCount()).isEqualTo(1);
+        assertThat(result.sedeCentralCount()).isEqualTo(1);
+        assertThat(result.eeasCount()).isEqualTo(2);
+
+        assertThat(result.distribucionPorFabricante())
+                .extracting(EquipoFabricanteCount::fabricante, EquipoFabricanteCount::total)
+                .containsExactly(
+                        org.assertj.core.groups.Tuple.tuple("Dell", 2L),
+                        org.assertj.core.groups.Tuple.tuple("HP", 1L)
+                );
+
+        assertThat(result.topDependencias())
+                .extracting(EquipoDependenciaCount::dependencia, EquipoDependenciaCount::total)
+                .containsExactly(
+                        org.assertj.core.groups.Tuple.tuple("UTI", 2L),
+                        org.assertj.core.groups.Tuple.tuple("OGRH", 1L)
+                );
+
+        assertThat(result.salud().rojos()).isEqualTo(1);
+        assertThat(result.salud().amarillos()).isEqualTo(1);
+        assertThat(result.salud().ok()).isEqualTo(1);
+        assertThat(result.salud().sinPatrimonial()).isEqualTo(2);
+        assertThat(result.salud().sinUsuario()).isEqualTo(1);
+        assertThat(result.salud().sinSede()).isEqualTo(1);
+    }
+
+    @Test
+    void getDashboardCompleto_onException_returnsEmptyDashboard() {
+        when(repository.findFiltered(null, null, null, null, null, null)).thenThrow(new RuntimeException("db down"));
+
+        EquipoDashboardCompleto result = service.getDashboardCompleto();
+
+        assertThat(result.total()).isEqualTo(0);
+        assertThat(result.distribucionPorFabricante()).isEmpty();
+        assertThat(result.topDependencias()).isEmpty();
+        assertThat(result.salud().rojos()).isEqualTo(0);
     }
 
     private VwInvComputerFull equipo(String tipo, String sede) {
