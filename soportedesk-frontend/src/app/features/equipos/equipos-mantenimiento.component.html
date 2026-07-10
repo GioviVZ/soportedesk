@@ -1,0 +1,50 @@
+<section class="kpi-grid">
+  <article *ngFor="let card of saludKpis()" class="kpi-card" [class]="'tone-' + card.tone">
+    <span>{{ card.label }}</span>
+    <strong>{{ card.value }}</strong>
+  </article>
+</section>
+
+<div class="salud-table-shell" *ngIf="salud().length; else sinAlertas">
+  <table class="salud-table">
+    <thead>
+      <tr>
+        <th>Alerta</th>
+        <th>Equipo</th>
+        <th>Sede</th>
+        <th>Tipo</th>
+        <th>Usuario</th>
+        <th>Sin encendido</th>
+        <th>Sin actualiz.</th>
+        <th>Problemas</th>
+        <th>Estado dep.</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let s of salud()" [class]="'row-' + s.nivelAlerta.toLowerCase()">
+        <td>
+          <span class="nivel-badge" [class]="'nivel-' + s.nivelAlerta.toLowerCase()">
+            {{ s.nivelAlerta }}
+          </span>
+        </td>
+        <td>{{ s.nombreEquipo }}</td>
+        <td>{{ s.sedeNombre || '-' }}</td>
+        <td>{{ s.tipoEquipo || '-' }}</td>
+        <td>{{ s.usuarioContacto || '-' }}</td>
+        <td>{{ mesesLabel(s.sinEncendidoMeses) }}</td>
+        <td>{{ mesesLabel(s.sinActualizacionMeses) }}</td>
+        <td>
+          <span class="tag-warn" *ngIf="s.sinCodigoPatrimonial">Sin patrimonial</span>
+          <span class="tag-warn" *ngIf="s.sinUsuario">Sin usuario</span>
+          <span class="tag-warn" *ngIf="s.sinSede">Sin sede</span>
+        </td>
+        <td>{{ s.estadoDepuracion || '-' }}</td>
+        <td><button type="button" class="view-link" (click)="onViewSalud(s)">Ver</button></td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+<ng-template #sinAlertas>
+  <p class="salud-ok">Todo el inventario está al día. No hay alertas.</p>
+</ng-template>
