@@ -5,82 +5,117 @@ import { ChartConfiguration, ChartData } from 'chart.js';
 import { BaseChartDirective } from 'ng2-charts';
 import { ActiveDirectoryService } from './active-directory.service';
 import { ActiveDirectoryDashboardCompleto } from './active-directory.model';
-import { AdKpisComponent } from './ad-kpis.component';
 
 @Component({
   selector: 'app-usuarios-red-dashboard',
   standalone: true,
-  imports: [CommonModule, BaseChartDirective, AdKpisComponent],
+  imports: [CommonModule, BaseChartDirective],
   template: `
     <div class="usuarios-red-page">
-      <div class="dashboard-toolbar">
-        <p>Distribucion por OU y cuentas que requieren seguimiento administrativo.</p>
-        <button type="button" class="btn btn-ghost" (click)="load()" [disabled]="loading">
-          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M23 4v6h-6" /><path d="M1 20v-6h6" />
-            <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
-          </svg>
-          {{ loading ? 'Cargando...' : 'Actualizar' }}
-        </button>
-      </div>
+      <div class="module-dash">
+        <div class="module-dash-toolbar">
+          <div class="module-dash-title">
+            <strong>Control operativo Active Directory</strong>
+            <span>Estado del directorio, distribucion por OU y cuentas con riesgo administrativo.</span>
+          </div>
+          <div class="module-dash-actions">
+            <span class="module-dash-updated" *ngIf="updatedAt">Actualizado {{ updatedAt | date:'HH:mm' }}</span>
+            <button type="button" class="module-dash-refresh" (click)="load()" [disabled]="loading">
+              <span class="module-dash-refresh-icon" aria-hidden="true"></span>
+              {{ loading ? 'Actualizando' : 'Actualizar' }}
+            </button>
+          </div>
+        </div>
 
-      <div class="notice error" *ngIf="error">
-        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" />
-        </svg>
-        No se pudo cargar. Intenta nuevamente.
-      </div>
+        <div class="module-dash-notice" *ngIf="error">No se pudo cargar. Se mantiene la ultima vista disponible.</div>
 
-      <app-ad-kpis [dashboard]="dashboard" />
+        <section class="module-dash-stats" *ngIf="dashboard">
+          <div class="module-dash-stat tone-success"><span>Habilitados</span><strong>{{ dashboard.usuariosHabilitados }}</strong><small>Cuentas activas</small></div>
+          <div class="module-dash-stat tone-danger"><span>Bloqueados</span><strong>{{ dashboard.usuariosBloqueados }}</strong><small>Requieren revision</small></div>
+          <div class="module-dash-stat tone-warning"><span>Deshabilitados</span><strong>{{ dashboard.usuariosDeshabilitados }}</strong><small>Fuera de operacion</small></div>
+          <div class="module-dash-stat tone-info"><span>Controladores</span><strong>{{ dashboard.controladoresDominio }}</strong><small>Dominio AD</small></div>
+        </section>
 
-      <section class="dashboard-grid" *ngIf="dashboard">
-        <article class="card chart-card">
-          <header>
-            <strong>Distribucion por OU</strong>
-            <span class="muted">{{ dashboard.distribucionPorOu.length }} unidades</span>
-          </header>
+        <section class="module-dash-grid" *ngIf="dashboard">
+          <article class="module-dash-card module-dash-chart">
+            <header class="module-dash-card__header">
+              <div>
+                <strong>Distribucion por OU</strong>
+                <span>{{ dashboard.distribucionPorOu.length }} unidades registradas</span>
+              </div>
+            </header>
           <canvas baseChart [data]="chartData" [options]="chartOptions" [type]="'bar'"></canvas>
         </article>
 
-        <div class="alert-list">
-          <ng-container *ngTemplateOutlet="alertCard; context: {
-            title: 'Contrasenas vencidas',
-            total: dashboard.totalPasswordsVencidas,
-            rows: dashboard.passwordsVencidas
-          }" />
-          <ng-container *ngTemplateOutlet="alertCard; context: {
-            title: 'Cuentas inactivas',
-            total: dashboard.totalCuentasInactivas,
-            rows: dashboard.cuentasInactivas
-          }" />
-          <ng-container *ngTemplateOutlet="alertCard; context: {
-            title: 'Cuentas bloqueadas',
-            total: dashboard.totalCuentasBloqueadas,
-            rows: dashboard.cuentasBloqueadas
-          }" />
-        </div>
-      </section>
+          <div class="module-dash-side">
+            <article class="module-dash-highlight">
+              <strong>{{ dashboard.totalPasswordsVencidas + dashboard.totalCuentasInactivas + dashboard.totalCuentasBloqueadas }}</strong>
+              <span>Alertas de cuentas por resolver.</span>
+            </article>
 
-      <section class="empty-state" *ngIf="!dashboard && !loading">
-        <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-          <line x1="18" y1="20" x2="18" y2="10" /><line x1="12" y1="20" x2="12" y2="4" /><line x1="6" y1="20" x2="6" y2="14" />
-        </svg>
-        <strong>Sin datos de dashboard</strong>
-        <span>El servicio devolvio un resumen vacio o no disponible.</span>
-      </section>
+            <article class="module-dash-card">
+              <header class="module-dash-card__header">
+                <div>
+                  <strong>Salud del directorio</strong>
+                  <span>Relacion de cuentas habilitadas frente al total visible</span>
+                </div>
+              </header>
+              <div class="module-dash-progress">
+                <div class="module-dash-progress-row">
+                  <span>Habilitadas</span><strong>{{ percent(dashboard.usuariosHabilitados, totalUsuarios(dashboard)) }}%</strong>
+                  <div class="module-dash-track"><i [style.width.%]="percent(dashboard.usuariosHabilitados, totalUsuarios(dashboard))"></i></div>
+                </div>
+                <div class="module-dash-progress-row">
+                  <span>Con bloqueo</span><strong>{{ percent(dashboard.usuariosBloqueados, totalUsuarios(dashboard)) }}%</strong>
+                  <div class="module-dash-track"><i [style.width.%]="percent(dashboard.usuariosBloqueados, totalUsuarios(dashboard))"></i></div>
+                </div>
+              </div>
+            </article>
+
+            <ng-container *ngTemplateOutlet="alertCard; context: {
+              title: 'Contrasenas vencidas',
+              total: dashboard.totalPasswordsVencidas,
+              rows: dashboard.passwordsVencidas,
+              tone: 'tone-warning'
+            }" />
+            <ng-container *ngTemplateOutlet="alertCard; context: {
+              title: 'Cuentas inactivas',
+              total: dashboard.totalCuentasInactivas,
+              rows: dashboard.cuentasInactivas,
+              tone: 'tone-info'
+            }" />
+            <ng-container *ngTemplateOutlet="alertCard; context: {
+              title: 'Cuentas bloqueadas',
+              total: dashboard.totalCuentasBloqueadas,
+              rows: dashboard.cuentasBloqueadas,
+              tone: 'tone-danger'
+            }" />
+          </div>
+        </section>
+
+        <section class="empty-state" *ngIf="!dashboard && !loading">
+          <strong>Sin datos de dashboard</strong>
+          <span>El servicio devolvio un resumen vacio o no disponible.</span>
+        </section>
+      </div>
     </div>
 
-    <ng-template #alertCard let-title="title" let-total="total" let-rows="rows">
-      <article class="card alert-card">
-        <header>
-          <strong>{{ title }}</strong>
+    <ng-template #alertCard let-title="title" let-total="total" let-rows="rows" let-tone="tone">
+      <article class="module-dash-card">
+        <header class="module-dash-card__header">
+          <div>
+            <strong>{{ title }}</strong>
+            <span>Primeras cuentas para revisar</span>
+          </div>
           <span class="badge badge-warning">{{ total }}</span>
         </header>
-        <button class="alert-row" type="button" *ngFor="let row of rows" (click)="goToAdmin(row.samAccountName)">
+        <div class="module-dash-list">
+        <button class="module-dash-row clickable" [ngClass]="tone" type="button" *ngFor="let row of rows" (click)="goToAdmin(row.samAccountName)">
           <strong>{{ row.samAccountName }}</strong>
           <span>{{ row.displayName || 'Sin nombre' }}</span>
           <small class="muted">{{ row.detalle }}</small>
         </button>
+        </div>
         <p class="muted" *ngIf="!rows.length">Sin registros criticos.</p>
         <p class="muted" *ngIf="total > rows.length">+{{ total - rows.length }} mas</p>
       </article>
@@ -109,6 +144,7 @@ export class UsuariosRedDashboardComponent implements OnInit {
   dashboard: ActiveDirectoryDashboardCompleto | null = null;
   loading = false;
   error = false;
+  updatedAt: Date | null = null;
 
   chartData: ChartData<'bar', number[], string> = {
     labels: [],
@@ -148,6 +184,7 @@ export class UsuariosRedDashboardComponent implements OnInit {
       next: (dashboard) => {
         this.loading = false;
         this.dashboard = dashboard;
+        this.updatedAt = new Date();
         this.applyChart(dashboard);
       },
       error: () => {
@@ -169,5 +206,13 @@ export class UsuariosRedDashboardComponent implements OnInit {
       labels: rows.map((row) => row.ou),
       datasets: [{ data: rows.map((row) => row.activos), label: 'Activos', backgroundColor: '#f97316' }],
     };
+  }
+
+  totalUsuarios(dashboard: ActiveDirectoryDashboardCompleto): number {
+    return dashboard.usuariosHabilitados + dashboard.usuariosDeshabilitados;
+  }
+
+  percent(value: number, total: number): number {
+    return total > 0 ? Math.round((value / total) * 100) : 0;
   }
 }
