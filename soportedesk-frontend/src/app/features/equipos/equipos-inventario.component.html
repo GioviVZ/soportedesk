@@ -1,0 +1,125 @@
+<section class="kpi-grid">
+  <article *ngFor="let card of kpiCards()" class="kpi-card" [class]="'tone-' + card.tone">
+    <span>{{ card.label }}</span>
+    <strong>{{ card.value }}</strong>
+  </article>
+</section>
+
+<section class="filter-bar">
+  <label class="mobile-search">
+    <span>Buscar</span>
+    <input
+      type="text"
+      [ngModel]="searchTerm()"
+      (ngModelChange)="onSearch($event)"
+      placeholder="Equipo o usuario"
+    />
+  </label>
+
+  <label>
+    <span>Sede</span>
+    <select [ngModel]="selectedSede()" (ngModelChange)="onSedeChange($event)">
+      <option value="">Todas</option>
+      <option *ngFor="let sede of sedes()" [value]="sede">{{ sede }}</option>
+    </select>
+  </label>
+
+  <label>
+    <span>Dependencia</span>
+    <select [ngModel]="selectedDependencia()" (ngModelChange)="onDependenciaChange($event)">
+      <option value="">Todas</option>
+      <option *ngFor="let dep of dependencias()" [value]="dep">{{ dep }}</option>
+    </select>
+  </label>
+
+  <label>
+    <span>Subdependencia</span>
+    <select [ngModel]="selectedSubdependencia()" (ngModelChange)="onSubdependenciaChange($event)"
+            [disabled]="!selectedDependencia()">
+      <option value="">Todas</option>
+      <option *ngFor="let sub of subdependencias()" [value]="sub">{{ sub }}</option>
+    </select>
+  </label>
+
+  <label>
+    <span>Tipo</span>
+    <select [ngModel]="selectedTipo()" (ngModelChange)="onTipoChange($event)">
+      <option value="">Todos</option>
+      <option *ngFor="let tipo of tipos()" [value]="tipo">{{ tipo }}</option>
+    </select>
+  </label>
+
+  <label>
+    <span>Fabricante</span>
+    <select [ngModel]="selectedFabricante()" (ngModelChange)="onFabricanteChange($event)">
+      <option value="">Todos</option>
+      <option *ngFor="let fab of fabricantes()" [value]="fab">{{ fab }}</option>
+    </select>
+  </label>
+
+  <button type="button" (click)="clearFilters()">Limpiar filtros</button>
+</section>
+
+<div class="desktop-table-shell">
+  <app-generic-table
+    [columns]="columns"
+    [data]="items()"
+    [canEdit]="false"
+    [canView]="true"
+    [initialSearch]="searchTerm()"
+    emptyMessage="Sin equipos activos registrados"
+    (searchChange)="onSearch($event)"
+    (view)="onView($event)"
+  />
+</div>
+
+<section class="mobile-equipment-list" aria-label="Equipos">
+  <article *ngFor="let item of items()" class="equipment-card">
+    <div class="card-head">
+      <div>
+        <strong>{{ item.nombreEquipo }}</strong>
+        <span>{{ item.usuarioLimpio || 'Sin usuario' }}</span>
+      </div>
+      <em>{{ item.tipoEquipo || 'Equipo' }}</em>
+    </div>
+
+    <dl>
+      <div>
+        <dt>Sede</dt>
+        <dd>{{ item.sedeNombre || '-' }}</dd>
+      </div>
+      <div>
+        <dt>Dependencia</dt>
+        <dd>{{ item.oficinaId || '-' }}</dd>
+      </div>
+      <div>
+        <dt>Subdependencia</dt>
+        <dd>{{ item.unidadId || '-' }}</dd>
+      </div>
+      <div>
+        <dt>Marca / Modelo</dt>
+        <dd>{{ item.fabricanteModelo || '-' }}</dd>
+      </div>
+      <div>
+        <dt>CPU</dt>
+        <dd>{{ item.cpuCorto || '-' }}</dd>
+      </div>
+      <div>
+        <dt>RAM</dt>
+        <dd>{{ item.ramLabel || '-' }}</dd>
+      </div>
+      <div>
+        <dt>Disco</dt>
+        <dd>{{ item.diskLabel || '-' }}</dd>
+      </div>
+      <div>
+        <dt>IP</dt>
+        <dd>{{ item.ipEquipo || '-' }}</dd>
+      </div>
+    </dl>
+
+    <button type="button" (click)="onView(item)">Ver detalle</button>
+  </article>
+
+  <p class="mobile-empty" *ngIf="items().length === 0">Sin equipos activos registrados</p>
+</section>
