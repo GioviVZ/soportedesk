@@ -19,6 +19,12 @@ avance, solo un spinner). Se pide:
 
 1. Mover la sincronización a la cara **Administración** (se quita de Dashboard).
 2. Mostrar una **barra de progreso con porcentaje real** (procesados/total), no un spinner.
+3. **Auto-sync tras cambios**: cada acción de escritura que hace un administrador (resetear
+   clave, desbloquear, habilitar/deshabilitar, mover OU, agregar/quitar de grupo, editar info,
+   crear usuario) debe programar una sincronización automática 30 segundos después del **último**
+   cambio (debounce — cada cambio nuevo reinicia el contador), para que la caché no quede
+   desactualizada esperando que alguien haga click manualmente. Implementado en el backend (no
+   un timer del navegador) para que sobreviva aunque el admin cierre la pestaña.
 
 ## 2. Backend
 
@@ -58,8 +64,9 @@ atómico) — evita que dos clics rápidos (o dos pestañas) arranquen dos sync 
 Orquesta la ejecución en segundo plano. Depende de `ActiveDirectoryService` (inyectado como bean
 real, no `this` — importante para que `@Transactional` de `sincronizarCache()` siga funcionando,
 ya que la auto-invocación dentro de la misma clase rompe el proxy AOP de Spring) y de
-`AdSyncJobStatus`. Un `ExecutorService` de un solo hilo (creado en el constructor, cerrado en
-`@PreDestroy`).
+`AdSyncJobStatus`. Un `ExecutorService` de un solo hilo para ejecutar el sync (creado en el
+constructor, cerrado en `@PreDestroy`) más un `ScheduledExecutorService` para el debounce del
+auto-sync (ver §2.3).
 
 ```java
 public AdSyncStatus iniciar() {
@@ -82,10 +89,51 @@ public AdSyncStatus estado() {
 }
 ```
 
-Si ya hay un sync corriendo, `iniciar()` no arranca uno nuevo — simplemente devuelve el snapshot
-actual (comportamiento idempotente ante doble clic).
+### 2.3 Auto-sync tras cambios (debounce de 30s)
 
-### 2.3 Cambios mínimos a `ActiveDirectoryService.sincronizarCache()`
+**Problema de diseño a resolver:** `ActiveDirectoryService` necesitaría notificar al
+`AdSyncCoordinator` tras cada escritura exitosa, pero `AdSyncCoordinator` ya depende de
+`ActiveDirectoryService` para ejecutar el sync — inyectar la dependencia en el sentido contrario
+crea un ciclo que Spring no puede resolver sin recurrir a `@Lazy` (parche menos limpio). Se evita
+por completo usando **eventos de Spring** (`ApplicationEventPublisher`, ya disponible sin
+dependencias nuevas):
+
+```java
+public record AdCambioEvent(String samAccountName, String accion) {}
+```
+
+- `ActiveDirectoryService` recibe `ApplicationEventPublisher` inyectado (un campo más). Dentro de
+  `withUserWrite(...)`, justo después del `audit(action, samAccountName, userDn, 200, ...)` en el
+  camino de éxito, publica `eventPublisher.publishEvent(new AdCambioEvent(samAccountName, action))`.
+  Como las 7 operaciones de escritura de usuario (desbloquear, reset password, habilitar/
+  deshabilitar, mover OU, agregar/quitar grupo, editar info) ya pasan por `withUserWrite`, el
+  evento queda cubierto para todas ellas en un solo punto. `crearUsuario(...)` (que no pasa por
+  `withUserWrite` porque no busca un usuario existente primero) publica el mismo evento
+  explícitamente tras crear con éxito.
+- `AdSyncCoordinator` agrega un listener:
+  ```java
+  @EventListener
+  public void onCambio(AdCambioEvent event) {
+      notificarCambio();
+  }
+
+  private synchronized void notificarCambio() {
+      if (pendingAutoSync != null) {
+          pendingAutoSync.cancel(false);
+      }
+      pendingAutoSync = scheduler.schedule(this::iniciar, 30, TimeUnit.SECONDS);
+  }
+  ```
+  `notificarCambio()` es `synchronized` y cancela cualquier tarea programada pendiente antes de
+  agendar una nueva — esto implementa el debounce (30s desde el **último** cambio, no desde cada
+  uno). Cuando el temporizador finalmente dispara, llama al mismo `iniciar()` de §2.2 — si para
+  ese momento ya hay un sync manual corriendo (`jobStatus.marcarInicio()` devuelve `false`), el
+  disparo automático simplemente no hace nada, sin lógica adicional necesaria para ese caso.
+- Como el auto-sync usa el mismo `iniciar()`/`jobStatus` que el botón manual, la barra de
+  progreso de Administración lo muestra igual sin trabajo extra — si el admin sigue en la
+  pantalla cuando pasan los 30s, ve la barra arrancar sola.
+
+### 2.4 Cambios mínimos a `ActiveDirectoryService.sincronizarCache()`
 
 Se le inyecta `AdSyncJobStatus` (un campo más en el constructor `@RequiredArgsConstructor`).
 Lógica de negocio sin cambios, solo se agrega reporte de progreso:
@@ -96,7 +144,7 @@ public AdSyncResponse sincronizarCache() {
     LocalDateTime syncedAt = LocalDateTime.now();
     int estimatedTotal = countPaged("(&(objectCategory=person)(objectClass=user)(sAMAccountName=*))");
     jobStatus.setTotal(estimatedTotal);
-    List<AdUsuarioCache> users = collectCacheUsersFromAd(syncedAt); // ver 2.4
+    List<AdUsuarioCache> users = collectCacheUsersFromAd(syncedAt); // ver 2.5
     int dcs = countPaged("(&(objectCategory=computer)(userAccountControl:" + LDAP_MATCHING_RULE_BIT_AND + ":=8192))");
     cacheRepository.saveAll(users);
     metadataRepository.save(new AdCacheMetadata("controladores_dominio", String.valueOf(dcs), syncedAt));
@@ -109,14 +157,14 @@ El pre-conteo (`countPaged` sobre el mismo filtro de personas) usa el mismo patr
 para los KPIs — es una consulta liviana (solo cuenta DNs, sin traer atributos), no un segundo
 recorrido pesado.
 
-### 2.4 Progreso dentro de `collectCacheUsersFromAd`
+### 2.5 Progreso dentro de `collectCacheUsersFromAd`
 
 Después de procesar cada página de 500 resultados (el bucle paginado ya existente), se llama
 `jobStatus.incrementarProcesados(<usuarios de esta página>)`. No cambia la forma en que se
 recolectan/mapean los `AdUsuarioCache`, solo se agrega el reporte de avance al final de cada
 iteración del `do/while` existente.
 
-### 2.5 DTO `AdSyncStatus`
+### 2.6 DTO `AdSyncStatus`
 
 ```java
 public record AdSyncStatus(
@@ -130,7 +178,7 @@ public record AdSyncStatus(
 ) {}
 ```
 
-### 2.6 Endpoints
+### 2.7 Endpoints
 
 ```
 POST /api/active-directory/sync/iniciar   → AdSyncCoordinator.iniciar()
@@ -138,7 +186,8 @@ GET  /api/active-directory/sync/estado    → AdSyncCoordinator.estado()
 ```
 
 Ambos `@PreAuthorize("hasRole('ADMIN') || hasAuthority('WRITE_usuarios-red')")`, igual que el
-resto de operaciones de escritura del módulo.
+resto de operaciones de escritura del módulo. No hay endpoint propio para el auto-sync — se
+dispara internamente vía evento (§2.3), no por HTTP.
 
 **Se elimina** `POST /api/active-directory/sync` (el endpoint síncrono actual) — queda
 reemplazado por el par arranque/estado. Su único consumidor hoy es el botón de Dashboard, que
@@ -202,6 +251,16 @@ En `usuarios-red-administracion.component.ts`, arriba de la fila de KPIs existen
 - **Verificación manual**: disparar un sync real contra AD, confirmar que el porcentaje avanza de
   forma consistente con el tamaño real del directorio, y que abrir la pantalla en una segunda
   pestaña mientras corre también muestra el progreso.
+- **Backend unit — debounce**: dos `AdCambioEvent` publicados con menos de 30s de diferencia
+  resultan en un solo `iniciar()` ejecutado (el segundo cancela y reemplaza la tarea programada
+  por el primero); usar un `ScheduledExecutorService` inyectable/mockeable en el test para no
+  depender de esperar 30s reales. Confirmar también que si `iniciar()` dispara mientras un sync
+  manual ya está `running`, no se arranca un segundo (mismo comportamiento que `marcarInicio()`
+  ya cubierto arriba).
+- **Backend integración**: al llamar cualquiera de los endpoints de escritura existentes
+  (`/desbloquear`, `/reset-password`, etc.) con el `AdSyncCoordinator` mockeado, verificar que se
+  publica el evento (o que se invoca el listener) — no hace falta esperar los 30s reales en este
+  test, solo confirmar que el evento se disparó.
 
 ## 7. Fuera de alcance
 
@@ -213,7 +272,9 @@ En `usuarios-red-administracion.component.ts`, arriba de la fila de KPIs existen
   es que la pantalla no muestre la fecha de "última sincronización" hasta que se corra una
   nueva; los datos ya sincronizados no se pierden.
 - Cancelar un sync en curso desde la UI.
-- Programar sincronizaciones automáticas/periódicas (cron) — sigue siendo manual, por botón.
+- Sincronizaciones programadas por horario fijo (cron), independientes de si hubo cambios — el
+  único disparo automático en este alcance es el debounce de 30s tras una escritura (§2.3); si no
+  hay cambios, no hay auto-sync.
 - Mostrar la última sincronización persistida en `ad_cache_metadata` cuando el servidor se
   reinició y `jobStatus` está "en blanco" (no se lee esa tabla como fallback) — se puede agregar
   después si se necesita.
@@ -229,4 +290,8 @@ En `usuarios-red-administracion.component.ts`, arriba de la fila de KPIs existen
 | Estado "total desconocido" | Barra indeterminada, no "0%" |
 | Sync disparado desde otra sesión | Se detecta al entrar a la pantalla y se retoma el polling automáticamente |
 | Al completar | Auto-refresca los KPIs de la pantalla, sin recargar la página |
+| Auto-sync tras cambios | Debounce de 30s desde el último cambio de escritura (no desde cada cambio individual), implementado en backend |
+| Cómo se notifica el cambio | Evento de Spring (`ApplicationEventPublisher`/`AdCambioEvent`) publicado desde `withUserWrite`, no una dependencia directa entre servicios (evita ciclo circular) |
+| Acciones que disparan auto-sync | Las 6 operaciones vía `withUserWrite` + `crearUsuario` (7 en total) |
+| Persistencia del progreso ante reinicio del backend | Fuera de alcance — se pierde, aceptable |
 | Persistencia del progreso ante reinicio del backend | Fuera de alcance — se pierde, aceptable |
