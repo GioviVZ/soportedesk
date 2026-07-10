@@ -23,11 +23,16 @@ export interface EquipoDetalle extends EquipoResumen {
   cpuNucleos: number;
   cpuHilos: number;
   cpuFrecuenciaMax: number;
+  cpuFabricantes: string | null;
   ramModulos: number;
   ramFrecuenciaMax: string;
   ramTipos: string;
+  ramModelos: string | null;
+  ramFabricantes: string | null;
   diskCantidad: number;
   diskTipos: string;
+  diskInterfaces: string | null;
+  diskModelos: string | null;
   monCantidad: number;
   monNombres: string | null;
   monModelos: string | null;
@@ -49,6 +54,11 @@ export interface EquipoTeclado {
   nmerodeseriefield: string;
   cdigodeinventariofield: string;
   cdigopatrimonialfield: string;
+}
+
+export interface EquipoOficina {
+  siglafield: string | null;
+  reafield: string | null;
 }
 
 export interface EquipoEnrichmentDto {
@@ -89,6 +99,7 @@ export interface EquipoDetalleResponse {
   equipo: EquipoDetalle;
   software: EquipoSoftware[];
   teclado: EquipoTeclado | null;
+  oficina: EquipoOficina | null;
   tipoEfectivo: string | null;
   enrichment: EquipoEnrichmentDto | null;
 }
@@ -100,6 +111,37 @@ export interface EquipoKpis {
   otrosCount: number;
   sedeCentralCount: number;
   eeasCount: number;
+}
+
+export interface EquipoFabricanteCount {
+  fabricante: string;
+  total: number;
+}
+
+export interface EquipoDependenciaCount {
+  dependencia: string;
+  total: number;
+}
+
+export interface EquipoSaludResumen {
+  rojos: number;
+  amarillos: number;
+  ok: number;
+  sinPatrimonial: number;
+  sinUsuario: number;
+  sinSede: number;
+}
+
+export interface EquipoDashboardCompleto {
+  total: number;
+  desktopCount: number;
+  laptopCount: number;
+  otrosCount: number;
+  sedeCentralCount: number;
+  eeasCount: number;
+  distribucionPorFabricante: EquipoFabricanteCount[];
+  topDependencias: EquipoDependenciaCount[];
+  salud: EquipoSaludResumen;
 }
 
 export interface Equipo {
