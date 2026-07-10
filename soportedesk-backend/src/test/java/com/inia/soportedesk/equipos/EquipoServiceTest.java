@@ -5,7 +5,6 @@ import com.inia.soportedesk.catalogo.TipoEquipoCatalogo;
 import com.inia.soportedesk.catalogo.TipoEquipoCatalogoRepository;
 import com.inia.soportedesk.equipos.enrichment.EquipoEnrichment;
 import com.inia.soportedesk.equipos.enrichment.EquipoEnrichmentRepository;
-import com.inia.soportedesk.equipos.enrichment.EquipoEnrichmentService;
 import com.inia.soportedesk.glpi.GlpiComputerOficinaRepository;
 import com.inia.soportedesk.glpi.GlpiTecladoRepository;
 import com.inia.soportedesk.glpi.VwInvComputerFull;
@@ -32,7 +31,6 @@ class EquipoServiceTest {
     @Mock private GlpiComputerOficinaRepository oficinaRepository;
     @Mock private TipoEquipoCatalogoRepository catalogoRepository;
     @Mock private EquipoEnrichmentRepository enrichmentRepository;
-    @Mock private EquipoEnrichmentService enrichmentService;
 
     @InjectMocks
     private EquipoService service;
@@ -80,7 +78,6 @@ class EquipoServiceTest {
         when(enrichmentRepository.findByComputerId(1L)).thenReturn(Optional.of(enrichment));
         when(repository.findSoftwareByComputerId(1L)).thenReturn(List.of());
         when(tecladoRepository.findByItemsId(1L)).thenReturn(Optional.empty());
-        when(enrichmentService.toDto(enrichment)).thenReturn(null);
 
         EquipoDetalleResponse result = service.findById(1L);
 

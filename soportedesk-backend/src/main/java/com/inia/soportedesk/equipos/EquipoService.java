@@ -3,9 +3,7 @@ package com.inia.soportedesk.equipos;
 import com.inia.soportedesk.catalogo.TipoEquipoCatalogo;
 import com.inia.soportedesk.catalogo.TipoEquipoCatalogoRepository;
 import com.inia.soportedesk.equipos.enrichment.EquipoEnrichment;
-import com.inia.soportedesk.equipos.enrichment.EquipoEnrichmentDto;
 import com.inia.soportedesk.equipos.enrichment.EquipoEnrichmentRepository;
-import com.inia.soportedesk.equipos.enrichment.EquipoEnrichmentService;
 import com.inia.soportedesk.exception.ResourceNotFoundException;
 import com.inia.soportedesk.glpi.VwInvComputerFull;
 import com.inia.soportedesk.glpi.VwInvComputerFullRepository;
@@ -33,7 +31,6 @@ public class EquipoService {
     private final GlpiComputerOficinaRepository oficinaRepository;
     private final TipoEquipoCatalogoRepository catalogoRepository;
     private final EquipoEnrichmentRepository enrichmentRepository;
-    private final EquipoEnrichmentService enrichmentService;
 
     public List<VwInvComputerFull> findAll(String search, String sede, String tipo,
                                             String dependencia, String subdependencia, String fabricante) {
@@ -66,15 +63,13 @@ public class EquipoService {
 
         EquipoEnrichment enrichment = enrichmentRepository.findByComputerId(id).orElse(null);
         String tipoEfectivo = resolveTipo(equipo.getTipoEquipo(), enrichment);
-        EquipoEnrichmentDto enrichmentDto = enrichment != null ? enrichmentService.toDto(enrichment) : null;
 
         return new EquipoDetalleResponse(
                 equipo,
                 repository.findSoftwareByComputerId(id),
                 tecladoRepository.findByItemsId(id).orElse(null),
                 oficinaRepository.findByItemsId(id).orElse(null),
-                tipoEfectivo,
-                enrichmentDto);
+                tipoEfectivo);
     }
 
     public List<EquipoSaludDto> getSalud() {
