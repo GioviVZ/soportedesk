@@ -1,11 +1,12 @@
 package com.inia.soportedesk.vpn;
 
+import com.inia.soportedesk.activedirectory.AdUsuarioCache;
+import com.inia.soportedesk.activedirectory.AdUsuarioCacheRepository;
 import com.inia.soportedesk.auth.UsuarioRepository;
 import com.inia.soportedesk.exception.ResourceNotFoundException;
 import com.inia.soportedesk.glpi.VwInvComputerFull;
 import com.inia.soportedesk.glpi.VwInvComputerFullRepository;
 import com.inia.soportedesk.usuariosred.UsuarioRed;
-import com.inia.soportedesk.usuariosred.UsuarioRedRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -33,7 +34,7 @@ class VpnServiceTest {
     private VpnRepository repository;
 
     @Mock
-    private UsuarioRedRepository usuarioRedRepository;
+    private AdUsuarioCacheRepository adUsuarioCacheRepository;
 
     @Mock
     private VwInvComputerFullRepository glpiRepository;
@@ -49,12 +50,23 @@ class VpnServiceTest {
 
     private VpnRequest sampleRequest() {
         VpnRequest request = new VpnRequest();
-        request.setUsuarioRedId(1L);
+        request.setUsuarioRedSamAccountName("jruiz");
         request.setTipoEquipo("PERSONAL");
         request.setAntivirusVerificado(true);
         request.setAnalisisAntivirusRealizado(true);
         request.setTitularCargo("Profesional");
         return request;
+    }
+
+    private AdUsuarioCache cacheUser() {
+        AdUsuarioCache usuario = new AdUsuarioCache();
+        usuario.setSamAccountName("jruiz");
+        usuario.setDisplayName("Juan Ruiz");
+        usuario.setMail("jruiz@inia.gob.pe");
+        usuario.setOffice("UTI");
+        usuario.setOrganizationalUnit("OU=UTI,DC=inia,DC=local");
+        usuario.setEnabled(true);
+        return usuario;
     }
 
     private Authentication authAs(String username, String... authorities) {
@@ -123,7 +135,7 @@ class VpnServiceTest {
         UsuarioRed mockUser = new UsuarioRed();
         mockUser.setId(1L);
         mockUser.setNombre("Juan Pérez");
-        when(usuarioRedRepository.findById(1L)).thenReturn(Optional.of(mockUser));
+        when(adUsuarioCacheRepository.findFirstBySamAccountNameIgnoreCase("jruiz")).thenReturn(Optional.of(cacheUser()));
         when(usuarioRepository.findByUsername("jasistente")).thenReturn(Optional.empty());
         when(repository.save(any(Vpn.class))).thenAnswer(inv -> inv.getArgument(0));
 
@@ -141,7 +153,7 @@ class VpnServiceTest {
     void crearSolicitud_withGlpiEquipo_snapshotsHostAndIp() {
         UsuarioRed mockUser = new UsuarioRed();
         mockUser.setId(1L);
-        when(usuarioRedRepository.findById(1L)).thenReturn(Optional.of(mockUser));
+        when(adUsuarioCacheRepository.findFirstBySamAccountNameIgnoreCase("jruiz")).thenReturn(Optional.of(cacheUser()));
         when(usuarioRepository.findByUsername(any())).thenReturn(Optional.empty());
 
         VwInvComputerFull equipo = new VwInvComputerFull();
@@ -166,7 +178,7 @@ class VpnServiceTest {
 
     @Test
     void crearSolicitud_withUnknownGlpiId_throwsResourceNotFoundException() {
-        when(usuarioRedRepository.findById(1L)).thenReturn(Optional.of(new UsuarioRed()));
+        when(adUsuarioCacheRepository.findFirstBySamAccountNameIgnoreCase("jruiz")).thenReturn(Optional.of(cacheUser()));
         when(glpiRepository.findById(999L)).thenReturn(Optional.empty());
 
         VpnRequest request = sampleRequest();
@@ -180,7 +192,7 @@ class VpnServiceTest {
     void crearSolicitud_copiesSistemaOperativoForticlientAndVencimientoAntivirus() {
         UsuarioRed mockUser = new UsuarioRed();
         mockUser.setId(1L);
-        when(usuarioRedRepository.findById(1L)).thenReturn(Optional.of(mockUser));
+        when(adUsuarioCacheRepository.findFirstBySamAccountNameIgnoreCase("jruiz")).thenReturn(Optional.of(cacheUser()));
         when(usuarioRepository.findByUsername(any())).thenReturn(Optional.empty());
         when(repository.save(any(Vpn.class))).thenAnswer(inv -> inv.getArgument(0));
 
@@ -200,7 +212,7 @@ class VpnServiceTest {
     void crearSolicitud_forEquipoPersonal_setsVenceFromVencimientoAntivirus() {
         UsuarioRed mockUser = new UsuarioRed();
         mockUser.setId(1L);
-        when(usuarioRedRepository.findById(1L)).thenReturn(Optional.of(mockUser));
+        when(adUsuarioCacheRepository.findFirstBySamAccountNameIgnoreCase("jruiz")).thenReturn(Optional.of(cacheUser()));
         when(usuarioRepository.findByUsername(any())).thenReturn(Optional.empty());
         when(repository.save(any(Vpn.class))).thenAnswer(inv -> inv.getArgument(0));
 
@@ -295,7 +307,7 @@ class VpnServiceTest {
         existing.setId(5L);
         existing.setEstadoSolicitud("OBSERVADO");
         when(repository.findById(5L)).thenReturn(Optional.of(existing));
-        when(usuarioRedRepository.findById(1L)).thenReturn(Optional.of(new UsuarioRed()));
+        when(adUsuarioCacheRepository.findFirstBySamAccountNameIgnoreCase("jruiz")).thenReturn(Optional.of(cacheUser()));
         when(repository.save(any(Vpn.class))).thenAnswer(inv -> inv.getArgument(0));
 
         Vpn result = service.actualizarSolicitud(5L, sampleRequest(), authAs("jasistente"));

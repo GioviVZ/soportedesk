@@ -66,6 +66,9 @@ public class VwInvComputerFull {
     @Column(name = "CPU_Modelos")
     private String cpuModelos;
 
+    @Column(name = "CPU_Fabricantes")
+    private String cpuFabricantes;
+
     @Column(name = "CPU_Conteo")
     private Long cpuConteo;
 
@@ -90,6 +93,12 @@ public class VwInvComputerFull {
     @Column(name = "RAM_Tipos")
     private String ramTipos;
 
+    @Column(name = "RAM_Modelos")
+    private String ramModelos;
+
+    @Column(name = "RAM_Fabricantes")
+    private String ramFabricantes;
+
     @Column(name = "DISK_Cantidad")
     private Long diskCantidad;
 
@@ -98,6 +107,12 @@ public class VwInvComputerFull {
 
     @Column(name = "DISK_Tipos")
     private String diskTipos;
+
+    @Column(name = "DISK_Interfaces")
+    private String diskInterfaces;
+
+    @Column(name = "DISK_Modelos")
+    private String diskModelos;
 
     @Column(name = "MON_Cantidad")
     private Long monCantidad;

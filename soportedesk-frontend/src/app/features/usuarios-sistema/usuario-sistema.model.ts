@@ -36,7 +36,7 @@ export const MODULOS: ModuloPermiso[] = [
     group: 'Operaciones',
     description: 'Permite consultar cuentas y ver el dashboard de Google Workspace.',
   },
-  { key: 'equipos', label: 'Equipos Asignados', kind: 'write', group: 'Operaciones' },
+  { key: 'equipos', label: 'Inventario de Equipos', kind: 'write', group: 'Operaciones' },
   {
     key: 'vpn',
     label: 'VPN Registros',

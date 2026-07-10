@@ -234,6 +234,49 @@ CREATE TABLE dbo.usuarios_red (
 );
 GO
 
+IF OBJECT_ID(N'dbo.ad_usuarios_cache', N'U') IS NULL
+CREATE TABLE dbo.ad_usuarios_cache (
+    sam_account_name             NVARCHAR(120)  NOT NULL,
+    display_name                 NVARCHAR(255)  NULL,
+    given_name                   NVARCHAR(255)  NULL,
+    surname                      NVARCHAR(255)  NULL,
+    mail                         NVARCHAR(255)  NULL,
+    department                   NVARCHAR(255)  NULL,
+    company                      NVARCHAR(255)  NULL,
+    title                        NVARCHAR(255)  NULL,
+    telephone_number             NVARCHAR(100)  NULL,
+    mobile                       NVARCHAR(100)  NULL,
+    office                       NVARCHAR(255)  NULL,
+    description                  NVARCHAR(MAX)  NULL,
+    distinguished_name           NVARCHAR(MAX)  NULL,
+    user_principal_name          NVARCHAR(255)  NULL,
+    enabled                      BIT            NOT NULL DEFAULT 0,
+    locked                       BIT            NOT NULL DEFAULT 0,
+    organizational_unit          NVARCHAR(500)  NULL,
+    when_created                 NVARCHAR(50)   NULL,
+    when_changed                 NVARCHAR(50)   NULL,
+    pwd_last_set                 NVARCHAR(50)   NULL,
+    last_logon_timestamp         NVARCHAR(50)   NULL,
+    account_expires              NVARCHAR(50)   NULL,
+    bad_pwd_count                NVARCHAR(50)   NULL,
+    days_since_password_change   BIGINT         NULL,
+    days_since_last_logon        BIGINT         NULL,
+    lockout_time                 BIGINT         NULL,
+    groups_text                  NVARCHAR(MAX)  NULL,
+    synced_at                    DATETIME2      NOT NULL,
+    CONSTRAINT PK_ad_usuarios_cache PRIMARY KEY (sam_account_name)
+);
+GO
+
+IF OBJECT_ID(N'dbo.ad_cache_metadata', N'U') IS NULL
+CREATE TABLE dbo.ad_cache_metadata (
+    clave                 NVARCHAR(100) NOT NULL,
+    valor                 NVARCHAR(500) NULL,
+    fecha_actualizacion   DATETIME2     NOT NULL,
+    CONSTRAINT PK_ad_cache_metadata PRIMARY KEY (clave)
+);
+GO
+
 -- ============================================================
 -- EQUIPOS DE CÓMPUTO
 -- ============================================================
@@ -386,6 +429,22 @@ CREATE TABLE dbo.vpn_config_institucional (
 );
 GO
 
+IF COL_LENGTH('dbo.vpn', 'ad_sam_account_name') IS NULL
+    ALTER TABLE dbo.vpn ADD ad_sam_account_name NVARCHAR(120) NULL;
+GO
+IF COL_LENGTH('dbo.vpn', 'ad_display_name') IS NULL
+    ALTER TABLE dbo.vpn ADD ad_display_name NVARCHAR(255) NULL;
+GO
+IF COL_LENGTH('dbo.vpn', 'ad_mail') IS NULL
+    ALTER TABLE dbo.vpn ADD ad_mail NVARCHAR(255) NULL;
+GO
+IF COL_LENGTH('dbo.vpn', 'ad_office') IS NULL
+    ALTER TABLE dbo.vpn ADD ad_office NVARCHAR(255) NULL;
+GO
+IF COL_LENGTH('dbo.vpn', 'ad_organizational_unit') IS NULL
+    ALTER TABLE dbo.vpn ADD ad_organizational_unit NVARCHAR(500) NULL;
+GO
+
 -- ============================================================
 -- REDES WIFI
 -- ============================================================
@@ -497,6 +556,8 @@ GO
 IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = N'IX_vpn_estado')                CREATE INDEX IX_vpn_estado                ON dbo.vpn (estado);
 GO
 IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = N'IX_vpn_vencimiento_antivirus') CREATE INDEX IX_vpn_vencimiento_antivirus ON dbo.vpn (vencimiento_antivirus);
+GO
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = N'IX_vpn_ad_sam_account_name')   CREATE INDEX IX_vpn_ad_sam_account_name   ON dbo.vpn (ad_sam_account_name);
 GO
 
 IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = N'IX_wifi_ssid')   CREATE INDEX IX_wifi_ssid   ON dbo.wifi (ssid);

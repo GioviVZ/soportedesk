@@ -256,6 +256,10 @@ td .status-badge + .status-badge { margin-left: 6px; }
   gap: 10px;
 }
 
+.admin-primary-actions {
+  grid-template-columns: minmax(220px, 320px);
+}
+
 .action-card {
   display: grid;
   justify-items: start;
@@ -290,6 +294,11 @@ td .status-badge + .status-badge { margin-left: 6px; }
   &.danger .action-icon {
     background: var(--color-danger-light);
     color: var(--color-danger);
+  }
+
+  &.create .action-icon {
+    background: var(--color-success-light);
+    color: var(--color-success);
   }
 }
 
@@ -338,6 +347,17 @@ td .status-badge + .status-badge { margin-left: 6px; }
 .inline-search {
   display: flex;
   gap: 10px;
+}
+
+.selected-dn {
+  overflow-wrap: anywhere;
+  padding: 8px 10px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-muted);
+  color: var(--color-text-secondary);
+  font-size: 12px;
+  font-weight: 600;
 }
 
 .pick-list,

@@ -11,6 +11,7 @@ import java.time.LocalDate;
 public class VpnRequest {
 
     private Long usuarioRedId;
+    private String usuarioRedSamAccountName;
 
     private String titularTipo;
     private String titularNombre;

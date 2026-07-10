@@ -12,6 +12,7 @@ import {
   VpnKpis,
   VpnResolucionRequest,
   VpnSolicitudRequest,
+  VpnUsuarioRedOption,
 } from './vpn.model';
 
 @Injectable({ providedIn: 'root' })
@@ -37,6 +38,12 @@ export class VpnService {
 
   getDashboardCompleto(): Observable<VpnDashboardCompleto> {
     return this.http.get<VpnDashboardCompleto>(`${this.apiUrl}/dashboard/completo`);
+  }
+
+  searchUsuariosRed(termino: string): Observable<VpnUsuarioRedOption[]> {
+    return this.http.get<VpnUsuarioRedOption[]>(`${this.apiUrl}/usuarios-red/buscar`, {
+      params: new HttpParams().set('termino', termino),
+    });
   }
 
   create(request: VpnSolicitudRequest): Observable<Vpn> {

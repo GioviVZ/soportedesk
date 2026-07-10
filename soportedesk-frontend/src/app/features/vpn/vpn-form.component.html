@@ -14,13 +14,17 @@
       <input type="text" [value]="adSearchTerm" (input)="onAdSearch($any($event.target).value)" placeholder="Nombre o usuario" />
       <ul class="equipo-results" *ngIf="adResults.length">
         <li *ngFor="let u of adResults" (click)="onAdUserSelected(u)">
-          {{ u.nombre }} ({{ u.usuario }})
+          <strong>{{ u.displayName || u.samAccountName }}</strong>
+          <span>{{ u.samAccountName }}</span>
+          <small *ngIf="u.mail || u.office || u.organizationalUnit">
+            {{ u.mail || 'Sin correo' }} · {{ u.office || u.organizationalUnit || 'Sin oficina' }}
+          </small>
         </li>
       </ul>
     </div>
 
     <div class="titular-fallback">
-      <p *ngIf="adBusquedaRealizada && adResults.length === 0">No se encontró en AD.</p>
+      <p *ngIf="adBusquedaRealizada && adResults.length === 0">No se encontró en la base local de Usuarios de Red.</p>
       <div class="actions">
         <button type="button" class="secondary" (click)="onElegirExterno()">Externo</button>
       </div>
@@ -30,19 +34,19 @@
   <div class="ad-preview" *ngIf="titularModo === 'ad-seleccionado' && adUserSelected">
     <div class="ad-preview-row">
       <span class="ad-label">Usuario</span>
-      <span>{{ adUserSelected.usuario }}</span>
+      <span>{{ adUserSelected.samAccountName }}</span>
     </div>
     <div class="ad-preview-row">
       <span class="ad-label">Nombre</span>
-      <span>{{ adUserSelected.nombre }}</span>
+      <span>{{ adUserSelected.displayName || adUserSelected.samAccountName }}</span>
     </div>
-    <div class="ad-preview-row" *ngIf="adUserSelected.sede">
-      <span class="ad-label">Sede</span>
-      <span>{{ adUserSelected.sede.nombre }}</span>
+    <div class="ad-preview-row" *ngIf="adUserSelected.mail">
+      <span class="ad-label">Correo</span>
+      <span>{{ adUserSelected.mail }}</span>
     </div>
-    <div class="ad-preview-row" *ngIf="adUserSelected.dependencia">
-      <span class="ad-label">Dependencia</span>
-      <span>{{ adUserSelected.dependencia.nombre }}</span>
+    <div class="ad-preview-row" *ngIf="adUserSelected.office || adUserSelected.organizationalUnit">
+      <span class="ad-label">Oficina/OU</span>
+      <span>{{ adUserSelected.office || adUserSelected.organizationalUnit }}</span>
     </div>
     <button type="button" class="secondary" (click)="onCambiarUsuario()">Cambiar usuario</button>
   </div>
@@ -120,6 +124,13 @@
 
     <div class="field checkbox-field">
       <label>
+        <input type="checkbox" formControlName="analisisAntivirusRealizado" [disabled]="!pasoAnalisisHabilitado" />
+        Análisis de antivirus al equipo realizado
+      </label>
+    </div>
+
+    <div class="field checkbox-field">
+      <label>
         <input type="checkbox" formControlName="sistemaOperativoActualizado" [disabled]="!pasoSoActualizadoHabilitado" />
         Sistema operativo actualizado
       </label>
@@ -135,7 +146,7 @@
     <div class="field checkbox-field">
       <label>
         <input type="checkbox" formControlName="tieneGlpi" (change)="onTieneGlpiChange()" [disabled]="!pasoGlpiHabilitado" />
-        ¿Tiene GLPI instalado?
+        GLPI instalado
       </label>
     </div>
 
@@ -171,6 +182,13 @@
       </label>
     </div>
 
+    <div class="field checkbox-field">
+      <label>
+        <input type="checkbox" formControlName="analisisAntivirusRealizado" [disabled]="!pasoAnalisisHabilitado" />
+        Análisis de antivirus al equipo realizado
+      </label>
+    </div>
+
     <div class="field">
       <label>Fecha de vencimiento de licencia de antivirus *</label>
       <input type="date" formControlName="vencimientoAntivirus" [disabled]="!pasoVencimientoHabilitado" />
@@ -190,13 +208,6 @@
       </label>
     </div>
   </ng-container>
-
-  <div class="field checkbox-field">
-    <label>
-      <input type="checkbox" formControlName="analisisAntivirusRealizado" [disabled]="!pasoAnalisisHabilitado" />
-      Análisis de antivirus al equipo realizado
-    </label>
-  </div>
 
   <div class="actions">
     <button type="button" class="secondary" (click)="cancelled.emit()">Cancelar</button>

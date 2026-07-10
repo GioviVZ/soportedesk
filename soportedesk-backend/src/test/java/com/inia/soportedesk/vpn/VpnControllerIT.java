@@ -35,7 +35,7 @@ class VpnControllerIT {
 
     private VpnRequest sampleRequest() {
         VpnRequest request = new VpnRequest();
-        request.setUsuarioRedId(1L);
+        request.setUsuarioRedSamAccountName("jruiz");
         request.setTipoEquipo("PERSONAL");
         request.setAntivirusVerificado(true);
         request.setAnalisisAntivirusRealizado(true);

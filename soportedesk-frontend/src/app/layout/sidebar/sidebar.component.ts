@@ -58,7 +58,7 @@ export class SidebarComponent {
       { path: '/dashboard', label: 'Dashboard', icon: s.bypassSecurityTrustHtml(SVG_ICONS['home']) },
       { path: '/usuarios-red/consultas', label: 'Usuarios de Red/AD', icon: s.bypassSecurityTrustHtml(SVG_ICONS['users']), permission: 'usuarios-red' },
       { path: '/correos', label: 'Correos Institucionales', icon: s.bypassSecurityTrustHtml(SVG_ICONS['mail']), permission: 'correos' },
-      { path: '/equipos', label: 'Equipos Asignados', icon: s.bypassSecurityTrustHtml(SVG_ICONS['monitor']), permission: 'equipos' },
+      { path: '/equipos', label: 'Inventario de Equipos', icon: s.bypassSecurityTrustHtml(SVG_ICONS['monitor']), permission: 'equipos' },
       { path: '/vpn', label: 'VPN', icon: s.bypassSecurityTrustHtml(SVG_ICONS['lock']), permission: 'vpn' },
       { path: '/impresoras', label: 'Impresoras', icon: s.bypassSecurityTrustHtml(SVG_ICONS['printer']), permission: 'impresoras' },
       { path: '/wifi', label: 'Claves WiFi', icon: s.bypassSecurityTrustHtml(SVG_ICONS['wifi']), permission: 'wifi' },

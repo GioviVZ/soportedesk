@@ -1,13 +1,14 @@
 package com.inia.soportedesk.vpn;
 
+import com.inia.soportedesk.activedirectory.AdUsuarioCache;
+import com.inia.soportedesk.activedirectory.AdUsuarioCacheRepository;
 import com.inia.soportedesk.auth.Usuario;
 import com.inia.soportedesk.auth.UsuarioRepository;
 import com.inia.soportedesk.exception.ResourceNotFoundException;
 import com.inia.soportedesk.glpi.VwInvComputerFull;
 import com.inia.soportedesk.glpi.VwInvComputerFullRepository;
-import com.inia.soportedesk.usuariosred.UsuarioRed;
-import com.inia.soportedesk.usuariosred.UsuarioRedRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,7 +24,7 @@ public class VpnService {
     private static final List<String> EDITABLES = List.of("PENDIENTE", "OBSERVADO");
 
     private final VpnRepository repository;
-    private final UsuarioRedRepository usuarioRedRepository;
+    private final AdUsuarioCacheRepository adUsuarioCacheRepository;
     private final VwInvComputerFullRepository glpiRepository;
     private final UsuarioRepository usuarioRepository;
     private final VpnConfigInstitucionalService configInstitucionalService;
@@ -50,6 +51,16 @@ public class VpnService {
                 repository.countByEstadoSolicitud("RECHAZADO"),
                 repository.countByEstadoSolicitud("OBSERVADO")
         );
+    }
+
+    public List<VpnUsuarioRedOption> buscarUsuariosRed(String termino) {
+        String normalized = termino == null ? "" : termino.trim();
+        if (normalized.length() < 2) {
+            return List.of();
+        }
+        return adUsuarioCacheRepository.autocompleteEnabled(normalized, PageRequest.of(0, 20)).stream()
+                .map(VpnUsuarioRedOption::from)
+                .toList();
     }
 
     private static final int VENCIMIENTO_ALERTA_DIAS = 30;
@@ -209,11 +220,21 @@ public class VpnService {
         vpn.setVencimientoAntivirus(request.getVencimientoAntivirus());
         vpn.setTitularCargo(request.getTitularCargo());
 
-        if (request.getUsuarioRedId() != null) {
-            UsuarioRed usuarioRed = usuarioRedRepository.findById(request.getUsuarioRedId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Usuario de red no encontrado: " + request.getUsuarioRedId()));
-            vpn.setUsuarioRed(usuarioRed);
+        if (!isBlank(request.getUsuarioRedSamAccountName())) {
+            AdUsuarioCache usuarioRed = adUsuarioCacheRepository
+                    .findFirstBySamAccountNameIgnoreCase(request.getUsuarioRedSamAccountName().trim())
+                    .orElseThrow(() -> new ResourceNotFoundException(
+                            "Usuario de red no encontrado en la cache local: " + request.getUsuarioRedSamAccountName()));
+            if (!usuarioRed.isEnabled()) {
+                throw new IllegalArgumentException("El usuario de red esta deshabilitado en la cache local");
+            }
+            vpn.setUsuarioRed(null);
             vpn.setTitularTipo("AD");
+            vpn.setAdSamAccountName(usuarioRed.getSamAccountName());
+            vpn.setAdDisplayName(usuarioRed.getDisplayName());
+            vpn.setAdMail(usuarioRed.getMail());
+            vpn.setAdOffice(usuarioRed.getOffice());
+            vpn.setAdOrganizationalUnit(usuarioRed.getOrganizationalUnit());
             vpn.setTitularNombre(null);
             vpn.setTitularApellidos(null);
             vpn.setTitularCorreo(null);
@@ -231,6 +252,11 @@ public class VpnService {
             }
             vpn.setUsuarioRed(null);
             vpn.setTitularTipo("EXTERNO");
+            vpn.setAdSamAccountName(null);
+            vpn.setAdDisplayName(null);
+            vpn.setAdMail(null);
+            vpn.setAdOffice(null);
+            vpn.setAdOrganizationalUnit(null);
             vpn.setTitularNombre(request.getTitularNombre());
             vpn.setTitularApellidos(request.getTitularApellidos());
             vpn.setTitularCorreo(request.getTitularCorreo());

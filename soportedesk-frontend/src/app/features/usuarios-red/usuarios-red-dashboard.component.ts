@@ -20,10 +20,6 @@ import { ActiveDirectoryDashboardCompleto } from './active-directory.model';
           </div>
           <div class="module-dash-actions">
             <span class="module-dash-updated" *ngIf="updatedAt">Actualizado {{ updatedAt | date:'HH:mm' }}</span>
-            <button type="button" class="module-dash-refresh" (click)="load()" [disabled]="loading">
-              <span class="module-dash-refresh-icon" aria-hidden="true"></span>
-              {{ loading ? 'Actualizando' : 'Actualizar' }}
-            </button>
           </div>
         </div>
 

@@ -5,10 +5,24 @@
       <h2>Panel de Control</h2>
       <p class="subtitle">Vista general de accesos, inventario y cuentas administradas.</p>
     </div>
-    <div class="total-badge">
-      <span class="total-num">{{ totalRegistros }}</span>
-      <span class="total-lbl">registros</span>
+    <div class="dash-side">
+      <div class="total-badge">
+        <span class="total-num">{{ totalRegistros }}</span>
+        <span class="total-lbl">registros</span>
+      </div>
+
+      <div class="dash-actions">
+        <span class="freshness" *ngIf="updatedAt">Actualizado {{ updatedAt | date:'HH:mm' }}</span>
+        <button type="button" class="refresh-btn" (click)="load()" [disabled]="loading">
+          <span class="refresh-icon" aria-hidden="true"></span>
+          {{ loading ? 'Actualizando' : 'Actualizar' }}
+        </button>
+      </div>
     </div>
+  </div>
+
+  <div class="dash-notice" *ngIf="error">
+    No se pudo actualizar el panel. Se mantiene la ultima vista disponible.
   </div>
 
   <div class="summary-grid">
@@ -37,6 +51,65 @@
       </ng-template>
     </ng-container>
   </div>
+
+  <section class="ops-grid" *ngIf="priorityItems.length || mixItems.length">
+    <div class="ops-panel priority-panel" *ngIf="priorityItems.length">
+      <div class="panel-heading">
+        <div>
+          <h3>Atencion prioritaria</h3>
+          <p>Situaciones que conviene revisar primero.</p>
+        </div>
+      </div>
+
+      <ng-container *ngFor="let item of priorityItems">
+        <a
+          *ngIf="item.path; else priorityBox"
+          class="priority-row"
+          [class.priority-row--warning]="item.state === 'warning'"
+          [class.priority-row--success]="item.state === 'success'"
+          [routerLink]="item.path">
+          <span class="priority-value">{{ item.value }}</span>
+          <span>
+            <strong>{{ item.label }}</strong>
+            <small>{{ item.detail }}</small>
+          </span>
+        </a>
+
+        <ng-template #priorityBox>
+          <div
+            class="priority-row"
+            [class.priority-row--warning]="item.state === 'warning'"
+            [class.priority-row--success]="item.state === 'success'">
+            <span class="priority-value">{{ item.value }}</span>
+            <span>
+              <strong>{{ item.label }}</strong>
+              <small>{{ item.detail }}</small>
+            </span>
+          </div>
+        </ng-template>
+      </ng-container>
+    </div>
+
+    <div class="ops-panel mix-panel" *ngIf="mixItems.length">
+      <div class="panel-heading">
+        <div>
+          <h3>Composicion operativa</h3>
+          <p>Peso relativo de los registros visibles.</p>
+        </div>
+      </div>
+
+      <div class="mix-row" *ngFor="let item of mixItems">
+        <div class="mix-meta">
+          <span>{{ item.label }}</span>
+          <strong>{{ item.value }}</strong>
+        </div>
+        <div class="mix-track">
+          <span [style.width.%]="item.percent" [style.background]="item.color"></span>
+        </div>
+        <small>{{ item.percent }}%</small>
+      </div>
+    </div>
+  </section>
 
   <div class="section-heading">
     <div>

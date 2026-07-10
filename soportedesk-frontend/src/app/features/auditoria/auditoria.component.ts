@@ -8,7 +8,7 @@ const MODULOS: Record<string, string> = {
   auth: 'Autenticacion',
   'usuarios-red': 'Usuarios de Red/AD',
   correos: 'Correos',
-  equipos: 'Equipos',
+  equipos: 'Inventario de Equipos',
   vpn: 'VPN',
   impresoras: 'Impresoras',
   wifi: 'WiFi',

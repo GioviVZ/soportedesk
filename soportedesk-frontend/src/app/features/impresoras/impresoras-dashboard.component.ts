@@ -10,65 +10,110 @@ import { ImpresoraDashboardCompleto } from './impresora.model';
   standalone: true,
   imports: [CommonModule, BaseChartDirective],
   template: `
-    <div class="dashboard-toolbar">
-      <p>Distribucion por marca, por sede y consumibles mas demandados de la flota.</p>
-      <button type="button" class="btn btn-ghost" (click)="load()" [disabled]="loading">
-        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M23 4v6h-6" /><path d="M1 20v-6h6" />
-          <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
-        </svg>
-        {{ loading ? 'Cargando...' : 'Actualizar' }}
-      </button>
-    </div>
-
-    <div class="notice error" *ngIf="error">No se pudo cargar. Intenta nuevamente.</div>
-
-    <section class="module-stats" *ngIf="dashboard as d">
-      <div class="stat-pill"><strong>{{ d.total }}</strong><span>Total</span></div>
-      <div class="stat-pill"><strong>{{ d.activas }}</strong><span>Activas</span></div>
-      <div class="stat-pill"><strong>{{ d.enMantenimiento }}</strong><span>Mant.</span></div>
-      <div class="stat-pill"><strong>{{ d.deBaja }}</strong><span>De baja</span></div>
-    </section>
-
-    <section class="dashboard-grid" *ngIf="dashboard as d">
-      <article class="card chart-card">
-        <header>
-          <strong>Distribucion por marca</strong>
-          <span class="muted">{{ d.distribucionPorMarca.length }} marcas</span>
-        </header>
-        <canvas baseChart [data]="chartData" [options]="chartOptions" [type]="'bar'"></canvas>
-      </article>
-
-      <div class="alert-list">
-        <article class="card alert-card">
-          <header>
-            <strong>Distribucion por sede</strong>
-            <span class="badge badge-info">{{ d.distribucionPorSede.length }}</span>
-          </header>
-          <div class="alert-row" *ngFor="let row of d.distribucionPorSede">
-            <strong>{{ row.sede }}</strong>
-            <small class="muted">{{ row.total }} impresoras</small>
-          </div>
-        </article>
-
-        <article class="card alert-card">
-          <header>
-            <strong>Top 10 consumibles mas demandados</strong>
-            <span class="badge badge-warning">{{ d.totalConsumiblesDistintos }}</span>
-          </header>
-          <div class="alert-row" *ngFor="let row of d.topConsumibles">
-            <strong>Toner {{ row.color }} - {{ row.variante }}</strong>
-            <small class="muted">{{ row.codigo }} - {{ row.cantidad }} impresoras</small>
-          </div>
-          <p class="muted" *ngIf="!d.topConsumibles.length">Sin registros criticos.</p>
-        </article>
+    <div class="module-dash">
+      <div class="module-dash-toolbar">
+        <div class="module-dash-title">
+          <strong>Control operativo de impresoras</strong>
+          <span>Estado de flota, distribucion por marca y consumibles con mayor demanda.</span>
+        </div>
+        <div class="module-dash-actions">
+          <span class="module-dash-updated" *ngIf="updatedAt">Actualizado {{ updatedAt | date:'HH:mm' }}</span>
+          <button type="button" class="module-dash-refresh" (click)="load()" [disabled]="loading">
+            <span class="module-dash-refresh-icon" aria-hidden="true"></span>
+            {{ loading ? 'Actualizando' : 'Actualizar' }}
+          </button>
+        </div>
       </div>
-    </section>
 
-    <section class="empty-state" *ngIf="!dashboard && !loading">
-      <strong>Sin datos de dashboard</strong>
-      <span>El servicio devolvio un resumen vacio o no disponible.</span>
-    </section>
+      <div class="module-dash-notice" *ngIf="error">No se pudo cargar. Se mantiene la ultima vista disponible.</div>
+
+      <section class="module-dash-stats" *ngIf="dashboard as d">
+        <div class="module-dash-stat"><span>Total</span><strong>{{ d.total }}</strong><small>Flota registrada</small></div>
+        <div class="module-dash-stat tone-success"><span>Activas</span><strong>{{ d.activas }}</strong><small>En operacion</small></div>
+        <div class="module-dash-stat tone-warning"><span>Mantenimiento</span><strong>{{ d.enMantenimiento }}</strong><small>Requieren atencion</small></div>
+        <div class="module-dash-stat tone-danger"><span>De baja</span><strong>{{ d.deBaja }}</strong><small>Fuera de servicio</small></div>
+      </section>
+
+      <section class="module-dash-grid" *ngIf="dashboard as d">
+        <article class="module-dash-card module-dash-chart">
+          <header class="module-dash-card__header">
+            <div>
+              <strong>Distribucion por marca</strong>
+              <span>{{ d.distribucionPorMarca.length }} marcas registradas</span>
+            </div>
+          </header>
+          <canvas baseChart [data]="chartData" [options]="chartOptions" [type]="'bar'"></canvas>
+        </article>
+
+        <div class="module-dash-side">
+          <article class="module-dash-highlight">
+            <strong>{{ percent(d.activas, d.total) }}%</strong>
+            <span>De la flota se encuentra activa.</span>
+          </article>
+
+          <article class="module-dash-card">
+            <header class="module-dash-card__header">
+              <div>
+                <strong>Estado de flota</strong>
+                <span>Participacion por estado operativo</span>
+              </div>
+            </header>
+            <div class="module-dash-progress">
+              <div class="module-dash-progress-row">
+                <span>Activas</span><strong>{{ percent(d.activas, d.total) }}%</strong>
+                <div class="module-dash-track"><i [style.width.%]="percent(d.activas, d.total)"></i></div>
+              </div>
+              <div class="module-dash-progress-row">
+                <span>Mantenimiento</span><strong>{{ percent(d.enMantenimiento, d.total) }}%</strong>
+                <div class="module-dash-track"><i [style.width.%]="percent(d.enMantenimiento, d.total)"></i></div>
+              </div>
+              <div class="module-dash-progress-row">
+                <span>De baja</span><strong>{{ percent(d.deBaja, d.total) }}%</strong>
+                <div class="module-dash-track"><i [style.width.%]="percent(d.deBaja, d.total)"></i></div>
+              </div>
+            </div>
+          </article>
+
+          <article class="module-dash-card">
+            <header class="module-dash-card__header">
+              <div>
+                <strong>Distribucion por sede</strong>
+                <span>Sedes con impresoras registradas</span>
+              </div>
+              <span class="badge badge-info">{{ d.distribucionPorSede.length }}</span>
+            </header>
+            <div class="module-dash-list">
+              <div class="module-dash-row tone-info" *ngFor="let row of d.distribucionPorSede">
+                <strong>{{ row.sede }}</strong>
+                <small>{{ row.total }} impresoras</small>
+              </div>
+            </div>
+          </article>
+
+          <article class="module-dash-card">
+            <header class="module-dash-card__header">
+              <div>
+                <strong>Top 10 consumibles mas demandados</strong>
+                <span>Codigos con mayor alcance en flota</span>
+              </div>
+              <span class="badge badge-warning">{{ d.totalConsumiblesDistintos }}</span>
+            </header>
+            <div class="module-dash-list">
+              <div class="module-dash-row tone-warning" *ngFor="let row of d.topConsumibles">
+                <strong>Toner {{ row.color }} - {{ row.variante }}</strong>
+                <small>{{ row.codigo }} - {{ row.cantidad }} impresoras</small>
+              </div>
+            </div>
+            <p class="muted" *ngIf="!d.topConsumibles.length">Sin registros criticos.</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="empty-state" *ngIf="!dashboard && !loading">
+        <strong>Sin datos de dashboard</strong>
+        <span>El servicio devolvio un resumen vacio o no disponible.</span>
+      </section>
+    </div>
   `,
   styles: [`
     .dashboard-toolbar {
@@ -92,6 +137,7 @@ export class ImpresorasDashboardComponent implements OnInit {
   dashboard: ImpresoraDashboardCompleto | null = null;
   loading = false;
   error = false;
+  updatedAt: Date | null = null;
 
   chartData: ChartData<'bar', number[], string> = {
     labels: [],
@@ -120,6 +166,7 @@ export class ImpresorasDashboardComponent implements OnInit {
       next: (dashboard) => {
         this.loading = false;
         this.dashboard = dashboard;
+        this.updatedAt = new Date();
         this.applyChart(dashboard);
       },
       error: () => {
@@ -137,5 +184,9 @@ export class ImpresorasDashboardComponent implements OnInit {
       labels: rows.map((row) => row.marca),
       datasets: [{ data: rows.map((row) => row.total), label: 'Impresoras', backgroundColor: '#64748b' }],
     };
+  }
+
+  percent(value: number, total: number): number {
+    return total > 0 ? Math.round((value / total) * 100) : 0;
   }
 }

@@ -27,6 +27,21 @@ interface SummaryMetric {
   state?: 'neutral' | 'success' | 'warning';
 }
 
+interface PriorityItem {
+  label: string;
+  value: number;
+  detail: string;
+  path?: string;
+  state: 'success' | 'warning' | 'neutral';
+}
+
+interface MixItem {
+  label: string;
+  value: number;
+  percent: number;
+  color: string;
+}
+
 const ICONS: Record<string, string> = {
   key: `<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="7.5" cy="15.5" r="5.5"/><path d="M21 2l-9.6 9.6"/><path d="M15.5 7.5l3 3L22 7l-3-3"/></svg>`,
   mail: `<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>`,
@@ -56,15 +71,36 @@ export class DashboardComponent implements OnInit {
   usuariosActivos = 0;
   showUsuariosChart = false;
   showLicenciasChart = false;
+  priorityItems: PriorityItem[] = [];
+  mixItems: MixItem[] = [];
+  loading = false;
+  error = false;
+  updatedAt: Date | null = null;
 
   ngOnInit(): void {
-    this.dashboardService.getCounts().subscribe((counts) => {
-      this.cards = this.toCards(counts);
-      this.totalRegistros = this.totalAllowedRecords(counts);
-      this.usuariosActivos = Math.max(counts.usuariosRed - counts.usuariosRedInactivos, 0);
-      this.showUsuariosChart = this.authService.canRead('usuarios-red');
-      this.showLicenciasChart = this.authService.canRead('licencias');
-      this.summaryMetrics = this.toSummaryMetrics(counts);
+    this.load();
+  }
+
+  load(): void {
+    this.loading = true;
+    this.error = false;
+    this.dashboardService.getCounts().subscribe({
+      next: (counts) => {
+        this.loading = false;
+        this.updatedAt = new Date();
+        this.cards = this.toCards(counts);
+        this.totalRegistros = this.totalAllowedRecords(counts);
+        this.usuariosActivos = Math.max(counts.usuariosRed - counts.usuariosRedInactivos, 0);
+        this.showUsuariosChart = this.authService.canRead('usuarios-red');
+        this.showLicenciasChart = this.authService.canRead('licencias');
+        this.summaryMetrics = this.toSummaryMetrics(counts);
+        this.priorityItems = this.toPriorityItems(counts);
+        this.mixItems = this.toMixItems(counts);
+      },
+      error: () => {
+        this.loading = false;
+        this.error = true;
+      },
     });
   }
 
@@ -80,7 +116,7 @@ export class DashboardComponent implements OnInit {
       { label: 'VPN', description: 'Credenciales de acceso remoto', value: counts.vpn, path: '/vpn', color: '#dc2626', icon: this.svg('lock') },
       { label: 'Claves WiFi', description: 'Redes y claves administradas', value: counts.wifi, path: '/wifi', color: '#0891b2', icon: this.svg('wifi') },
       { label: 'Impresoras', description: 'Equipos de impresion registrados', value: counts.impresoras, path: '/impresoras', color: '#475569', icon: this.svg('printer') },
-      { label: 'Equipos Asignados', description: 'Inventario operativo asignado', value: counts.equipos, path: '/equipos', color: '#16a34a', icon: this.svg('monitor') },
+      { label: 'Inventario de Equipos', description: 'Inventario operativo asignado', value: counts.equipos, path: '/equipos', color: '#16a34a', icon: this.svg('monitor') },
     ];
 
     if (this.authService.canWrite('usuarios-red')) {
@@ -152,6 +188,56 @@ export class DashboardComponent implements OnInit {
     }
 
     return metrics;
+  }
+
+  private toPriorityItems(counts: DashboardCounts): PriorityItem[] {
+    const items: PriorityItem[] = [];
+
+    if (this.authService.canWrite('aprobar-vpn')) {
+      items.push({
+        label: 'Solicitudes VPN pendientes',
+        value: counts.vpnPendientes,
+        detail: counts.vpnPendientes > 0 ? 'Requieren verificacion y aprobacion' : 'Sin solicitudes por resolver',
+        path: '/vpn/administracion',
+        state: counts.vpnPendientes > 0 ? 'warning' : 'success',
+      });
+    }
+
+    if (this.authService.canWrite('usuarios-red')) {
+      items.push({
+        label: 'Usuarios desactivados',
+        value: counts.usuariosRedInactivos,
+        detail: counts.usuariosRedInactivos > 0 ? 'Revisar cuentas inactivas en AD' : 'Directorio sin alertas activas',
+        path: '/usuarios-red/dashboard',
+        state: counts.usuariosRedInactivos > 0 ? 'warning' : 'success',
+      });
+    }
+
+    if (this.authService.canRead('licencias')) {
+      items.push({
+        label: 'Inventario de licencias',
+        value: counts.licencias,
+        detail: 'Claves y software bajo seguimiento',
+        path: '/licencias',
+        state: 'neutral',
+      });
+    }
+
+    return items.slice(0, 3);
+  }
+
+  private toMixItems(counts: DashboardCounts): MixItem[] {
+    const raw = [
+      { label: 'Accesos', value: this.sumAllowed([['licencias', counts.licencias], ['correos', counts.correos], ['usuarios-red', counts.usuariosRed], ['vpn', counts.vpn], ['wifi', counts.wifi]]), color: '#2563eb' },
+      { label: 'Infraestructura', value: this.sumAllowed([['impresoras', counts.impresoras], ['equipos', counts.equipos]]), color: '#16a34a' },
+      { label: 'Alertas', value: this.sumAllowed([['usuarios-red', counts.usuariosRedInactivos]]) + (this.authService.canWrite('aprobar-vpn') ? counts.vpnPendientes : 0), color: '#d97706' },
+    ].filter((item) => item.value > 0);
+
+    const total = raw.reduce((sum, item) => sum + item.value, 0);
+    return raw.map((item) => ({
+      ...item,
+      percent: total > 0 ? Math.round((item.value / total) * 100) : 0,
+    }));
   }
 
   private canOpen(path: string): boolean {

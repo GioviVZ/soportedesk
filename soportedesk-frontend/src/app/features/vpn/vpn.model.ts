@@ -1,6 +1,11 @@
 export interface Vpn {
   id: number;
   usuarioRed: { id: number; nombre: string; usuario: string } | null;
+  adSamAccountName: string | null;
+  adDisplayName: string | null;
+  adMail: string | null;
+  adOffice: string | null;
+  adOrganizationalUnit: string | null;
   equipo: { id: number; marca: string; modelo: string; tipo: string; host: string | null; ip: string | null } | null;
   vence: string | null;
   estado: string;
@@ -52,7 +57,7 @@ export const CARGOS_VPN_EXTERNO = [
 ] as const;
 
 export interface VpnSolicitudRequest {
-  usuarioRedId: number | null;
+  usuarioRedSamAccountName: string | null;
   titularTipo: 'EXTERNO' | null;
   titularNombre: string | null;
   titularApellidos: string | null;
@@ -68,6 +73,15 @@ export interface VpnSolicitudRequest {
   forticlientInstalado: boolean;
   hostActualizado: boolean | null;
   vencimientoAntivirus: string | null;
+}
+
+export interface VpnUsuarioRedOption {
+  samAccountName: string;
+  displayName: string | null;
+  mail: string | null;
+  office: string | null;
+  organizationalUnit: string | null;
+  enabled: boolean;
 }
 
 export interface VpnAprobarRequest {

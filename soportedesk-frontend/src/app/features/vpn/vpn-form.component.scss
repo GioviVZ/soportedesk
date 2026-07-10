@@ -106,9 +106,20 @@
   overflow-y: auto;
 
   li {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
     padding: 8px;
     font-size: 13px;
     cursor: pointer;
+
+    span, small {
+      color: var(--color-gray);
+    }
+
+    small {
+      font-size: 11px;
+    }
 
     &:hover {
       background: var(--color-gray-light);

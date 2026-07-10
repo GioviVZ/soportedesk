@@ -1,11 +1,9 @@
 import { Component, EventEmitter, Input, OnChanges, Output, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
-import { CARGOS_VPN, CARGOS_VPN_EXTERNO, Vpn } from './vpn.model';
+import { CARGOS_VPN, CARGOS_VPN_EXTERNO, Vpn, VpnUsuarioRedOption } from './vpn.model';
 import { VpnService } from './vpn.service';
-import { UsuarioRedService } from '../usuarios-red/usuario-red.service';
 import { EquipoService } from '../equipos/equipo.service';
-import { UsuarioRed } from '../usuarios-red/usuario-red.model';
 import { EquipoResumen } from '../equipos/equipo.model';
 
 type TitularModo = 'buscando' | 'ad-seleccionado' | 'externo';
@@ -20,7 +18,6 @@ type TitularModo = 'buscando' | 'ad-seleccionado' | 'externo';
 export class VpnFormComponent implements OnChanges {
   private fb = inject(FormBuilder);
   private service = inject(VpnService);
-  private usuarioRedService = inject(UsuarioRedService);
   private equipoService = inject(EquipoService);
 
   @Input() vpn: Vpn | null = null;
@@ -32,12 +29,12 @@ export class VpnFormComponent implements OnChanges {
 
   titularModo: TitularModo = 'buscando';
   adSearchTerm = '';
-  adResults: UsuarioRed[] = [];
+  adResults: VpnUsuarioRedOption[] = [];
   adBusquedaRealizada = false;
   private adSearchTimeout?: ReturnType<typeof setTimeout>;
 
-  selectedAdUserId: number | null = null;
-  adUserSelected: UsuarioRed | null = null;
+  selectedAdSamAccountName: string | null = null;
+  adUserSelected: VpnUsuarioRedOption | null = null;
 
   equipoResults: EquipoResumen[] = [];
   equipoSeleccionado: EquipoResumen | null = null;
@@ -115,9 +112,27 @@ export class VpnFormComponent implements OnChanges {
           ipEquipo: this.vpn.glpiIpEquipo,
         } as EquipoResumen;
       }
-      if (this.vpn.usuarioRed) {
-        this.selectedAdUserId = this.vpn.usuarioRed.id;
-        this.adUserSelected = this.vpn.usuarioRed as UsuarioRed;
+      if (this.vpn.adSamAccountName) {
+        this.selectedAdSamAccountName = this.vpn.adSamAccountName;
+        this.adUserSelected = {
+          samAccountName: this.vpn.adSamAccountName,
+          displayName: this.vpn.adDisplayName,
+          mail: this.vpn.adMail,
+          office: this.vpn.adOffice,
+          organizationalUnit: this.vpn.adOrganizationalUnit,
+          enabled: true,
+        };
+        this.setTitularModo('ad-seleccionado');
+      } else if (this.vpn.usuarioRed) {
+        this.selectedAdSamAccountName = this.vpn.usuarioRed.usuario;
+        this.adUserSelected = {
+          samAccountName: this.vpn.usuarioRed.usuario,
+          displayName: this.vpn.usuarioRed.nombre,
+          mail: null,
+          office: null,
+          organizationalUnit: null,
+          enabled: true,
+        };
         this.setTitularModo('ad-seleccionado');
       } else if (this.vpn.titularTipo === 'EXTERNO') {
         this.form.patchValue({
@@ -143,15 +158,15 @@ export class VpnFormComponent implements OnChanges {
         this.adBusquedaRealizada = false;
         return;
       }
-      this.usuarioRedService.getAll(term).subscribe((data) => {
+      this.service.searchUsuariosRed(term).subscribe((data) => {
         this.adResults = data;
         this.adBusquedaRealizada = true;
       });
     }, 300);
   }
 
-  onAdUserSelected(usuario: UsuarioRed): void {
-    this.selectedAdUserId = usuario.id;
+  onAdUserSelected(usuario: VpnUsuarioRedOption): void {
+    this.selectedAdSamAccountName = usuario.samAccountName;
     this.adUserSelected = usuario;
     this.adResults = [];
     this.adSearchTerm = '';
@@ -159,7 +174,7 @@ export class VpnFormComponent implements OnChanges {
   }
 
   onCambiarUsuario(): void {
-    this.selectedAdUserId = null;
+    this.selectedAdSamAccountName = null;
     this.adUserSelected = null;
     this.setTitularModo('buscando');
   }
@@ -226,7 +241,7 @@ export class VpnFormComponent implements OnChanges {
     const raw = this.form.getRawValue();
     const esExterno = this.titularModo === 'externo';
     const request = {
-      usuarioRedId: this.titularModo === 'ad-seleccionado' ? this.selectedAdUserId : null,
+      usuarioRedSamAccountName: this.titularModo === 'ad-seleccionado' ? this.selectedAdSamAccountName : null,
       titularTipo: esExterno ? ('EXTERNO' as const) : null,
       titularNombre: esExterno ? raw.titularNombre : null,
       titularApellidos: esExterno ? raw.titularApellidos : null,
@@ -298,7 +313,7 @@ export class VpnFormComponent implements OnChanges {
   }
 
   private resetAll(): void {
-    this.selectedAdUserId = null;
+    this.selectedAdSamAccountName = null;
     this.adUserSelected = null;
     this.adSearchTerm = '';
     this.adResults = [];

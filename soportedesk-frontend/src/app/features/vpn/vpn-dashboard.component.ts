@@ -11,65 +11,103 @@ import { VpnDashboardCompleto } from './vpn.model';
   standalone: true,
   imports: [CommonModule, BaseChartDirective],
   template: `
-    <div class="dashboard-toolbar">
-      <p>Distribucion de solicitudes por tipo de equipo y antivirus por vencer.</p>
-      <button type="button" class="btn btn-ghost" (click)="load()" [disabled]="loading">
-        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M23 4v6h-6" /><path d="M1 20v-6h6" />
-          <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
-        </svg>
-        {{ loading ? 'Cargando...' : 'Actualizar' }}
-      </button>
-    </div>
+    <div class="module-dash">
+      <div class="module-dash-toolbar">
+        <div class="module-dash-title">
+          <strong>Control operativo VPN</strong>
+          <span>Solicitudes, aprobaciones y vencimientos de antivirus que requieren seguimiento.</span>
+        </div>
+        <div class="module-dash-actions">
+          <span class="module-dash-updated" *ngIf="updatedAt">Actualizado {{ updatedAt | date:'HH:mm' }}</span>
+          <button type="button" class="module-dash-refresh" (click)="load()" [disabled]="loading">
+            <span class="module-dash-refresh-icon" aria-hidden="true"></span>
+            {{ loading ? 'Actualizando' : 'Actualizar' }}
+          </button>
+        </div>
+      </div>
 
-    <div class="notice error" *ngIf="error">No se pudo cargar. Intenta nuevamente.</div>
+      <div class="module-dash-notice" *ngIf="error">No se pudo cargar. Se mantiene la ultima vista disponible.</div>
 
-    <section class="module-stats" *ngIf="dashboard">
-      <div class="stat-pill"><strong>{{ dashboard.pendientes }}</strong><span>Pendientes</span></div>
-      <div class="stat-pill"><strong>{{ dashboard.aprobadas }}</strong><span>Aprobadas</span></div>
-      <div class="stat-pill"><strong>{{ dashboard.rechazadas }}</strong><span>Rechazadas</span></div>
-      <div class="stat-pill"><strong>{{ dashboard.observadas }}</strong><span>Observadas</span></div>
-      <div class="stat-pill"><strong>{{ dashboard.total }}</strong><span>Total</span></div>
-    </section>
+      <section class="module-dash-stats" *ngIf="dashboard">
+        <div class="module-dash-stat tone-warning"><span>Pendientes</span><strong>{{ dashboard.pendientes }}</strong><small>Por revisar</small></div>
+        <div class="module-dash-stat tone-success"><span>Aprobadas</span><strong>{{ dashboard.aprobadas }}</strong><small>Accesos habilitados</small></div>
+        <div class="module-dash-stat tone-danger"><span>Rechazadas</span><strong>{{ dashboard.rechazadas }}</strong><small>No proceden</small></div>
+        <div class="module-dash-stat tone-info"><span>Observadas</span><strong>{{ dashboard.observadas }}</strong><small>Con correccion</small></div>
+        <div class="module-dash-stat"><span>Total</span><strong>{{ dashboard.total }}</strong><small>Solicitudes registradas</small></div>
+      </section>
 
-    <section class="dashboard-grid" *ngIf="dashboard">
-      <article class="card chart-card">
-        <header>
-          <strong>Distribucion por tipo de equipo</strong>
-          <span class="muted">{{ dashboard.distribucionPorTipoEquipo.length }} tipos</span>
-        </header>
+      <section class="module-dash-grid" *ngIf="dashboard">
+        <article class="module-dash-card module-dash-chart">
+          <header class="module-dash-card__header">
+            <div>
+              <strong>Distribucion por tipo de equipo</strong>
+              <span>{{ dashboard.distribucionPorTipoEquipo.length }} tipos registrados</span>
+            </div>
+          </header>
         <canvas baseChart [data]="chartData" [options]="chartOptions" [type]="'bar'"></canvas>
       </article>
 
-      <div class="alert-list">
-        <ng-container *ngTemplateOutlet="alertCard; context: {
-          title: 'Antivirus vencidos',
-          total: dashboard.totalAntivirusVencidos,
-          rows: dashboard.antivirusVencidos
-        }" />
-        <ng-container *ngTemplateOutlet="alertCard; context: {
-          title: 'Antivirus por vencer',
-          total: dashboard.totalAntivirusPorVencer,
-          rows: dashboard.antivirusPorVencer
-        }" />
-      </div>
-    </section>
+        <div class="module-dash-side">
+          <article class="module-dash-highlight">
+            <strong>{{ dashboard.totalAntivirusVencidos + dashboard.totalAntivirusPorVencer }}</strong>
+            <span>Equipos con antivirus vencido o por vencer.</span>
+          </article>
 
-    <section class="empty-state" *ngIf="!dashboard && !loading">
-      <strong>Sin datos de dashboard</strong>
-      <span>El servicio devolvio un resumen vacio o no disponible.</span>
-    </section>
+          <article class="module-dash-card">
+            <header class="module-dash-card__header">
+              <div>
+                <strong>Composicion de solicitudes</strong>
+                <span>Avance general del flujo VPN</span>
+              </div>
+            </header>
+            <div class="module-dash-progress">
+              <div class="module-dash-progress-row">
+                <span>Resueltas</span><strong>{{ percent(dashboard.aprobadas + dashboard.rechazadas + dashboard.observadas, dashboard.total) }}%</strong>
+                <div class="module-dash-track"><i [style.width.%]="percent(dashboard.aprobadas + dashboard.rechazadas + dashboard.observadas, dashboard.total)"></i></div>
+              </div>
+              <div class="module-dash-progress-row">
+                <span>Pendientes</span><strong>{{ percent(dashboard.pendientes, dashboard.total) }}%</strong>
+                <div class="module-dash-track"><i [style.width.%]="percent(dashboard.pendientes, dashboard.total)"></i></div>
+              </div>
+            </div>
+          </article>
 
-    <ng-template #alertCard let-title="title" let-total="total" let-rows="rows">
-      <article class="card alert-card">
-        <header>
-          <strong>{{ title }}</strong>
+          <ng-container *ngTemplateOutlet="alertCard; context: {
+            title: 'Antivirus vencidos',
+            total: dashboard.totalAntivirusVencidos,
+            rows: dashboard.antivirusVencidos,
+            tone: 'tone-danger'
+          }" />
+          <ng-container *ngTemplateOutlet="alertCard; context: {
+            title: 'Antivirus por vencer',
+            total: dashboard.totalAntivirusPorVencer,
+            rows: dashboard.antivirusPorVencer,
+            tone: 'tone-warning'
+          }" />
+        </div>
+      </section>
+
+      <section class="empty-state" *ngIf="!dashboard && !loading">
+        <strong>Sin datos de dashboard</strong>
+        <span>El servicio devolvio un resumen vacio o no disponible.</span>
+      </section>
+    </div>
+
+    <ng-template #alertCard let-title="title" let-total="total" let-rows="rows" let-tone="tone">
+      <article class="module-dash-card">
+        <header class="module-dash-card__header">
+          <div>
+            <strong>{{ title }}</strong>
+            <span>Primeros registros por atender</span>
+          </div>
           <span class="badge badge-warning">{{ total }}</span>
         </header>
-        <button class="alert-row" type="button" *ngFor="let row of rows" (click)="goToRegistros(row.vpnId)">
+        <div class="module-dash-list">
+        <button class="module-dash-row clickable" [ngClass]="tone" type="button" *ngFor="let row of rows" (click)="goToRegistros(row.vpnId)">
           <strong>{{ row.titular }}</strong>
           <small class="muted">{{ row.detalle }}</small>
         </button>
+        </div>
         <p class="muted" *ngIf="!rows.length">Sin registros criticos.</p>
         <p class="muted" *ngIf="total > rows.length">+{{ total - rows.length }} mas</p>
       </article>
@@ -98,6 +136,7 @@ export class VpnDashboardComponent implements OnInit {
   dashboard: VpnDashboardCompleto | null = null;
   loading = false;
   error = false;
+  updatedAt: Date | null = null;
 
   chartData: ChartData<'bar', number[], string> = {
     labels: [],
@@ -126,6 +165,7 @@ export class VpnDashboardComponent implements OnInit {
       next: (dashboard) => {
         this.loading = false;
         this.dashboard = dashboard;
+        this.updatedAt = new Date();
         this.applyChart(dashboard);
       },
       error: () => {
@@ -147,5 +187,9 @@ export class VpnDashboardComponent implements OnInit {
       labels: rows.map((row) => row.tipoEquipo),
       datasets: [{ data: rows.map((row) => row.total), label: 'Solicitudes', backgroundColor: '#ef4444' }],
     };
+  }
+
+  percent(value: number, total: number): number {
+    return total > 0 ? Math.round((value / total) * 100) : 0;
   }
 }

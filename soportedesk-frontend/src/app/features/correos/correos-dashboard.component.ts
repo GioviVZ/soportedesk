@@ -10,62 +10,94 @@ import { CorreoDashboardCompleto } from './correo.model';
   standalone: true,
   imports: [CommonModule, BaseChartDirective],
   template: `
-    <div class="dashboard-toolbar">
-      <p>Licencias, distribucion por dependencia y cuentas que requieren seguimiento.</p>
-      <button type="button" class="btn btn-ghost" (click)="load()" [disabled]="loading">
-        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M23 4v6h-6" /><path d="M1 20v-6h6" />
-          <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
-        </svg>
-        {{ loading ? 'Cargando...' : 'Actualizar' }}
-      </button>
-    </div>
-
-    <div class="notice error" *ngIf="error">No se pudo cargar. Intenta nuevamente.</div>
-
-    <section class="module-stats" *ngIf="dashboard as d">
-      <div class="stat-pill"><strong>{{ d.kpis.licenciasTotales }}</strong><span>Licencias Totales</span></div>
-      <div class="stat-pill"><strong>{{ d.kpis.activasCount }}</strong><span>Activas</span></div>
-      <div class="stat-pill"><strong>{{ d.kpis.suspendidasCount }}</strong><span>Suspendidas</span></div>
-      <div class="stat-pill"><strong>{{ d.kpis.licenciasDisponibles }}</strong><span>Disponibles</span></div>
-      <div class="stat-pill"><strong>{{ d.kpis.sedeCentralCount }}</strong><span>Sede Central</span></div>
-      <div class="stat-pill"><strong>{{ d.kpis.eeasCount }}</strong><span>EEAs</span></div>
-    </section>
-
-    <section class="dashboard-grid" *ngIf="dashboard as d">
-      <article class="card chart-card">
-        <header>
-          <strong>Distribucion por dependencia</strong>
-          <span class="muted">{{ d.distribucionPorDependencia.length }} dependencias</span>
-        </header>
-        <canvas baseChart [data]="chartData" [options]="chartOptions" [type]="'bar'"></canvas>
-      </article>
-
-      <div class="alert-list">
-        <article class="card stat-highlight">
-          <strong>{{ d.porcentaje2FA.toFixed(1) }}%</strong>
-          <span>{{ d.cuentasCon2FA }} de {{ d.totalCuentas }} cuentas con verificacion en 2 pasos</span>
-        </article>
-
-        <article class="card alert-card">
-          <header>
-            <strong>Cuentas sin uso 30+ dias</strong>
-            <span class="badge badge-warning">{{ d.totalSinUso }}</span>
-          </header>
-          <div class="alert-row" *ngFor="let row of d.sinUso">
-            <strong>{{ row.nombreCompleto || row.email }}</strong>
-            <small class="muted">{{ row.detalle }}</small>
-          </div>
-          <p class="muted" *ngIf="!d.sinUso.length">Sin registros criticos.</p>
-          <p class="muted" *ngIf="d.totalSinUso > d.sinUso.length">+{{ d.totalSinUso - d.sinUso.length }} mas</p>
-        </article>
+    <div class="module-dash">
+      <div class="module-dash-toolbar">
+        <div class="module-dash-title">
+          <strong>Control operativo de correos</strong>
+          <span>Licencias, seguridad 2FA, distribucion por dependencia y cuentas sin uso.</span>
+        </div>
+        <div class="module-dash-actions">
+          <span class="module-dash-updated" *ngIf="updatedAt">Actualizado {{ updatedAt | date:'HH:mm' }}</span>
+          <button type="button" class="module-dash-refresh" (click)="load()" [disabled]="loading">
+            <span class="module-dash-refresh-icon" aria-hidden="true"></span>
+            {{ loading ? 'Actualizando' : 'Actualizar' }}
+          </button>
+        </div>
       </div>
-    </section>
 
-    <section class="empty-state" *ngIf="!dashboard && !loading">
-      <strong>Sin datos de dashboard</strong>
-      <span>El servicio devolvio un resumen vacio o no disponible.</span>
-    </section>
+      <div class="module-dash-notice" *ngIf="error">No se pudo cargar. Se mantiene la ultima vista disponible.</div>
+
+      <section class="module-dash-stats" *ngIf="dashboard as d">
+        <div class="module-dash-stat"><span>Licencias totales</span><strong>{{ d.kpis.licenciasTotales }}</strong><small>Capacidad disponible</small></div>
+        <div class="module-dash-stat tone-success"><span>Activas</span><strong>{{ d.kpis.activasCount }}</strong><small>Cuentas operativas</small></div>
+        <div class="module-dash-stat tone-warning"><span>Suspendidas</span><strong>{{ d.kpis.suspendidasCount }}</strong><small>Revisar estado</small></div>
+        <div class="module-dash-stat tone-info"><span>Disponibles</span><strong>{{ d.kpis.licenciasDisponibles }}</strong><small>Sin asignar</small></div>
+        <div class="module-dash-stat"><span>Sede Central</span><strong>{{ d.kpis.sedeCentralCount }}</strong><small>Asignaciones</small></div>
+        <div class="module-dash-stat"><span>EEAs</span><strong>{{ d.kpis.eeasCount }}</strong><small>Asignaciones</small></div>
+      </section>
+
+      <section class="module-dash-grid" *ngIf="dashboard as d">
+        <article class="module-dash-card module-dash-chart">
+          <header class="module-dash-card__header">
+            <div>
+              <strong>Distribucion por dependencia</strong>
+              <span>{{ d.distribucionPorDependencia.length }} dependencias registradas</span>
+            </div>
+          </header>
+          <canvas baseChart [data]="chartData" [options]="chartOptions" [type]="'bar'"></canvas>
+        </article>
+
+        <div class="module-dash-side">
+          <article class="module-dash-highlight">
+            <strong>{{ d.porcentaje2FA.toFixed(1) }}%</strong>
+            <span>{{ d.cuentasCon2FA }} de {{ d.totalCuentas }} cuentas con verificacion en 2 pasos.</span>
+          </article>
+
+          <article class="module-dash-card">
+            <header class="module-dash-card__header">
+              <div>
+                <strong>Uso de licencias</strong>
+                <span>Asignadas frente a capacidad total</span>
+              </div>
+            </header>
+            <div class="module-dash-progress">
+              <div class="module-dash-progress-row">
+                <span>Asignadas</span><strong>{{ percent(d.kpis.licenciasAsignadas, d.kpis.licenciasTotales) }}%</strong>
+                <div class="module-dash-track"><i [style.width.%]="percent(d.kpis.licenciasAsignadas, d.kpis.licenciasTotales)"></i></div>
+              </div>
+              <div class="module-dash-progress-row">
+                <span>Disponibles</span><strong>{{ percent(d.kpis.licenciasDisponibles, d.kpis.licenciasTotales) }}%</strong>
+                <div class="module-dash-track"><i [style.width.%]="percent(d.kpis.licenciasDisponibles, d.kpis.licenciasTotales)"></i></div>
+              </div>
+            </div>
+          </article>
+
+          <article class="module-dash-card">
+            <header class="module-dash-card__header">
+              <div>
+                <strong>Cuentas sin uso 30+ dias</strong>
+                <span>Primeras cuentas para revisar</span>
+              </div>
+              <span class="badge badge-warning">{{ d.totalSinUso }}</span>
+            </header>
+            <div class="module-dash-list">
+              <div class="module-dash-row tone-warning" *ngFor="let row of d.sinUso">
+                <strong>{{ row.nombreCompleto || row.email }}</strong>
+                <span>{{ row.email }}</span>
+                <small>{{ row.detalle }}</small>
+              </div>
+            </div>
+            <p class="muted" *ngIf="!d.sinUso.length">Sin registros criticos.</p>
+            <p class="muted" *ngIf="d.totalSinUso > d.sinUso.length">+{{ d.totalSinUso - d.sinUso.length }} mas</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="empty-state" *ngIf="!dashboard && !loading">
+        <strong>Sin datos de dashboard</strong>
+        <span>El servicio devolvio un resumen vacio o no disponible.</span>
+      </section>
+    </div>
   `,
   styleUrl: './correos.shared.scss',
 })
@@ -75,6 +107,7 @@ export class CorreosDashboardComponent implements OnInit {
   dashboard: CorreoDashboardCompleto | null = null;
   loading = false;
   error = false;
+  updatedAt: Date | null = null;
 
   chartData: ChartData<'bar', number[], string> = {
     labels: [],
@@ -103,6 +136,7 @@ export class CorreosDashboardComponent implements OnInit {
       next: (dashboard) => {
         this.loading = false;
         this.dashboard = dashboard;
+        this.updatedAt = new Date();
         this.applyChart(dashboard);
       },
       error: () => {
@@ -120,5 +154,9 @@ export class CorreosDashboardComponent implements OnInit {
       labels: rows.map((row) => row.dependencia),
       datasets: [{ data: rows.map((row) => row.total), label: 'Cuentas', backgroundColor: '#8b5cf6' }],
     };
+  }
+
+  percent(value: number, total: number): number {
+    return total > 0 ? Math.round((value / total) * 100) : 0;
   }
 }

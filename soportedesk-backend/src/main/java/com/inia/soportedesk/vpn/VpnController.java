@@ -34,6 +34,12 @@ public class VpnController {
         return service.getKpis();
     }
 
+    @GetMapping("/usuarios-red/buscar")
+    @PreAuthorize(CAN_VIEW)
+    public List<VpnUsuarioRedOption> buscarUsuariosRed(@RequestParam String termino) {
+        return service.buscarUsuariosRed(termino);
+    }
+
     @GetMapping("/{id}")
     @PreAuthorize(CAN_VIEW)
     public Vpn findById(@PathVariable Long id, Authentication auth) {

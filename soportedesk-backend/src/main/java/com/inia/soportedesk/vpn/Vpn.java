@@ -121,9 +121,28 @@ public class Vpn {
     @Column(name = "titular_cargo", nullable = false)
     private String titularCargo;
 
+    @Column(name = "ad_sam_account_name")
+    private String adSamAccountName;
+
+    @Column(name = "ad_display_name")
+    private String adDisplayName;
+
+    @Column(name = "ad_mail")
+    private String adMail;
+
+    @Column(name = "ad_office")
+    private String adOffice;
+
+    @Column(name = "ad_organizational_unit")
+    private String adOrganizationalUnit;
+
     @Transient
     public String getTitularNombreCompleto() {
         if (usuarioRed != null) return usuarioRed.getNombre();
+        if ("AD".equals(titularTipo)) {
+            if (adDisplayName != null && !adDisplayName.isBlank()) return adDisplayName;
+            if (adSamAccountName != null && !adSamAccountName.isBlank()) return adSamAccountName;
+        }
         String apellidos = titularApellidos == null ? "" : " " + titularApellidos;
         return (titularNombre == null ? "" : titularNombre) + apellidos;
     }
