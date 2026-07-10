@@ -2,9 +2,8 @@ import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
-import { EquipoDetalle, EquipoEnrichmentDto, EquipoSoftware, EquipoTeclado, HistorialItem } from './equipo.model';
+import { EquipoDetalle, EquipoOficina, EquipoSoftware, EquipoTeclado } from './equipo.model';
 import { EquipoService } from './equipo.service';
-import { AuthService } from '../../core/auth/auth.service';
 
 interface MonitorRow {
   nombre: string;
@@ -24,25 +23,12 @@ export class EquipoDetailComponent implements OnInit {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
   private service = inject(EquipoService);
-  auth = inject(AuthService);
 
   equipo = signal<EquipoDetalle | null>(null);
   software = signal<EquipoSoftware[]>([]);
   teclado = signal<EquipoTeclado | null>(null);
+  oficina = signal<EquipoOficina | null>(null);
   tipoEfectivo = signal<string | null>(null);
-  enrichment = signal<EquipoEnrichmentDto>({
-    tipoOverride: null,
-    fabricanteOverride: null,
-    modeloOverride: null,
-    codigoPatrimonial: null,
-    estadoDepuracion: null,
-    observaciones: null,
-    revisadoPor: null,
-    fechaRevision: null,
-  });
-  historial = signal<HistorialItem[]>([]);
-  savingEnrichment = signal(false);
-  saveSuccess = signal(false);
   softwareFilter = signal('');
 
   private equipoId = 0;
@@ -60,29 +46,9 @@ export class EquipoDetailComponent implements OnInit {
       this.equipo.set(response.equipo);
       this.software.set(response.software ?? []);
       this.teclado.set(response.teclado);
+      this.oficina.set(response.oficina);
       this.tipoEfectivo.set(response.tipoEfectivo);
-      if (response.enrichment) this.enrichment.set(response.enrichment);
     });
-    this.service.getHistorial(this.equipoId).subscribe((h) => this.historial.set(h));
-  }
-
-  saveEnrichment(): void {
-    this.savingEnrichment.set(true);
-    this.saveSuccess.set(false);
-    this.service.saveEnrichment(this.equipoId, this.enrichment()).subscribe({
-      next: (saved) => {
-        this.enrichment.set(saved);
-        this.service.getHistorial(this.equipoId).subscribe((h) => this.historial.set(h));
-        this.savingEnrichment.set(false);
-        this.saveSuccess.set(true);
-        setTimeout(() => this.saveSuccess.set(false), 3000);
-      },
-      error: () => this.savingEnrichment.set(false),
-    });
-  }
-
-  updateField(field: keyof EquipoEnrichmentDto, value: string): void {
-    this.enrichment.update((e) => ({ ...e, [field]: value || null }));
   }
 
   back(): void {
@@ -99,6 +65,19 @@ export class EquipoDetailComponent implements OnInit {
 
   empty(value: unknown): string {
     return value == null || value === '' ? '-' : String(value);
+  }
+
+  private static readonly INVENTORY_JUNK_VALUES = new Set([
+    '0000000000',
+    'no asset information',
+    'chassis asset tag',
+    'default string',
+    'to be filled by o.e.m.',
+  ]);
+
+  inventoryLabel(value: string | null | undefined): string {
+    if (value == null || value.trim() === '') return '-';
+    return EquipoDetailComponent.INVENTORY_JUNK_VALUES.has(value.trim().toLowerCase()) ? '-' : value;
   }
 
   formatDate(iso: string | null | undefined): string {
