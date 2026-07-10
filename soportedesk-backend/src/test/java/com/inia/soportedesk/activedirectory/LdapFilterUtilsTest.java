@@ -14,7 +14,7 @@ class LdapFilterUtilsTest {
 
     @Test
     void combinedUserSearchFilterUsesOnlyTermsWithTwoCharacters() {
-        ActiveDirectoryService service = new ActiveDirectoryService(null, null, null);
+        ActiveDirectoryService service = new ActiveDirectoryService(null, null, null, null, null, null, null);
 
         assertThat(service.buildUserSearchFilter("gv", "Gustavo", " "))
                 .isEqualTo("(&(objectCategory=person)(objectClass=user)(sAMAccountName=*gv*)(displayName=*Gustavo*))");
@@ -22,7 +22,7 @@ class LdapFilterUtilsTest {
 
     @Test
     void combinedUserSearchFilterEscapesEachTerm() {
-        ActiveDirectoryService service = new ActiveDirectoryService(null, null, null);
+        ActiveDirectoryService service = new ActiveDirectoryService(null, null, null, null, null, null, null);
 
         assertThat(service.buildUserSearchFilter("ad*", null, "Lab(1)"))
                 .isEqualTo("(&(objectCategory=person)(objectClass=user)(sAMAccountName=*ad\\2a*)(physicalDeliveryOfficeName=*Lab\\281\\29*))");

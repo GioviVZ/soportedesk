@@ -6,10 +6,12 @@ import com.inia.soportedesk.activedirectory.dto.ActiveDirectoryDashboardCompleto
 import com.inia.soportedesk.activedirectory.dto.ActiveDirectoryGroup;
 import com.inia.soportedesk.activedirectory.dto.ActiveDirectoryOu;
 import com.inia.soportedesk.activedirectory.dto.ActiveDirectoryResponse;
+import com.inia.soportedesk.activedirectory.dto.AdSyncResponse;
 import com.inia.soportedesk.activedirectory.dto.AdUserAlerta;
 import com.inia.soportedesk.activedirectory.dto.AdUserSearchResult;
 import com.inia.soportedesk.activedirectory.dto.AdUserSummary;
 import com.inia.soportedesk.activedirectory.dto.AdUser;
+import com.inia.soportedesk.activedirectory.dto.CreateAdUserRequest;
 import com.inia.soportedesk.activedirectory.dto.GroupRequest;
 import com.inia.soportedesk.activedirectory.dto.MoveUserRequest;
 import com.inia.soportedesk.activedirectory.dto.OuUsuariosCount;
@@ -20,9 +22,12 @@ import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import javax.naming.NamingEnumeration;
 import javax.naming.PartialResultException;
@@ -30,6 +35,7 @@ import javax.naming.directory.AttributeInUseException;
 import javax.naming.directory.Attribute;
 import javax.naming.directory.Attributes;
 import javax.naming.directory.BasicAttribute;
+import javax.naming.directory.BasicAttributes;
 import javax.naming.directory.DirContext;
 import javax.naming.directory.ModificationItem;
 import javax.naming.directory.NoSuchAttributeException;
@@ -40,6 +46,7 @@ import javax.naming.ldap.LdapContext;
 import javax.naming.ldap.LdapName;
 import javax.naming.ldap.PagedResultsControl;
 import javax.naming.ldap.PagedResultsResponseControl;
+import javax.naming.ldap.Rdn;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
@@ -57,6 +64,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class ActiveDirectoryService {
     private static final Logger log = LoggerFactory.getLogger(ActiveDirectoryService.class);
+    private static final int NORMAL_ACCOUNT = 0x0200;
     private static final int ACCOUNT_DISABLED = 0x0002;
     private static final int PASSWORD_EXPIRED_DAYS = 90;
     private static final int INACTIVE_ACCOUNT_DAYS = 60;
@@ -71,53 +79,36 @@ public class ActiveDirectoryService {
     private final LdapContextFactory contextFactory;
     private final MovimientoAuditoriaService auditoriaService;
     private final HttpServletRequest request;
+    private final AdUsuarioCacheRepository cacheRepository;
+    private final AdCacheMetadataRepository metadataRepository;
+    private final AdSyncJobStatus jobStatus;
+    private final ApplicationEventPublisher eventPublisher;
 
     public AdUserSearchResult buscarUsuarios(String usuario, String nombre, String oficina) {
         if (!hasSearchTerm(usuario) && !hasSearchTerm(nombre) && !hasSearchTerm(oficina)) {
             return new AdUserSearchResult(List.of(), false);
         }
-        List<AdUserSummary> users = new ArrayList<>();
-        DirContext context = null;
-        try {
-            context = contextFactory.openDirContext();
-            SearchControls controls = controls(new String[]{
-                    "sAMAccountName", "displayName", "mail", "physicalDeliveryOfficeName",
-                    "distinguishedName", "userAccountControl", "lockoutTime"
-            }, 50);
-            NamingEnumeration<SearchResult> results = context.search(
-                    contextFactory.baseDn(),
-                    buildUserSearchFilter(usuario, nombre, oficina),
-                    controls
-            );
-            while (results.hasMore()) {
-                users.add(toUserSummary(results.next()));
+        List<AdUserSummary> users = cacheRepository.search(
+                        normalizeSearchTerm(usuario),
+                        normalizeSearchTerm(nombre),
+                        normalizeSearchTerm(oficina),
+                        PageRequest.of(0, 50)
+                ).stream()
+                .map(this::toUserSummary)
+                .toList();
+        if (users.isEmpty() && hasSearchTerm(usuario) && !hasSearchTerm(nombre) && !hasSearchTerm(oficina)) {
+            AdUser refreshed = refreshCachedUserFromAd(usuario.trim());
+            if (refreshed != null) {
+                users = List.of(toUserSummary(refreshed));
             }
-            return new AdUserSearchResult(users, users.size() >= 50);
-        } catch (PartialResultException ignored) {
-            return new AdUserSearchResult(users, users.size() >= 50);
-        } catch (Exception e) {
-            log.warn("Error buscando usuarios en Active Directory", e);
-            return new AdUserSearchResult(List.of(), false);
-        } finally {
-            closeQuietly(context);
         }
+        return new AdUserSearchResult(users, users.size() >= 50);
     }
 
     public ActiveDirectoryResponse<AdUser> buscarUsuarioPorSam(String samAccountName) {
-        DirContext context = null;
-        try {
-            context = contextFactory.openDirContext();
-            SearchResult result = findUser(context, samAccountName, USER_ATTRIBUTES);
-            if (result == null) {
-                return ActiveDirectoryResponse.error("Usuario no encontrado.");
-            }
-            return ActiveDirectoryResponse.ok("Usuario encontrado correctamente.", toUser(result));
-        } catch (Exception e) {
-            log.warn("Error consultando Active Directory para samAccountName={}", samAccountName, e);
-            return ActiveDirectoryResponse.error("Error consultando Active Directory: " + e.getMessage());
-        } finally {
-            closeQuietly(context);
-        }
+        return cacheRepository.findFirstBySamAccountNameIgnoreCase(samAccountName)
+                .map(user -> ActiveDirectoryResponse.ok("Usuario encontrado correctamente.", toUser(user)))
+                .orElseGet(() -> ActiveDirectoryResponse.error("Usuario no encontrado en la cache local. Sincroniza Active Directory."));
     }
 
     public ActiveDirectoryResponse<AdUser> desbloquearUsuario(String samAccountName) {
@@ -192,6 +183,79 @@ public class ActiveDirectoryService {
         });
     }
 
+    public ActiveDirectoryResponse<AdUser> crearUsuario(CreateAdUserRequest body) {
+        String sam = body.samAccountName().trim();
+        String userDn = null;
+        DirContext context = null;
+        try {
+            context = contextFactory.openDirContext();
+            if (findUser(context, sam, new String[]{"distinguishedName"}) != null) {
+                audit("CREAR_USUARIO", sam, null, 400, "El usuario ya existe.");
+                return ActiveDirectoryResponse.error("El usuario ya existe en Active Directory.");
+            }
+
+            String targetOu = body.ouDestinoDn().trim();
+            validateTargetOu(targetOu);
+            String givenName = body.givenName().trim();
+            String surname = body.surname().trim();
+            String displayName = firstNonBlank(body.displayName(), givenName + " " + surname, sam);
+            String upn = firstNonBlank(body.userPrincipalName(), sam + "@" + domainFromBaseDn());
+            userDn = "CN=" + Rdn.escapeValue(displayName) + "," + targetOu;
+
+            BasicAttributes attrs = new BasicAttributes(true);
+            BasicAttribute objectClass = new BasicAttribute("objectClass");
+            objectClass.add("top");
+            objectClass.add("person");
+            objectClass.add("organizationalPerson");
+            objectClass.add("user");
+            attrs.put(objectClass);
+            attrs.put("cn", displayName);
+            attrs.put("sAMAccountName", sam);
+            attrs.put("givenName", givenName);
+            attrs.put("sn", surname);
+            attrs.put("displayName", displayName);
+            attrs.put("userPrincipalName", upn);
+            attrs.put("userAccountControl", String.valueOf(NORMAL_ACCOUNT | ACCOUNT_DISABLED));
+            putIfPresent(attrs, "mail", body.mail());
+            putIfPresent(attrs, "title", body.title());
+            putIfPresent(attrs, "department", body.department());
+            putIfPresent(attrs, "physicalDeliveryOfficeName", body.office());
+            putIfPresent(attrs, "telephoneNumber", body.telephoneNumber());
+            putIfPresent(attrs, "mobile", body.mobile());
+            putIfPresent(attrs, "description", body.description());
+
+            context.createSubcontext(userDn, attrs);
+            try {
+                String quotedPassword = "\"" + body.temporaryPassword() + "\"";
+                context.modifyAttributes(userDn, new ModificationItem[]{
+                        new ModificationItem(DirContext.REPLACE_ATTRIBUTE,
+                                new BasicAttribute("unicodePwd", quotedPassword.getBytes(StandardCharsets.UTF_16LE))),
+                        new ModificationItem(DirContext.REPLACE_ATTRIBUTE,
+                                new BasicAttribute("pwdLastSet", body.forceChange() ? "0" : "-1")),
+                        new ModificationItem(DirContext.REPLACE_ATTRIBUTE,
+                                new BasicAttribute("userAccountControl", String.valueOf(body.enabled() ? NORMAL_ACCOUNT : NORMAL_ACCOUNT | ACCOUNT_DISABLED)))
+                });
+            } catch (Exception e) {
+                destroyCreatedUserQuietly(context, userDn);
+                throw e;
+            }
+
+            audit("CREAR_USUARIO", sam, userDn, 201, "Usuario creado correctamente.");
+            eventPublisher.publishEvent(new AdCambioEvent(sam, "CREAR_USUARIO"));
+            AdUser refreshed = refreshCachedUserFromAd(sam, userDn);
+            return ActiveDirectoryResponse.ok("Usuario creado correctamente.", refreshed);
+        } catch (IllegalArgumentException e) {
+            audit("CREAR_USUARIO", sam, userDn, 400, e.getMessage());
+            return ActiveDirectoryResponse.error(e.getMessage());
+        } catch (Exception e) {
+            log.warn("Error creando usuario en Active Directory para samAccountName={}", sam, e);
+            audit("CREAR_USUARIO", sam, userDn, 500, e.getMessage());
+            return ActiveDirectoryResponse.error("Error creando usuario en Active Directory: " + e.getMessage());
+        } finally {
+            closeQuietly(context);
+        }
+    }
+
     public List<ActiveDirectoryGroup> buscarGrupos(String nombre) {
         if (nombre == null || nombre.trim().length() < 2) {
             return List.of();
@@ -252,44 +316,30 @@ public class ActiveDirectoryService {
     }
 
     public ActiveDirectoryDashboard obtenerDashboard() {
-        int enabled = countPaged("(&(objectCategory=person)(objectClass=user)(sAMAccountName=*)(!(userAccountControl:" + LDAP_MATCHING_RULE_BIT_AND + ":=2)))");
-        int disabled = countPaged("(&(objectCategory=person)(objectClass=user)(sAMAccountName=*)(userAccountControl:" + LDAP_MATCHING_RULE_BIT_AND + ":=2))");
-        int locked = countPaged("(&(objectCategory=person)(objectClass=user)(sAMAccountName=*)(lockoutTime>=1))");
-        int dcs = countPaged("(&(objectCategory=computer)(userAccountControl:" + LDAP_MATCHING_RULE_BIT_AND + ":=8192))");
+        int enabled = safeInt(cacheRepository.countByEnabledTrue());
+        int disabled = safeInt(cacheRepository.countByEnabledFalse());
+        int locked = safeInt(cacheRepository.countByLockedTrue());
+        int dcs = metadataInt("controladores_dominio");
         return new ActiveDirectoryDashboard(enabled, locked, disabled, dcs);
     }
 
     public ActiveDirectoryDashboardCompleto obtenerDashboardCompleto() {
         try {
-            List<DashboardUserRow> users = collectDashboardUsers();
-            int enabled = (int) users.stream().filter(DashboardUserRow::enabled).count();
-            int disabled = users.size() - enabled;
-            int locked = (int) users.stream().filter(DashboardUserRow::locked).count();
-            int dcs = countPaged("(&(objectCategory=computer)(userAccountControl:" + LDAP_MATCHING_RULE_BIT_AND + ":=8192))");
+            int enabled = safeInt(cacheRepository.countByEnabledTrue());
+            int disabled = safeInt(cacheRepository.countByEnabledFalse());
+            int locked = safeInt(cacheRepository.countByLockedTrue());
+            int dcs = metadataInt("controladores_dominio");
 
-            List<OuUsuariosCount> ous = users.stream()
-                    .filter(DashboardUserRow::enabled)
-                    .collect(Collectors.groupingBy(row -> blankToDefault(row.organizationalUnit(), "Sin OU"), HashMap::new, Collectors.counting()))
-                    .entrySet()
-                    .stream()
-                    .sorted(Map.Entry.<String, Long>comparingByValue(Comparator.reverseOrder()).thenComparing(Map.Entry.comparingByKey()))
-                    .map(entry -> new OuUsuariosCount(entry.getKey(), entry.getValue().intValue()))
+            List<OuUsuariosCount> ous = cacheRepository.countEnabledByOu().stream()
+                    .map(row -> new OuUsuariosCount(blankToDefault((String) row[0], "Sin OU"), safeInt((Long) row[1])))
+                    .sorted(Comparator.comparing(OuUsuariosCount::activos).reversed().thenComparing(OuUsuariosCount::ou))
                     .toList();
 
-            List<DashboardUserRow> passwords = users.stream()
-                    .filter(row -> row.daysSincePasswordChange() != null && row.daysSincePasswordChange() > PASSWORD_EXPIRED_DAYS)
-                    .sorted(Comparator.comparing(DashboardUserRow::daysSincePasswordChange, Comparator.reverseOrder()))
-                    .toList();
-
-            List<DashboardUserRow> inactive = users.stream()
-                    .filter(row -> row.daysSinceLastLogon() != null && row.daysSinceLastLogon() > INACTIVE_ACCOUNT_DAYS)
-                    .sorted(Comparator.comparing(DashboardUserRow::daysSinceLastLogon, Comparator.reverseOrder()))
-                    .toList();
-
-            List<DashboardUserRow> blocked = users.stream()
-                    .filter(DashboardUserRow::locked)
-                    .sorted(Comparator.comparing(DashboardUserRow::lockoutTime, Comparator.reverseOrder()))
-                    .toList();
+            long totalPasswords = cacheRepository.countByDaysSincePasswordChangeGreaterThan((long) PASSWORD_EXPIRED_DAYS);
+            long totalInactive = cacheRepository.countByDaysSinceLastLogonGreaterThan((long) INACTIVE_ACCOUNT_DAYS);
+            List<AdUsuarioCache> passwords = cacheRepository.findTop10ByDaysSincePasswordChangeGreaterThanOrderByDaysSincePasswordChangeDesc((long) PASSWORD_EXPIRED_DAYS);
+            List<AdUsuarioCache> inactive = cacheRepository.findTop10ByDaysSinceLastLogonGreaterThanOrderByDaysSinceLastLogonDesc((long) INACTIVE_ACCOUNT_DAYS);
+            List<AdUsuarioCache> blocked = cacheRepository.findTop10ByLockedTrueOrderByLockoutTimeDesc();
 
             return new ActiveDirectoryDashboardCompleto(
                     enabled,
@@ -297,20 +347,33 @@ public class ActiveDirectoryService {
                     locked,
                     dcs,
                     ous,
-                    topAlerts(passwords, "dias sin cambiar clave", DashboardUserRow::daysSincePasswordChange),
-                    passwords.size(),
-                    topAlerts(inactive, "dias sin iniciar sesion", DashboardUserRow::daysSinceLastLogon),
-                    inactive.size(),
+                    topAlerts(passwords, "dias sin cambiar clave", AdUsuarioCache::getDaysSincePasswordChange),
+                    safeInt(totalPasswords),
+                    topAlerts(inactive, "dias sin iniciar sesion", AdUsuarioCache::getDaysSinceLastLogon),
+                    safeInt(totalInactive),
                     blocked.stream()
                             .limit(10)
-                            .map(row -> new AdUserAlerta(row.samAccountName(), row.displayName(), lockoutDetail(row.lockoutTime())))
+                            .map(row -> new AdUserAlerta(row.getSamAccountName(), row.getDisplayName(), lockoutDetail(row.getLockoutTime())))
                             .toList(),
-                    blocked.size()
+                    locked
             );
         } catch (Exception e) {
             log.warn("Error construyendo dashboard completo de Active Directory", e);
             return emptyDashboardCompleto();
         }
+    }
+
+    @Transactional
+    public AdSyncResponse sincronizarCache() {
+        LocalDateTime syncedAt = LocalDateTime.now();
+        int estimatedTotal = countPaged("(&(objectCategory=person)(objectClass=user)(sAMAccountName=*))");
+        jobStatus.setTotal(estimatedTotal);
+        List<AdUsuarioCache> users = collectCacheUsersFromAd(syncedAt);
+        int dcs = countPaged("(&(objectCategory=computer)(userAccountControl:" + LDAP_MATCHING_RULE_BIT_AND + ":=8192))");
+        cacheRepository.saveAll(users);
+        metadataRepository.save(new AdCacheMetadata("controladores_dominio", String.valueOf(dcs), syncedAt));
+        metadataRepository.save(new AdCacheMetadata("ultima_sincronizacion", syncedAt.toString(), syncedAt));
+        return new AdSyncResponse(users.size(), dcs, syncedAt);
     }
 
     private ActiveDirectoryResponse<AdUser> changeEnabled(String samAccountName, boolean enabled) {
@@ -355,10 +418,9 @@ public class ActiveDirectoryService {
             userDn = result.getNameInNamespace();
             operation.apply(context, userDn, result);
             audit(action, samAccountName, userDn, 200, successMessage);
-            ActiveDirectoryResponse<AdUser> refreshed = buscarUsuarioPorSam(samAccountName);
-            return refreshed.success()
-                    ? ActiveDirectoryResponse.ok(successMessage, refreshed.data())
-                    : ActiveDirectoryResponse.ok(successMessage, null);
+            eventPublisher.publishEvent(new AdCambioEvent(samAccountName, action));
+            AdUser refreshed = refreshCachedUserFromAd(samAccountName);
+            return ActiveDirectoryResponse.ok(successMessage, refreshed);
         } catch (IllegalArgumentException | IllegalStateException e) {
             audit(action, samAccountName, userDn, 400, e.getMessage());
             return ActiveDirectoryResponse.error(e.getMessage());
@@ -372,9 +434,18 @@ public class ActiveDirectoryService {
     }
 
     private SearchResult findUser(DirContext context, String samAccountName, String[] returningAttributes) throws Exception {
+        SearchResult cachedResult = findUserByCachedDn(context, samAccountName, returningAttributes);
+        if (cachedResult != null) {
+            return cachedResult;
+        }
         String filter = "(&(objectCategory=person)(objectClass=user)(sAMAccountName=" + LdapFilterUtils.escape(samAccountName) + "))";
-        NamingEnumeration<SearchResult> results = context.search(contextFactory.baseDn(), filter, controls(returningAttributes, 1));
-        return results.hasMore() ? results.next() : null;
+        try {
+            NamingEnumeration<SearchResult> results = context.search(contextFactory.baseDn(), filter, controls(returningAttributes, 1));
+            return results.hasMore() ? results.next() : null;
+        } catch (PartialResultException e) {
+            log.debug("Busqueda AD parcial para samAccountName={}; se continua sin resultado directo.", samAccountName);
+            return null;
+        }
     }
 
     String buildUserSearchFilter(String usuario, String nombre, String oficina) {
@@ -400,16 +471,17 @@ public class ActiveDirectoryService {
         return value != null && value.trim().length() >= 2;
     }
 
-    private List<DashboardUserRow> collectDashboardUsers() throws Exception {
-        List<DashboardUserRow> users = new ArrayList<>();
+    private String normalizeSearchTerm(String value) {
+        return hasSearchTerm(value) ? value.trim() : null;
+    }
+
+    private List<AdUsuarioCache> collectCacheUsersFromAd(LocalDateTime syncedAt) {
+        List<AdUsuarioCache> users = new ArrayList<>();
         LdapContext context = null;
         try {
             context = contextFactory.openLdapContext();
             byte[] cookie = null;
-            SearchControls controls = controls(new String[]{
-                    "sAMAccountName", "displayName", "userAccountControl", "lockoutTime",
-                    "badPwdCount", "pwdLastSet", "lastLogonTimestamp", "distinguishedName"
-            }, 0);
+            SearchControls controls = controls(USER_ATTRIBUTES, 0);
             do {
                 context.setRequestControls(new Control[]{new PagedResultsControl(500, cookie, Control.CRITICAL)});
                 NamingEnumeration<SearchResult> results = context.search(
@@ -417,13 +489,17 @@ public class ActiveDirectoryService {
                         "(&(objectCategory=person)(objectClass=user)(sAMAccountName=*))",
                         controls
                 );
+                int pageCount = 0;
                 try {
                     while (results.hasMore()) {
-                        users.add(toDashboardUserRow(results.next()));
+                        users.add(toCache(results.next(), syncedAt));
+                        pageCount++;
                     }
                 } catch (PartialResultException ignored) {
+                    jobStatus.incrementarProcesados(pageCount);
                     break;
                 }
+                jobStatus.incrementarProcesados(pageCount);
                 cookie = null;
                 Control[] responseControls = context.getResponseControls();
                 if (responseControls != null) {
@@ -434,10 +510,77 @@ public class ActiveDirectoryService {
                     }
                 }
             } while (cookie != null && cookie.length > 0);
+        } catch (Exception e) {
+            log.warn("Error sincronizando cache de Active Directory", e);
         } finally {
             closeQuietly(context);
         }
         return users;
+    }
+
+    private AdUser refreshCachedUserFromAd(String samAccountName) {
+        DirContext context = null;
+        try {
+            context = contextFactory.openDirContext();
+            SearchResult result = findUser(context, samAccountName, USER_ATTRIBUTES);
+            if (result == null) {
+                cacheRepository.findFirstBySamAccountNameIgnoreCase(samAccountName)
+                        .ifPresent(cacheRepository::delete);
+                return null;
+            }
+            AdUsuarioCache cache = toCache(result, LocalDateTime.now());
+            cacheRepository.save(cache);
+            return toUser(cache);
+        } catch (Exception e) {
+            log.warn("No se pudo refrescar cache AD para samAccountName={}", samAccountName, e);
+            return cacheRepository.findFirstBySamAccountNameIgnoreCase(samAccountName)
+                    .map(this::toUser)
+                    .orElse(null);
+        } finally {
+            closeQuietly(context);
+        }
+    }
+
+    private AdUser refreshCachedUserFromAd(String samAccountName, String distinguishedName) {
+        if (distinguishedName == null || distinguishedName.isBlank()) {
+            return refreshCachedUserFromAd(samAccountName);
+        }
+        DirContext context = null;
+        try {
+            context = contextFactory.openDirContext();
+            Attributes attrs = context.getAttributes(distinguishedName, USER_ATTRIBUTES);
+            AdUsuarioCache cache = toCache(attrs, distinguishedName, LocalDateTime.now());
+            cacheRepository.save(cache);
+            return toUser(cache);
+        } catch (Exception e) {
+            log.warn("No se pudo refrescar cache AD por DN para samAccountName={}", samAccountName, e);
+            return refreshCachedUserFromAd(samAccountName);
+        } finally {
+            closeQuietly(context);
+        }
+    }
+
+    private SearchResult findUserByCachedDn(DirContext context, String samAccountName, String[] returningAttributes) {
+        if (cacheRepository == null || samAccountName == null || samAccountName.isBlank()) {
+            return null;
+        }
+        try {
+            return cacheRepository.findFirstBySamAccountNameIgnoreCase(samAccountName)
+                    .map(AdUsuarioCache::getDistinguishedName)
+                    .filter(dn -> dn != null && !dn.isBlank())
+                    .map(dn -> {
+                        try {
+                            SearchResult result = new SearchResult("", null, context.getAttributes(dn, returningAttributes));
+                            result.setNameInNamespace(dn);
+                            return result;
+                        } catch (Exception ignored) {
+                            return null;
+                        }
+                    })
+                    .orElse(null);
+        } catch (RuntimeException ignored) {
+            return null;
+        }
     }
 
     private List<ActiveDirectoryGroup> searchGroups(String filter, int limit) {
@@ -528,38 +671,102 @@ public class ActiveDirectoryService {
         );
     }
 
-    private AdUserSummary toUserSummary(SearchResult result) throws Exception {
-        Attributes attrs = result.getAttributes();
+    private AdUserSummary toUserSummary(AdUsuarioCache user) {
         return new AdUserSummary(
-                attr(attrs, "sAMAccountName"),
-                attr(attrs, "displayName"),
-                attr(attrs, "mail"),
-                attr(attrs, "physicalDeliveryOfficeName"),
-                extractOus(result.getNameInNamespace()),
-                (parseInt(attr(attrs, "userAccountControl")) & ACCOUNT_DISABLED) == 0,
-                parseLong(attr(attrs, "lockoutTime")) > 0
+                user.getSamAccountName(),
+                user.getDisplayName(),
+                user.getMail(),
+                user.getOffice(),
+                user.getOrganizationalUnit(),
+                user.isEnabled(),
+                user.isLocked()
         );
     }
 
-    private DashboardUserRow toDashboardUserRow(SearchResult result) throws Exception {
-        Attributes attrs = result.getAttributes();
+    private AdUsuarioCache toCache(SearchResult result, LocalDateTime syncedAt) throws Exception {
+        return toCache(result.getAttributes(), result.getNameInNamespace(), syncedAt);
+    }
+
+    private AdUsuarioCache toCache(Attributes attrs, String distinguishedName, LocalDateTime syncedAt) throws Exception {
         long lockoutTime = parseLong(attr(attrs, "lockoutTime"));
-        return new DashboardUserRow(
-                attr(attrs, "sAMAccountName"),
-                attr(attrs, "displayName"),
-                (parseInt(attr(attrs, "userAccountControl")) & ACCOUNT_DISABLED) == 0,
-                lockoutTime > 0,
-                lockoutTime,
-                daysSinceFileTime(attr(attrs, "pwdLastSet")),
-                daysSinceFileTime(attr(attrs, "lastLogonTimestamp")),
-                extractOus(result.getNameInNamespace())
+        AdUsuarioCache cache = new AdUsuarioCache();
+        cache.setSamAccountName(attr(attrs, "sAMAccountName"));
+        cache.setDisplayName(attr(attrs, "displayName"));
+        cache.setGivenName(attr(attrs, "givenName"));
+        cache.setSurname(attr(attrs, "sn"));
+        cache.setMail(attr(attrs, "mail"));
+        cache.setDepartment(attr(attrs, "department"));
+        cache.setCompany(attr(attrs, "company"));
+        cache.setTitle(attr(attrs, "title"));
+        cache.setTelephoneNumber(attr(attrs, "telephoneNumber"));
+        cache.setMobile(attr(attrs, "mobile"));
+        cache.setOffice(attr(attrs, "physicalDeliveryOfficeName"));
+        cache.setDescription(attr(attrs, "description"));
+        cache.setDistinguishedName(distinguishedName);
+        cache.setUserPrincipalName(attr(attrs, "userPrincipalName"));
+        cache.setEnabled((parseInt(attr(attrs, "userAccountControl")) & ACCOUNT_DISABLED) == 0);
+        cache.setLocked(lockoutTime > 0);
+        cache.setOrganizationalUnit(extractOus(distinguishedName));
+        cache.setWhenCreated(formatAdDate(attr(attrs, "whenCreated")));
+        cache.setWhenChanged(formatAdDate(attr(attrs, "whenChanged")));
+        cache.setPwdLastSet(fileTimeToDate(attr(attrs, "pwdLastSet")));
+        cache.setLastLogonTimestamp(fileTimeToDate(attr(attrs, "lastLogonTimestamp")));
+        cache.setAccountExpires(accountExpiresToDate(attr(attrs, "accountExpires")));
+        cache.setBadPwdCount(attr(attrs, "badPwdCount"));
+        cache.setDaysSincePasswordChange(daysSinceFileTime(attr(attrs, "pwdLastSet")));
+        cache.setDaysSinceLastLogon(daysSinceFileTime(attr(attrs, "lastLogonTimestamp")));
+        cache.setLockoutTime(lockoutTime);
+        cache.setGroupsText(String.join("\n", groups(attrs)));
+        cache.setSyncedAt(syncedAt);
+        return cache;
+    }
+
+    private AdUser toUser(AdUsuarioCache user) {
+        return new AdUser(
+                user.getSamAccountName(),
+                user.getDisplayName(),
+                user.getGivenName(),
+                user.getSurname(),
+                user.getMail(),
+                user.getDepartment(),
+                user.getCompany(),
+                user.getTitle(),
+                user.getTelephoneNumber(),
+                user.getMobile(),
+                user.getOffice(),
+                user.getDescription(),
+                user.getDistinguishedName(),
+                user.getUserPrincipalName(),
+                user.isEnabled(),
+                user.isLocked(),
+                user.getOrganizationalUnit(),
+                user.getWhenCreated(),
+                user.getWhenChanged(),
+                user.getPwdLastSet(),
+                user.getLastLogonTimestamp(),
+                user.getAccountExpires(),
+                user.getBadPwdCount(),
+                user.getDaysSincePasswordChange(),
+                groups(user.getGroupsText())
         );
     }
 
-    private List<AdUserAlerta> topAlerts(List<DashboardUserRow> rows, String suffix, AlertDaysExtractor extractor) {
+    private AdUserSummary toUserSummary(AdUser user) {
+        return new AdUserSummary(
+                user.samAccountName(),
+                user.displayName(),
+                user.mail(),
+                user.office(),
+                user.organizationalUnit(),
+                user.enabled(),
+                user.locked()
+        );
+    }
+
+    private List<AdUserAlerta> topAlerts(List<AdUsuarioCache> rows, String suffix, AlertDaysExtractor extractor) {
         return rows.stream()
                 .limit(10)
-                .map(row -> new AdUserAlerta(row.samAccountName(), row.displayName(), extractor.days(row) + " " + suffix))
+                .map(row -> new AdUserAlerta(row.getSamAccountName(), row.getDisplayName(), extractor.days(row) + " " + suffix))
                 .toList();
     }
 
@@ -571,7 +778,10 @@ public class ActiveDirectoryService {
         return value == null || value.isBlank() ? fallback : value;
     }
 
-    private String lockoutDetail(long lockoutTime) {
+    private String lockoutDetail(Long lockoutTime) {
+        if (lockoutTime == null || lockoutTime <= 0) {
+            return "Cuenta bloqueada";
+        }
         String date = fileTimeToDate(String.valueOf(lockoutTime));
         return date == null ? "Cuenta bloqueada" : "Bloqueada desde " + date;
     }
@@ -587,6 +797,48 @@ public class ActiveDirectoryService {
     private void addReplace(List<ModificationItem> mods, String attribute, String value) {
         if (value != null && !value.trim().isEmpty()) {
             mods.add(new ModificationItem(DirContext.REPLACE_ATTRIBUTE, new BasicAttribute(attribute, value.trim())));
+        }
+    }
+
+    private void putIfPresent(BasicAttributes attrs, String attribute, String value) {
+        if (value != null && !value.trim().isEmpty()) {
+            attrs.put(attribute, value.trim());
+        }
+    }
+
+    private void validateTargetOu(String targetOu) {
+        if (targetOu == null || targetOu.isBlank()) {
+            throw new IllegalArgumentException("Selecciona una OU destino.");
+        }
+        if (!targetOu.toLowerCase().endsWith(contextFactory.baseDn().toLowerCase())) {
+            throw new IllegalArgumentException("La OU destino debe pertenecer a " + contextFactory.baseDn());
+        }
+    }
+
+    private String firstNonBlank(String... values) {
+        for (String value : values) {
+            if (value != null && !value.trim().isEmpty()) {
+                return value.trim();
+            }
+        }
+        return "";
+    }
+
+    private String domainFromBaseDn() {
+        String domain = java.util.Arrays.stream(contextFactory.baseDn().split(","))
+                .map(String::trim)
+                .filter(part -> part.regionMatches(true, 0, "DC=", 0, 3))
+                .map(part -> part.substring(3))
+                .filter(part -> !part.isBlank())
+                .collect(Collectors.joining("."));
+        return domain.isBlank() ? "local" : domain;
+    }
+
+    private void destroyCreatedUserQuietly(DirContext context, String userDn) {
+        try {
+            context.destroySubcontext(userDn);
+        } catch (Exception cleanupError) {
+            log.warn("No se pudo revertir usuario AD creado parcialmente: {}", userDn, cleanupError);
         }
     }
 
@@ -606,6 +858,26 @@ public class ActiveDirectoryService {
             values.add(extractCn(all.next().toString()));
         }
         return values;
+    }
+
+    private List<String> groups(String groupsText) {
+        if (groupsText == null || groupsText.isBlank()) {
+            return List.of();
+        }
+        return groupsText.lines()
+                .filter(line -> !line.isBlank())
+                .toList();
+    }
+
+    private int metadataInt(String key) {
+        return metadataRepository.findById(key)
+                .map(AdCacheMetadata::getValor)
+                .map(this::parseInt)
+                .orElse(0);
+    }
+
+    private int safeInt(long value) {
+        return value > Integer.MAX_VALUE ? Integer.MAX_VALUE : (int) value;
     }
 
     private String extractOus(String dn) {
@@ -734,7 +1006,7 @@ public class ActiveDirectoryService {
 
     @FunctionalInterface
     private interface AlertDaysExtractor {
-        Long days(DashboardUserRow row);
+        Long days(AdUsuarioCache row);
     }
 
     record DashboardUserRow(

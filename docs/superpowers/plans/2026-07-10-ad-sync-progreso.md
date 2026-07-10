@@ -661,10 +661,26 @@ Expected: BUILD SUCCESS (los dos campos nuevos se inyectan por constructor graci
 Run: `cd soportedesk-backend && mvn -o test`
 Expected: BUILD SUCCESS, todos los tests existentes siguen pasando (incluyendo los de Tasks 1-2).
 
+**Regresión encontrada al ejecutar este paso:** `LdapFilterUtilsTest.java` (ya existente, no
+listado en la sección "File Structure" porque no se conocía que instanciara el servicio
+directamente) tiene dos tests que hacen `new ActiveDirectoryService(null, null, null, null,
+null)` para probar `buildUserSearchFilter` de forma aislada. Al agregar `jobStatus` y
+`eventPublisher` al constructor generado por `@RequiredArgsConstructor`, esas dos llamadas dejan
+de compilar (esperan 5 argumentos, ahora son 7). Como `buildUserSearchFilter` no toca ninguno de
+los campos inyectados, la corrección es agregar dos `null` más a cada llamada — sin tocar la
+lógica de los tests:
+
+```java
+        ActiveDirectoryService service = new ActiveDirectoryService(null, null, null, null, null, null, null);
+```
+
+(reemplazar en ambos métodos de test de `soportedesk-backend/src/test/java/com/inia/soportedesk/activedirectory/LdapFilterUtilsTest.java`)
+
 - [ ] **Step 8: Commit**
 
 ```bash
-git add soportedesk-backend/src/main/java/com/inia/soportedesk/activedirectory/ActiveDirectoryService.java
+git add soportedesk-backend/src/main/java/com/inia/soportedesk/activedirectory/ActiveDirectoryService.java \
+        soportedesk-backend/src/test/java/com/inia/soportedesk/activedirectory/LdapFilterUtilsTest.java
 git commit -m "feat(ad): report sync progress and publish change events from write operations"
 ```
 
