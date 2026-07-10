@@ -469,9 +469,18 @@ public class AdSyncCoordinator {
         if (pendingAutoSync != null) {
             pendingAutoSync.cancel(false);
         }
-        pendingAutoSync = scheduler.schedule(this::iniciar, DEBOUNCE_SECONDS, TimeUnit.SECONDS);
+        pendingAutoSync = scheduler.schedule(() -> { iniciar(); }, DEBOUNCE_SECONDS, TimeUnit.SECONDS);
     }
+```
 
+Nota: usar `() -> { iniciar(); }` (lambda de bloque) en vez de `this::iniciar`. Como `iniciar()`
+devuelve `AdSyncStatus`, la referencia a método `this::iniciar` es ambigua entre
+`Runnable`/`Callable<AdSyncStatus>`, y Java resuelve silenciosamente al overload
+`schedule(Callable, long, TimeUnit)` — descubierto porque el Step 4 (test) fallaba con
+"Argument(s) are different!" aunque el mock imprimía el mismo lambda en ambos lados. Un lambda
+de bloque sin `return` es inequívocamente `Runnable`, forzando el overload correcto.
+
+```java
     @PreDestroy
     public void shutdown() {
         executor.shutdownNow();
