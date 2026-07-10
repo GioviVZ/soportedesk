@@ -1,0 +1,132 @@
+.info-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+}
+
+.info-grid div,
+.ubicacion-cell {
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 12px;
+  background: #fff;
+}
+
+.ubicacion-cell {
+  margin-top: 12px;
+}
+
+.info-grid span,
+.ubicacion-cell > span {
+  display: block;
+  color: #64748b;
+  font-size: 0.78rem;
+  font-weight: 700;
+  margin-bottom: 5px;
+}
+
+.info-grid input,
+.info-grid select,
+.info-grid textarea {
+  width: 100%;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  padding: 7px 10px;
+  font-size: 0.9rem;
+  background: #f8fafc;
+  box-sizing: border-box;
+  color: #0f172a;
+}
+
+.info-grid textarea {
+  resize: vertical;
+}
+
+.obs-cell {
+  grid-column: 1 / -1;
+}
+
+.enrichment-meta {
+  margin-top: 10px;
+  font-size: 0.82rem;
+  color: #64748b;
+}
+
+.enrichment-actions {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-top: 14px;
+  flex-wrap: wrap;
+}
+
+.save-btn {
+  background: var(--color-equipos, #4f46e5);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 9px 20px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.save-btn:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.save-ok {
+  color: #166534;
+  font-weight: 600;
+  font-size: 0.87rem;
+}
+
+.ver-ficha-btn {
+  margin-left: auto;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  padding: 8px 14px;
+  background: #fff;
+  color: #334155;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.historial-section {
+  margin-top: 20px;
+  border-top: 1px dashed #e2e8f0;
+  padding-top: 14px;
+}
+
+.historial-section h4 {
+  margin: 0 0 10px;
+  font-size: 0.9rem;
+  color: #475569;
+}
+
+.simple-table {
+  overflow-x: auto;
+  max-width: 100%;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  table-layout: fixed;
+}
+
+th,
+td {
+  padding: 10px 12px;
+  border-bottom: 1px solid #e2e8f0;
+  text-align: left;
+  overflow-wrap: anywhere;
+}
+
+th {
+  color: #475569;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+}
