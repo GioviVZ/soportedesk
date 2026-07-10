@@ -1,11 +1,18 @@
 package com.inia.soportedesk.herramientas;
 
+import com.inia.soportedesk.glpi.VwInvComputerFull;
+import com.inia.soportedesk.glpi.VwInvComputerFullRepository;
+import jakarta.servlet.http.HttpServletRequest;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.net.InetAddress;
 import java.nio.charset.Charset;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -15,12 +22,16 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 @Service
+@RequiredArgsConstructor
 public class HerramientasService {
 
     private static final Pattern WINDOWS_AVERAGE = Pattern.compile("(?:Media|Average)\\s*=\\s*(\\d+)ms", Pattern.CASE_INSENSITIVE);
     private static final Pattern UNIX_AVERAGE = Pattern.compile("=\\s*[\\d.]+/([\\d.]+)/[\\d.]+/[\\d.]+\\s*ms");
     private static final Pattern RECEIVED_ENGLISH = Pattern.compile("Sent\\s*=\\s*(\\d+),\\s*Received\\s*=\\s*(\\d+),\\s*Lost\\s*=\\s*(\\d+)", Pattern.CASE_INSENSITIVE);
     private static final Pattern RECEIVED_SPANISH = Pattern.compile("enviados\\s*=\\s*(\\d+),\\s*recibidos\\s*=\\s*(\\d+),\\s*perdidos\\s*=\\s*(\\d+)", Pattern.CASE_INSENSITIVE);
+    private static final DateTimeFormatter CAPTURE_FORMAT = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
+
+    private final VwInvComputerFullRepository glpiRepository;
 
     public PingResult ping(String rawHost) {
         String host = rawHost.trim();
@@ -77,6 +88,52 @@ public class HerramientasService {
                 .build();
     }
 
+    public EquipoDatosResponse datosEquipo(String referencia, HttpServletRequest request) {
+        String requestIp = clientIp(request);
+        String lookup = firstNonBlank(referencia, requestIp);
+        String resolvedHost = resolveHost(lookup);
+        Optional<VwInvComputerFull> glpi = glpiRepository.findByHostOrIp(lookup).stream().findFirst();
+        if (glpi.isEmpty() && !resolvedHost.equals(lookup)) {
+            glpi = glpiRepository.findByHostOrIp(resolvedHost).stream().findFirst();
+        }
+
+        String ip = lookup.matches("\\d{1,3}(\\.\\d{1,3}){3}") ? lookup : requestIp;
+        String host = resolvedHost;
+        String modelo = null;
+        String serie = null;
+        String fabricante = null;
+        String tipo = null;
+        String sede = null;
+        String usuarioContacto = null;
+        String fuente = "Solicitud web";
+
+        if (glpi.isPresent()) {
+            VwInvComputerFull equipo = glpi.get();
+            host = firstNonBlank(equipo.getNombreEquipo(), host);
+            ip = firstNonBlank(equipo.getIpEquipo(), ip);
+            modelo = equipo.getModeloEquipo();
+            serie = equipo.getNumeroserie();
+            fabricante = equipo.getFabricanteEquipo();
+            tipo = equipo.getTipoEquipo();
+            sede = firstNonBlank(equipo.getSedeNombreCompleto(), equipo.getSedeNombre());
+            usuarioContacto = equipo.getUsuarioContacto();
+            fuente = "GLPI";
+        }
+
+        return new EquipoDatosResponse(
+                blankToDash(host),
+                blankToDash(ip),
+                blankToDash(modelo),
+                blankToDash(serie),
+                blankToDash(fabricante),
+                blankToDash(tipo),
+                blankToDash(sede),
+                blankToDash(usuarioContacto),
+                fuente,
+                LocalDateTime.now().format(CAPTURE_FORMAT)
+        );
+    }
+
     private PacketStats parsePacketStats(List<String> output) {
         for (String line : output) {
             Matcher english = RECEIVED_ENGLISH.matcher(line);
@@ -115,6 +172,43 @@ public class HerramientasService {
 
     private boolean isWindows() {
         return System.getProperty("os.name", "").toLowerCase(Locale.ROOT).contains("win");
+    }
+
+    private String clientIp(HttpServletRequest request) {
+        String forwarded = request.getHeader("X-Forwarded-For");
+        if (forwarded != null && !forwarded.isBlank()) {
+            return forwarded.split(",")[0].trim();
+        }
+        String realIp = request.getHeader("X-Real-IP");
+        if (realIp != null && !realIp.isBlank()) {
+            return realIp.trim();
+        }
+        return request.getRemoteAddr();
+    }
+
+    private String resolveHost(String value) {
+        if (value == null || value.isBlank()) {
+            return "-";
+        }
+        try {
+            String host = InetAddress.getByName(value.trim()).getHostName();
+            return firstNonBlank(host, value.trim());
+        } catch (Exception ignored) {
+            return value.trim();
+        }
+    }
+
+    private String firstNonBlank(String... values) {
+        for (String value : values) {
+            if (value != null && !value.trim().isEmpty()) {
+                return value.trim();
+            }
+        }
+        return "-";
+    }
+
+    private String blankToDash(String value) {
+        return value == null || value.isBlank() ? "-" : value.trim();
     }
 
     private record PacketStats(Optional<Integer> sent, Optional<Integer> received, Optional<Integer> lost) {

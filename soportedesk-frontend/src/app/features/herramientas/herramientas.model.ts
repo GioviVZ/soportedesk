@@ -8,3 +8,16 @@ export interface PingResult {
   status: string;
   output: string[];
 }
+
+export interface EquipoDatosResult {
+  host: string;
+  ip: string;
+  modelo: string;
+  serie: string;
+  fabricante: string;
+  tipo: string;
+  sede: string;
+  usuarioContacto: string;
+  fuente: string;
+  capturadoEn: string;
+}

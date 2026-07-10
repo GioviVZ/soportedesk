@@ -11,10 +11,10 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import * as THREE from 'three';
 import QRCode from 'qrcode';
-import { PingResult } from './herramientas.model';
+import { EquipoDatosResult, PingResult } from './herramientas.model';
 import { HerramientasService } from './herramientas.service';
 
-type ToolTab = 'ping' | 'qr' | 'vencimientos' | 'gpu' | 'ram' | 'teclado' | 'mouse' | 'microfono' | 'camara';
+type ToolTab = 'equipo' | 'ping' | 'qr' | 'vencimientos' | 'gpu' | 'ram' | 'teclado' | 'mouse' | 'microfono' | 'camara';
 type TestState = 'idle' | 'running' | 'done' | 'error';
 type QrFormat = 'png' | 'jpg' | 'svg';
 
@@ -139,6 +139,7 @@ export class HerramientasComponent implements AfterViewInit, OnDestroy {
   @ViewChild('cameraVideo') cameraVideo?: ElementRef<HTMLVideoElement>;
 
   readonly tabs: ToolTabItem[] = [
+    { id: 'equipo', label: 'Equipo', detail: 'Datos' },
     { id: 'ping', label: 'Ping', detail: 'Red' },
     { id: 'qr', label: 'QR', detail: 'Link' },
     { id: 'vencimientos', label: 'Vencimientos', detail: 'Informes' },
@@ -152,7 +153,11 @@ export class HerramientasComponent implements AfterViewInit, OnDestroy {
 
   readonly keyRows = KEY_ROWS;
 
-  activeTab: ToolTab = 'ping';
+  activeTab: ToolTab = 'equipo';
+  equipoReferencia = '';
+  equipoState: TestState = 'idle';
+  equipoDatos: EquipoDatosResult | null = null;
+  equipoError = '';
   pingHost = '8.8.8.8';
   pingState: TestState = 'idle';
   pingResult: PingResult | null = null;
@@ -305,6 +310,22 @@ export class HerramientasComponent implements AfterViewInit, OnDestroy {
       error: (err) => {
         this.pingState = 'error';
         this.pingError = err?.error?.message ?? 'No se pudo ejecutar la prueba.';
+      },
+    });
+  }
+
+  capturarDatosEquipo(): void {
+    this.equipoState = 'running';
+    this.equipoError = '';
+    this.service.datosEquipo(this.equipoReferencia).subscribe({
+      next: (result) => {
+        this.equipoState = 'done';
+        this.equipoDatos = result;
+        this.addReport('Datos equipo', `${result.host} / ${result.ip} / ${result.modelo} / serie ${result.serie} / ${result.capturadoEn}`);
+      },
+      error: (err) => {
+        this.equipoState = 'error';
+        this.equipoError = err?.error?.message ?? 'No se pudieron capturar los datos del equipo.';
       },
     });
   }

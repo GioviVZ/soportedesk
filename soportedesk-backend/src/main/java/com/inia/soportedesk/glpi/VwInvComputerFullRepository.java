@@ -30,6 +30,15 @@ public interface VwInvComputerFullRepository extends JpaRepository<VwInvComputer
             @Param("subdependencia") String subdependencia,
             @Param("fabricante") String fabricante);
 
+    @Query("""
+        SELECT v FROM VwInvComputerFull v
+        WHERE v.eliminado = 0
+          AND (LOWER(v.nombreEquipo) = LOWER(:referencia)
+               OR v.ipEquipo = :referencia)
+        ORDER BY v.ultimaActualizacion DESC
+    """)
+    List<VwInvComputerFull> findByHostOrIp(@Param("referencia") String referencia);
+
     @Query("SELECT DISTINCT v.sedeNombre FROM VwInvComputerFull v WHERE v.eliminado = 0 AND v.sedeNombre IS NOT NULL ORDER BY v.sedeNombre")
     List<String> findDistinctSedes();
 

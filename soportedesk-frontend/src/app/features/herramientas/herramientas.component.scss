@@ -352,6 +352,36 @@ button:disabled {
   margin: 16px 0;
 }
 
+.equipo-layout {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.equipo-main {
+  display: grid;
+  grid-column: 1 / -1;
+  gap: 5px;
+  padding: 16px;
+  border: 1px solid rgba(22, 163, 74, .28);
+  border-radius: var(--radius-sm);
+  background: var(--color-success-light);
+
+  span,
+  small {
+    color: var(--color-text-secondary);
+    font-size: 12px;
+    font-weight: 800;
+  }
+
+  strong {
+    color: var(--color-text);
+    font-size: 24px;
+    overflow-wrap: anywhere;
+  }
+}
+
 .metric,
 .mouse-grid div,
 .gpu-stats div {
@@ -649,6 +679,7 @@ button:disabled {
   }
 
   .mouse-grid,
+  .equipo-layout,
   .metric-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -696,6 +727,7 @@ button:disabled {
   }
 
   .tool-tabs,
+  .equipo-layout,
   .metric-grid,
   .mouse-grid {
     grid-template-columns: 1fr;

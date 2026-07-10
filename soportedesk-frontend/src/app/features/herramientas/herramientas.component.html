@@ -28,6 +28,50 @@
     </button>
   </nav>
 
+  <section class="tool-panel" [class.active]="activeTab === 'equipo'">
+    <div class="panel-heading">
+      <div>
+        <h3>Datos del equipo</h3>
+        <p>Captura host, IP, fecha y cruza modelo/serie con inventario GLPI cuando hay coincidencia.</p>
+      </div>
+      <span class="status-pill" [class.ok]="equipoDatos" [class.bad]="equipoState === 'error'">
+        {{ equipoState === 'running' ? 'Capturando' : (equipoDatos ? equipoDatos.fuente : 'Listo') }}
+      </span>
+    </div>
+
+    <div class="ping-box">
+      <label>
+        Host o IP a buscar
+        <input
+          type="text"
+          [(ngModel)]="equipoReferencia"
+          placeholder="Opcional: usa la IP detectada si lo dejas vacio"
+          (keyup.enter)="capturarDatosEquipo()"
+        />
+      </label>
+      <button type="button" class="primary-btn" (click)="capturarDatosEquipo()" [disabled]="equipoState === 'running'">
+        {{ equipoState === 'running' ? 'Capturando...' : 'Capturar datos' }}
+      </button>
+    </div>
+
+    <p class="error-text" *ngIf="equipoError">{{ equipoError }}</p>
+
+    <div class="equipo-layout" *ngIf="equipoDatos">
+      <div class="equipo-main">
+        <span>Equipo</span>
+        <strong>{{ equipoDatos.host }}</strong>
+        <small>{{ equipoDatos.ip }} - {{ equipoDatos.capturadoEn }}</small>
+      </div>
+      <div class="metric"><span>Modelo</span><strong>{{ equipoDatos.modelo }}</strong></div>
+      <div class="metric"><span>Serie</span><strong>{{ equipoDatos.serie }}</strong></div>
+      <div class="metric"><span>Fabricante</span><strong>{{ equipoDatos.fabricante }}</strong></div>
+      <div class="metric"><span>Tipo</span><strong>{{ equipoDatos.tipo }}</strong></div>
+      <div class="metric"><span>Sede</span><strong>{{ equipoDatos.sede }}</strong></div>
+      <div class="metric"><span>Usuario</span><strong>{{ equipoDatos.usuarioContacto }}</strong></div>
+      <div class="metric"><span>Fuente</span><strong>{{ equipoDatos.fuente }}</strong></div>
+    </div>
+  </section>
+
   <section class="tool-panel" [class.active]="activeTab === 'ping'">
     <div class="panel-heading">
       <div>
