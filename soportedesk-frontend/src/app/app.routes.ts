@@ -39,16 +39,36 @@ export const routes: Routes = [
           import('./features/wifi/wifi-list.component').then((m) => m.WifiListComponent),
       },
       {
+        path: 'equipos',
+        loadComponent: () =>
+          import('./features/equipos/equipos-shell.component').then((m) => m.EquiposShellComponent),
+        children: [
+          { path: '', redirectTo: 'inventario', pathMatch: 'full' },
+          {
+            path: 'inventario',
+            canActivate: [moduloGuard('equipos')],
+            loadComponent: () =>
+              import('./features/equipos/equipos-inventario.component').then((m) => m.EquiposInventarioComponent),
+          },
+          {
+            path: 'mantenimiento',
+            canActivate: [moduloGuard('equipos', { write: true })],
+            loadComponent: () =>
+              import('./features/equipos/equipos-mantenimiento.component').then((m) => m.EquiposMantenimientoComponent),
+          },
+          {
+            path: 'dashboard',
+            canActivate: [moduloGuard('equipos', { write: true })],
+            loadComponent: () =>
+              import('./features/equipos/equipos-dashboard.component').then((m) => m.EquiposDashboardComponent),
+          },
+        ],
+      },
+      {
         path: 'equipos/:id',
         canActivate: [moduloGuard('equipos')],
         loadComponent: () =>
           import('./features/equipos/equipo-detail.component').then((m) => m.EquipoDetailComponent),
-      },
-      {
-        path: 'equipos',
-        canActivate: [moduloGuard('equipos')],
-        loadComponent: () =>
-          import('./features/equipos/equipos-list.component').then((m) => m.EquiposListComponent),
       },
       {
         path: 'vpn',
