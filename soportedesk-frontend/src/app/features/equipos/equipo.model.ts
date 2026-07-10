@@ -66,6 +66,13 @@ export interface EquipoEnrichmentDto {
   fabricanteOverride: string | null;
   modeloOverride: string | null;
   codigoPatrimonial: string | null;
+  sedeId: number | null;
+  sedeNombre: string | null;
+  dependenciaId: number | null;
+  dependenciaNombre: string | null;
+  subdependenciaId: number | null;
+  subdependenciaNombre: string | null;
+  numeroSerieOverride: string | null;
   estadoDepuracion: string | null;
   observaciones: string | null;
   revisadoPor: string | null;
@@ -92,6 +99,9 @@ export interface EquipoSaludItem {
   sinCodigoPatrimonial: boolean;
   sinUsuario: boolean;
   sinSede: boolean;
+  sinDependencia: boolean;
+  sinSubdependencia: boolean;
+  sinNumeroSerie: boolean;
   estadoDepuracion: string | null;
 }
 
@@ -101,7 +111,6 @@ export interface EquipoDetalleResponse {
   teclado: EquipoTeclado | null;
   oficina: EquipoOficina | null;
   tipoEfectivo: string | null;
-  enrichment: EquipoEnrichmentDto | null;
 }
 
 export interface EquipoKpis {
