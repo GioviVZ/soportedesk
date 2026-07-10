@@ -38,9 +38,12 @@
           <span class="tag-warn" *ngIf="s.sinCodigoPatrimonial">Sin patrimonial</span>
           <span class="tag-warn" *ngIf="s.sinUsuario">Sin usuario</span>
           <span class="tag-warn" *ngIf="s.sinSede">Sin sede</span>
+          <span class="tag-warn" *ngIf="s.sinDependencia">Sin dependencia</span>
+          <span class="tag-warn" *ngIf="s.sinSubdependencia">Sin subdependencia</span>
+          <span class="tag-warn" *ngIf="s.sinNumeroSerie">Sin nro. serie</span>
         </td>
         <td>{{ s.estadoDepuracion || '-' }}</td>
-        <td><button type="button" class="view-link" (click)="onViewSalud(s)">Ver</button></td>
+        <td><button type="button" class="view-link" (click)="abrirModal(s)">Ver</button></td>
       </tr>
     </tbody>
   </table>
@@ -48,3 +51,11 @@
 <ng-template #sinAlertas>
   <p class="salud-ok">Todo el inventario está al día. No hay alertas.</p>
 </ng-template>
+
+<app-equipo-enrichment-modal
+  [open]="modalOpen()"
+  [computerId]="selectedComputerId()"
+  [nombreEquipo]="selectedNombreEquipo()"
+  (closed)="cerrarModal()"
+  (saved)="onGuardado()"
+/>

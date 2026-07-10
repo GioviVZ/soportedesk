@@ -1,21 +1,23 @@
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Router } from '@angular/router';
 import { EquipoSaludItem } from './equipo.model';
 import { EquipoService } from './equipo.service';
+import { EquipoEnrichmentModalComponent } from './equipo-enrichment-modal.component';
 
 @Component({
   selector: 'app-equipos-mantenimiento',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, EquipoEnrichmentModalComponent],
   templateUrl: './equipos-mantenimiento.component.html',
   styleUrl: './equipos.shared.scss',
 })
 export class EquiposMantenimientoComponent implements OnInit {
   private service = inject(EquipoService);
-  private router = inject(Router);
 
   salud = signal<EquipoSaludItem[]>([]);
+  modalOpen = signal(false);
+  selectedComputerId = signal(0);
+  selectedNombreEquipo = signal('');
 
   saludKpis = computed(() => {
     const s = this.salud();
@@ -41,8 +43,18 @@ export class EquiposMantenimientoComponent implements OnInit {
     this.service.getSalud().subscribe((data) => this.salud.set(data));
   }
 
-  onViewSalud(item: EquipoSaludItem): void {
-    this.router.navigate(['/equipos', item.computerID]);
+  abrirModal(item: EquipoSaludItem): void {
+    this.selectedComputerId.set(item.computerID);
+    this.selectedNombreEquipo.set(item.nombreEquipo);
+    this.modalOpen.set(true);
+  }
+
+  cerrarModal(): void {
+    this.modalOpen.set(false);
+  }
+
+  onGuardado(): void {
+    this.loadSalud();
   }
 
   mesesLabel(val: number): string {
