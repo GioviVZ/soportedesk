@@ -1,0 +1,188 @@
+import { CommonModule } from '@angular/common';
+import { Component, EventEmitter, Input, OnInit, Output, inject } from '@angular/core';
+import { FormsModule } from '@angular/forms';
+import { SectionCardComponent } from '../../shared/section-card/section-card.component';
+import { CatalogoService } from '../../core/catalogos/catalogo.service';
+import { Dependencia, Subdependencia } from '../../core/models/catalogo.model';
+import { ActiveDirectoryService } from './active-directory.service';
+import { AdPanelResult, AdUser, UpdateUserInfoRequest } from './active-directory.model';
+
+@Component({
+  selector: 'app-ad-edit-info-panel',
+  standalone: true,
+  imports: [CommonModule, FormsModule, SectionCardComponent],
+  template: `
+    <form class="modal-form form-grid" (ngSubmit)="submit()">
+      <app-section-card title="Datos de AD" class="full">
+        <svg icon xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+          <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4Z" />
+        </svg>
+
+        <div class="notice error full" *ngIf="error">{{ error }}</div>
+
+        <div class="field"><label>Nombre mostrado</label><input name="displayName" [(ngModel)]="form.displayName" /></div>
+        <div class="field"><label>Cargo</label><input name="title" [(ngModel)]="form.title" /></div>
+        <div class="field">
+          <label>Dependencia</label>
+          <select name="dependenciaId" [(ngModel)]="dependenciaId" (ngModelChange)="onDependenciaChange($event)">
+            <option [ngValue]="null">Seleccione...</option>
+            <option *ngFor="let dependencia of dependencias" [ngValue]="dependencia.id">{{ dependencia.nombre }}</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Subdependencia</label>
+          <select name="subdependenciaId" [(ngModel)]="subdependenciaId" (ngModelChange)="onSubdependenciaChange($event)" [disabled]="!dependenciaId">
+            <option [ngValue]="null">Usar dependencia seleccionada</option>
+            <option *ngFor="let subdependencia of subdependencias" [ngValue]="subdependencia.id">{{ subdependencia.nombre }}</option>
+          </select>
+        </div>
+        <div class="field"><label>Telefono</label><input name="telephoneNumber" [(ngModel)]="form.telephoneNumber" /></div>
+        <div class="field"><label>Celular</label><input name="mobile" [(ngModel)]="form.mobile" /></div>
+        <div class="field"><label>Correo</label><input name="mail" [(ngModel)]="form.mail" /></div>
+        <div class="field full"><label>Descripcion</label><textarea name="description" rows="3" [(ngModel)]="form.description"></textarea></div>
+      </app-section-card>
+
+      <footer class="modal-actions full">
+        <button type="button" class="btn btn-ghost" (click)="cancelled.emit()">Cancelar</button>
+        <button type="submit" class="btn btn-primary" [disabled]="working">Guardar</button>
+      </footer>
+    </form>
+  `,
+  styleUrl: './usuarios-red.shared.scss',
+})
+export class AdEditInfoPanelComponent implements OnInit {
+  private adService = inject(ActiveDirectoryService);
+  private catalogoService = inject(CatalogoService);
+
+  @Input({ required: true }) user!: AdUser;
+  @Output() saved = new EventEmitter<AdPanelResult>();
+  @Output() cancelled = new EventEmitter<void>();
+
+  form: UpdateUserInfoRequest = {};
+  dependencias: Dependencia[] = [];
+  subdependencias: Subdependencia[] = [];
+  dependenciaId: number | null = null;
+  subdependenciaId: number | null = null;
+  working = false;
+  error = '';
+
+  ngOnInit(): void {
+    this.form = {
+      displayName: this.user.displayName,
+      title: this.user.title,
+      department: this.user.department,
+      office: this.user.office,
+      telephoneNumber: this.user.telephoneNumber,
+      mobile: this.user.mobile,
+      mail: this.user.mail,
+      description: this.user.description,
+    };
+    this.catalogoService.getDependencias().subscribe({
+      next: (items) => {
+        this.dependencias = this.sortByName(items);
+        this.syncCatalogSelectionFromInfo();
+      },
+      error: () => (this.dependencias = []),
+    });
+  }
+
+  onDependenciaChange(value: number | null): void {
+    this.dependenciaId = this.normalizeSelectId(value);
+    this.subdependenciaId = null;
+    this.subdependencias = [];
+    const dependencia = this.findDependencia(this.dependenciaId);
+    this.form = { ...this.form, department: dependencia?.nombre ?? null, office: dependencia?.nombre ?? null };
+    if (this.dependenciaId) {
+      this.catalogoService.getSubdependencias(this.dependenciaId).subscribe((items) => (this.subdependencias = this.sortByName(items)));
+    }
+  }
+
+  onSubdependenciaChange(value: number | null): void {
+    this.subdependenciaId = this.normalizeSelectId(value);
+    const subdependencia = this.findSubdependencia(this.subdependenciaId);
+    this.form = { ...this.form, office: subdependencia?.nombre || this.form.department || null };
+  }
+
+  submit(): void {
+    this.error = '';
+    this.working = true;
+    const department = this.blankToNull(this.form.department);
+    const office = this.blankToNull(this.form.office) ?? department;
+    const request: UpdateUserInfoRequest = {
+      displayName: this.blankToNull(this.form.displayName),
+      title: this.blankToNull(this.form.title),
+      department,
+      office,
+      telephoneNumber: this.blankToNull(this.form.telephoneNumber),
+      mobile: this.blankToNull(this.form.mobile),
+      mail: this.blankToNull(this.form.mail),
+      description: this.blankToNull(this.form.description),
+    };
+    this.adService.updateInfo(this.user.samAccountName, request).subscribe({
+      next: (response) => {
+        this.working = false;
+        if (!response.success) {
+          this.error = response.message;
+          return;
+        }
+        this.saved.emit({ user: response.data!, notice: { tone: 'success', text: response.message } });
+      },
+      error: () => {
+        this.working = false;
+        this.error = 'No se pudo completar la acción.';
+      },
+    });
+  }
+
+  private syncCatalogSelectionFromInfo(): void {
+    const dependencia = this.findDependenciaByName(this.form.department);
+    this.dependenciaId = dependencia?.id ?? null;
+    this.subdependenciaId = null;
+    this.subdependencias = [];
+    if (!dependencia) return;
+
+    this.catalogoService.getSubdependencias(dependencia.id).subscribe((items) => {
+      this.subdependencias = this.sortByName(items);
+      const office = this.normalizeName(this.form.office);
+      const department = this.normalizeName(this.form.department);
+      this.subdependenciaId = office && office !== department
+        ? (this.subdependencias.find((item) => this.normalizeName(item.nombre) === office)?.id ?? null)
+        : null;
+      if (!this.subdependenciaId && this.form.department) {
+        this.form = { ...this.form, office: this.form.department };
+      }
+    });
+  }
+
+  private findDependencia(id: number | null): Dependencia | null {
+    return id ? (this.dependencias.find((item) => item.id === id) ?? null) : null;
+  }
+
+  private findDependenciaByName(name: string | null | undefined): Dependencia | null {
+    const normalized = this.normalizeName(name);
+    return normalized ? (this.dependencias.find((item) => this.normalizeName(item.nombre) === normalized) ?? null) : null;
+  }
+
+  private findSubdependencia(id: number | null): Subdependencia | null {
+    return id ? (this.subdependencias.find((item) => item.id === id) ?? null) : null;
+  }
+
+  private normalizeSelectId(value: number | string | null | undefined): number | null {
+    if (value === null || value === undefined || value === '') return null;
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : null;
+  }
+
+  private normalizeName(value: string | null | undefined): string {
+    return value?.trim().toLowerCase() ?? '';
+  }
+
+  private sortByName<T extends { nombre: string }>(items: T[]): T[] {
+    return [...items].sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'));
+  }
+
+  private blankToNull(value: string | null | undefined): string | null {
+    return value?.trim() ? value.trim() : null;
+  }
+}
