@@ -1,10 +1,10 @@
 package com.inia.soportedesk.dashboard;
 
+import com.inia.soportedesk.activedirectory.AdUsuarioCacheRepository;
 import com.inia.soportedesk.equipos.EquipoRepository;
 import com.inia.soportedesk.impresoras.ImpresoraRepository;
 import com.inia.soportedesk.licencias.LicenciaRepository;
 import com.inia.soportedesk.gestiontiinia.VwGwDashboardRepository;
-import com.inia.soportedesk.usuariosred.UsuarioRedRepository;
 import com.inia.soportedesk.vpn.VpnRepository;
 import com.inia.soportedesk.wifi.WifiRepository;
 import lombok.RequiredArgsConstructor;
@@ -22,7 +22,7 @@ public class DashboardService {
 
     private final LicenciaRepository licenciaRepository;
     private final VwGwDashboardRepository correoRepository;
-    private final UsuarioRedRepository usuarioRedRepository;
+    private final AdUsuarioCacheRepository adUsuarioCacheRepository;
     private final VpnRepository vpnRepository;
     private final WifiRepository wifiRepository;
     private final ImpresoraRepository impresoraRepository;
@@ -32,13 +32,13 @@ public class DashboardService {
         return new DashboardCounts(
                 licenciaRepository.count(),
                 correoRepository.count(),
-                usuarioRedRepository.count(),
+                adUsuarioCacheRepository.count(),
                 vpnRepository.count(),
                 vpnRepository.countByEstadoSolicitud("PENDIENTE"),
                 wifiRepository.count(),
                 impresoraRepository.count(),
                 equipoRepository.count(),
-                usuarioRedRepository.countDesactivados()
+                adUsuarioCacheRepository.countByEnabledFalse()
         );
     }
 
@@ -59,8 +59,8 @@ public class DashboardService {
 
     public List<UbicacionUsuariosCount> usuariosRedPorUbicacion(String nivel) {
         List<Object[]> rows = "dependencia".equalsIgnoreCase(nivel)
-                ? usuarioRedRepository.countGroupedByDependenciaAndEstado()
-                : usuarioRedRepository.countGroupedBySedeAndEstado();
+                ? adUsuarioCacheRepository.countGroupedByOuAndEnabled()
+                : adUsuarioCacheRepository.countGroupedByOfficeAndEnabled();
         return pivot(rows);
     }
 

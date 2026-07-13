@@ -4,11 +4,12 @@ import { StatusBadgeComponent } from '../../shared/status-badge/status-badge.com
 import { SectionCardComponent } from '../../shared/section-card/section-card.component';
 import { ActiveDirectoryService } from './active-directory.service';
 import { ActiveDirectoryGroup, AdUser } from './active-directory.model';
+import { UsuarioRedContratosPanelComponent } from './usuario-red-contratos-panel.component';
 
 @Component({
   selector: 'app-ad-user-detail',
   standalone: true,
-  imports: [CommonModule, StatusBadgeComponent, SectionCardComponent],
+  imports: [CommonModule, StatusBadgeComponent, SectionCardComponent, UsuarioRedContratosPanelComponent],
   template: `
     <ng-container *ngIf="user">
       <section class="identity-band">
@@ -71,6 +72,8 @@ import { ActiveDirectoryGroup, AdUser } from './active-directory.model';
           </div>
           <ng-template #noGroups><p class="muted">Sin grupos cargados.</p></ng-template>
         </app-section-card>
+
+        <app-usuario-red-contratos-panel [usuario]="user.samAccountName" [editable]="puedeEditarContratos" />
       </section>
     </ng-container>
   `,
@@ -81,6 +84,7 @@ export class AdUserDetailComponent implements OnChanges {
 
   @Input({ required: true }) user: AdUser | null = null;
   @Input() showManage = false;
+  @Input() puedeEditarContratos = false;
   @Output() manage = new EventEmitter<string>();
 
   groups: ActiveDirectoryGroup[] = [];

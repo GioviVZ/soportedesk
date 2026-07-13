@@ -208,32 +208,6 @@ GO
 -- USUARIOS DE RED / ACTIVE DIRECTORY
 -- ============================================================
 
-IF OBJECT_ID(N'dbo.usuarios_red', N'U') IS NULL
-CREATE TABLE dbo.usuarios_red (
-    id                 BIGINT        NOT NULL IDENTITY(1,1),
-    usuario            NVARCHAR(100) NOT NULL,
-    nombre             NVARCHAR(150) NOT NULL,
-    apellidos          NVARCHAR(150) NOT NULL,
-    grupo              NVARCHAR(100) NOT NULL,
-    unidad_organizativa NVARCHAR(150) NULL,
-    ultimo_login       DATETIME2     NULL,
-    estado             NVARCHAR(30)  NOT NULL,
-    sede_id            BIGINT        NOT NULL,
-    dependencia_id     BIGINT        NOT NULL,
-    subdependencia_id  BIGINT        NOT NULL,
-    tipo_contrato_id   BIGINT        NOT NULL,
-    fecha_fin_contrato DATE          NULL,
-    fecha_creacion     DATE          NULL,
-    numero_contrato    NVARCHAR(100) NULL,
-    CONSTRAINT PK_usuarios_red             PRIMARY KEY (id),
-    CONSTRAINT UQ_usuarios_red_usuario     UNIQUE      (usuario),
-    CONSTRAINT FK_usuarios_red_sede        FOREIGN KEY (sede_id)           REFERENCES dbo.sedes (id)           ON UPDATE NO ACTION ON DELETE NO ACTION,
-    CONSTRAINT FK_usuarios_red_dependencia FOREIGN KEY (dependencia_id)    REFERENCES dbo.dependencias (id)    ON UPDATE NO ACTION ON DELETE NO ACTION,
-    CONSTRAINT FK_usuarios_red_subdep      FOREIGN KEY (subdependencia_id) REFERENCES dbo.subdependencias (id) ON UPDATE NO ACTION ON DELETE NO ACTION,
-    CONSTRAINT FK_usuarios_red_contrato    FOREIGN KEY (tipo_contrato_id)  REFERENCES dbo.tipos_contrato (id)  ON UPDATE NO ACTION ON DELETE NO ACTION
-);
-GO
-
 IF OBJECT_ID(N'dbo.ad_usuarios_cache', N'U') IS NULL
 CREATE TABLE dbo.ad_usuarios_cache (
     sam_account_name             NVARCHAR(120)  NOT NULL,
@@ -277,6 +251,28 @@ CREATE TABLE dbo.ad_cache_metadata (
 );
 GO
 
+-- Historial de contratos (OS/CAS/CAP, etc.) por cuenta de red. No tiene FK a
+-- ad_usuarios_cache: esa tabla se borra y reinserta completa en cada sync,
+-- rompería cualquier FK. Se cruza con AD solo por el string "usuario".
+IF OBJECT_ID(N'dbo.usuarios_red_contratos', N'U') IS NULL
+CREATE TABLE dbo.usuarios_red_contratos (
+    id                  BIGINT        NOT NULL IDENTITY(1,1),
+    usuario             NVARCHAR(100) NOT NULL,
+    tipo_contrato_id    BIGINT        NOT NULL,
+    fecha_inicio        DATE          NOT NULL,
+    fecha_fin           DATE          NULL,
+    numero_contrato     NVARCHAR(100) NULL,
+    personal_nombre     NVARCHAR(150) NULL,
+    personal_apellidos  NVARCHAR(150) NULL,
+    registrado_por      NVARCHAR(100) NULL,
+    fecha_registro      DATETIME2     NULL,
+    actualizado_por     NVARCHAR(100) NULL,
+    fecha_actualizacion DATETIME2     NULL,
+    CONSTRAINT PK_usuarios_red_contratos      PRIMARY KEY (id),
+    CONSTRAINT FK_usuarios_red_contratos_tipo FOREIGN KEY (tipo_contrato_id) REFERENCES dbo.tipos_contrato (id) ON UPDATE NO ACTION ON DELETE NO ACTION
+);
+GO
+
 -- ============================================================
 -- EQUIPOS DE CÓMPUTO
 -- ============================================================
@@ -292,14 +288,12 @@ CREATE TABLE dbo.equipos (
     modelo              NVARCHAR(100) NOT NULL,
     host                NVARCHAR(100) NULL,
     ip                  NVARCHAR(45)  NULL,
-    usuario_red_id      BIGINT        NULL,
     sede_id             BIGINT        NULL,
     dependencia_id      BIGINT        NULL,
     subdependencia_id   BIGINT        NULL,
     asignado            DATE          NULL,
     estado              NVARCHAR(30)  NOT NULL,
     CONSTRAINT PK_equipos             PRIMARY KEY (id),
-    CONSTRAINT FK_equipos_usuario_red FOREIGN KEY (usuario_red_id)    REFERENCES dbo.usuarios_red (id)    ON UPDATE NO ACTION ON DELETE NO ACTION,
     CONSTRAINT FK_equipos_sede        FOREIGN KEY (sede_id)           REFERENCES dbo.sedes (id)           ON UPDATE NO ACTION ON DELETE NO ACTION,
     CONSTRAINT FK_equipos_dependencia FOREIGN KEY (dependencia_id)    REFERENCES dbo.dependencias (id)    ON UPDATE NO ACTION ON DELETE NO ACTION,
     CONSTRAINT FK_equipos_subdep      FOREIGN KEY (subdependencia_id) REFERENCES dbo.subdependencias (id) ON UPDATE NO ACTION ON DELETE NO ACTION
@@ -408,16 +402,14 @@ GO
 IF OBJECT_ID(N'dbo.vpn', N'U') IS NULL
 CREATE TABLE dbo.vpn (
     id                    BIGINT        NOT NULL IDENTITY(1,1),
-    usuario_red_id        BIGINT        NULL,
     equipo_id             BIGINT        NULL,
     estado                NVARCHAR(30)  NOT NULL,
     tiene_antivirus       BIT           NULL,
     vencimiento_antivirus DATE          NULL,
     usuario_vpn           NVARCHAR(100) NULL,
     credencial_vpn        NVARCHAR(200) NULL,
-    CONSTRAINT PK_vpn             PRIMARY KEY (id),
-    CONSTRAINT FK_vpn_usuario_red FOREIGN KEY (usuario_red_id) REFERENCES dbo.usuarios_red (id) ON UPDATE NO ACTION ON DELETE NO ACTION,
-    CONSTRAINT FK_vpn_equipo      FOREIGN KEY (equipo_id)      REFERENCES dbo.equipos (id)      ON UPDATE NO ACTION ON DELETE NO ACTION
+    CONSTRAINT PK_vpn        PRIMARY KEY (id),
+    CONSTRAINT FK_vpn_equipo FOREIGN KEY (equipo_id) REFERENCES dbo.equipos (id) ON UPDATE NO ACTION ON DELETE NO ACTION
 );
 GO
 
@@ -484,21 +476,13 @@ IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = N'IX_movimientos_auditoria
     CREATE INDEX IX_movimientos_auditoria_modulo_accion ON dbo.movimientos_auditoria (modulo, accion);
 GO
 
-IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = N'IX_usuarios_red_sede_id')         CREATE INDEX IX_usuarios_red_sede_id         ON dbo.usuarios_red (sede_id);
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = N'IX_usuarios_red_contratos_usuario')      CREATE INDEX IX_usuarios_red_contratos_usuario      ON dbo.usuarios_red_contratos (usuario);
 GO
-IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = N'IX_usuarios_red_dependencia_id')  CREATE INDEX IX_usuarios_red_dependencia_id  ON dbo.usuarios_red (dependencia_id);
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = N'IX_usuarios_red_contratos_tipo_contrato') CREATE INDEX IX_usuarios_red_contratos_tipo_contrato ON dbo.usuarios_red_contratos (tipo_contrato_id);
 GO
-IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = N'IX_usuarios_red_subdependencia_id') CREATE INDEX IX_usuarios_red_subdependencia_id ON dbo.usuarios_red (subdependencia_id);
-GO
-IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = N'IX_usuarios_red_tipo_contrato_id') CREATE INDEX IX_usuarios_red_tipo_contrato_id ON dbo.usuarios_red (tipo_contrato_id);
-GO
-IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = N'IX_usuarios_red_estado')           CREATE INDEX IX_usuarios_red_estado           ON dbo.usuarios_red (estado);
-GO
-IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = N'IX_usuarios_red_nombre')           CREATE INDEX IX_usuarios_red_nombre           ON dbo.usuarios_red (nombre);
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = N'IX_usuarios_red_contratos_personal')      CREATE INDEX IX_usuarios_red_contratos_personal      ON dbo.usuarios_red_contratos (personal_apellidos, personal_nombre);
 GO
 
-IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = N'IX_equipos_usuario_red_id')    CREATE INDEX IX_equipos_usuario_red_id    ON dbo.equipos (usuario_red_id);
-GO
 IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = N'IX_equipos_sede_id')           CREATE INDEX IX_equipos_sede_id           ON dbo.equipos (sede_id);
 GO
 IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = N'IX_equipos_dependencia_id')    CREATE INDEX IX_equipos_dependencia_id    ON dbo.equipos (dependencia_id);
@@ -549,8 +533,6 @@ GO
 IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = N'IX_licencia_activaciones_cuenta') CREATE INDEX IX_licencia_activaciones_cuenta ON dbo.licencia_activaciones (cuenta_activacion);
 GO
 
-IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = N'IX_vpn_usuario_red_id')        CREATE INDEX IX_vpn_usuario_red_id        ON dbo.vpn (usuario_red_id);
-GO
 IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = N'IX_vpn_equipo_id')             CREATE INDEX IX_vpn_equipo_id             ON dbo.vpn (equipo_id);
 GO
 IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = N'IX_vpn_estado')                CREATE INDEX IX_vpn_estado                ON dbo.vpn (estado);

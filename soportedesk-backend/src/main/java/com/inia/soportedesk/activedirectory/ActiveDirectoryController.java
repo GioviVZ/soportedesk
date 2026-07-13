@@ -5,6 +5,7 @@ import com.inia.soportedesk.activedirectory.dto.ActiveDirectoryDashboardCompleto
 import com.inia.soportedesk.activedirectory.dto.ActiveDirectoryGroup;
 import com.inia.soportedesk.activedirectory.dto.ActiveDirectoryOu;
 import com.inia.soportedesk.activedirectory.dto.ActiveDirectoryResponse;
+import com.inia.soportedesk.activedirectory.dto.AdFilterOption;
 import com.inia.soportedesk.activedirectory.dto.AdSyncStatus;
 import com.inia.soportedesk.activedirectory.dto.AdUserSearchResult;
 import com.inia.soportedesk.activedirectory.dto.AdUser;
@@ -41,10 +42,25 @@ public class ActiveDirectoryController {
 
     @GetMapping("/usuarios/buscar")
     @PreAuthorize("hasRole('ADMIN') || hasAuthority('READ_usuarios-red')")
-    public AdUserSearchResult buscarUsuarios(@RequestParam(required = false) String usuario,
+    public AdUserSearchResult buscarUsuarios(@RequestParam(required = false) String q,
+                                             @RequestParam(required = false) String usuario,
                                              @RequestParam(required = false) String nombre,
-                                             @RequestParam(required = false) String oficina) {
-        return service.buscarUsuarios(usuario, nombre, oficina);
+                                             @RequestParam(required = false) String oficina,
+                                             @RequestParam(required = false) String ou,
+                                             @RequestParam(required = false) String estado) {
+        return service.buscarUsuarios(q, usuario, nombre, oficina, ou, estado);
+    }
+
+    @GetMapping("/usuarios/filtros/ous")
+    @PreAuthorize("hasRole('ADMIN') || hasAuthority('READ_usuarios-red')")
+    public List<AdFilterOption> listarUnidadesOrganizativas() {
+        return service.listarUnidadesOrganizativas();
+    }
+
+    @GetMapping("/usuarios/filtros/oficinas")
+    @PreAuthorize("hasRole('ADMIN') || hasAuthority('READ_usuarios-red')")
+    public List<AdFilterOption> listarOficinas() {
+        return service.listarOficinas();
     }
 
     @GetMapping("/usuarios/{samAccountName}/grupos")

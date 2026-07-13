@@ -17,7 +17,7 @@ class LdapFilterUtilsTest {
         ActiveDirectoryService service = new ActiveDirectoryService(null, null, null, null, null, null, null);
 
         assertThat(service.buildUserSearchFilter("gv", "Gustavo", " "))
-                .isEqualTo("(&(objectCategory=person)(objectClass=user)(sAMAccountName=*gv*)(displayName=*Gustavo*))");
+                .isEqualTo("(&(objectCategory=person)(objectClass=user)(|(sAMAccountName=*gv*)(userPrincipalName=*gv*)(mail=*gv*))(displayName=*Gustavo*))");
     }
 
     @Test
@@ -25,6 +25,14 @@ class LdapFilterUtilsTest {
         ActiveDirectoryService service = new ActiveDirectoryService(null, null, null, null, null, null, null);
 
         assertThat(service.buildUserSearchFilter("ad*", null, "Lab(1)"))
-                .isEqualTo("(&(objectCategory=person)(objectClass=user)(sAMAccountName=*ad\\2a*)(physicalDeliveryOfficeName=*Lab\\281\\29*))");
+                .isEqualTo("(&(objectCategory=person)(objectClass=user)(|(sAMAccountName=*ad\\2a*)(userPrincipalName=*ad\\2a*)(mail=*ad\\2a*))(physicalDeliveryOfficeName=*Lab\\281\\29*))");
+    }
+
+    @Test
+    void combinedUserSearchFilterUsesLocalPartForIniaUpn() {
+        ActiveDirectoryService service = new ActiveDirectoryService(null, null, null, null, null, null, null);
+
+        assertThat(service.buildUserSearchFilter("jlopez@inia.local", null, null))
+                .isEqualTo("(&(objectCategory=person)(objectClass=user)(|(sAMAccountName=*jlopez*)(userPrincipalName=*jlopez@inia.local*)(mail=*jlopez@inia.local*)))");
     }
 }

@@ -31,6 +31,8 @@ export class VpnFormComponent implements OnChanges {
   adSearchTerm = '';
   adResults: VpnUsuarioRedOption[] = [];
   adBusquedaRealizada = false;
+  adSearching = false;
+  adSearchError = '';
   private adSearchTimeout?: ReturnType<typeof setTimeout>;
 
   selectedAdSamAccountName: string | null = null;
@@ -152,15 +154,34 @@ export class VpnFormComponent implements OnChanges {
   onAdSearch(term: string): void {
     this.adSearchTerm = term;
     clearTimeout(this.adSearchTimeout);
+    const normalized = term.trim();
+    this.adSearchError = '';
     this.adSearchTimeout = setTimeout(() => {
-      if (!term.trim()) {
+      if (!normalized) {
         this.adResults = [];
         this.adBusquedaRealizada = false;
+        this.adSearching = false;
         return;
       }
-      this.service.searchUsuariosRed(term).subscribe((data) => {
-        this.adResults = data;
-        this.adBusquedaRealizada = true;
+      if (normalized.length < 2) {
+        this.adResults = [];
+        this.adBusquedaRealizada = false;
+        this.adSearching = false;
+        return;
+      }
+      this.adSearching = true;
+      this.service.searchUsuariosRed(normalized).subscribe({
+        next: (data) => {
+          this.adResults = data;
+          this.adBusquedaRealizada = true;
+          this.adSearching = false;
+        },
+        error: () => {
+          this.adResults = [];
+          this.adBusquedaRealizada = true;
+          this.adSearching = false;
+          this.adSearchError = 'No se pudo consultar Active Directory. Intente nuevamente.';
+        },
       });
     }, 300);
   }
@@ -169,6 +190,8 @@ export class VpnFormComponent implements OnChanges {
     this.selectedAdSamAccountName = usuario.samAccountName;
     this.adUserSelected = usuario;
     this.adResults = [];
+    this.adSearching = false;
+    this.adSearchError = '';
     this.adSearchTerm = '';
     this.setTitularModo('ad-seleccionado');
   }
@@ -318,6 +341,8 @@ export class VpnFormComponent implements OnChanges {
     this.adSearchTerm = '';
     this.adResults = [];
     this.adBusquedaRealizada = false;
+    this.adSearching = false;
+    this.adSearchError = '';
     this.equipoSeleccionado = null;
     this.equipoResults = [];
     this.titularModo = 'buscando';

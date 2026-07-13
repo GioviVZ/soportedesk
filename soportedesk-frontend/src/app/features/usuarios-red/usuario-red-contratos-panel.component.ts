@@ -1,0 +1,246 @@
+import { CommonModule } from '@angular/common';
+import { Component, Input, OnChanges, SimpleChanges, inject } from '@angular/core';
+import { FormsModule } from '@angular/forms';
+import { SectionCardComponent } from '../../shared/section-card/section-card.component';
+import { ModalComponent } from '../../shared/modal/modal.component';
+import { VencimientoBadgeComponent } from '../../shared/vencimiento-badge/vencimiento-badge.component';
+import { CatalogoService } from '../../core/catalogos/catalogo.service';
+import { TipoContrato } from '../../core/models/catalogo.model';
+import { UsuarioRedContratoService } from './usuario-red-contrato.service';
+import { UsuarioRedContrato, UsuarioRedContratoRequest, esTipoContratoOs } from './usuario-red-contrato.model';
+
+@Component({
+  selector: 'app-usuario-red-contratos-panel',
+  standalone: true,
+  imports: [CommonModule, FormsModule, SectionCardComponent, ModalComponent, VencimientoBadgeComponent],
+  template: `
+    <app-section-card title="Contratos">
+      <svg icon xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" />
+        <line x1="16" y1="13" x2="8" y2="13" /><line x1="16" y1="17" x2="8" y2="17" />
+      </svg>
+
+      <div class="notice" [class.error]="notice.tone === 'error'" [class.success]="notice.tone === 'success'" *ngIf="notice">
+        {{ notice.text }}
+      </div>
+
+      <div class="contract-expiry-alert" [class.danger]="vencimientoEstado() === 'VENCIDO'" [class.warning]="vencimientoEstado() === 'POR_VENCER'" *ngIf="contratos.length">
+        <div>
+          <strong>Vencimiento de usuario de red</strong>
+          <span>{{ vencimientoUsuarioRed() ? (vencimientoUsuarioRed() | date:'dd/MM/yyyy') : 'Sin fecha fin registrada' }}</span>
+        </div>
+        <app-vencimiento-badge [fecha]="vencimientoUsuarioRed()" />
+      </div>
+
+      <button type="button" class="btn btn-primary" *ngIf="editable" (click)="openCreate()">
+        Agregar contrato
+      </button>
+
+      <p class="muted" *ngIf="!loading && !contratos.length">Sin contratos registrados para esta cuenta.</p>
+
+      <div class="assigned-list contrato-list" *ngIf="contratos.length">
+        <div class="contrato-item" *ngFor="let c of contratos">
+          <div class="contrato-main">
+            <span class="contrato-tipo">{{ c.tipoContratoNombre }}</span>
+            <span class="contrato-fechas">
+              {{ c.fechaInicio | date:'dd/MM/yyyy' }} — {{ c.fechaFin ? (c.fechaFin | date:'dd/MM/yyyy') : 'Actual' }}
+              <app-vencimiento-badge [fecha]="c.fechaFin" />
+            </span>
+            <span class="contrato-numero" *ngIf="c.numeroContrato">N° {{ c.numeroContrato }}</span>
+            <span class="contrato-personal" *ngIf="esOs(c)">
+              Titular: <strong>{{ c.personalNombre }} {{ c.personalApellidos }}</strong>
+            </span>
+          </div>
+          <div class="contrato-actions" *ngIf="editable">
+            <button type="button" class="link-danger" (click)="openEdit(c)">Editar</button>
+            <button type="button" class="link-danger" (click)="remove(c)">Eliminar</button>
+          </div>
+        </div>
+      </div>
+    </app-section-card>
+
+    <app-modal [title]="editingId ? 'Editar contrato' : 'Agregar contrato'" [open]="modalOpen" (closed)="closeModal()">
+      <form class="modal-form form-grid" (ngSubmit)="save()">
+        <div class="field">
+          <label>Tipo de contrato</label>
+          <select name="tipoContratoId" [(ngModel)]="form.tipoContratoId" required>
+            <option [ngValue]="null" disabled>Selecciona un tipo</option>
+            <option *ngFor="let tipo of tiposContrato" [ngValue]="tipo.id">{{ tipo.nombre }}</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>N° de contrato</label>
+          <input name="numeroContrato" [(ngModel)]="form.numeroContrato" />
+        </div>
+        <div class="field">
+          <label>Fecha inicio</label>
+          <input type="date" name="fechaInicio" [(ngModel)]="form.fechaInicio" required />
+        </div>
+        <div class="field">
+          <label>Fecha fin</label>
+          <input type="date" name="fechaFin" [(ngModel)]="form.fechaFin" />
+        </div>
+        <ng-container *ngIf="esTipoSeleccionadoOs()">
+          <div class="field">
+            <label>Nombre del personal</label>
+            <input name="personalNombre" [(ngModel)]="form.personalNombre" />
+          </div>
+          <div class="field">
+            <label>Apellidos del personal</label>
+            <input name="personalApellidos" [(ngModel)]="form.personalApellidos" />
+          </div>
+        </ng-container>
+
+        <footer class="modal-actions full">
+          <button type="button" class="btn btn-ghost" (click)="closeModal()">Cancelar</button>
+          <button type="submit" class="btn btn-primary" [disabled]="saving">Guardar</button>
+        </footer>
+      </form>
+    </app-modal>
+  `,
+  styleUrl: './usuarios-red.shared.scss',
+})
+export class UsuarioRedContratosPanelComponent implements OnChanges {
+  private service = inject(UsuarioRedContratoService);
+  private catalogoService = inject(CatalogoService);
+
+  @Input({ required: true }) usuario!: string;
+  @Input() editable = false;
+
+  contratos: UsuarioRedContrato[] = [];
+  tiposContrato: TipoContrato[] = [];
+  loading = false;
+  saving = false;
+  modalOpen = false;
+  editingId: number | null = null;
+  form: UsuarioRedContratoRequest = this.emptyForm();
+  notice: { tone: 'success' | 'error'; text: string } | null = null;
+
+  ngOnChanges(changes: SimpleChanges): void {
+    if (changes['usuario'] && this.usuario) {
+      this.load();
+    }
+  }
+
+  esOs(c: UsuarioRedContrato): boolean {
+    return esTipoContratoOs(c.tipoContratoNombre);
+  }
+
+  esTipoSeleccionadoOs(): boolean {
+    const tipo = this.tiposContrato.find((t) => t.id === this.form.tipoContratoId);
+    return esTipoContratoOs(tipo?.nombre);
+  }
+
+  vencimientoUsuarioRed(): string | null {
+    const fechas = this.contratos
+      .map((contrato) => contrato.fechaFin)
+      .filter((fecha): fecha is string => !!fecha)
+      .sort();
+    return fechas.length ? fechas[fechas.length - 1] : null;
+  }
+
+  vencimientoEstado(): 'VENCIDO' | 'POR_VENCER' | 'VIGENTE' | 'SIN_FECHA' {
+    const fecha = this.vencimientoUsuarioRed();
+    if (!fecha) return 'SIN_FECHA';
+    const hoy = new Date();
+    hoy.setHours(0, 0, 0, 0);
+    const vencimiento = new Date(fecha);
+    vencimiento.setHours(0, 0, 0, 0);
+    const diffDias = (vencimiento.getTime() - hoy.getTime()) / (1000 * 60 * 60 * 24);
+    if (diffDias < 0) return 'VENCIDO';
+    if (diffDias <= 30) return 'POR_VENCER';
+    return 'VIGENTE';
+  }
+
+  openCreate(): void {
+    this.form = this.emptyForm();
+    this.editingId = null;
+    this.notice = null;
+    this.ensureTiposContrato();
+    this.modalOpen = true;
+  }
+
+  openEdit(c: UsuarioRedContrato): void {
+    this.form = {
+      usuario: c.usuario,
+      tipoContratoId: c.tipoContratoId,
+      fechaInicio: c.fechaInicio,
+      fechaFin: c.fechaFin,
+      numeroContrato: c.numeroContrato,
+      personalNombre: c.personalNombre,
+      personalApellidos: c.personalApellidos,
+    };
+    this.editingId = c.id;
+    this.notice = null;
+    this.ensureTiposContrato();
+    this.modalOpen = true;
+  }
+
+  closeModal(): void {
+    this.modalOpen = false;
+  }
+
+  save(): void {
+    if (!this.form.tipoContratoId || !this.form.fechaInicio) {
+      this.notice = { tone: 'error', text: 'Completa tipo de contrato y fecha de inicio.' };
+      return;
+    }
+    this.saving = true;
+    const request$ = this.editingId
+      ? this.service.update(this.editingId, this.form)
+      : this.service.create({ ...this.form, usuario: this.usuario });
+    request$.subscribe({
+      next: () => {
+        this.saving = false;
+        this.modalOpen = false;
+        this.load();
+      },
+      error: (err) => {
+        this.saving = false;
+        this.notice = { tone: 'error', text: err?.error?.message || 'No se pudo guardar el contrato.' };
+      },
+    });
+  }
+
+  remove(c: UsuarioRedContrato): void {
+    if (!confirm(`¿Eliminar el contrato ${c.tipoContratoNombre} de "${c.usuario}"?`)) return;
+    this.service.delete(c.id).subscribe({
+      next: () => this.load(),
+      error: () => (this.notice = { tone: 'error', text: 'No se pudo eliminar el contrato.' }),
+    });
+  }
+
+  private load(): void {
+    this.loading = true;
+    this.service.getByUsuario(this.usuario).subscribe({
+      next: (contratos) => {
+        this.contratos = contratos;
+        this.loading = false;
+      },
+      error: () => {
+        this.contratos = [];
+        this.loading = false;
+      },
+    });
+  }
+
+  private ensureTiposContrato(): void {
+    if (this.tiposContrato.length) return;
+    this.catalogoService.getTiposContrato().subscribe({
+      next: (tipos) => (this.tiposContrato = tipos),
+      error: () => (this.tiposContrato = []),
+    });
+  }
+
+  private emptyForm(): UsuarioRedContratoRequest {
+    return {
+      usuario: this.usuario,
+      tipoContratoId: null as unknown as number,
+      fechaInicio: '',
+      fechaFin: null,
+      numeroContrato: null,
+      personalNombre: null,
+      personalApellidos: null,
+    };
+  }
+}

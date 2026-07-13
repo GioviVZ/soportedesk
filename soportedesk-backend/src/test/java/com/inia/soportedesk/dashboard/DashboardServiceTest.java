@@ -1,10 +1,10 @@
 package com.inia.soportedesk.dashboard;
 
+import com.inia.soportedesk.activedirectory.AdUsuarioCacheRepository;
 import com.inia.soportedesk.equipos.EquipoRepository;
 import com.inia.soportedesk.gestiontiinia.VwGwDashboardRepository;
 import com.inia.soportedesk.impresoras.ImpresoraRepository;
 import com.inia.soportedesk.licencias.LicenciaRepository;
-import com.inia.soportedesk.usuariosred.UsuarioRedRepository;
 import com.inia.soportedesk.vpn.VpnRepository;
 import com.inia.soportedesk.wifi.WifiRepository;
 import org.junit.jupiter.api.Test;
@@ -30,7 +30,7 @@ class DashboardServiceTest {
     private VwGwDashboardRepository correoRepository;
 
     @Mock
-    private UsuarioRedRepository usuarioRedRepository;
+    private AdUsuarioCacheRepository adUsuarioCacheRepository;
 
     @Mock
     private VpnRepository vpnRepository;
@@ -51,13 +51,13 @@ class DashboardServiceTest {
     void getCounts_returnsCountForEachModule() {
         when(licenciaRepository.count()).thenReturn(5L);
         when(correoRepository.count()).thenReturn(12L);
-        when(usuarioRedRepository.count()).thenReturn(20L);
+        when(adUsuarioCacheRepository.count()).thenReturn(20L);
         when(vpnRepository.count()).thenReturn(3L);
         when(vpnRepository.countByEstadoSolicitud("PENDIENTE")).thenReturn(2L);
         when(wifiRepository.count()).thenReturn(4L);
         when(impresoraRepository.count()).thenReturn(7L);
         when(equipoRepository.count()).thenReturn(15L);
-        when(usuarioRedRepository.countDesactivados()).thenReturn(1L);
+        when(adUsuarioCacheRepository.countByEnabledFalse()).thenReturn(1L);
 
         DashboardCounts counts = service.getCounts();
 
@@ -79,7 +79,7 @@ class DashboardServiceTest {
                 new Object[]{"Lima", "Inactivo", 2L},
                 new Object[]{"Cusco", "Activo", 5L}
         );
-        when(usuarioRedRepository.countGroupedBySedeAndEstado()).thenReturn(rows);
+        when(adUsuarioCacheRepository.countGroupedByOfficeAndEnabled()).thenReturn(rows);
 
         List<UbicacionUsuariosCount> result = service.usuariosRedPorUbicacion("sede");
 
@@ -90,9 +90,9 @@ class DashboardServiceTest {
     }
 
     @Test
-    void usuariosRedPorUbicacion_withDependencia_usesGroupedByDependenciaQuery() {
+    void usuariosRedPorUbicacion_withDependencia_usesGroupedByOuQuery() {
         List<Object[]> rows = Arrays.<Object[]>asList(new Object[]{"TI", "Activo", 8L});
-        when(usuarioRedRepository.countGroupedByDependenciaAndEstado()).thenReturn(rows);
+        when(adUsuarioCacheRepository.countGroupedByOuAndEnabled()).thenReturn(rows);
 
         List<UbicacionUsuariosCount> result = service.usuariosRedPorUbicacion("dependencia");
 
@@ -100,14 +100,14 @@ class DashboardServiceTest {
     }
 
     @Test
-    void usuariosRedPorUbicacion_withInvalidOrNullNivel_defaultsToSede() {
-        when(usuarioRedRepository.countGroupedBySedeAndEstado()).thenReturn(List.of());
+    void usuariosRedPorUbicacion_withInvalidOrNullNivel_defaultsToOffice() {
+        when(adUsuarioCacheRepository.countGroupedByOfficeAndEnabled()).thenReturn(List.of());
 
         List<UbicacionUsuariosCount> result = service.usuariosRedPorUbicacion("foo");
         service.usuariosRedPorUbicacion(null);
 
         assertThat(result).isEmpty();
-        verify(usuarioRedRepository, org.mockito.Mockito.times(2)).countGroupedBySedeAndEstado();
+        verify(adUsuarioCacheRepository, org.mockito.Mockito.times(2)).countGroupedByOfficeAndEnabled();
     }
 
     @Test

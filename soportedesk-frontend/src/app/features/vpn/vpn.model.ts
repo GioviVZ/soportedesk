@@ -8,6 +8,9 @@ export interface Vpn {
   adOrganizationalUnit: string | null;
   equipo: { id: number; marca: string; modelo: string; tipo: string; host: string | null; ip: string | null } | null;
   vence: string | null;
+  vencimientoBaseVpn: string | null;
+  vencimientoContrato: string | null;
+  venceOrigen: 'CONTRATO' | 'INSTITUCIONAL' | 'ANTIVIRUS_PERSONAL' | null;
   estado: string;
   tieneAntivirus: boolean | null;
   vencimientoAntivirus: string | null;

@@ -37,11 +37,12 @@ const EDITABLE_STATES = new Set(['PENDIENTE', 'OBSERVADO']);
       <app-vpn-detail
         *ngIf="viewing as v"
         [vpn]="v"
-        [canWriteSolicitar]="canWriteSolicitar"
-        [canEditCredenciales]="false"
+        [canEditSolicitud]="canWriteSolicitar"
+        [canDeleteSolicitud]="false"
+        [canViewCredenciales]="true"
         [showDecisionPanel]="false"
         (editRequested)="editFromDetail($event)"
-        (deleteRequested)="deleteFromDetail($event)"
+        (closeRequested)="closeView()"
       />
     </app-modal>
 
@@ -116,17 +117,6 @@ export class VpnRegistrosComponent implements OnInit {
 
   closeForm(): void {
     this.formOpen = false;
-  }
-
-  onDelete(item: Vpn): void {
-    const nombre = item.usuarioRed?.nombre ?? item.id;
-    if (!confirm(`¿Eliminar el registro VPN de "${nombre}"?`)) return;
-    this.service.delete(item.id).subscribe(() => this.load());
-  }
-
-  deleteFromDetail(item: Vpn): void {
-    this.viewing = null;
-    this.onDelete(item);
   }
 
   onSaved(): void {

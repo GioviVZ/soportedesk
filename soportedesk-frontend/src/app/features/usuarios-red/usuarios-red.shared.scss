@@ -37,25 +37,6 @@
   }
 }
 
-/* Search panel */
-.search-panel {
-  display: grid;
-  gap: 12px;
-  padding: 16px;
-}
-
-.search-form {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: end;
-  gap: 12px;
-}
-
-.search-form .field {
-  flex: 1 1 160px;
-  min-width: 140px;
-}
-
 .field {
   display: grid;
   gap: 6px;
@@ -68,7 +49,6 @@
   }
 }
 
-.search-hint,
 .muted {
   margin: 0;
   color: var(--color-text-muted);
@@ -99,23 +79,6 @@
     color: var(--color-success);
   }
 }
-
-/* Results table */
-.table-wrap {
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-}
-
-tr.clickable {
-  cursor: pointer;
-
-  &:focus-visible {
-    outline: 2px solid var(--color-accent);
-    outline-offset: -2px;
-  }
-}
-
-td .status-badge + .status-badge { margin-left: 6px; }
 
 /* Empty state */
 .empty-state {
@@ -409,6 +372,359 @@ td .status-badge + .status-badge { margin-left: 6px; }
   cursor: pointer;
 }
 
+.contrato-list {
+  max-height: none;
+}
+
+.contract-expiry-alert {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+  padding: 10px 12px;
+  border: 1px solid #bbf7d0;
+  border-radius: var(--radius-sm);
+  background: #f0fdf4;
+
+  div {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  strong {
+    font-size: 12px;
+    color: #166534;
+  }
+
+  span {
+    font-size: 13px;
+    color: #14532d;
+  }
+
+  &.warning {
+    border-color: #fed7aa;
+    background: #fff7ed;
+
+    strong,
+    span {
+      color: #7c2d12;
+    }
+  }
+
+  &.danger {
+    border-color: #fecaca;
+    background: #fef2f2;
+
+    strong,
+    span {
+      color: #991b1b;
+    }
+  }
+}
+
+.contrato-item {
+  align-items: flex-start;
+}
+
+.contrato-main {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 12px;
+}
+
+.contrato-tipo {
+  padding: 3px 9px;
+  border-radius: var(--radius-sm);
+  background: var(--color-accent-subtle);
+  color: var(--color-accent);
+  font-size: 11.5px;
+  font-weight: 700;
+}
+
+.contrato-fechas {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--color-text-secondary);
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
+.contrato-numero,
+.contrato-personal {
+  color: var(--color-text-secondary);
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
+.contrato-actions {
+  display: flex;
+  gap: 8px;
+  flex: 0 0 auto;
+}
+
+.personal-search {
+  display: grid;
+  gap: 10px;
+}
+
+.link-toggle {
+  justify-self: start;
+  border: none;
+  background: none;
+  padding: 0;
+  color: var(--color-accent);
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.personal-search-box {
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+}
+
+/* Consultas */
+.consultas-page {
+  display: grid;
+  gap: 14px;
+}
+
+.consulta-panel {
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-sm);
+}
+
+.consulta-search {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+}
+
+.consulta-input {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  min-height: 46px;
+  padding: 0 12px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-muted);
+  color: var(--color-text-secondary);
+
+  &:focus-within {
+    border-color: var(--color-accent);
+    box-shadow: 0 0 0 3px var(--color-accent-subtle);
+    background: var(--color-surface);
+  }
+
+  svg { flex: 0 0 auto; }
+
+  input {
+    width: 100%;
+    min-width: 0;
+    height: 42px;
+    border: none;
+    outline: none;
+    background: transparent;
+    color: var(--color-text);
+    font-size: 15px;
+    font-weight: 650;
+  }
+}
+
+.consulta-clear {
+  display: inline-grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-text-muted);
+  cursor: pointer;
+
+  &:hover {
+    background: var(--color-border);
+    color: var(--color-text);
+  }
+}
+
+.consulta-submit {
+  height: 46px;
+
+  svg { flex: 0 0 auto; }
+}
+
+.consulta-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  color: var(--color-text-secondary);
+  font-size: 12.5px;
+  font-weight: 700;
+}
+
+.toolbar-error { color: var(--color-danger); }
+
+.consulta-results {
+  display: grid;
+  gap: 10px;
+}
+
+.consulta-card {
+  display: grid;
+  grid-template-columns: 48px minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+  width: 100%;
+  padding: 13px 14px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  color: var(--color-text);
+  text-align: left;
+  box-shadow: var(--shadow-sm);
+  cursor: pointer;
+  transition: var(--transition);
+
+  &:hover {
+    border-color: var(--color-accent);
+    box-shadow: var(--shadow-md);
+  }
+
+  &.no-ad {
+    border-style: dashed;
+  }
+}
+
+.consulta-avatar {
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-md);
+  background: var(--color-accent-subtle);
+  color: var(--color-accent);
+  font-size: 14px;
+  font-weight: 850;
+}
+
+.consulta-card-main {
+  display: grid;
+  gap: 7px;
+  min-width: 0;
+}
+
+.consulta-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-width: 0;
+
+  strong {
+    min-width: 0;
+    overflow-wrap: anywhere;
+    color: var(--color-text);
+    font-size: 14.5px;
+  }
+}
+
+.consulta-badges,
+.consulta-meta,
+.consulta-contratos {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.consulta-meta {
+  color: var(--color-text-secondary);
+  font-size: 12.5px;
+  font-weight: 650;
+
+  span {
+    overflow-wrap: anywhere;
+  }
+}
+
+.mini-badge,
+.contrato-pill,
+.more-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 24px;
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+  background: var(--color-muted);
+  color: var(--color-text-secondary);
+  font-size: 11.5px;
+  font-weight: 750;
+  line-height: 1.2;
+}
+
+.mini-badge.success {
+  background: var(--color-success-light);
+  color: var(--color-success);
+}
+
+.mini-badge.neutral {
+  background: var(--color-muted);
+  color: var(--color-text-secondary);
+}
+
+.mini-badge.danger {
+  background: var(--color-danger-light);
+  color: var(--color-danger);
+}
+
+.mini-badge.warning {
+  background: var(--color-warning-light);
+  color: var(--color-warning);
+}
+
+.contrato-pill {
+  background: var(--color-info-light);
+  color: var(--color-info);
+
+  strong { color: inherit; }
+}
+
+.more-pill {
+  background: var(--color-accent-subtle);
+  color: var(--color-accent);
+}
+
+.consulta-action {
+  align-self: stretch;
+  display: inline-flex;
+  align-items: center;
+  padding-left: 12px;
+  border-left: 1px solid var(--color-border);
+  color: var(--color-accent);
+  font-size: 12.5px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
 /* Dashboard */
 .dashboard-grid {
   display: grid;
@@ -461,6 +777,38 @@ td .status-badge + .status-badge { margin-left: 6px; }
 @media (max-width: 760px) {
   .detail-sections,
   .form-grid { grid-template-columns: 1fr; }
+
+  .consulta-search { grid-template-columns: 1fr; }
+
+  .consulta-submit {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .consulta-card {
+    grid-template-columns: 42px minmax(0, 1fr);
+    align-items: start;
+  }
+
+  .consulta-avatar {
+    width: 42px;
+    height: 42px;
+    font-size: 13px;
+  }
+
+  .consulta-card-head {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .consulta-action {
+    grid-column: 2;
+    justify-self: start;
+    align-self: auto;
+    min-height: 26px;
+    padding-left: 0;
+    border-left: none;
+  }
 
   .identity-band { flex-direction: column; align-items: flex-start; }
   .identity-side { align-items: flex-start; width: 100%; }

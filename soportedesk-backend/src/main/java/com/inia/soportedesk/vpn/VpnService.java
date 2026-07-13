@@ -2,11 +2,13 @@ package com.inia.soportedesk.vpn;
 
 import com.inia.soportedesk.activedirectory.AdUsuarioCache;
 import com.inia.soportedesk.activedirectory.AdUsuarioCacheRepository;
+import com.inia.soportedesk.activedirectory.ActiveDirectoryService;
 import com.inia.soportedesk.auth.Usuario;
 import com.inia.soportedesk.auth.UsuarioRepository;
 import com.inia.soportedesk.exception.ResourceNotFoundException;
 import com.inia.soportedesk.glpi.VwInvComputerFull;
 import com.inia.soportedesk.glpi.VwInvComputerFullRepository;
+import com.inia.soportedesk.usuariosred.contrato.UsuarioRedContratoRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.security.core.Authentication;
@@ -15,7 +17,10 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
@@ -25,6 +30,8 @@ public class VpnService {
 
     private final VpnRepository repository;
     private final AdUsuarioCacheRepository adUsuarioCacheRepository;
+    private final ActiveDirectoryService activeDirectoryService;
+    private final UsuarioRedContratoRepository contratoRepository;
     private final VwInvComputerFullRepository glpiRepository;
     private final UsuarioRepository usuarioRepository;
     private final VpnConfigInstitucionalService configInstitucionalService;
@@ -58,7 +65,22 @@ public class VpnService {
         if (normalized.length() < 2) {
             return List.of();
         }
-        return adUsuarioCacheRepository.autocompleteEnabled(normalized, PageRequest.of(0, 20)).stream()
+        Map<String, AdUsuarioCache> resultados = new LinkedHashMap<>();
+        adUsuarioCacheRepository.autocompleteEnabled(normalized, normalizeAccountSearchTerm(normalized), PageRequest.of(0, 20))
+                .forEach(usuario -> resultados.put(usuario.getSamAccountName().toLowerCase(), usuario));
+
+        contratoRepository.searchAllFields(normalized, PageRequest.of(0, 20)).forEach(contrato -> {
+            String accountName = normalizeAccountSearchTerm(contrato.getUsuario());
+            if (accountName == null || accountName.isBlank()) {
+                return;
+            }
+            activeDirectoryService.buscarUsuarioCacheadoORefrescar(accountName)
+                    .filter(AdUsuarioCache::isEnabled)
+                    .ifPresent(usuario -> resultados.putIfAbsent(usuario.getSamAccountName().toLowerCase(), usuario));
+        });
+
+        return resultados.values().stream()
+                .limit(20)
                 .map(VpnUsuarioRedOption::from)
                 .toList();
     }
@@ -110,9 +132,10 @@ public class VpnService {
     }
 
     private VpnVencimientoAlerta toAlerta(Vpn vpn) {
+        String baseDetalle = "CONTRATO".equals(vpn.getVenceOrigen()) ? " por fin de contrato" : "";
         String detalle = vpn.getVence().isBefore(LocalDate.now())
-                ? "Vencido el " + vpn.getVence()
-                : "Vence el " + vpn.getVence();
+                ? "Vencido" + baseDetalle + " el " + vpn.getVence()
+                : "Vence" + baseDetalle + " el " + vpn.getVence();
         return new VpnVencimientoAlerta(vpn.getId(), vpn.getTitularNombreCompleto(), vpn.getTipoEquipo(), vpn.getVence(), detalle);
     }
 
@@ -221,14 +244,14 @@ public class VpnService {
         vpn.setTitularCargo(request.getTitularCargo());
 
         if (!isBlank(request.getUsuarioRedSamAccountName())) {
-            AdUsuarioCache usuarioRed = adUsuarioCacheRepository
-                    .findFirstBySamAccountNameIgnoreCase(request.getUsuarioRedSamAccountName().trim())
+            String samAccountName = normalizeAccountSearchTerm(request.getUsuarioRedSamAccountName());
+            AdUsuarioCache usuarioRed = activeDirectoryService
+                    .buscarUsuarioCacheadoORefrescar(samAccountName)
                     .orElseThrow(() -> new ResourceNotFoundException(
-                            "Usuario de red no encontrado en la cache local: " + request.getUsuarioRedSamAccountName()));
+                            "Usuario de red no encontrado en Active Directory: " + request.getUsuarioRedSamAccountName()));
             if (!usuarioRed.isEnabled()) {
                 throw new IllegalArgumentException("El usuario de red esta deshabilitado en la cache local");
             }
-            vpn.setUsuarioRed(null);
             vpn.setTitularTipo("AD");
             vpn.setAdSamAccountName(usuarioRed.getSamAccountName());
             vpn.setAdDisplayName(usuarioRed.getDisplayName());
@@ -250,7 +273,6 @@ public class VpnService {
             if (isBlank(request.getTitularEmpresa()) || isBlank(request.getTitularMotivo())) {
                 throw new IllegalArgumentException("Empresa y motivo son obligatorios para un tercero externo");
             }
-            vpn.setUsuarioRed(null);
             vpn.setTitularTipo("EXTERNO");
             vpn.setAdSamAccountName(null);
             vpn.setAdDisplayName(null);
@@ -283,6 +305,29 @@ public class VpnService {
         return s == null || s.isBlank();
     }
 
+    private String normalizeAccountSearchTerm(String value) {
+        if (value == null || value.trim().length() < 2) {
+            return "";
+        }
+        String term = value.trim();
+        int slash = Math.max(term.lastIndexOf('\\'), term.lastIndexOf('/'));
+        if (slash >= 0 && slash + 1 < term.length()) {
+            term = term.substring(slash + 1).trim();
+        }
+        int at = term.indexOf('@');
+        if (at > 0 && isKnownAdDomain(term.substring(at + 1))) {
+            return term.substring(0, at).trim();
+        }
+        return term;
+    }
+
+    private boolean isKnownAdDomain(String domain) {
+        if (domain == null || domain.isBlank()) {
+            return false;
+        }
+        return domain.trim().equalsIgnoreCase("inia.local");
+    }
+
     private Vpn saveAndApplyVence(Vpn vpn) {
         Vpn saved = repository.save(vpn);
         aplicarVence(saved);
@@ -290,12 +335,34 @@ public class VpnService {
     }
 
     private void aplicarVence(Vpn vpn) {
-        if ("INIA".equals(vpn.getTipoEquipo())) {
-            vpn.setVence(configInstitucionalService.getVencimiento());
+        LocalDate vencimientoBase = "INIA".equals(vpn.getTipoEquipo())
+                ? configInstitucionalService.getVencimiento()
+                : vpn.getVencimientoAntivirus();
+        LocalDate vencimientoContrato = vencimientoContrato(vpn.getAdSamAccountName());
+
+        vpn.setVencimientoBaseVpn(vencimientoBase);
+        vpn.setVencimientoContrato(vencimientoContrato);
+
+        if (vencimientoContrato != null && (vencimientoBase == null || vencimientoContrato.isBefore(vencimientoBase))) {
+            vpn.setVence(vencimientoContrato);
+            vpn.setVenceOrigen("CONTRATO");
             return;
         }
-        LocalDate vencimiento = vpn.getVencimientoAntivirus();
-        vpn.setVence(vencimiento);
+
+        vpn.setVence(vencimientoBase);
+        vpn.setVenceOrigen("INIA".equals(vpn.getTipoEquipo()) ? "INSTITUCIONAL" : "ANTIVIRUS_PERSONAL");
+    }
+
+    private LocalDate vencimientoContrato(String samAccountName) {
+        if (isBlank(samAccountName)) {
+            return null;
+        }
+        String usuario = normalizeAccountSearchTerm(samAccountName);
+        return contratoRepository.findByUsuarioIgnoreCaseOrderByFechaInicioDesc(usuario).stream()
+                .map(contrato -> contrato.getFechaFin())
+                .filter(Objects::nonNull)
+                .max(LocalDate::compareTo)
+                .orElse(null);
     }
 
     private boolean canViewCredenciales(Vpn vpn, Authentication auth) {
@@ -304,6 +371,8 @@ public class VpnService {
         }
         return auth.getAuthorities().stream().anyMatch(a ->
                 a.getAuthority().equals("ROLE_ADMIN") ||
+                a.getAuthority().equals("READ_solicitar-vpn") ||
+                a.getAuthority().equals("WRITE_solicitar-vpn") ||
                 a.getAuthority().equals("READ_credenciales-vpn"));
     }
 }

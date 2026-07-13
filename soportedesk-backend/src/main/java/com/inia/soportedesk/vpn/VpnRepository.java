@@ -11,13 +11,9 @@ public interface VpnRepository extends JpaRepository<Vpn, Long> {
 
     Optional<Vpn> findFirstByEquipoId(Long equipoId);
 
-    Optional<Vpn> findFirstByUsuarioRedId(Long usuarioRedId);
-
     long countByEstadoSolicitud(String estadoSolicitud);
 
-    @Query("SELECT v FROM Vpn v LEFT JOIN v.usuarioRed u LEFT JOIN v.equipo e WHERE " +
-           "LOWER(u.nombre) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
-           "LOWER(u.usuario) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
+    @Query("SELECT v FROM Vpn v LEFT JOIN v.equipo e WHERE " +
            "LOWER(COALESCE(v.adDisplayName, '')) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
            "LOWER(COALESCE(v.adSamAccountName, '')) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
            "LOWER(COALESCE(v.adMail, '')) LIKE LOWER(CONCAT('%', :search, '%')) OR " +

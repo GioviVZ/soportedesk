@@ -10,7 +10,6 @@ import java.time.LocalDate;
 @Setter
 public class VpnRequest {
 
-    private Long usuarioRedId;
     private String usuarioRedSamAccountName;
 
     private String titularTipo;

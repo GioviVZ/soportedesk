@@ -36,6 +36,7 @@ import { Vpn } from './vpn.model';
 
     <section class="module-stats">
       <div class="stat-pill"><strong>{{ vpn.vence || 'Sin fecha' }}</strong><span>Vence VPN</span></div>
+      <div class="stat-pill" *ngIf="vpn.vencimientoContrato"><strong>{{ vpn.vencimientoContrato }}</strong><span>Fin contrato</span></div>
       <div class="stat-pill"><strong>{{ vpn.estado || 'Sin estado' }}</strong><span>Estado acceso</span></div>
       <div class="stat-pill"><strong>{{ vpn.solicitadoPorNombre || vpn.solicitadoPor }}</strong><span>Solicitado por</span></div>
     </section>
@@ -73,6 +74,8 @@ import { Vpn } from './vpn.model';
         <div class="detail-grid">
           <div class="detail-field"><span class="detail-label">{{ vpn.tipoEquipo === 'INIA' ? 'Antivirus institucional' : 'Antivirus personal' }}</span><span class="detail-value">{{ antivirusOrigenValor(vpn) }}</span></div>
           <div class="detail-field"><span class="detail-label">Fecha base</span><span class="detail-value">{{ fechaBaseAntivirus(vpn) }}</span></div>
+          <div class="detail-field"><span class="detail-label">Fin de contrato</span><span class="detail-value">{{ vpn.vencimientoContrato || 'Sin contrato con fecha fin' }}</span></div>
+          <div class="detail-field"><span class="detail-label">Fecha final VPN</span><span class="detail-value">{{ vpn.vence || 'Sin fecha' }}<small>{{ venceOrigenLabel(vpn) }}</small></span></div>
         </div>
       </app-section-card>
 
@@ -86,7 +89,7 @@ import { Vpn } from './vpn.model';
         </div>
       </app-section-card>
 
-      <app-section-card title="Credenciales VPN" *ngIf="canEditCredenciales">
+      <app-section-card title="Credenciales VPN" *ngIf="canViewCredenciales">
         <svg icon xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" />
         </svg>
@@ -97,21 +100,24 @@ import { Vpn } from './vpn.model';
       </app-section-card>
     </div>
 
-    <footer class="modal-actions" *ngIf="canWriteSolicitar">
-      <button type="button" class="btn btn-ghost" *ngIf="vpn.estadoSolicitud !== 'APROBADO'" (click)="editRequested.emit(vpn)">Editar</button>
-      <button type="button" class="btn btn-danger" (click)="deleteRequested.emit(vpn)">Eliminar</button>
+    <footer class="modal-actions">
+      <button type="button" class="btn btn-ghost" *ngIf="canEditSolicitud && vpn.estadoSolicitud !== 'APROBADO'" (click)="editRequested.emit(vpn)">Editar</button>
+      <button type="button" class="btn btn-danger" *ngIf="canDeleteSolicitud" (click)="deleteRequested.emit(vpn)">Eliminar</button>
+      <button type="button" class="btn btn-ghost" (click)="closeRequested.emit()">Cerrar</button>
     </footer>
   `,
   styleUrl: './vpn.shared.scss',
 })
 export class VpnDetailComponent {
   @Input({ required: true }) vpn!: Vpn;
-  @Input() canWriteSolicitar = false;
+  @Input() canEditSolicitud = false;
+  @Input() canDeleteSolicitud = false;
   @Input() showDecisionPanel = false;
-  @Input() canEditCredenciales = false;
+  @Input() canViewCredenciales = false;
 
   @Output() editRequested = new EventEmitter<Vpn>();
   @Output() deleteRequested = new EventEmitter<Vpn>();
+  @Output() closeRequested = new EventEmitter<void>();
   @Output() aprobarRequested = new EventEmitter<Vpn>();
   @Output() resolucionRequested = new EventEmitter<{ vpn: Vpn; modo: 'RECHAZAR' | 'OBSERVAR' }>();
 
@@ -133,7 +139,14 @@ export class VpnDetailComponent {
   }
 
   fechaBaseAntivirus(vpn: Vpn): string {
-    if (vpn.tipoEquipo === 'INIA') return vpn.vence || 'Sin fecha institucional';
+    if (vpn.tipoEquipo === 'INIA') return vpn.vencimientoBaseVpn || 'Sin fecha institucional';
     return vpn.vencimientoAntivirus || 'Sin fecha registrada';
+  }
+
+  venceOrigenLabel(vpn: Vpn): string {
+    if (vpn.venceOrigen === 'CONTRATO') return 'Aplicado por fin de contrato';
+    if (vpn.venceOrigen === 'INSTITUCIONAL') return 'Aplicado por fecha institucional';
+    if (vpn.venceOrigen === 'ANTIVIRUS_PERSONAL') return 'Aplicado por antivirus personal';
+    return 'Sin regla aplicada';
   }
 }

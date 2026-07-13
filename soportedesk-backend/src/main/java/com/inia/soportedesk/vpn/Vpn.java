@@ -1,7 +1,6 @@
 package com.inia.soportedesk.vpn;
 
 import com.inia.soportedesk.equipos.Equipo;
-import com.inia.soportedesk.usuariosred.UsuarioRed;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -24,15 +23,20 @@ public class Vpn {
     private Long id;
 
     @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "usuario_red_id")
-    private UsuarioRed usuarioRed;
-
-    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "equipo_id")
     private Equipo equipo;
 
     @Transient
     private LocalDate vence;
+
+    @Transient
+    private LocalDate vencimientoBaseVpn;
+
+    @Transient
+    private LocalDate vencimientoContrato;
+
+    @Transient
+    private String venceOrigen;
 
     @Column(nullable = false)
     private String estado;
@@ -138,7 +142,6 @@ public class Vpn {
 
     @Transient
     public String getTitularNombreCompleto() {
-        if (usuarioRed != null) return usuarioRed.getNombre();
         if ("AD".equals(titularTipo)) {
             if (adDisplayName != null && !adDisplayName.isBlank()) return adDisplayName;
             if (adSamAccountName != null && !adSamAccountName.isBlank()) return adSamAccountName;

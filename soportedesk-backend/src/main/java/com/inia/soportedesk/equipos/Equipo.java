@@ -3,7 +3,6 @@ package com.inia.soportedesk.equipos;
 import com.inia.soportedesk.catalogo.Dependencia;
 import com.inia.soportedesk.catalogo.Sede;
 import com.inia.soportedesk.catalogo.Subdependencia;
-import com.inia.soportedesk.usuariosred.UsuarioRed;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -44,10 +43,6 @@ public class Equipo {
 
     private String host;
     private String ip;
-
-    @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "usuario_red_id")
-    private UsuarioRed usuarioRed;
 
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "sede_id")

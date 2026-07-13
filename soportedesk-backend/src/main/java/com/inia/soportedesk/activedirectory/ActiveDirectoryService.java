@@ -6,6 +6,7 @@ import com.inia.soportedesk.activedirectory.dto.ActiveDirectoryDashboardCompleto
 import com.inia.soportedesk.activedirectory.dto.ActiveDirectoryGroup;
 import com.inia.soportedesk.activedirectory.dto.ActiveDirectoryOu;
 import com.inia.soportedesk.activedirectory.dto.ActiveDirectoryResponse;
+import com.inia.soportedesk.activedirectory.dto.AdFilterOption;
 import com.inia.soportedesk.activedirectory.dto.AdSyncResponse;
 import com.inia.soportedesk.activedirectory.dto.AdUserAlerta;
 import com.inia.soportedesk.activedirectory.dto.AdUserSearchResult;
@@ -58,6 +59,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -84,31 +86,67 @@ public class ActiveDirectoryService {
     private final AdSyncJobStatus jobStatus;
     private final ApplicationEventPublisher eventPublisher;
 
-    public AdUserSearchResult buscarUsuarios(String usuario, String nombre, String oficina) {
-        if (!hasSearchTerm(usuario) && !hasSearchTerm(nombre) && !hasSearchTerm(oficina)) {
+    public AdUserSearchResult buscarUsuarios(String q, String usuario, String nombre, String oficina, String ou, String estado) {
+        SearchStateFilter state = SearchStateFilter.from(estado);
+        if (!hasSearchTerm(q) && !hasSearchTerm(usuario) && !hasSearchTerm(nombre) && !hasSearchTerm(oficina) && !hasSearchTerm(ou) && state.isAll()) {
             return new AdUserSearchResult(List.of(), false);
         }
+        String normalizedQuery = normalizeSearchTerm(q);
+        String normalizedUsuario = normalizeAccountSearchTerm(usuario);
         List<AdUserSummary> users = cacheRepository.search(
-                        normalizeSearchTerm(usuario),
+                        normalizedQuery,
+                        normalizedUsuario,
                         normalizeSearchTerm(nombre),
                         normalizeSearchTerm(oficina),
-                        PageRequest.of(0, 50)
+                        normalizeSearchTerm(ou),
+                        state.enabled(),
+                        state.locked(),
+                        PageRequest.of(0, 75)
                 ).stream()
                 .map(this::toUserSummary)
                 .toList();
-        if (users.isEmpty() && hasSearchTerm(usuario) && !hasSearchTerm(nombre) && !hasSearchTerm(oficina)) {
-            AdUser refreshed = refreshCachedUserFromAd(usuario.trim());
+        String directLookup = directLookupTerm(q, usuario, nombre, oficina, ou, state);
+        if (users.isEmpty() && directLookup != null) {
+            AdUser refreshed = refreshCachedUserFromAd(directLookup);
             if (refreshed != null) {
                 users = List.of(toUserSummary(refreshed));
             }
         }
-        return new AdUserSearchResult(users, users.size() >= 50);
+        return new AdUserSearchResult(users, users.size() >= 75);
     }
 
     public ActiveDirectoryResponse<AdUser> buscarUsuarioPorSam(String samAccountName) {
         return cacheRepository.findFirstBySamAccountNameIgnoreCase(samAccountName)
                 .map(user -> ActiveDirectoryResponse.ok("Usuario encontrado correctamente.", toUser(user)))
                 .orElseGet(() -> ActiveDirectoryResponse.error("Usuario no encontrado en la cache local. Sincroniza Active Directory."));
+    }
+
+    public Optional<AdUsuarioCache> buscarUsuarioCacheadoORefrescar(String samAccountName) {
+        String accountName = normalizeAccountSearchTerm(samAccountName);
+        if (accountName == null) {
+            return Optional.empty();
+        }
+        Optional<AdUsuarioCache> cached = cacheRepository.findFirstBySamAccountNameIgnoreCase(accountName);
+        if (cached.isPresent()) {
+            return cached;
+        }
+        AdUser refreshed = refreshCachedUserFromAd(accountName);
+        if (refreshed == null) {
+            return Optional.empty();
+        }
+        return cacheRepository.findFirstBySamAccountNameIgnoreCase(refreshed.samAccountName());
+    }
+
+    public List<AdFilterOption> listarUnidadesOrganizativas() {
+        return cacheRepository.listOrganizationalUnits().stream()
+                .map(row -> new AdFilterOption(blankToDefault((String) row[0], "Sin OU"), safeInt((Long) row[1])))
+                .toList();
+    }
+
+    public List<AdFilterOption> listarOficinas() {
+        return cacheRepository.listOffices().stream()
+                .map(row -> new AdFilterOption(blankToDefault((String) row[0], "Sin oficina"), safeInt((Long) row[1])))
+                .toList();
     }
 
     public ActiveDirectoryResponse<AdUser> desbloquearUsuario(String samAccountName) {
@@ -167,11 +205,13 @@ public class ActiveDirectoryService {
 
     public ActiveDirectoryResponse<AdUser> actualizarInformacionUsuario(String samAccountName, UpdateUserInfoRequest body) {
         return withUserWrite(samAccountName, "ACTUALIZAR_INFO", "Informacion del usuario actualizada correctamente.", (context, userDn, result) -> {
+            String department = blankToNull(body.department());
+            String office = firstNonBlank(body.office(), department);
             List<ModificationItem> mods = new ArrayList<>();
             addReplace(mods, "displayName", body.displayName());
             addReplace(mods, "title", body.title());
-            addReplace(mods, "department", body.department());
-            addReplace(mods, "physicalDeliveryOfficeName", body.office());
+            addReplace(mods, "department", department);
+            addReplace(mods, "physicalDeliveryOfficeName", office);
             addReplace(mods, "telephoneNumber", body.telephoneNumber());
             addReplace(mods, "mobile", body.mobile());
             addReplace(mods, "mail", body.mail());
@@ -216,10 +256,12 @@ public class ActiveDirectoryService {
             attrs.put("displayName", displayName);
             attrs.put("userPrincipalName", upn);
             attrs.put("userAccountControl", String.valueOf(NORMAL_ACCOUNT | ACCOUNT_DISABLED));
+            String department = blankToNull(body.department());
+            String office = firstNonBlank(body.office(), department);
             putIfPresent(attrs, "mail", body.mail());
             putIfPresent(attrs, "title", body.title());
-            putIfPresent(attrs, "department", body.department());
-            putIfPresent(attrs, "physicalDeliveryOfficeName", body.office());
+            putIfPresent(attrs, "department", department);
+            putIfPresent(attrs, "physicalDeliveryOfficeName", office);
             putIfPresent(attrs, "telephoneNumber", body.telephoneNumber());
             putIfPresent(attrs, "mobile", body.mobile());
             putIfPresent(attrs, "description", body.description());
@@ -371,6 +413,10 @@ public class ActiveDirectoryService {
         List<AdUsuarioCache> users = collectCacheUsersFromAd(syncedAt);
         int dcs = countPaged("(&(objectCategory=computer)(userAccountControl:" + LDAP_MATCHING_RULE_BIT_AND + ":=8192))");
         cacheRepository.saveAll(users);
+        if (!users.isEmpty()) {
+            // Sync trae el universo completo de usuarios cada vez; lo no tocado en esta corrida ya no existe en AD.
+            cacheRepository.deleteBySyncedAtBefore(syncedAt);
+        }
         metadataRepository.save(new AdCacheMetadata("controladores_dominio", String.valueOf(dcs), syncedAt));
         metadataRepository.save(new AdCacheMetadata("ultima_sincronizacion", syncedAt.toString(), syncedAt));
         return new AdSyncResponse(users.size(), dcs, syncedAt);
@@ -434,27 +480,46 @@ public class ActiveDirectoryService {
     }
 
     private SearchResult findUser(DirContext context, String samAccountName, String[] returningAttributes) throws Exception {
-        SearchResult cachedResult = findUserByCachedDn(context, samAccountName, returningAttributes);
+        String accountName = normalizeAccountSearchTerm(samAccountName);
+        if (accountName == null) {
+            return null;
+        }
+        SearchResult cachedResult = findUserByCachedDn(context, accountName, returningAttributes);
         if (cachedResult != null) {
             return cachedResult;
         }
-        String filter = "(&(objectCategory=person)(objectClass=user)(sAMAccountName=" + LdapFilterUtils.escape(samAccountName) + "))";
+        String escapedAccount = LdapFilterUtils.escape(accountName);
+        String escapedOriginal = LdapFilterUtils.escape(samAccountName.trim());
+        String filter = "(&(objectCategory=person)(objectClass=user)(|(sAMAccountName=" + escapedAccount + ")(userPrincipalName=" + escapedOriginal + ")))";
         try {
             NamingEnumeration<SearchResult> results = context.search(contextFactory.baseDn(), filter, controls(returningAttributes, 1));
             return results.hasMore() ? results.next() : null;
         } catch (PartialResultException e) {
-            log.debug("Busqueda AD parcial para samAccountName={}; se continua sin resultado directo.", samAccountName);
+            log.debug("Busqueda AD parcial para samAccountName={}; se continua sin resultado directo.", accountName);
             return null;
         }
     }
 
     String buildUserSearchFilter(String usuario, String nombre, String oficina) {
         StringBuilder filter = new StringBuilder("(&(objectCategory=person)(objectClass=user)");
-        appendContainsFilter(filter, "sAMAccountName", usuario);
+        appendAccountContainsFilter(filter, usuario);
         appendContainsFilter(filter, "displayName", nombre);
         appendContainsFilter(filter, "physicalDeliveryOfficeName", oficina);
         filter.append(")");
         return filter.toString();
+    }
+
+    private void appendAccountContainsFilter(StringBuilder filter, String value) {
+        if (!hasSearchTerm(value)) {
+            return;
+        }
+        String raw = value.trim();
+        String account = normalizeAccountSearchTerm(raw);
+        filter.append("(|");
+        appendContainsFilter(filter, "sAMAccountName", account);
+        appendContainsFilter(filter, "userPrincipalName", raw);
+        appendContainsFilter(filter, "mail", raw);
+        filter.append(")");
     }
 
     private void appendContainsFilter(StringBuilder filter, String attribute, String value) {
@@ -473,6 +538,45 @@ public class ActiveDirectoryService {
 
     private String normalizeSearchTerm(String value) {
         return hasSearchTerm(value) ? value.trim() : null;
+    }
+
+    private String normalizeAccountSearchTerm(String value) {
+        if (!hasSearchTerm(value)) {
+            return null;
+        }
+        String term = value.trim();
+        int slash = Math.max(term.lastIndexOf('\\'), term.lastIndexOf('/'));
+        if (slash >= 0 && slash + 1 < term.length()) {
+            term = term.substring(slash + 1).trim();
+        }
+        int at = term.indexOf('@');
+        if (at > 0 && isKnownAdDomain(term.substring(at + 1))) {
+            return term.substring(0, at).trim();
+        }
+        return term;
+    }
+
+    private boolean isKnownAdDomain(String domain) {
+        if (domain == null || domain.isBlank()) {
+            return false;
+        }
+        String normalized = domain.trim().toLowerCase();
+        String configuredDomain = contextFactory == null ? "" : domainFromBaseDn().toLowerCase();
+        return normalized.equals(configuredDomain) || normalized.equals("inia.local");
+    }
+
+    private String directLookupTerm(String q, String usuario, String nombre, String oficina, String ou, SearchStateFilter state) {
+        String term = null;
+        if (hasSearchTerm(q) && !hasSearchTerm(usuario) && !hasSearchTerm(nombre) && !hasSearchTerm(oficina) && !hasSearchTerm(ou)) {
+            term = normalizeAccountSearchTerm(q);
+        }
+        if (hasSearchTerm(usuario) && !hasSearchTerm(q) && !hasSearchTerm(nombre) && !hasSearchTerm(oficina) && !hasSearchTerm(ou)) {
+            term = normalizeAccountSearchTerm(usuario);
+        }
+        if (term == null || !state.isAll() || term.contains(" ")) {
+            return null;
+        }
+        return term;
     }
 
     private List<AdUsuarioCache> collectCacheUsersFromAd(LocalDateTime syncedAt) {
@@ -511,7 +615,7 @@ public class ActiveDirectoryService {
                 }
             } while (cookie != null && cookie.length > 0);
         } catch (Exception e) {
-            log.warn("Error sincronizando cache de Active Directory", e);
+            throw new RuntimeException("Error sincronizando cache de Active Directory: " + e.getMessage(), e);
         } finally {
             closeQuietly(context);
         }
@@ -778,6 +882,10 @@ public class ActiveDirectoryService {
         return value == null || value.isBlank() ? fallback : value;
     }
 
+    private String blankToNull(String value) {
+        return value == null || value.isBlank() ? null : value.trim();
+    }
+
     private String lockoutDetail(Long lockoutTime) {
         if (lockoutTime == null || lockoutTime <= 0) {
             return "Cuenta bloqueada";
@@ -1007,6 +1115,24 @@ public class ActiveDirectoryService {
     @FunctionalInterface
     private interface AlertDaysExtractor {
         Long days(AdUsuarioCache row);
+    }
+
+    record SearchStateFilter(Boolean enabled, Boolean locked) {
+        static SearchStateFilter from(String estado) {
+            if (estado == null || estado.isBlank()) {
+                return new SearchStateFilter(null, null);
+            }
+            return switch (estado.trim().toLowerCase()) {
+                case "enabled", "habilitados", "habilitado" -> new SearchStateFilter(true, null);
+                case "disabled", "deshabilitados", "deshabilitado" -> new SearchStateFilter(false, null);
+                case "locked", "bloqueados", "bloqueado" -> new SearchStateFilter(null, true);
+                default -> new SearchStateFilter(null, null);
+            };
+        }
+
+        boolean isAll() {
+            return enabled == null && locked == null;
+        }
     }
 
     record DashboardUserRow(

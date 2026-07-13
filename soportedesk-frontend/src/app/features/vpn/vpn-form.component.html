@@ -11,7 +11,11 @@
   <ng-container *ngIf="titularModo === 'buscando'">
     <div class="field ad-field">
       <label>Buscar usuario de red (AD) *</label>
-      <input type="text" [value]="adSearchTerm" (input)="onAdSearch($any($event.target).value)" placeholder="Nombre o usuario" />
+      <input type="text" [value]="adSearchTerm" (input)="onAdSearch($any($event.target).value)" placeholder="Usuario, usuario&#64;inia.local, nombre, correo o contrato" />
+      <span class="hint">Puede escribir el usuario, correo, oficina o nombre del contrato. Ejemplo: jeremi.</span>
+      <div class="search-status" *ngIf="adSearchTerm.trim().length === 1">Escriba al menos 2 caracteres.</div>
+      <div class="search-status" *ngIf="adSearching">Buscando coincidencias...</div>
+      <div class="search-error" *ngIf="adSearchError">{{ adSearchError }}</div>
       <ul class="equipo-results" *ngIf="adResults.length">
         <li *ngFor="let u of adResults" (click)="onAdUserSelected(u)">
           <strong>{{ u.displayName || u.samAccountName }}</strong>
@@ -24,7 +28,9 @@
     </div>
 
     <div class="titular-fallback">
-      <p *ngIf="adBusquedaRealizada && adResults.length === 0">No se encontró en la base local de Usuarios de Red.</p>
+      <p *ngIf="adBusquedaRealizada && adResults.length === 0 && !adSearching">
+        No se encontro un usuario activo en AD ni en contratos de Usuarios de Red.
+      </p>
       <div class="actions">
         <button type="button" class="secondary" (click)="onElegirExterno()">Externo</button>
       </div>

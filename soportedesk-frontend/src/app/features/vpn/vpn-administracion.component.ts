@@ -48,11 +48,14 @@ type EstadoSolicitud = 'PENDIENTE' | 'APROBADO' | 'RECHAZADO' | 'OBSERVADO';
       <app-vpn-detail
         *ngIf="viewing as v"
         [vpn]="v"
-        [canWriteSolicitar]="canWriteSolicitar"
-        [canEditCredenciales]="canEditCredenciales"
+        [canEditSolicitud]="canWriteSolicitar"
+        [canDeleteSolicitud]="canDelete"
+        [canViewCredenciales]="canViewCredenciales"
         [showDecisionPanel]="canWriteAprobar"
         (aprobarRequested)="openAprobar($event)"
         (resolucionRequested)="openResolucion($event.vpn, $event.modo)"
+        (deleteRequested)="deleteFromDetail($event)"
+        (closeRequested)="closeView()"
       />
     </app-modal>
 
@@ -101,8 +104,13 @@ export class VpnAdministracionComponent implements OnInit {
     return this.authService.isAdmin() || this.authService.canWrite('aprobar-vpn');
   }
 
-  get canEditCredenciales(): boolean {
-    if (this.authService.isAdmin() || this.authService.canWrite('credenciales-vpn')) return true;
+  get canDelete(): boolean {
+    return this.authService.isAdmin();
+  }
+
+  get canViewCredenciales(): boolean {
+    if (this.authService.isAdmin() || this.authService.canRead('credenciales-vpn')) return true;
+    if (this.authService.canRead('solicitar-vpn')) return true;
     return this.viewing?.solicitadoPor === this.authService.getUsername();
   }
 
@@ -187,6 +195,20 @@ export class VpnAdministracionComponent implements OnInit {
     this.resolucionOpen = false;
     this.load();
     this.loadKpis();
+  }
+
+  onDelete(item: Vpn): void {
+    const nombre = item.titularNombreCompleto ?? item.id;
+    if (!confirm(`¿Eliminar el registro VPN de "${nombre}"?`)) return;
+    this.service.delete(item.id).subscribe(() => {
+      this.load();
+      this.loadKpis();
+    });
+  }
+
+  deleteFromDetail(item: Vpn): void {
+    this.viewing = null;
+    this.onDelete(item);
   }
 
   estadoTone(estado: string): 'success' | 'warning' | 'danger' | 'neutral' {

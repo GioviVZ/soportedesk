@@ -9,6 +9,10 @@ import { ActiveDirectoryDashboard } from './active-directory.model';
   template: `
     <section class="module-stats" *ngIf="dashboard">
       <div class="stat-pill">
+        <strong>{{ total() }}</strong>
+        <span>Total</span>
+      </div>
+      <div class="stat-pill">
         <strong>{{ dashboard.usuariosHabilitados }}</strong>
         <span>Habilitados</span>
       </div>
@@ -32,4 +36,9 @@ import { ActiveDirectoryDashboard } from './active-directory.model';
 })
 export class AdKpisComponent {
   @Input({ required: true }) dashboard: ActiveDirectoryDashboard | null = null;
+
+  total(): number {
+    if (!this.dashboard) return 0;
+    return this.dashboard.usuariosHabilitados + this.dashboard.usuariosDeshabilitados;
+  }
 }

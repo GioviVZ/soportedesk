@@ -26,6 +26,11 @@ export interface AdUserSearchResult {
   truncated: boolean;
 }
 
+export interface AdFilterOption {
+  value: string;
+  total: number;
+}
+
 export interface OuUsuariosCount {
   ou: string;
   activos: number;

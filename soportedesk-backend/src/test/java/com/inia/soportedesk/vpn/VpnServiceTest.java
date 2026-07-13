@@ -6,12 +6,12 @@ import com.inia.soportedesk.auth.UsuarioRepository;
 import com.inia.soportedesk.exception.ResourceNotFoundException;
 import com.inia.soportedesk.glpi.VwInvComputerFull;
 import com.inia.soportedesk.glpi.VwInvComputerFullRepository;
-import com.inia.soportedesk.usuariosred.UsuarioRed;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -23,6 +23,7 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -131,10 +132,29 @@ class VpnServiceTest {
     }
 
     @Test
+    void buscarUsuariosRed_normalizesIniaUpnForAdAutocomplete() {
+        when(adUsuarioCacheRepository.autocompleteEnabled(eq("jruiz@inia.local"), eq("jruiz"), any(Pageable.class)))
+                .thenReturn(List.of(cacheUser()));
+
+        List<VpnUsuarioRedOption> result = service.buscarUsuariosRed("jruiz@inia.local");
+
+        assertThat(result).extracting(VpnUsuarioRedOption::samAccountName).containsExactly("jruiz");
+        verify(adUsuarioCacheRepository).autocompleteEnabled(eq("jruiz@inia.local"), eq("jruiz"), any(Pageable.class));
+    }
+
+    @Test
+    void buscarUsuariosRed_normalizesDomainPrefixForAdAutocomplete() {
+        when(adUsuarioCacheRepository.autocompleteEnabled(eq("INIA\\jruiz"), eq("jruiz"), any(Pageable.class)))
+                .thenReturn(List.of(cacheUser()));
+
+        List<VpnUsuarioRedOption> result = service.buscarUsuariosRed("INIA\\jruiz");
+
+        assertThat(result).extracting(VpnUsuarioRedOption::samAccountName).containsExactly("jruiz");
+        verify(adUsuarioCacheRepository).autocompleteEnabled(eq("INIA\\jruiz"), eq("jruiz"), any(Pageable.class));
+    }
+
+    @Test
     void crearSolicitud_withoutGlpiEquipo_savesPendingRequest() {
-        UsuarioRed mockUser = new UsuarioRed();
-        mockUser.setId(1L);
-        mockUser.setNombre("Juan Pérez");
         when(adUsuarioCacheRepository.findFirstBySamAccountNameIgnoreCase("jruiz")).thenReturn(Optional.of(cacheUser()));
         when(usuarioRepository.findByUsername("jasistente")).thenReturn(Optional.empty());
         when(repository.save(any(Vpn.class))).thenAnswer(inv -> inv.getArgument(0));
@@ -150,9 +170,22 @@ class VpnServiceTest {
     }
 
     @Test
+    void crearSolicitud_withIniaUpn_usesSamAccountNameForLookup() {
+        when(adUsuarioCacheRepository.findFirstBySamAccountNameIgnoreCase("jruiz")).thenReturn(Optional.of(cacheUser()));
+        when(usuarioRepository.findByUsername(any())).thenReturn(Optional.empty());
+        when(repository.save(any(Vpn.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        VpnRequest request = sampleRequest();
+        request.setUsuarioRedSamAccountName("jruiz@inia.local");
+
+        Vpn result = service.crearSolicitud(request, authAs("jasistente"));
+
+        assertThat(result.getAdSamAccountName()).isEqualTo("jruiz");
+        verify(adUsuarioCacheRepository).findFirstBySamAccountNameIgnoreCase("jruiz");
+    }
+
+    @Test
     void crearSolicitud_withGlpiEquipo_snapshotsHostAndIp() {
-        UsuarioRed mockUser = new UsuarioRed();
-        mockUser.setId(1L);
         when(adUsuarioCacheRepository.findFirstBySamAccountNameIgnoreCase("jruiz")).thenReturn(Optional.of(cacheUser()));
         when(usuarioRepository.findByUsername(any())).thenReturn(Optional.empty());
 
@@ -190,8 +223,6 @@ class VpnServiceTest {
 
     @Test
     void crearSolicitud_copiesSistemaOperativoForticlientAndVencimientoAntivirus() {
-        UsuarioRed mockUser = new UsuarioRed();
-        mockUser.setId(1L);
         when(adUsuarioCacheRepository.findFirstBySamAccountNameIgnoreCase("jruiz")).thenReturn(Optional.of(cacheUser()));
         when(usuarioRepository.findByUsername(any())).thenReturn(Optional.empty());
         when(repository.save(any(Vpn.class))).thenAnswer(inv -> inv.getArgument(0));
@@ -210,8 +241,6 @@ class VpnServiceTest {
 
     @Test
     void crearSolicitud_forEquipoPersonal_setsVenceFromVencimientoAntivirus() {
-        UsuarioRed mockUser = new UsuarioRed();
-        mockUser.setId(1L);
         when(adUsuarioCacheRepository.findFirstBySamAccountNameIgnoreCase("jruiz")).thenReturn(Optional.of(cacheUser()));
         when(usuarioRepository.findByUsername(any())).thenReturn(Optional.empty());
         when(repository.save(any(Vpn.class))).thenAnswer(inv -> inv.getArgument(0));
@@ -257,7 +286,6 @@ class VpnServiceTest {
 
         Vpn result = service.crearSolicitud(request, authAs("jasistente"));
 
-        assertThat(result.getUsuarioRed()).isNull();
         assertThat(result.getTitularTipo()).isEqualTo("EXTERNO");
         assertThat(result.getTitularEmpresa()).isEqualTo("ACME SAC");
         assertThat(result.getTitularMotivo()).isEqualTo("Consultoria - Proyecto X");
@@ -291,14 +319,22 @@ class VpnServiceTest {
     }
 
     @Test
-    void getTitularNombreCompleto_forAdTitular_returnsUsuarioRedNombre() {
+    void getTitularNombreCompleto_forAdTitular_returnsAdDisplayName() {
         Vpn vpn = new Vpn();
-        UsuarioRed usuarioRed = new UsuarioRed();
-        usuarioRed.setNombre("Carlos Ruiz");
-        vpn.setUsuarioRed(usuarioRed);
+        vpn.setTitularTipo("AD");
+        vpn.setAdDisplayName("Carlos Ruiz");
 
         assertThat(vpn.getTitularNombreCompleto()).isEqualTo("Carlos Ruiz");
         assertThat(vpn.getTitularOrigenLabel()).isEqualTo("AD");
+    }
+
+    @Test
+    void getTitularNombreCompleto_forAdTitularWithoutDisplayName_fallsBackToSamAccountName() {
+        Vpn vpn = new Vpn();
+        vpn.setTitularTipo("AD");
+        vpn.setAdSamAccountName("cruiz");
+
+        assertThat(vpn.getTitularNombreCompleto()).isEqualTo("cruiz");
     }
 
     @Test
@@ -428,6 +464,19 @@ class VpnServiceTest {
         service.maskCredencialesIfNeeded(vpn, authAs("jasistente", "ROLE_SOPORTE", "READ_credenciales-vpn"));
 
         assertThat(vpn.getUsuarioVpn()).isEqualTo("vpnuser1");
+    }
+
+    @Test
+    void maskCredencialesIfNeeded_withSolicitarReadAuthority_keepsCredentialsForRegistros() {
+        Vpn vpn = new Vpn();
+        vpn.setUsuarioVpn("vpnuser1");
+        vpn.setCredencialVpn("supersecret");
+        vpn.setSolicitadoPor("otro-usuario");
+
+        service.maskCredencialesIfNeeded(vpn, authAs("jregistro", "ROLE_SOPORTE", "READ_solicitar-vpn"));
+
+        assertThat(vpn.getUsuarioVpn()).isEqualTo("vpnuser1");
+        assertThat(vpn.getCredencialVpn()).isEqualTo("supersecret");
     }
 
     @Test

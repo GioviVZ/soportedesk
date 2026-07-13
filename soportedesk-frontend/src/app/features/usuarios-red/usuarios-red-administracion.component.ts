@@ -4,6 +4,8 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import { Observable, Subscription, interval } from 'rxjs';
 import { switchMap, takeWhile } from 'rxjs/operators';
+import { CatalogoService } from '../../core/catalogos/catalogo.service';
+import { Dependencia, Subdependencia } from '../../core/models/catalogo.model';
 import { ModalComponent } from '../../shared/modal/modal.component';
 import { ActiveDirectoryService } from './active-directory.service';
 import {
@@ -85,7 +87,7 @@ type Panel = 'create' | 'password' | 'groups' | 'ou' | 'info' | null;
       </section>
 
       <ng-container *ngIf="user">
-        <app-ad-user-detail [user]="user" />
+        <app-ad-user-detail [user]="user" [puedeEditarContratos]="true" />
 
         <section class="actions-grid">
           <button type="button" class="action-card" (click)="openPanel('password')">
@@ -189,12 +191,18 @@ type Panel = 'create' | 'password' | 'groups' | 'ou' | 'info' | null;
           <input name="createTitle" [(ngModel)]="createForm.title" />
         </div>
         <div class="field">
-          <label>Area</label>
-          <input name="createDepartment" [(ngModel)]="createForm.department" />
+          <label>Dependencia</label>
+          <select name="createDependenciaId" [(ngModel)]="createDependenciaId" (ngModelChange)="onCreateDependenciaChange($event)">
+            <option [ngValue]="null">Seleccione...</option>
+            <option *ngFor="let dependencia of dependencias" [ngValue]="dependencia.id">{{ dependencia.nombre }}</option>
+          </select>
         </div>
         <div class="field">
-          <label>Oficina</label>
-          <input name="createOffice" [(ngModel)]="createForm.office" />
+          <label>Subdependencia</label>
+          <select name="createSubdependenciaId" [(ngModel)]="createSubdependenciaId" (ngModelChange)="onCreateSubdependenciaChange($event)" [disabled]="!createDependenciaId">
+            <option [ngValue]="null">Usar dependencia seleccionada</option>
+            <option *ngFor="let subdependencia of createSubdependencias" [ngValue]="subdependencia.id">{{ subdependencia.nombre }}</option>
+          </select>
         </div>
         <div class="field">
           <label>Telefono</label>
@@ -298,8 +306,20 @@ type Panel = 'create' | 'password' | 'groups' | 'ou' | 'info' | null;
       <form class="modal-form form-grid" (ngSubmit)="saveInfo()">
         <div class="field"><label>Nombre mostrado</label><input name="displayName" [(ngModel)]="infoForm.displayName" /></div>
         <div class="field"><label>Cargo</label><input name="title" [(ngModel)]="infoForm.title" /></div>
-        <div class="field"><label>Area</label><input name="department" [(ngModel)]="infoForm.department" /></div>
-        <div class="field"><label>Oficina</label><input name="office" [(ngModel)]="infoForm.office" /></div>
+        <div class="field">
+          <label>Dependencia</label>
+          <select name="infoDependenciaId" [(ngModel)]="infoDependenciaId" (ngModelChange)="onInfoDependenciaChange($event)">
+            <option [ngValue]="null">Seleccione...</option>
+            <option *ngFor="let dependencia of dependencias" [ngValue]="dependencia.id">{{ dependencia.nombre }}</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Subdependencia</label>
+          <select name="infoSubdependenciaId" [(ngModel)]="infoSubdependenciaId" (ngModelChange)="onInfoSubdependenciaChange($event)" [disabled]="!infoDependenciaId">
+            <option [ngValue]="null">Usar dependencia seleccionada</option>
+            <option *ngFor="let subdependencia of infoSubdependencias" [ngValue]="subdependencia.id">{{ subdependencia.nombre }}</option>
+          </select>
+        </div>
         <div class="field"><label>Telefono</label><input name="telephoneNumber" [(ngModel)]="infoForm.telephoneNumber" /></div>
         <div class="field"><label>Celular</label><input name="mobile" [(ngModel)]="infoForm.mobile" /></div>
         <div class="field"><label>Correo</label><input name="mail" [(ngModel)]="infoForm.mail" /></div>
@@ -315,6 +335,7 @@ type Panel = 'create' | 'password' | 'groups' | 'ou' | 'info' | null;
 })
 export class UsuariosRedAdministracionComponent implements OnInit, OnDestroy {
   private adService = inject(ActiveDirectoryService);
+  private catalogoService = inject(CatalogoService);
   private route = inject(ActivatedRoute);
   private readonly adDomain = 'inia.local';
 
@@ -335,10 +356,18 @@ export class UsuariosRedAdministracionComponent implements OnInit, OnDestroy {
   infoForm: UpdateUserInfoRequest = {};
   createForm: CreateAdUserRequest = this.emptyCreateForm();
   createOuResults: ActiveDirectoryOu[] = [];
+  dependencias: Dependencia[] = [];
+  createSubdependencias: Subdependencia[] = [];
+  infoSubdependencias: Subdependencia[] = [];
+  createDependenciaId: number | null = null;
+  createSubdependenciaId: number | null = null;
+  infoDependenciaId: number | null = null;
+  infoSubdependenciaId: number | null = null;
   private createUpnEdited = false;
   private syncPollSub?: Subscription;
 
   ngOnInit(): void {
+    this.loadOrganizacionCatalogo();
     this.loadDashboard();
     this.checkSyncStatus();
     this.route.queryParamMap.subscribe((params) => {
@@ -483,7 +512,7 @@ export class UsuariosRedAdministracionComponent implements OnInit, OnDestroy {
 
   saveInfo(): void {
     if (!this.user) return;
-    this.runAction(this.adService.updateInfo(this.user.samAccountName, this.infoForm), true);
+    this.runAction(this.adService.updateInfo(this.user.samAccountName, this.normalizedInfoRequest()), true);
   }
 
   searchGroups(): void {
@@ -520,6 +549,50 @@ export class UsuariosRedAdministracionComponent implements OnInit, OnDestroy {
     this.createOuResults = [];
   }
 
+  onCreateDependenciaChange(value: number | null): void {
+    this.createDependenciaId = this.normalizeSelectId(value);
+    this.createSubdependenciaId = null;
+    this.createSubdependencias = [];
+    const dependencia = this.findDependencia(this.createDependenciaId);
+    this.createForm.department = dependencia?.nombre ?? '';
+    this.createForm.office = dependencia?.nombre ?? '';
+    if (this.createDependenciaId) {
+      this.catalogoService.getSubdependencias(this.createDependenciaId)
+        .subscribe((items) => (this.createSubdependencias = this.sortByName(items)));
+    }
+  }
+
+  onCreateSubdependenciaChange(value: number | null): void {
+    this.createSubdependenciaId = this.normalizeSelectId(value);
+    const subdependencia = this.findSubdependencia(this.createSubdependencias, this.createSubdependenciaId);
+    this.createForm.office = subdependencia?.nombre || this.createForm.department || '';
+  }
+
+  onInfoDependenciaChange(value: number | null): void {
+    this.infoDependenciaId = this.normalizeSelectId(value);
+    this.infoSubdependenciaId = null;
+    this.infoSubdependencias = [];
+    const dependencia = this.findDependencia(this.infoDependenciaId);
+    this.infoForm = {
+      ...this.infoForm,
+      department: dependencia?.nombre ?? null,
+      office: dependencia?.nombre ?? null,
+    };
+    if (this.infoDependenciaId) {
+      this.catalogoService.getSubdependencias(this.infoDependenciaId)
+        .subscribe((items) => (this.infoSubdependencias = this.sortByName(items)));
+    }
+  }
+
+  onInfoSubdependenciaChange(value: number | null): void {
+    this.infoSubdependenciaId = this.normalizeSelectId(value);
+    const subdependencia = this.findSubdependencia(this.infoSubdependencias, this.infoSubdependenciaId);
+    this.infoForm = {
+      ...this.infoForm,
+      office: subdependencia?.nombre || this.infoForm.department || null,
+    };
+  }
+
   onCreateSamChanged(value: string): void {
     this.createForm.samAccountName = value;
     if (!this.createUpnEdited) {
@@ -535,6 +608,20 @@ export class UsuariosRedAdministracionComponent implements OnInit, OnDestroy {
   moveToOu(ouDn: string): void {
     if (!this.user || !ouDn) return;
     this.runAction(this.adService.moveUser(this.user.samAccountName, ouDn), true);
+  }
+
+  private loadOrganizacionCatalogo(): void {
+    this.catalogoService.getDependencias().subscribe({
+      next: (items) => {
+        this.dependencias = this.sortByName(items);
+        if (this.user) {
+          this.syncCatalogSelectionFromInfo();
+        }
+      },
+      error: () => {
+        this.dependencias = [];
+      },
+    });
   }
 
   private loadUser(sam: string): void {
@@ -608,6 +695,30 @@ export class UsuariosRedAdministracionComponent implements OnInit, OnDestroy {
       mail: user.mail,
       description: user.description,
     };
+    this.syncCatalogSelectionFromInfo();
+  }
+
+  private syncCatalogSelectionFromInfo(): void {
+    const dependencia = this.findDependenciaByName(this.infoForm.department);
+    this.infoDependenciaId = dependencia?.id ?? null;
+    this.infoSubdependenciaId = null;
+    this.infoSubdependencias = [];
+
+    if (!dependencia) {
+      return;
+    }
+
+    this.catalogoService.getSubdependencias(dependencia.id).subscribe((items) => {
+      this.infoSubdependencias = this.sortByName(items);
+      const office = this.normalizeName(this.infoForm.office);
+      const department = this.normalizeName(this.infoForm.department);
+      this.infoSubdependenciaId = office && office !== department
+        ? (this.infoSubdependencias.find((item) => this.normalizeName(item.nombre) === office)?.id ?? null)
+        : null;
+      if (!this.infoSubdependenciaId && this.infoForm.department) {
+        this.infoForm = { ...this.infoForm, office: this.infoForm.department };
+      }
+    });
   }
 
   private emptyCreateForm(): CreateAdUserRequest {
@@ -635,10 +746,15 @@ export class UsuariosRedAdministracionComponent implements OnInit, OnDestroy {
     this.createForm = this.emptyCreateForm();
     this.createOuSearch = '';
     this.createOuResults = [];
+    this.createDependenciaId = null;
+    this.createSubdependenciaId = null;
+    this.createSubdependencias = [];
     this.createUpnEdited = false;
   }
 
   private normalizedCreateRequest(): CreateAdUserRequest {
+    const department = this.blankToNull(this.createForm.department);
+    const office = this.blankToNull(this.createForm.office) ?? department;
     return {
       samAccountName: this.createForm.samAccountName.trim(),
       givenName: this.createForm.givenName.trim(),
@@ -649,14 +765,58 @@ export class UsuariosRedAdministracionComponent implements OnInit, OnDestroy {
       temporaryPassword: this.createForm.temporaryPassword,
       ouDestinoDn: this.createForm.ouDestinoDn.trim(),
       title: this.blankToNull(this.createForm.title),
-      department: this.blankToNull(this.createForm.department),
-      office: this.blankToNull(this.createForm.office),
+      department,
+      office,
       telephoneNumber: this.blankToNull(this.createForm.telephoneNumber),
       mobile: this.blankToNull(this.createForm.mobile),
       description: this.blankToNull(this.createForm.description),
       enabled: this.createForm.enabled,
       forceChange: this.createForm.forceChange,
     };
+  }
+
+  private normalizedInfoRequest(): UpdateUserInfoRequest {
+    const department = this.blankToNull(this.infoForm.department);
+    const office = this.blankToNull(this.infoForm.office) ?? department;
+    return {
+      displayName: this.blankToNull(this.infoForm.displayName),
+      title: this.blankToNull(this.infoForm.title),
+      department,
+      office,
+      telephoneNumber: this.blankToNull(this.infoForm.telephoneNumber),
+      mobile: this.blankToNull(this.infoForm.mobile),
+      mail: this.blankToNull(this.infoForm.mail),
+      description: this.blankToNull(this.infoForm.description),
+    };
+  }
+
+  private findDependencia(id: number | null): Dependencia | null {
+    return id ? (this.dependencias.find((item) => item.id === id) ?? null) : null;
+  }
+
+  private findDependenciaByName(name: string | null | undefined): Dependencia | null {
+    const normalized = this.normalizeName(name);
+    return normalized ? (this.dependencias.find((item) => this.normalizeName(item.nombre) === normalized) ?? null) : null;
+  }
+
+  private findSubdependencia(items: Subdependencia[], id: number | null): Subdependencia | null {
+    return id ? (items.find((item) => item.id === id) ?? null) : null;
+  }
+
+  private normalizeSelectId(value: number | string | null | undefined): number | null {
+    if (value === null || value === undefined || value === '') {
+      return null;
+    }
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : null;
+  }
+
+  private normalizeName(value: string | null | undefined): string {
+    return value?.trim().toLowerCase() ?? '';
+  }
+
+  private sortByName<T extends { nombre: string }>(items: T[]): T[] {
+    return [...items].sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'));
   }
 
   private blankToNull(value: string | null | undefined): string | null {
