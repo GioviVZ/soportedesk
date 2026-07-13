@@ -79,3 +79,42 @@
   --color-gray-light: #f6f9fc;
   --color-white: #ffffff;
 }
+
+:root[data-theme='dark'] {
+  --color-bg: #0f1521;
+  --color-surface: #171f2e;
+  --color-surface-raised: #1e293b;
+  --color-border: #2a3547;
+  --color-border-strong: #3a4759;
+  --color-text: #e8ecf4;
+  --color-text-secondary: #9aa7bd;
+  --color-text-muted: #6b7688;
+  --color-muted: #1c2534;
+
+  --color-primary-light: rgba(93, 135, 255, .16);
+  --color-secondary-light: rgba(68, 183, 247, .16);
+  --color-accent-light: rgba(93, 135, 255, .16);
+  --color-accent-subtle: rgba(93, 135, 255, .10);
+
+  --color-success-light: rgba(19, 222, 185, .14);
+  --color-warning-light: rgba(255, 174, 31, .14);
+  --color-danger-light: rgba(250, 137, 107, .14);
+  --color-info-light: rgba(83, 155, 255, .14);
+
+  --color-licencias-light: rgba(93, 135, 255, .14);
+  --color-correos-light: rgba(135, 84, 236, .14);
+  --color-usuarios-red-light: rgba(255, 174, 31, .14);
+  --color-vpn-light: rgba(250, 137, 107, .14);
+  --color-wifi-light: rgba(68, 183, 247, .14);
+  --color-impresoras-light: rgba(124, 143, 172, .14);
+  --color-equipos-light: rgba(19, 222, 185, .14);
+
+  --shadow-sm: 0 2px 16px rgba(0, 0, 0, .35);
+  --shadow-md: 0 6px 24px rgba(0, 0, 0, .45);
+  --shadow-lg: 0 18px 48px rgba(0, 0, 0, .55);
+
+  --color-green-light: rgba(19, 222, 185, .14);
+  --color-yellow-light: rgba(255, 174, 31, .14);
+  --color-red-light: rgba(250, 137, 107, .14);
+  --color-gray-light: rgba(124, 143, 172, .14);
+}
