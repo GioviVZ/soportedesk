@@ -5,7 +5,7 @@ import { ActivatedRoute } from '@angular/router';
 import { Observable, Subscription, interval } from 'rxjs';
 import { switchMap, takeWhile } from 'rxjs/operators';
 import { CatalogoService } from '../../core/catalogos/catalogo.service';
-import { Dependencia, Subdependencia } from '../../core/models/catalogo.model';
+import { Dependencia, Subdependencia, TipoContrato } from '../../core/models/catalogo.model';
 import { ModalComponent } from '../../shared/modal/modal.component';
 import { ActiveDirectoryService } from './active-directory.service';
 import {
@@ -22,6 +22,8 @@ import {
 import { AdKpisComponent } from './ad-kpis.component';
 import { AdUserDetailComponent } from './ad-user-detail.component';
 import { AdUserSearchComponent } from './ad-user-search.component';
+import { UsuarioRedContratoRequest, esTipoContratoOs } from './usuario-red-contrato.model';
+import { UsuarioRedContratoService } from './usuario-red-contrato.service';
 
 type Panel = 'create' | 'password' | 'groups' | 'ou' | 'info' | null;
 
@@ -33,7 +35,7 @@ type Panel = 'create' | 'password' | 'groups' | 'ou' | 'info' | null;
     <div class="usuarios-red-page">
       <div class="module-dash-toolbar">
         <div class="module-dash-title">
-          <strong>Sincronizacion con Active Directory</strong>
+          <strong>Sincronización con Active Directory</strong>
           <span>{{ lastSyncLabel() }}</span>
         </div>
         <div class="module-dash-actions">
@@ -83,7 +85,7 @@ type Panel = 'create' | 'password' | 'groups' | 'ou' | 'info' | null;
           <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" />
         </svg>
         <strong>Selecciona una cuenta de red</strong>
-        <span>Tambien puedes llegar aqui desde Consultas o Dashboard con un usuario precargado.</span>
+        <span>También puedes llegar aquí desde Consultas o Dashboard con un usuario precargado.</span>
       </section>
 
       <ng-container *ngIf="user">
@@ -125,7 +127,7 @@ type Panel = 'create' | 'password' | 'groups' | 'ou' | 'info' | null;
               </svg>
             </span>
             <strong>Grupos</strong>
-            <small>Agregar o quitar membresias</small>
+            <small>Agregar o quitar membresías</small>
           </button>
           <button type="button" class="action-card" (click)="openPanel('ou')">
             <span class="action-icon">
@@ -163,7 +165,7 @@ type Panel = 'create' | 'password' | 'groups' | 'ou' | 'info' | null;
           <input name="createSam" [(ngModel)]="createForm.samAccountName" (ngModelChange)="onCreateSamChanged($event)" required minlength="2" pattern="[A-Za-z0-9._-]+" />
         </div>
         <div class="field">
-          <label>Contrasena temporal</label>
+          <label>Contraseña temporal</label>
           <input type="password" name="createPassword" [(ngModel)]="createForm.temporaryPassword" minlength="8" required />
         </div>
         <div class="field">
@@ -239,25 +241,64 @@ type Panel = 'create' | 'password' | 'groups' | 'ou' | 'info' | null;
         </label>
         <label class="checkbox-field">
           <input type="checkbox" name="createForceChange" [(ngModel)]="createForm.forceChange" />
-          Exigir cambio al iniciar sesion
+          Exigir cambio al iniciar sesión
         </label>
+
+        <section class="create-contract-section full">
+          <label class="checkbox-field contract-toggle">
+            <input type="checkbox" name="createContratoEnabled" [(ngModel)]="createContratoEnabled" (ngModelChange)="onCreateContratoToggle($event)" />
+            Registrar contrato al crear el usuario
+          </label>
+
+          <div class="contract-inline-grid" *ngIf="createContratoEnabled">
+            <div class="field">
+              <label>Tipo de contrato</label>
+              <select name="createContratoTipo" [(ngModel)]="createContratoForm.tipoContratoId" required>
+                <option [ngValue]="null" disabled>Selecciona...</option>
+                <option *ngFor="let tipo of tiposContrato" [ngValue]="tipo.id">{{ tipo.nombre }}</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>Nro. de contrato</label>
+              <input name="createContratoNumero" [(ngModel)]="createContratoForm.numeroContrato" />
+            </div>
+            <div class="field">
+              <label>Fecha inicio</label>
+              <input type="date" name="createContratoInicio" [(ngModel)]="createContratoForm.fechaInicio" required />
+            </div>
+            <div class="field">
+              <label>Fecha fin</label>
+              <input type="date" name="createContratoFin" [(ngModel)]="createContratoForm.fechaFin" />
+            </div>
+            <ng-container *ngIf="esCreateContratoOs()">
+              <div class="field">
+                <label>Nombre del personal</label>
+                <input name="createContratoPersonalNombre" [(ngModel)]="createContratoForm.personalNombre" />
+              </div>
+              <div class="field">
+                <label>Apellidos del personal</label>
+                <input name="createContratoPersonalApellidos" [(ngModel)]="createContratoForm.personalApellidos" />
+              </div>
+            </ng-container>
+          </div>
+        </section>
 
         <footer class="modal-actions full">
           <button type="button" class="btn btn-ghost" (click)="closePanel()">Cancelar</button>
-          <button type="submit" class="btn btn-primary" [disabled]="working">Crear en AD</button>
+          <button type="submit" class="btn btn-primary" [disabled]="working">{{ createContratoEnabled ? 'Crear en AD y registrar contrato' : 'Crear en AD' }}</button>
         </footer>
       </form>
     </app-modal>
 
-    <app-modal title="Restablecer contrasena" [open]="activePanel === 'password'" (closed)="closePanel()">
+    <app-modal title="Restablecer contraseña" [open]="activePanel === 'password'" (closed)="closePanel()">
       <form class="modal-form" (ngSubmit)="resetPassword()">
         <div class="field">
-          <label>Contrasena temporal</label>
+          <label>Contraseña temporal</label>
           <input type="password" name="newPassword" [(ngModel)]="newPassword" minlength="8" required />
         </div>
         <label class="checkbox-field">
           <input type="checkbox" name="forceChange" [(ngModel)]="forceChange" />
-          Exigir cambio al iniciar sesion
+          Exigir cambio al iniciar sesión
         </label>
         <footer class="modal-actions">
           <button type="button" class="btn btn-ghost" (click)="closePanel()">Cancelar</button>
@@ -335,6 +376,7 @@ type Panel = 'create' | 'password' | 'groups' | 'ou' | 'info' | null;
 })
 export class UsuariosRedAdministracionComponent implements OnInit, OnDestroy {
   private adService = inject(ActiveDirectoryService);
+  private contratoService = inject(UsuarioRedContratoService);
   private catalogoService = inject(CatalogoService);
   private route = inject(ActivatedRoute);
   private readonly adDomain = 'inia.local';
@@ -355,6 +397,9 @@ export class UsuariosRedAdministracionComponent implements OnInit, OnDestroy {
   notice: { tone: 'success' | 'error' | 'info'; text: string } | null = null;
   infoForm: UpdateUserInfoRequest = {};
   createForm: CreateAdUserRequest = this.emptyCreateForm();
+  createContratoEnabled = false;
+  createContratoForm: UsuarioRedContratoRequest = this.emptyCreateContratoForm();
+  tiposContrato: TipoContrato[] = [];
   createOuResults: ActiveDirectoryOu[] = [];
   dependencias: Dependencia[] = [];
   createSubdependencias: Subdependencia[] = [];
@@ -411,7 +456,7 @@ export class UsuariosRedAdministracionComponent implements OnInit, OnDestroy {
 
   lastSyncLabel(): string {
     const fecha = this.syncStatus?.ultimoResultado?.sincronizadoEn;
-    return fecha ? `Ultima sincronizacion: ${new Date(fecha).toLocaleString('es-PE')}` : 'Nunca sincronizado en esta sesion.';
+    return fecha ? `Última sincronización: ${new Date(fecha).toLocaleString('es-PE')}` : 'Nunca sincronizado en esta sesión.';
   }
 
   private checkSyncStatus(): void {
@@ -490,7 +535,7 @@ export class UsuariosRedAdministracionComponent implements OnInit, OnDestroy {
 
   resetPassword(): void {
     if (!this.user || !this.newPassword.trim()) {
-      this.flash('error', 'Ingresa una contrasena temporal.');
+      this.flash('error', 'Ingresa una contraseña temporal.');
       return;
     }
     this.runAction(this.adService.resetPassword(this.user.samAccountName, this.newPassword.trim(), this.forceChange), true);
@@ -500,14 +545,57 @@ export class UsuariosRedAdministracionComponent implements OnInit, OnDestroy {
     this.ensureCreateUpn();
     const request = this.normalizedCreateRequest();
     if (!request.samAccountName || !request.givenName || !request.surname || !request.temporaryPassword || !request.ouDestinoDn) {
-      this.flash('error', 'Completa usuario, nombres, apellidos, contrasena temporal y OU destino.');
+      this.flash('error', 'Completa usuario, nombres, apellidos, contraseña temporal y OU destino.');
       return;
     }
     if (request.temporaryPassword.length < 8) {
-      this.flash('error', 'La contrasena temporal debe tener al menos 8 caracteres.');
+      this.flash('error', 'La contraseña temporal debe tener al menos 8 caracteres.');
       return;
     }
-    this.runAction(this.adService.createUser(request), true);
+    if (this.createContratoEnabled && (!this.createContratoForm.tipoContratoId || !this.createContratoForm.fechaInicio)) {
+      this.flash('error', 'Completa tipo de contrato y fecha de inicio del contrato inicial.');
+      return;
+    }
+
+    this.working = true;
+    this.adService.createUser(request).subscribe({
+      next: (response) => {
+        if (!response.success) {
+          this.working = false;
+          this.flash('error', response.message);
+          return;
+        }
+        if (response.data) {
+          this.user = response.data;
+          this.syncInfoForm(response.data);
+          this.loadGroups();
+        }
+        this.loadDashboard();
+        const usuarioCreado = response.data?.samAccountName || request.samAccountName;
+        if (!this.createContratoEnabled) {
+          this.working = false;
+          this.closePanel();
+          this.flash('success', response.message);
+          return;
+        }
+        this.contratoService.create(this.normalizedCreateContratoRequest(usuarioCreado)).subscribe({
+          next: () => {
+            this.working = false;
+            this.closePanel();
+            this.flash('success', `${response.message} Contrato inicial registrado.`);
+          },
+          error: (err) => {
+            this.working = false;
+            this.closePanel();
+            this.flash('error', `Usuario creado en AD, pero no se pudo registrar el contrato: ${err?.error?.message || 'error no especificado'}.`);
+          },
+        });
+      },
+      error: () => {
+        this.working = false;
+        this.flash('error', 'No se pudo crear el usuario en Active Directory.');
+      },
+    });
   }
 
   saveInfo(): void {
@@ -595,6 +683,7 @@ export class UsuariosRedAdministracionComponent implements OnInit, OnDestroy {
 
   onCreateSamChanged(value: string): void {
     this.createForm.samAccountName = value;
+    this.createContratoForm = { ...this.createContratoForm, usuario: value };
     if (!this.createUpnEdited) {
       this.createForm.userPrincipalName = this.generatedUpn(value);
     }
@@ -608,6 +697,22 @@ export class UsuariosRedAdministracionComponent implements OnInit, OnDestroy {
   moveToOu(ouDn: string): void {
     if (!this.user || !ouDn) return;
     this.runAction(this.adService.moveUser(this.user.samAccountName, ouDn), true);
+  }
+
+  onCreateContratoToggle(enabled: boolean): void {
+    this.createContratoEnabled = enabled;
+    if (enabled) {
+      this.createContratoForm = {
+        ...this.createContratoForm,
+        usuario: this.createForm.samAccountName,
+      };
+      this.ensureTiposContrato();
+    }
+  }
+
+  esCreateContratoOs(): boolean {
+    const tipo = this.tiposContrato.find((item) => item.id === this.createContratoForm.tipoContratoId);
+    return esTipoContratoOs(tipo?.nombre);
   }
 
   private loadOrganizacionCatalogo(): void {
@@ -679,7 +784,7 @@ export class UsuariosRedAdministracionComponent implements OnInit, OnDestroy {
       },
       error: () => {
         this.working = false;
-        this.flash('error', 'No se pudo completar la accion.');
+        this.flash('error', 'No se pudo completar la acción.');
       },
     });
   }
@@ -744,12 +849,26 @@ export class UsuariosRedAdministracionComponent implements OnInit, OnDestroy {
 
   private resetCreateForm(): void {
     this.createForm = this.emptyCreateForm();
+    this.createContratoEnabled = false;
+    this.createContratoForm = this.emptyCreateContratoForm();
     this.createOuSearch = '';
     this.createOuResults = [];
     this.createDependenciaId = null;
     this.createSubdependenciaId = null;
     this.createSubdependencias = [];
     this.createUpnEdited = false;
+  }
+
+  private emptyCreateContratoForm(): UsuarioRedContratoRequest {
+    return {
+      usuario: '',
+      tipoContratoId: null as unknown as number,
+      fechaInicio: '',
+      fechaFin: null,
+      numeroContrato: null,
+      personalNombre: null,
+      personalApellidos: null,
+    };
   }
 
   private normalizedCreateRequest(): CreateAdUserRequest {
@@ -772,6 +891,18 @@ export class UsuariosRedAdministracionComponent implements OnInit, OnDestroy {
       description: this.blankToNull(this.createForm.description),
       enabled: this.createForm.enabled,
       forceChange: this.createForm.forceChange,
+    };
+  }
+
+  private normalizedCreateContratoRequest(usuario: string): UsuarioRedContratoRequest {
+    return {
+      usuario: usuario.trim(),
+      tipoContratoId: this.createContratoForm.tipoContratoId,
+      fechaInicio: this.createContratoForm.fechaInicio,
+      fechaFin: this.blankToNull(this.createContratoForm.fechaFin),
+      numeroContrato: this.blankToNull(this.createContratoForm.numeroContrato),
+      personalNombre: this.blankToNull(this.createContratoForm.personalNombre),
+      personalApellidos: this.blankToNull(this.createContratoForm.personalApellidos),
     };
   }
 
@@ -817,6 +948,14 @@ export class UsuariosRedAdministracionComponent implements OnInit, OnDestroy {
 
   private sortByName<T extends { nombre: string }>(items: T[]): T[] {
     return [...items].sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'));
+  }
+
+  private ensureTiposContrato(): void {
+    if (this.tiposContrato.length) return;
+    this.catalogoService.getTiposContrato().subscribe({
+      next: (tipos) => (this.tiposContrato = this.sortByName(tipos)),
+      error: () => (this.tiposContrato = []),
+    });
   }
 
   private blankToNull(value: string | null | undefined): string | null {

@@ -1,5 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, inject } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../core/auth/auth.service';
 import { GenericTableComponent, TableColumn } from '../../shared/generic-table/generic-table.component';
 import { ModalComponent } from '../../shared/modal/modal.component';
@@ -11,6 +12,15 @@ import { VpnResolucionFormComponent } from './vpn-resolucion-form.component';
 import { VpnDetailComponent } from './vpn-detail.component';
 import { Vpn, VpnKpis } from './vpn.model';
 import { VpnService } from './vpn.service';
+import {
+  VpnListFilters,
+  cargoOptions,
+  defaultVpnFilters,
+  dependenciaOptions,
+  filterAndSortVpns,
+  hasActiveVpnFilters,
+  subdependenciaOptions,
+} from './vpn-list-filters';
 
 type EstadoSolicitud = 'PENDIENTE' | 'APROBADO' | 'RECHAZADO' | 'OBSERVADO';
 
@@ -18,7 +28,7 @@ type EstadoSolicitud = 'PENDIENTE' | 'APROBADO' | 'RECHAZADO' | 'OBSERVADO';
   selector: 'app-vpn-administracion',
   standalone: true,
   imports: [
-    CommonModule, GenericTableComponent, ModalComponent, StatusBadgeComponent, VencimientoBadgeComponent,
+    CommonModule, FormsModule, GenericTableComponent, ModalComponent, StatusBadgeComponent, VencimientoBadgeComponent,
     VpnAntivirusFormComponent, VpnAprobarFormComponent, VpnResolucionFormComponent, VpnDetailComponent,
   ],
   template: `
@@ -29,13 +39,74 @@ type EstadoSolicitud = 'PENDIENTE' | 'APROBADO' | 'RECHAZADO' | 'OBSERVADO';
       </div>
     </section>
 
+    <section class="vpn-filter-panel">
+      <label class="vpn-search-field">
+        <span>Buscar solicitud</span>
+        <input
+          type="search"
+          [(ngModel)]="filters.query"
+          placeholder="Nombre, usuario, equipo, correo, dependencia..."
+          autocomplete="off"
+        />
+      </label>
+
+      <div class="vpn-filter-grid">
+        <label class="field">
+          <span>Dependencia</span>
+          <select [(ngModel)]="filters.dependencia">
+            <option value="">Todas</option>
+            <option *ngFor="let option of dependencias" [value]="option">{{ option }}</option>
+          </select>
+        </label>
+
+        <label class="field">
+          <span>Subdependencia / oficina</span>
+          <select [(ngModel)]="filters.subdependencia">
+            <option value="">Todas</option>
+            <option *ngFor="let option of subdependencias" [value]="option">{{ option }}</option>
+          </select>
+        </label>
+
+        <label class="field">
+          <span>Cargo</span>
+          <select [(ngModel)]="filters.cargo">
+            <option value="">Todos</option>
+            <option *ngFor="let option of cargos" [value]="option">{{ option }}</option>
+          </select>
+        </label>
+
+        <label class="field">
+          <span>Orden</span>
+          <select [(ngModel)]="filters.orden">
+            <option value="nuevas">Nuevas pendientes arriba</option>
+            <option value="recientes">Más recientes</option>
+            <option value="rechazados">Rechazadas arriba</option>
+            <option value="observados">Observadas arriba</option>
+          </select>
+        </label>
+      </div>
+
+      <div class="vpn-filter-actions">
+        <div class="segmented-control" role="group" aria-label="Estado de solicitud VPN">
+          <button type="button" [class.active]="filters.estado === 'TODOS'" (click)="filters.estado = 'TODOS'">Todas</button>
+          <button type="button" [class.active]="filters.estado === 'PENDIENTE'" (click)="filters.estado = 'PENDIENTE'">Pendientes</button>
+          <button type="button" [class.active]="filters.estado === 'OBSERVADO'" (click)="filters.estado = 'OBSERVADO'">Observadas</button>
+          <button type="button" [class.active]="filters.estado === 'RECHAZADO'" (click)="filters.estado = 'RECHAZADO'">Rechazadas</button>
+          <button type="button" [class.active]="filters.estado === 'APROBADO'" (click)="filters.estado = 'APROBADO'">Aprobadas</button>
+        </div>
+
+        <button type="button" class="btn btn-ghost" *ngIf="hasFilters" (click)="clearFilters()">Limpiar filtros</button>
+      </div>
+    </section>
+
     <app-generic-table
       [columns]="columns"
-      [data]="items"
+      [data]="filteredItems"
       [canAdd]="false"
       [canEdit]="false"
+      [showSearch]="false"
+      emptyMessage="Sin solicitudes con los filtros aplicados"
       extraColumnLabel="Vence VPN"
-      (searchChange)="onSearch($event)"
       (view)="onView($event)"
     >
       <ng-template #extraCell let-row>
@@ -78,6 +149,7 @@ export class VpnAdministracionComponent implements OnInit {
   private authService = inject(AuthService);
 
   items: Vpn[] = [];
+  filters: VpnListFilters = defaultVpnFilters();
   kpis: VpnKpis | null = null;
   viewing: Vpn | null = null;
 
@@ -91,6 +163,9 @@ export class VpnAdministracionComponent implements OnInit {
 
   columns: TableColumn[] = [
     { key: 'titularNombreCompleto', label: 'Nombre' },
+    { key: 'adOrganizationalUnit', label: 'Dependencia' },
+    { key: 'adOffice', label: 'Subdependencia' },
+    { key: 'titularCargo', label: 'Cargo' },
     { key: 'titularOrigenLabel', label: 'Origen' },
     { key: 'estadoSolicitud', label: 'Estado solicitud' },
     { key: 'estado', label: 'Estado' },
@@ -124,17 +199,33 @@ export class VpnAdministracionComponent implements OnInit {
     ];
   }
 
+  get filteredItems(): Vpn[] {
+    return filterAndSortVpns(this.items, this.filters);
+  }
+
+  get dependencias(): string[] {
+    return dependenciaOptions(this.items);
+  }
+
+  get subdependencias(): string[] {
+    return subdependenciaOptions(this.items);
+  }
+
+  get cargos(): string[] {
+    return cargoOptions(this.items);
+  }
+
+  get hasFilters(): boolean {
+    return hasActiveVpnFilters(this.filters);
+  }
+
   ngOnInit(): void {
     this.load();
     this.loadKpis();
   }
 
-  load(search?: string): void {
-    this.service.getAll(search).subscribe((data) => (this.items = data));
-  }
-
-  onSearch(term: string): void {
-    this.load(term);
+  load(): void {
+    this.service.getAll().subscribe((data) => (this.items = data));
   }
 
   loadKpis(): void {
@@ -209,6 +300,10 @@ export class VpnAdministracionComponent implements OnInit {
   deleteFromDetail(item: Vpn): void {
     this.viewing = null;
     this.onDelete(item);
+  }
+
+  clearFilters(): void {
+    this.filters = defaultVpnFilters();
   }
 
   estadoTone(estado: string): 'success' | 'warning' | 'danger' | 'neutral' {

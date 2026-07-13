@@ -301,6 +301,26 @@
   input { width: auto; }
 }
 
+.create-contract-section {
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-muted);
+}
+
+.contract-toggle {
+  color: var(--color-text);
+  font-weight: 850;
+}
+
+.contract-inline-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
 .modal-actions {
   display: flex;
   justify-content: flex-end;
@@ -609,7 +629,8 @@
 
 @media (max-width: 760px) {
   .detail-sections,
-  .form-grid { grid-template-columns: 1fr; }
+  .form-grid,
+  .contract-inline-grid { grid-template-columns: 1fr; }
 
   .consulta-search { grid-template-columns: 1fr; }
 

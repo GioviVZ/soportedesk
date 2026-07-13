@@ -1,9 +1,9 @@
 <div class="ficha">
   <div class="ficha-toolbar">
   <div class="tabs">
-    <button [class.active]="activeTab === 'instalacion'" (click)="setTab('instalacion')">Instalación</button>
-    <button [class.active]="activeTab === 'consumibles'" (click)="setTab('consumibles')">Consumibles</button>
-    <button [class.active]="activeTab === 'driver'" (click)="setTab('driver')">Driver</button>
+    <button type="button" [class.active]="activeTab === 'instalacion'" (click)="setTab('instalacion')">Instalación</button>
+    <button type="button" [class.active]="activeTab === 'consumibles'" (click)="setTab('consumibles')">Consumibles</button>
+    <button type="button" [class.active]="activeTab === 'driver'" (click)="setTab('driver')">Driver</button>
   </div>
   <button *ngIf="isAdmin && allowActions" type="button" class="edit-btn" (click)="editRequested.emit(impresora)">Editar</button>
   </div>
@@ -125,7 +125,7 @@
             <span class="detail-value">{{ impresora.modeloImpresora.driverSo || '—' }}</span>
           </div>
         </div>
-        <button class="download-btn" (click)="downloadDriver()">Descargar driver</button>
+        <button type="button" class="download-btn" (click)="downloadDriver()">Descargar driver</button>
       </ng-container>
       <ng-template #noDriver>
         <p class="empty-message">El modelo {{ impresora.modeloImpresora.marca.nombre }} {{ impresora.modeloImpresora.nombre }} no tiene driver cargado.</p>

@@ -2,7 +2,7 @@
   <div class="dialog" [class.wide]="size === 'wide'" (click)="$event.stopPropagation()">
     <header>
       <h2>{{ title }}</h2>
-      <button class="close" (click)="close()">×</button>
+      <button type="button" class="close" (click)="close()">×</button>
     </header>
     <div class="body">
       <ng-content />

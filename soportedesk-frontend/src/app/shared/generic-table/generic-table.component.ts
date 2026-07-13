@@ -23,6 +23,7 @@ export class GenericTableComponent<T = any> implements OnInit, OnChanges {
   @Input() extraColumnLabel: string | null = null;
   @Input() initialSearch = '';
   @Input() emptyMessage = 'Sin registros aun';
+  @Input() showSearch = true;
 
   @Output() searchChange = new EventEmitter<string>();
   @Output() add = new EventEmitter<void>();

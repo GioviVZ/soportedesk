@@ -22,12 +22,16 @@ export class VpnAprobarFormComponent implements OnChanges {
 
   form = this.fb.nonNullable.group({
     usuarioVpn: ['', Validators.required],
-    credencialVpn: ['', Validators.required],
+    credencialVpn: ['', [Validators.required, Validators.minLength(17)]],
     estado: ['Activo', Validators.required],
   });
 
   ngOnChanges(): void {
-    this.form.reset({ estado: 'Activo' });
+    this.form.reset({
+      usuarioVpn: this.vpn?.usuarioVpn || this.vpn?.adSamAccountName || '',
+      credencialVpn: '',
+      estado: 'Activo',
+    });
   }
 
   useGeneratedPassword(password: string): void {

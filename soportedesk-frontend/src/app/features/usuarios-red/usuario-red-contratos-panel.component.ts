@@ -43,10 +43,10 @@ import { UsuarioRedContrato, UsuarioRedContratoRequest, esTipoContratoOs } from 
           <div class="contrato-main">
             <span class="contrato-tipo">{{ c.tipoContratoNombre }}</span>
             <span class="contrato-fechas">
-              {{ c.fechaInicio | date:'dd/MM/yyyy' }} — {{ c.fechaFin ? (c.fechaFin | date:'dd/MM/yyyy') : 'Actual' }}
+              {{ c.fechaInicio | date:'dd/MM/yyyy' }} - {{ c.fechaFin ? (c.fechaFin | date:'dd/MM/yyyy') : 'Actual' }}
               <app-vencimiento-badge [fecha]="c.fechaFin" />
             </span>
-            <span class="contrato-numero" *ngIf="c.numeroContrato">N° {{ c.numeroContrato }}</span>
+            <span class="contrato-numero" *ngIf="c.numeroContrato">Nro. {{ c.numeroContrato }}</span>
             <span class="contrato-personal" *ngIf="esOs(c)">
               Titular: <strong>{{ c.personalNombre }} {{ c.personalApellidos }}</strong>
             </span>
@@ -69,7 +69,7 @@ import { UsuarioRedContrato, UsuarioRedContratoRequest, esTipoContratoOs } from 
           </select>
         </div>
         <div class="field">
-          <label>N° de contrato</label>
+          <label>Nro. de contrato</label>
           <input name="numeroContrato" [(ngModel)]="form.numeroContrato" />
         </div>
         <div class="field">

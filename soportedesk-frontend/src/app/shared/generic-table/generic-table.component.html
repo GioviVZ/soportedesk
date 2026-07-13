@@ -1,12 +1,12 @@
 <div class="table-toolbar">
-  <div class="search-wrap">
+  <div class="search-wrap" *ngIf="showSearch">
     <span class="search-icon">
       <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
     </span>
-    <input type="text" placeholder="Buscar..." [value]="searchTerm" (input)="onSearch($any($event.target).value)" />
+    <input type="text" placeholder="Buscar..." aria-label="Buscar registros" [value]="searchTerm" (input)="onSearch($any($event.target).value)" />
   </div>
   <span class="result-count">{{ data.length }} {{ data.length === 1 ? 'registro' : 'registros' }}</span>
-  <button *ngIf="showAddButton" class="add-btn" (click)="add.emit()">
+  <button type="button" *ngIf="showAddButton" class="add-btn" (click)="add.emit()" aria-label="Agregar registro" title="Agregar registro">
     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
     Agregar
   </button>
@@ -28,9 +28,9 @@
           <ng-container *ngTemplateOutlet="extraCellTemplate ?? null; context: { $implicit: row }" />
         </td>
         <td *ngIf="canView || canEdit" class="actions">
-          <button *ngIf="canView" class="view-btn" (click)="view.emit(row)">Ver</button>
-          <button *ngIf="canEdit" class="edit-btn" (click)="edit.emit(row)">Editar</button>
-          <button *ngIf="canEdit" class="del-btn" (click)="delete.emit(row)">Eliminar</button>
+          <button type="button" *ngIf="canView" class="view-btn" (click)="view.emit(row)" aria-label="Ver registro" title="Ver registro">Ver</button>
+          <button type="button" *ngIf="canEdit" class="edit-btn" (click)="edit.emit(row)" aria-label="Editar registro" title="Editar registro">Editar</button>
+          <button type="button" *ngIf="canEdit" class="del-btn" (click)="delete.emit(row)" aria-label="Eliminar registro" title="Eliminar registro">Eliminar</button>
         </td>
       </tr>
       <tr *ngIf="data.length === 0">

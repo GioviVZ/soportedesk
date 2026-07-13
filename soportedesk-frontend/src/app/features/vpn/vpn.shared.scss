@@ -135,6 +135,98 @@
 
 .stat-pill.tone-danger strong { color: var(--color-danger); }
 
+.vpn-filter-panel {
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-sm);
+}
+
+.vpn-search-field,
+.vpn-filter-grid .field {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+
+  span {
+    color: var(--color-text-secondary);
+    font-size: 12px;
+    font-weight: 800;
+  }
+}
+
+.vpn-search-field input,
+.vpn-filter-grid select {
+  width: 100%;
+  min-height: 40px;
+  padding: 8px 10px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-size: 13px;
+  font-weight: 650;
+  outline: none;
+  transition: var(--transition);
+
+  &:focus {
+    border-color: var(--color-accent);
+    box-shadow: 0 0 0 3px rgba(220, 38, 38, .1);
+  }
+}
+
+.vpn-filter-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.vpn-filter-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.segmented-control {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-muted);
+}
+
+.segmented-control button {
+  min-height: 32px;
+  padding: 0 11px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-text-secondary);
+  font-size: 12px;
+  font-weight: 800;
+
+  &:hover,
+  &.active {
+    background: var(--color-surface);
+  }
+
+  &:hover {
+    color: var(--color-text);
+  }
+
+  &.active {
+    color: var(--color-accent);
+    box-shadow: var(--shadow-sm);
+  }
+}
+
 .dashboard-grid {
   display: grid;
   grid-template-columns: minmax(0, 1.35fr) minmax(300px, .9fr);
@@ -188,6 +280,24 @@
 }
 
 @media (max-width: 900px) {
-  .detail-sections, .dashboard-grid { grid-template-columns: 1fr; }
+  .detail-sections, .dashboard-grid, .vpn-filter-grid { grid-template-columns: 1fr; }
   .identity-band { flex-direction: column; align-items: flex-start; }
+}
+
+@media (max-width: 640px) {
+  .vpn-filter-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .segmented-control {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .segmented-control button,
+  .vpn-filter-actions .btn {
+    width: 100%;
+    justify-content: center;
+  }
 }

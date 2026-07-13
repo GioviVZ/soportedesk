@@ -40,8 +40,9 @@
     </label>
 
     <label class="field">
-      Credencial / Contrasena VPN *
-      <input type="text" formControlName="credencialVpn" placeholder="Contrasena o clave de acceso" />
+      Credencial / Contraseña VPN *
+      <input type="text" formControlName="credencialVpn" placeholder="Genera una credencial segura" readonly />
+      <small *ngIf="form.controls.credencialVpn.hasError('minlength')">La credencial debe tener al menos 17 caracteres.</small>
     </label>
 
     <app-vpn-password-generator (passwordSelected)="useGeneratedPassword($event)" />

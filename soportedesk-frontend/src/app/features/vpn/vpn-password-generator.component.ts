@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, EventEmitter, Output } from '@angular/core';
+import { Component, EventEmitter, OnInit, Output } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 type Strength = 'Media' | 'Fuerte' | 'Muy fuerte';
@@ -11,10 +11,10 @@ type Strength = 'Media' | 'Fuerte' | 'Muy fuerte';
   templateUrl: './vpn-password-generator.component.html',
   styleUrl: './vpn-password-generator.component.scss',
 })
-export class VpnPasswordGeneratorComponent {
+export class VpnPasswordGeneratorComponent implements OnInit {
   @Output() passwordSelected = new EventEmitter<string>();
 
-  readonly minLength = 12;
+  readonly minLength = 17;
   readonly maxLength = 64;
 
   length = 20;
@@ -35,7 +35,7 @@ export class VpnPasswordGeneratorComponent {
 
   private readonly ambiguous = new Set(['I', 'l', '1', 'O', '0']);
 
-  constructor() {
+  ngOnInit(): void {
     this.generate();
   }
 
@@ -80,6 +80,7 @@ export class VpnPasswordGeneratorComponent {
 
     this.generatedPassword = this.shuffle(chars).join('');
     this.copied = false;
+    this.passwordSelected.emit(this.generatedPassword);
   }
 
   usePassword(): void {
