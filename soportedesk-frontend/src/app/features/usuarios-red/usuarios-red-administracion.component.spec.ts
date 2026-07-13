@@ -22,7 +22,6 @@ describe('UsuariosRedAdministracionComponent - sincronizacion AD', () => {
   }
 
   function flushInitialRequests(): void {
-    httpMock.expectOne('/api/catalogos/dependencias').flush([]);
     httpMock.expectOne('/api/active-directory/dashboard').flush({
       usuariosHabilitados: 0,
       usuariosBloqueados: 0,
@@ -100,7 +99,6 @@ describe('UsuariosRedAdministracionComponent - sincronizacion AD', () => {
   it('retoma el polling si al entrar a la pantalla ya hay un sync corriendo', fakeAsync(() => {
     const component = createComponent();
     component.ngOnInit();
-    httpMock.expectOne('/api/catalogos/dependencias').flush([]);
     httpMock.expectOne('/api/active-directory/dashboard').flush({
       usuariosHabilitados: 0,
       usuariosBloqueados: 0,
@@ -140,4 +138,99 @@ describe('UsuariosRedAdministracionComponent - sincronizacion AD', () => {
 
     component.ngOnDestroy();
   }));
+});
+
+describe('UsuariosRedAdministracionComponent - paneles', () => {
+  let httpMock: HttpTestingController;
+
+  function createComponent(): UsuariosRedAdministracionComponent {
+    TestBed.configureTestingModule({
+      imports: [HttpClientTestingModule],
+      providers: [
+        {
+          provide: ActivatedRoute,
+          useValue: { queryParamMap: of(convertToParamMap({})) },
+        },
+      ],
+    });
+    httpMock = TestBed.inject(HttpTestingController);
+    return TestBed.runInInjectionContext(() => new UsuariosRedAdministracionComponent());
+  }
+
+  function flushInitialRequests(): void {
+    httpMock.expectOne('/api/active-directory/dashboard').flush({
+      usuariosHabilitados: 0,
+      usuariosBloqueados: 0,
+      usuariosDeshabilitados: 0,
+      controladoresDominio: 0,
+    });
+    httpMock.expectOne('/api/active-directory/sync/estado').flush({
+      running: false,
+      procesados: 0,
+      total: 0,
+      iniciadoEn: null,
+      finalizadoEn: null,
+      ultimoResultado: null,
+      error: null,
+    });
+  }
+
+  afterEach(() => httpMock.verify());
+
+  it('onPanelSaved actualiza el usuario, cierra el panel activo y refresca el dashboard', () => {
+    const component = createComponent();
+    component.ngOnInit();
+    flushInitialRequests();
+
+    component.activePanel = 'password';
+    component.onPanelSaved({
+      user: { samAccountName: 'jperez', enabled: true } as any,
+      notice: { tone: 'success', text: 'Contraseña restablecida.' },
+    });
+
+    httpMock.expectOne('/api/active-directory/dashboard').flush({
+      usuariosHabilitados: 1,
+      usuariosBloqueados: 0,
+      usuariosDeshabilitados: 0,
+      controladoresDominio: 1,
+    });
+
+    expect(component.user?.samAccountName).toBe('jperez');
+    expect(component.activePanel).toBeNull();
+    expect(component.notice?.text).toBe('Contraseña restablecida.');
+  });
+
+  it('onPanelChanged actualiza el usuario sin cerrar el panel activo', () => {
+    const component = createComponent();
+    component.ngOnInit();
+    flushInitialRequests();
+
+    component.activePanel = 'groups';
+    component.onPanelChanged({
+      user: { samAccountName: 'jperez', enabled: true } as any,
+      notice: { tone: 'success', text: 'Grupo agregado.' },
+    });
+
+    httpMock.expectOne('/api/active-directory/dashboard').flush({
+      usuariosHabilitados: 1,
+      usuariosBloqueados: 0,
+      usuariosDeshabilitados: 0,
+      controladoresDominio: 1,
+    });
+
+    expect(component.user?.samAccountName).toBe('jperez');
+    expect(component.activePanel).toBe('groups');
+  });
+
+  it('openPanel no abre paneles de gestion si no hay usuario seleccionado', () => {
+    const component = createComponent();
+    component.ngOnInit();
+    flushInitialRequests();
+
+    component.openPanel('password');
+    expect(component.activePanel).toBeNull();
+
+    component.openPanel('create');
+    expect(component.activePanel).toBe('create');
+  });
 });

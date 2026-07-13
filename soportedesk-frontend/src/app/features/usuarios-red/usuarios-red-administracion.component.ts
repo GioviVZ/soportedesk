@@ -1,36 +1,37 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnDestroy, OnInit, inject } from '@angular/core';
-import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
-import { Observable, Subscription, interval } from 'rxjs';
+import { Subscription, interval } from 'rxjs';
 import { switchMap, takeWhile } from 'rxjs/operators';
-import { CatalogoService } from '../../core/catalogos/catalogo.service';
-import { Dependencia, Subdependencia, TipoContrato } from '../../core/models/catalogo.model';
 import { ModalComponent } from '../../shared/modal/modal.component';
 import { ActiveDirectoryService } from './active-directory.service';
-import {
-  ActiveDirectoryDashboard,
-  ActiveDirectoryGroup,
-  ActiveDirectoryOu,
-  ActiveDirectoryResponse,
-  AdSyncStatus,
-  AdUser,
-  AdUserSummary,
-  CreateAdUserRequest,
-  UpdateUserInfoRequest,
-} from './active-directory.model';
-import { AdKpisComponent } from './ad-kpis.component';
+import { ActiveDirectoryDashboard, AdPanelResult, AdSyncStatus, AdUser, AdUserSummary } from './active-directory.model';
+import { AdAdminSummaryComponent } from './ad-admin-summary.component';
 import { AdUserDetailComponent } from './ad-user-detail.component';
 import { AdUserSearchComponent } from './ad-user-search.component';
-import { UsuarioRedContratoRequest, esTipoContratoOs } from './usuario-red-contrato.model';
-import { UsuarioRedContratoService } from './usuario-red-contrato.service';
+import { AdCreateUserPanelComponent } from './ad-create-user-panel.component';
+import { AdResetPasswordPanelComponent } from './ad-reset-password-panel.component';
+import { AdGroupsPanelComponent } from './ad-groups-panel.component';
+import { AdMoveOuPanelComponent } from './ad-move-ou-panel.component';
+import { AdEditInfoPanelComponent } from './ad-edit-info-panel.component';
 
 type Panel = 'create' | 'password' | 'groups' | 'ou' | 'info' | null;
 
 @Component({
   selector: 'app-usuarios-red-administracion',
   standalone: true,
-  imports: [CommonModule, FormsModule, ModalComponent, AdKpisComponent, AdUserSearchComponent, AdUserDetailComponent],
+  imports: [
+    CommonModule,
+    ModalComponent,
+    AdAdminSummaryComponent,
+    AdUserSearchComponent,
+    AdUserDetailComponent,
+    AdCreateUserPanelComponent,
+    AdResetPasswordPanelComponent,
+    AdGroupsPanelComponent,
+    AdMoveOuPanelComponent,
+    AdEditInfoPanelComponent,
+  ],
   template: `
     <div class="usuarios-red-page">
       <div class="module-dash-toolbar">
@@ -56,10 +57,10 @@ type Panel = 'create' | 'password' | 'groups' | 'ou' | 'info' | null;
         </div>
       </div>
 
-      <app-ad-kpis [dashboard]="dashboard" />
+      <app-ad-admin-summary [dashboard]="dashboard" />
 
       <section class="actions-grid admin-primary-actions">
-        <button type="button" class="action-card create" (click)="openCreatePanel()">
+        <button type="button" class="action-card create" (click)="openPanel('create')">
           <span class="action-icon">
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="8.5" cy="7" r="4" />
@@ -153,266 +154,40 @@ type Panel = 'create' | 'password' | 'groups' | 'ou' | 'info' | null;
     </div>
 
     <app-modal title="Crear usuario de red" size="wide" [open]="activePanel === 'create'" (closed)="closePanel()">
-      <form class="modal-form form-grid" (ngSubmit)="createUser()">
-        <div class="notice full" [class.error]="notice.tone === 'error'" [class.success]="notice.tone === 'success'" *ngIf="notice && activePanel === 'create'">
-          <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" />
-          </svg>
-          {{ notice.text }}
-        </div>
-        <div class="field">
-          <label>Usuario</label>
-          <input name="createSam" [(ngModel)]="createForm.samAccountName" (ngModelChange)="onCreateSamChanged($event)" required minlength="2" pattern="[A-Za-z0-9._-]+" />
-        </div>
-        <div class="field">
-          <label>Contraseña temporal</label>
-          <input type="password" name="createPassword" [(ngModel)]="createForm.temporaryPassword" minlength="8" required />
-        </div>
-        <div class="field">
-          <label>Nombres</label>
-          <input name="createGivenName" [(ngModel)]="createForm.givenName" required />
-        </div>
-        <div class="field">
-          <label>Apellidos</label>
-          <input name="createSurname" [(ngModel)]="createForm.surname" required />
-        </div>
-        <div class="field">
-          <label>Nombre mostrado</label>
-          <input name="createDisplayName" [(ngModel)]="createForm.displayName" />
-        </div>
-        <div class="field">
-          <label>Correo</label>
-          <input type="email" name="createMail" [(ngModel)]="createForm.mail" />
-        </div>
-        <div class="field">
-          <label>UPN</label>
-          <input name="createUpn" [(ngModel)]="createForm.userPrincipalName" (ngModelChange)="onCreateUpnChanged($event)" placeholder="usuario@inia.local" />
-        </div>
-        <div class="field">
-          <label>Cargo</label>
-          <input name="createTitle" [(ngModel)]="createForm.title" />
-        </div>
-        <div class="field">
-          <label>Dependencia</label>
-          <select name="createDependenciaId" [(ngModel)]="createDependenciaId" (ngModelChange)="onCreateDependenciaChange($event)">
-            <option [ngValue]="null">Seleccione...</option>
-            <option *ngFor="let dependencia of dependencias" [ngValue]="dependencia.id">{{ dependencia.nombre }}</option>
-          </select>
-        </div>
-        <div class="field">
-          <label>Subdependencia</label>
-          <select name="createSubdependenciaId" [(ngModel)]="createSubdependenciaId" (ngModelChange)="onCreateSubdependenciaChange($event)" [disabled]="!createDependenciaId">
-            <option [ngValue]="null">Usar dependencia seleccionada</option>
-            <option *ngFor="let subdependencia of createSubdependencias" [ngValue]="subdependencia.id">{{ subdependencia.nombre }}</option>
-          </select>
-        </div>
-        <div class="field">
-          <label>Telefono</label>
-          <input name="createPhone" [(ngModel)]="createForm.telephoneNumber" />
-        </div>
-        <div class="field">
-          <label>Celular</label>
-          <input name="createMobile" [(ngModel)]="createForm.mobile" />
-        </div>
-
-        <div class="field full">
-          <label>Unidad organizativa destino</label>
-          <div class="inline-search">
-            <input name="createOuSearch" [(ngModel)]="createOuSearch" placeholder="Buscar OU" (keyup.enter)="searchCreateOus()" />
-            <button type="button" class="btn btn-ghost" (click)="searchCreateOus()">Buscar</button>
-          </div>
-          <div class="selected-dn" *ngIf="createForm.ouDestinoDn">{{ createForm.ouDestinoDn }}</div>
-          <div class="pick-list" *ngIf="createOuResults.length">
-            <button type="button" *ngFor="let ou of createOuResults" (click)="selectCreateOu(ou)">
-              <strong>{{ ou.name }}</strong>
-              <span>{{ ou.dn }}</span>
-            </button>
-          </div>
-        </div>
-
-        <div class="field full">
-          <label>Descripcion</label>
-          <textarea name="createDescription" rows="2" [(ngModel)]="createForm.description"></textarea>
-        </div>
-
-        <label class="checkbox-field">
-          <input type="checkbox" name="createEnabled" [(ngModel)]="createForm.enabled" />
-          Habilitar cuenta al crearla
-        </label>
-        <label class="checkbox-field">
-          <input type="checkbox" name="createForceChange" [(ngModel)]="createForm.forceChange" />
-          Exigir cambio al iniciar sesión
-        </label>
-
-        <section class="create-contract-section full">
-          <label class="checkbox-field contract-toggle">
-            <input type="checkbox" name="createContratoEnabled" [(ngModel)]="createContratoEnabled" (ngModelChange)="onCreateContratoToggle($event)" />
-            Registrar contrato al crear el usuario
-          </label>
-
-          <div class="contract-inline-grid" *ngIf="createContratoEnabled">
-            <div class="field">
-              <label>Tipo de contrato</label>
-              <select name="createContratoTipo" [(ngModel)]="createContratoForm.tipoContratoId" required>
-                <option [ngValue]="null" disabled>Selecciona...</option>
-                <option *ngFor="let tipo of tiposContrato" [ngValue]="tipo.id">{{ tipo.nombre }}</option>
-              </select>
-            </div>
-            <div class="field">
-              <label>Nro. de contrato</label>
-              <input name="createContratoNumero" [(ngModel)]="createContratoForm.numeroContrato" />
-            </div>
-            <div class="field">
-              <label>Fecha inicio</label>
-              <input type="date" name="createContratoInicio" [(ngModel)]="createContratoForm.fechaInicio" required />
-            </div>
-            <div class="field">
-              <label>Fecha fin</label>
-              <input type="date" name="createContratoFin" [(ngModel)]="createContratoForm.fechaFin" />
-            </div>
-            <ng-container *ngIf="esCreateContratoOs()">
-              <div class="field">
-                <label>Nombre del personal</label>
-                <input name="createContratoPersonalNombre" [(ngModel)]="createContratoForm.personalNombre" />
-              </div>
-              <div class="field">
-                <label>Apellidos del personal</label>
-                <input name="createContratoPersonalApellidos" [(ngModel)]="createContratoForm.personalApellidos" />
-              </div>
-            </ng-container>
-          </div>
-        </section>
-
-        <footer class="modal-actions full">
-          <button type="button" class="btn btn-ghost" (click)="closePanel()">Cancelar</button>
-          <button type="submit" class="btn btn-primary" [disabled]="working">{{ createContratoEnabled ? 'Crear en AD y registrar contrato' : 'Crear en AD' }}</button>
-        </footer>
-      </form>
+      <app-ad-create-user-panel (saved)="onPanelSaved($event)" (cancelled)="closePanel()" />
     </app-modal>
 
     <app-modal title="Restablecer contraseña" [open]="activePanel === 'password'" (closed)="closePanel()">
-      <form class="modal-form" (ngSubmit)="resetPassword()">
-        <div class="field">
-          <label>Contraseña temporal</label>
-          <input type="password" name="newPassword" [(ngModel)]="newPassword" minlength="8" required />
-        </div>
-        <label class="checkbox-field">
-          <input type="checkbox" name="forceChange" [(ngModel)]="forceChange" />
-          Exigir cambio al iniciar sesión
-        </label>
-        <footer class="modal-actions">
-          <button type="button" class="btn btn-ghost" (click)="closePanel()">Cancelar</button>
-          <button type="submit" class="btn btn-primary" [disabled]="working">Guardar</button>
-        </footer>
-      </form>
+      <app-ad-reset-password-panel *ngIf="user" [samAccountName]="user.samAccountName" (saved)="onPanelSaved($event)" (cancelled)="closePanel()" />
     </app-modal>
 
     <app-modal title="Membresias de grupos" [open]="activePanel === 'groups'" (closed)="closePanel()">
-      <div class="modal-form">
-        <div class="inline-search">
-          <input name="groupSearch" [(ngModel)]="groupSearch" placeholder="Buscar grupo" (keyup.enter)="searchGroups()" />
-          <button type="button" class="btn btn-ghost" (click)="searchGroups()">Buscar</button>
-        </div>
-        <div class="pick-list" *ngIf="groupResults.length">
-          <button type="button" *ngFor="let group of groupResults" (click)="addSelectedGroup(group.dn)">
-            <strong>{{ group.cn }}</strong>
-            <span>{{ group.description || group.dn }}</span>
-          </button>
-        </div>
-        <div class="assigned-list" *ngIf="groups.length">
-          <div *ngFor="let group of groups">
-            <span>{{ group.cn }}</span>
-            <button type="button" class="link-danger" (click)="removeGroup(group.dn)">Quitar</button>
-          </div>
-        </div>
-      </div>
+      <app-ad-groups-panel *ngIf="user" [samAccountName]="user.samAccountName" (changed)="onPanelChanged($event)" />
     </app-modal>
 
     <app-modal title="Mover a unidad organizativa" [open]="activePanel === 'ou'" (closed)="closePanel()">
-      <div class="modal-form">
-        <div class="inline-search">
-          <input name="ouSearch" [(ngModel)]="ouSearch" placeholder="Buscar OU" (keyup.enter)="searchOus()" />
-          <button type="button" class="btn btn-ghost" (click)="searchOus()">Buscar</button>
-        </div>
-        <div class="pick-list" *ngIf="ouResults.length">
-          <button type="button" *ngFor="let ou of ouResults" (click)="moveToOu(ou.dn)">
-            <strong>{{ ou.name }}</strong>
-            <span>{{ ou.dn }}</span>
-          </button>
-        </div>
-      </div>
+      <app-ad-move-ou-panel *ngIf="user" [samAccountName]="user.samAccountName" (saved)="onPanelSaved($event)" />
     </app-modal>
 
     <app-modal title="Editar informacion AD" size="wide" [open]="activePanel === 'info'" (closed)="closePanel()">
-      <form class="modal-form form-grid" (ngSubmit)="saveInfo()">
-        <div class="field"><label>Nombre mostrado</label><input name="displayName" [(ngModel)]="infoForm.displayName" /></div>
-        <div class="field"><label>Cargo</label><input name="title" [(ngModel)]="infoForm.title" /></div>
-        <div class="field">
-          <label>Dependencia</label>
-          <select name="infoDependenciaId" [(ngModel)]="infoDependenciaId" (ngModelChange)="onInfoDependenciaChange($event)">
-            <option [ngValue]="null">Seleccione...</option>
-            <option *ngFor="let dependencia of dependencias" [ngValue]="dependencia.id">{{ dependencia.nombre }}</option>
-          </select>
-        </div>
-        <div class="field">
-          <label>Subdependencia</label>
-          <select name="infoSubdependenciaId" [(ngModel)]="infoSubdependenciaId" (ngModelChange)="onInfoSubdependenciaChange($event)" [disabled]="!infoDependenciaId">
-            <option [ngValue]="null">Usar dependencia seleccionada</option>
-            <option *ngFor="let subdependencia of infoSubdependencias" [ngValue]="subdependencia.id">{{ subdependencia.nombre }}</option>
-          </select>
-        </div>
-        <div class="field"><label>Telefono</label><input name="telephoneNumber" [(ngModel)]="infoForm.telephoneNumber" /></div>
-        <div class="field"><label>Celular</label><input name="mobile" [(ngModel)]="infoForm.mobile" /></div>
-        <div class="field"><label>Correo</label><input name="mail" [(ngModel)]="infoForm.mail" /></div>
-        <div class="field full"><label>Descripcion</label><textarea name="description" rows="3" [(ngModel)]="infoForm.description"></textarea></div>
-        <footer class="modal-actions full">
-          <button type="button" class="btn btn-ghost" (click)="closePanel()">Cancelar</button>
-          <button type="submit" class="btn btn-primary" [disabled]="working">Guardar</button>
-        </footer>
-      </form>
+      <app-ad-edit-info-panel *ngIf="user" [user]="user" (saved)="onPanelSaved($event)" (cancelled)="closePanel()" />
     </app-modal>
   `,
   styleUrl: './usuarios-red.shared.scss',
 })
 export class UsuariosRedAdministracionComponent implements OnInit, OnDestroy {
   private adService = inject(ActiveDirectoryService);
-  private contratoService = inject(UsuarioRedContratoService);
-  private catalogoService = inject(CatalogoService);
   private route = inject(ActivatedRoute);
-  private readonly adDomain = 'inia.local';
 
   dashboard: ActiveDirectoryDashboard | null = null;
   syncStatus: AdSyncStatus | null = null;
   user: AdUser | null = null;
-  groups: ActiveDirectoryGroup[] = [];
-  groupResults: ActiveDirectoryGroup[] = [];
-  ouResults: ActiveDirectoryOu[] = [];
-  groupSearch = '';
-  ouSearch = '';
-  createOuSearch = '';
-  newPassword = '';
-  forceChange = true;
   activePanel: Panel = null;
   working = false;
   notice: { tone: 'success' | 'error' | 'info'; text: string } | null = null;
-  infoForm: UpdateUserInfoRequest = {};
-  createForm: CreateAdUserRequest = this.emptyCreateForm();
-  createContratoEnabled = false;
-  createContratoForm: UsuarioRedContratoRequest = this.emptyCreateContratoForm();
-  tiposContrato: TipoContrato[] = [];
-  createOuResults: ActiveDirectoryOu[] = [];
-  dependencias: Dependencia[] = [];
-  createSubdependencias: Subdependencia[] = [];
-  infoSubdependencias: Subdependencia[] = [];
-  createDependenciaId: number | null = null;
-  createSubdependenciaId: number | null = null;
-  infoDependenciaId: number | null = null;
-  infoSubdependenciaId: number | null = null;
-  private createUpnEdited = false;
   private syncPollSub?: Subscription;
 
   ngOnInit(): void {
-    this.loadOrganizacionCatalogo();
     this.loadDashboard();
     this.checkSyncStatus();
     this.route.queryParamMap.subscribe((params) => {
@@ -504,20 +279,21 @@ export class UsuariosRedAdministracionComponent implements OnInit, OnDestroy {
     this.notice = null;
   }
 
-  openCreatePanel(): void {
-    this.resetCreateForm();
-    this.openPanel('create');
+  closePanel(): void {
+    this.activePanel = null;
   }
 
-  closePanel(): void {
-    const panel = this.activePanel;
-    this.activePanel = null;
-    this.newPassword = '';
-    this.groupSearch = '';
-    this.ouSearch = '';
-    if (panel === 'create') {
-      this.resetCreateForm();
-    }
+  onPanelSaved(result: AdPanelResult): void {
+    this.user = result.user;
+    this.loadDashboard();
+    this.closePanel();
+    this.flash(result.notice.tone, result.notice.text);
+  }
+
+  onPanelChanged(result: AdPanelResult): void {
+    this.user = result.user;
+    this.loadDashboard();
+    this.flash(result.notice.tone, result.notice.text);
   }
 
   unlock(): void {
@@ -533,235 +309,26 @@ export class UsuariosRedAdministracionComponent implements OnInit, OnDestroy {
     this.runAction(request);
   }
 
-  resetPassword(): void {
-    if (!this.user || !this.newPassword.trim()) {
-      this.flash('error', 'Ingresa una contraseña temporal.');
-      return;
-    }
-    this.runAction(this.adService.resetPassword(this.user.samAccountName, this.newPassword.trim(), this.forceChange), true);
-  }
-
-  createUser(): void {
-    this.ensureCreateUpn();
-    const request = this.normalizedCreateRequest();
-    if (!request.samAccountName || !request.givenName || !request.surname || !request.temporaryPassword || !request.ouDestinoDn) {
-      this.flash('error', 'Completa usuario, nombres, apellidos, contraseña temporal y OU destino.');
-      return;
-    }
-    if (request.temporaryPassword.length < 8) {
-      this.flash('error', 'La contraseña temporal debe tener al menos 8 caracteres.');
-      return;
-    }
-    if (this.createContratoEnabled && (!this.createContratoForm.tipoContratoId || !this.createContratoForm.fechaInicio)) {
-      this.flash('error', 'Completa tipo de contrato y fecha de inicio del contrato inicial.');
-      return;
-    }
-
-    this.working = true;
-    this.adService.createUser(request).subscribe({
-      next: (response) => {
-        if (!response.success) {
-          this.working = false;
-          this.flash('error', response.message);
-          return;
-        }
-        if (response.data) {
-          this.user = response.data;
-          this.syncInfoForm(response.data);
-          this.loadGroups();
-        }
-        this.loadDashboard();
-        const usuarioCreado = response.data?.samAccountName || request.samAccountName;
-        if (!this.createContratoEnabled) {
-          this.working = false;
-          this.closePanel();
-          this.flash('success', response.message);
-          return;
-        }
-        this.contratoService.create(this.normalizedCreateContratoRequest(usuarioCreado)).subscribe({
-          next: () => {
-            this.working = false;
-            this.closePanel();
-            this.flash('success', `${response.message} Contrato inicial registrado.`);
-          },
-          error: (err) => {
-            this.working = false;
-            this.closePanel();
-            this.flash('error', `Usuario creado en AD, pero no se pudo registrar el contrato: ${err?.error?.message || 'error no especificado'}.`);
-          },
-        });
-      },
-      error: () => {
-        this.working = false;
-        this.flash('error', 'No se pudo crear el usuario en Active Directory.');
-      },
-    });
-  }
-
-  saveInfo(): void {
-    if (!this.user) return;
-    this.runAction(this.adService.updateInfo(this.user.samAccountName, this.normalizedInfoRequest()), true);
-  }
-
-  searchGroups(): void {
-    const term = this.groupSearch.trim();
-    if (term.length < 2) return;
-    this.adService.searchGroups(term).subscribe((groups) => (this.groupResults = groups));
-  }
-
-  addSelectedGroup(groupDn: string): void {
-    if (!this.user || !groupDn) return;
-    this.runAction(this.adService.addGroup(this.user.samAccountName, groupDn), true, () => this.loadGroups());
-  }
-
-  removeGroup(groupDn: string): void {
-    if (!this.user || !groupDn) return;
-    this.runAction(this.adService.removeGroup(this.user.samAccountName, groupDn), false, () => this.loadGroups());
-  }
-
-  searchOus(): void {
-    const term = this.ouSearch.trim();
-    if (term.length < 2) return;
-    this.adService.searchOus(term).subscribe((ous) => (this.ouResults = ous));
-  }
-
-  searchCreateOus(): void {
-    const term = this.createOuSearch.trim();
-    if (term.length < 2) return;
-    this.adService.searchOus(term).subscribe((ous) => (this.createOuResults = ous));
-  }
-
-  selectCreateOu(ou: ActiveDirectoryOu): void {
-    this.createForm.ouDestinoDn = ou.dn;
-    this.createOuSearch = ou.name;
-    this.createOuResults = [];
-  }
-
-  onCreateDependenciaChange(value: number | null): void {
-    this.createDependenciaId = this.normalizeSelectId(value);
-    this.createSubdependenciaId = null;
-    this.createSubdependencias = [];
-    const dependencia = this.findDependencia(this.createDependenciaId);
-    this.createForm.department = dependencia?.nombre ?? '';
-    this.createForm.office = dependencia?.nombre ?? '';
-    if (this.createDependenciaId) {
-      this.catalogoService.getSubdependencias(this.createDependenciaId)
-        .subscribe((items) => (this.createSubdependencias = this.sortByName(items)));
-    }
-  }
-
-  onCreateSubdependenciaChange(value: number | null): void {
-    this.createSubdependenciaId = this.normalizeSelectId(value);
-    const subdependencia = this.findSubdependencia(this.createSubdependencias, this.createSubdependenciaId);
-    this.createForm.office = subdependencia?.nombre || this.createForm.department || '';
-  }
-
-  onInfoDependenciaChange(value: number | null): void {
-    this.infoDependenciaId = this.normalizeSelectId(value);
-    this.infoSubdependenciaId = null;
-    this.infoSubdependencias = [];
-    const dependencia = this.findDependencia(this.infoDependenciaId);
-    this.infoForm = {
-      ...this.infoForm,
-      department: dependencia?.nombre ?? null,
-      office: dependencia?.nombre ?? null,
-    };
-    if (this.infoDependenciaId) {
-      this.catalogoService.getSubdependencias(this.infoDependenciaId)
-        .subscribe((items) => (this.infoSubdependencias = this.sortByName(items)));
-    }
-  }
-
-  onInfoSubdependenciaChange(value: number | null): void {
-    this.infoSubdependenciaId = this.normalizeSelectId(value);
-    const subdependencia = this.findSubdependencia(this.infoSubdependencias, this.infoSubdependenciaId);
-    this.infoForm = {
-      ...this.infoForm,
-      office: subdependencia?.nombre || this.infoForm.department || null,
-    };
-  }
-
-  onCreateSamChanged(value: string): void {
-    this.createForm.samAccountName = value;
-    this.createContratoForm = { ...this.createContratoForm, usuario: value };
-    if (!this.createUpnEdited) {
-      this.createForm.userPrincipalName = this.generatedUpn(value);
-    }
-  }
-
-  onCreateUpnChanged(value: string): void {
-    this.createForm.userPrincipalName = value;
-    this.createUpnEdited = !!value?.trim() && value.trim() !== this.generatedUpn(this.createForm.samAccountName);
-  }
-
-  moveToOu(ouDn: string): void {
-    if (!this.user || !ouDn) return;
-    this.runAction(this.adService.moveUser(this.user.samAccountName, ouDn), true);
-  }
-
-  onCreateContratoToggle(enabled: boolean): void {
-    this.createContratoEnabled = enabled;
-    if (enabled) {
-      this.createContratoForm = {
-        ...this.createContratoForm,
-        usuario: this.createForm.samAccountName,
-      };
-      this.ensureTiposContrato();
-    }
-  }
-
-  esCreateContratoOs(): boolean {
-    const tipo = this.tiposContrato.find((item) => item.id === this.createContratoForm.tipoContratoId);
-    return esTipoContratoOs(tipo?.nombre);
-  }
-
-  private loadOrganizacionCatalogo(): void {
-    this.catalogoService.getDependencias().subscribe({
-      next: (items) => {
-        this.dependencias = this.sortByName(items);
-        if (this.user) {
-          this.syncCatalogSelectionFromInfo();
-        }
-      },
-      error: () => {
-        this.dependencias = [];
-      },
-    });
-  }
-
   private loadUser(sam: string): void {
     this.notice = null;
     this.adService.getUser(sam).subscribe({
       next: (response) => {
         if (!response.success || !response.data) {
           this.user = null;
-          this.groups = [];
           this.flash('error', response.message || 'Usuario no encontrado.');
           return;
         }
         this.user = response.data;
-        this.syncInfoForm(response.data);
-        this.loadGroups();
         this.flash('success', response.message);
       },
       error: () => {
         this.user = null;
-        this.groups = [];
         this.flash('error', 'No se pudo consultar Active Directory.');
       },
     });
   }
 
-  private loadGroups(): void {
-    if (!this.user) return;
-    this.adService.getUserGroups(this.user.samAccountName).subscribe((groups) => (this.groups = groups));
-  }
-
-  private runAction(
-    request: Observable<ActiveDirectoryResponse<AdUser>>,
-    close = false,
-    after?: () => void,
-  ): void {
+  private runAction(request: ReturnType<ActiveDirectoryService['unlockUser']>): void {
     this.working = true;
     request.subscribe({
       next: (response) => {
@@ -769,14 +336,10 @@ export class UsuariosRedAdministracionComponent implements OnInit, OnDestroy {
         if (response.success) {
           if (response.data) {
             this.user = response.data;
-            this.syncInfoForm(response.data);
-            this.loadGroups();
           } else if (this.user) {
             this.loadUser(this.user.samAccountName);
           }
-          after?.();
           this.loadDashboard();
-          if (close) this.closePanel();
           this.flash('success', response.message);
         } else {
           this.flash('error', response.message);
@@ -787,190 +350,6 @@ export class UsuariosRedAdministracionComponent implements OnInit, OnDestroy {
         this.flash('error', 'No se pudo completar la acción.');
       },
     });
-  }
-
-  private syncInfoForm(user: AdUser): void {
-    this.infoForm = {
-      displayName: user.displayName,
-      title: user.title,
-      department: user.department,
-      office: user.office,
-      telephoneNumber: user.telephoneNumber,
-      mobile: user.mobile,
-      mail: user.mail,
-      description: user.description,
-    };
-    this.syncCatalogSelectionFromInfo();
-  }
-
-  private syncCatalogSelectionFromInfo(): void {
-    const dependencia = this.findDependenciaByName(this.infoForm.department);
-    this.infoDependenciaId = dependencia?.id ?? null;
-    this.infoSubdependenciaId = null;
-    this.infoSubdependencias = [];
-
-    if (!dependencia) {
-      return;
-    }
-
-    this.catalogoService.getSubdependencias(dependencia.id).subscribe((items) => {
-      this.infoSubdependencias = this.sortByName(items);
-      const office = this.normalizeName(this.infoForm.office);
-      const department = this.normalizeName(this.infoForm.department);
-      this.infoSubdependenciaId = office && office !== department
-        ? (this.infoSubdependencias.find((item) => this.normalizeName(item.nombre) === office)?.id ?? null)
-        : null;
-      if (!this.infoSubdependenciaId && this.infoForm.department) {
-        this.infoForm = { ...this.infoForm, office: this.infoForm.department };
-      }
-    });
-  }
-
-  private emptyCreateForm(): CreateAdUserRequest {
-    return {
-      samAccountName: '',
-      givenName: '',
-      surname: '',
-      displayName: '',
-      mail: '',
-      userPrincipalName: '',
-      temporaryPassword: '',
-      ouDestinoDn: '',
-      title: '',
-      department: '',
-      office: '',
-      telephoneNumber: '',
-      mobile: '',
-      description: '',
-      enabled: true,
-      forceChange: true,
-    };
-  }
-
-  private resetCreateForm(): void {
-    this.createForm = this.emptyCreateForm();
-    this.createContratoEnabled = false;
-    this.createContratoForm = this.emptyCreateContratoForm();
-    this.createOuSearch = '';
-    this.createOuResults = [];
-    this.createDependenciaId = null;
-    this.createSubdependenciaId = null;
-    this.createSubdependencias = [];
-    this.createUpnEdited = false;
-  }
-
-  private emptyCreateContratoForm(): UsuarioRedContratoRequest {
-    return {
-      usuario: '',
-      tipoContratoId: null as unknown as number,
-      fechaInicio: '',
-      fechaFin: null,
-      numeroContrato: null,
-      personalNombre: null,
-      personalApellidos: null,
-    };
-  }
-
-  private normalizedCreateRequest(): CreateAdUserRequest {
-    const department = this.blankToNull(this.createForm.department);
-    const office = this.blankToNull(this.createForm.office) ?? department;
-    return {
-      samAccountName: this.createForm.samAccountName.trim(),
-      givenName: this.createForm.givenName.trim(),
-      surname: this.createForm.surname.trim(),
-      displayName: this.blankToNull(this.createForm.displayName),
-      mail: this.blankToNull(this.createForm.mail),
-      userPrincipalName: this.blankToNull(this.createForm.userPrincipalName),
-      temporaryPassword: this.createForm.temporaryPassword,
-      ouDestinoDn: this.createForm.ouDestinoDn.trim(),
-      title: this.blankToNull(this.createForm.title),
-      department,
-      office,
-      telephoneNumber: this.blankToNull(this.createForm.telephoneNumber),
-      mobile: this.blankToNull(this.createForm.mobile),
-      description: this.blankToNull(this.createForm.description),
-      enabled: this.createForm.enabled,
-      forceChange: this.createForm.forceChange,
-    };
-  }
-
-  private normalizedCreateContratoRequest(usuario: string): UsuarioRedContratoRequest {
-    return {
-      usuario: usuario.trim(),
-      tipoContratoId: this.createContratoForm.tipoContratoId,
-      fechaInicio: this.createContratoForm.fechaInicio,
-      fechaFin: this.blankToNull(this.createContratoForm.fechaFin),
-      numeroContrato: this.blankToNull(this.createContratoForm.numeroContrato),
-      personalNombre: this.blankToNull(this.createContratoForm.personalNombre),
-      personalApellidos: this.blankToNull(this.createContratoForm.personalApellidos),
-    };
-  }
-
-  private normalizedInfoRequest(): UpdateUserInfoRequest {
-    const department = this.blankToNull(this.infoForm.department);
-    const office = this.blankToNull(this.infoForm.office) ?? department;
-    return {
-      displayName: this.blankToNull(this.infoForm.displayName),
-      title: this.blankToNull(this.infoForm.title),
-      department,
-      office,
-      telephoneNumber: this.blankToNull(this.infoForm.telephoneNumber),
-      mobile: this.blankToNull(this.infoForm.mobile),
-      mail: this.blankToNull(this.infoForm.mail),
-      description: this.blankToNull(this.infoForm.description),
-    };
-  }
-
-  private findDependencia(id: number | null): Dependencia | null {
-    return id ? (this.dependencias.find((item) => item.id === id) ?? null) : null;
-  }
-
-  private findDependenciaByName(name: string | null | undefined): Dependencia | null {
-    const normalized = this.normalizeName(name);
-    return normalized ? (this.dependencias.find((item) => this.normalizeName(item.nombre) === normalized) ?? null) : null;
-  }
-
-  private findSubdependencia(items: Subdependencia[], id: number | null): Subdependencia | null {
-    return id ? (items.find((item) => item.id === id) ?? null) : null;
-  }
-
-  private normalizeSelectId(value: number | string | null | undefined): number | null {
-    if (value === null || value === undefined || value === '') {
-      return null;
-    }
-    const parsed = Number(value);
-    return Number.isFinite(parsed) ? parsed : null;
-  }
-
-  private normalizeName(value: string | null | undefined): string {
-    return value?.trim().toLowerCase() ?? '';
-  }
-
-  private sortByName<T extends { nombre: string }>(items: T[]): T[] {
-    return [...items].sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'));
-  }
-
-  private ensureTiposContrato(): void {
-    if (this.tiposContrato.length) return;
-    this.catalogoService.getTiposContrato().subscribe({
-      next: (tipos) => (this.tiposContrato = this.sortByName(tipos)),
-      error: () => (this.tiposContrato = []),
-    });
-  }
-
-  private blankToNull(value: string | null | undefined): string | null {
-    return value?.trim() ? value.trim() : null;
-  }
-
-  private ensureCreateUpn(): void {
-    if (!this.createForm.userPrincipalName?.trim()) {
-      this.createForm.userPrincipalName = this.generatedUpn(this.createForm.samAccountName);
-    }
-  }
-
-  private generatedUpn(value: string | null | undefined): string {
-    const sam = value?.trim();
-    return sam ? `${sam}@${this.adDomain}` : '';
   }
 
   private flash(tone: 'success' | 'error' | 'info', text: string): void {
