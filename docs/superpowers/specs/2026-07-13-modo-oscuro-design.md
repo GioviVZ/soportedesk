@@ -22,36 +22,41 @@ Nuevo archivo: `soportedesk-frontend/src/app/core/services/theme.service.ts`, mi
 ```ts
 export type ThemeMode = 'light' | 'dark';
 
+const STORAGE_KEY = 'soportedesk-theme';
+
 @Injectable({ providedIn: 'root' })
 export class ThemeService {
   readonly theme = signal<ThemeMode>(this.resolveInitialTheme());
 
   constructor() {
-    effect(() => this.applyTheme(this.theme()));
+    this.applyTheme(this.theme());
   }
 
   setTheme(mode: ThemeMode): void {
     this.theme.set(mode);
+    this.applyTheme(mode);
   }
 
   toggle(): void {
-    this.theme.set(this.theme() === 'dark' ? 'light' : 'dark');
+    this.setTheme(this.theme() === 'dark' ? 'light' : 'dark');
   }
 
   private resolveInitialTheme(): ThemeMode {
-    const stored = localStorage.getItem('soportedesk-theme');
+    const stored = localStorage.getItem(STORAGE_KEY);
     if (stored === 'light' || stored === 'dark') return stored;
     return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
   }
 
   private applyTheme(mode: ThemeMode): void {
     document.documentElement.setAttribute('data-theme', mode);
-    localStorage.setItem('soportedesk-theme', mode);
+    localStorage.setItem(STORAGE_KEY, mode);
   }
 }
 ```
 
-- Se instancia apenas arranca la app (inyectado desde `AppComponent` con `inject(ThemeService)` en el constructor, aunque no se use directamente, para forzar su creación y que el `effect` aplique el tema inicial antes de que el usuario vea nada) — mismo truco ya usado implícitamente por servicios `providedIn: 'root'` que se autoinicializan al ser inyectados por el primer consumidor; aquí forzamos la inyección temprana en `AppComponent` para evitar un parpadeo de tema claro→oscuro en el primer render.
+`setTheme`/`toggle` aplican el atributo y persisten de forma síncrona e imperativa (sin `effect()`): es más simple, no depende del timing de flush de la reactividad de Angular, y es trivial de probar. El signal `theme` sigue existiendo para que el template lo lea de forma reactiva.
+
+- Se instancia apenas arranca la app: `AppComponent` inyecta `ThemeService` como campo (`private theme = inject(ThemeService)`), aunque no lo use directamente, para forzar su creación temprana — el constructor de `ThemeService` aplica el tema de forma síncrona antes de que se renderice el primer template, evitando un parpadeo de tema claro→oscuro.
 - No escucha cambios en vivo de `prefers-color-scheme` (si el SO cambia de tema mientras la app está abierta, no se refleja hasta recargar) — mantiene el servicio simple; es un valor por defecto, no una sincronización continua.
 
 ## Variables oscuras
