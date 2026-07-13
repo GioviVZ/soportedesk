@@ -64,9 +64,9 @@ export class SidebarComponent {
       { path: '/wifi', label: 'Claves WiFi', icon: s.bypassSecurityTrustHtml(SVG_ICONS['wifi']), permission: 'wifi' },
       { path: '/licencias', label: 'Licencias', icon: s.bypassSecurityTrustHtml(SVG_ICONS['key']), permission: 'licencias' },
       { path: '/auditoria', label: 'Movimientos', icon: s.bypassSecurityTrustHtml(SVG_ICONS['activity']), permission: 'auditoria' },
-      { path: '/herramientas', label: 'Herramientas', icon: s.bypassSecurityTrustHtml(SVG_ICONS['wrench']), permission: 'herramientas' },
+      { path: '/herramientas', label: 'Aplicaciones', icon: s.bypassSecurityTrustHtml(SVG_ICONS['grid']), permission: 'herramientas' },
       { path: '/usuarios-sistema', label: 'Usuarios del Sistema', icon: s.bypassSecurityTrustHtml(SVG_ICONS['shield']), adminOnly: true },
-      { path: '/catalogos', label: 'Catálogos', icon: s.bypassSecurityTrustHtml(SVG_ICONS['grid']), permission: 'catalogos' },
+      { path: '/catalogos', label: 'Configuración', icon: s.bypassSecurityTrustHtml(SVG_ICONS['wrench']), permission: 'catalogos' },
     ];
   }
 

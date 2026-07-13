@@ -14,7 +14,7 @@ const MODULOS: Record<string, string> = {
   wifi: 'WiFi',
   licencias: 'Licencias',
   'usuarios-sistema': 'Usuarios del Sistema',
-  catalogos: 'Catalogos',
+  catalogos: 'Configuración',
 };
 
 @Component({

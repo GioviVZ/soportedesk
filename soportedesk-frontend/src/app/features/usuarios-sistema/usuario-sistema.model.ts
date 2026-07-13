@@ -68,7 +68,7 @@ export const MODULOS: ModuloPermiso[] = [
   { key: 'wifi', label: 'Claves WiFi', kind: 'write', group: 'Redes y Accesos' },
   { key: 'impresoras', label: 'Impresoras', kind: 'write', group: 'Inventario' },
   { key: 'licencias', label: 'Licencias', kind: 'write', group: 'Inventario' },
-  { key: 'catalogos', label: 'Catalogos', kind: 'write', group: 'Administracion' },
+  { key: 'catalogos', label: 'Configuración', kind: 'write', group: 'Administracion' },
   {
     key: 'auditoria',
     label: 'Vista de Movimientos',
@@ -78,7 +78,7 @@ export const MODULOS: ModuloPermiso[] = [
   },
   {
     key: 'herramientas',
-    label: 'Herramientas',
+    label: 'Aplicaciones',
     kind: 'view',
     group: 'Diagnostico',
     description: 'Permite usar ping, inventario, GPU, RAM, teclado y mouse.',

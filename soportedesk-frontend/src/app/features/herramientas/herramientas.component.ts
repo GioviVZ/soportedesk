@@ -903,7 +903,7 @@ export class HerramientasComponent implements AfterViewInit, OnDestroy {
     const url = URL.createObjectURL(blob);
     const anchor = document.createElement('a');
     anchor.href = url;
-    anchor.download = `reporte-herramientas-${new Date().toISOString().slice(0, 10)}.txt`;
+    anchor.download = `reporte-aplicaciones-${new Date().toISOString().slice(0, 10)}.txt`;
     anchor.click();
     URL.revokeObjectURL(url);
   }
@@ -1235,7 +1235,7 @@ export class HerramientasComponent implements AfterViewInit, OnDestroy {
 
   private buildReport(): string {
     const lines = [
-      'Reporte de herramientas - Sistema Gestión de Soporte Informático INIA',
+      'Reporte de aplicaciones - Sistema Gestión de Soporte Informático INIA',
       `Fecha: ${new Date().toLocaleString()}`,
       '',
       'Equipo cliente',
