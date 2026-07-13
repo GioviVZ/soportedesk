@@ -51,7 +51,7 @@ public class UsuarioRedContratoService {
     public List<UsuarioRedConsultaDto> searchConsultas(String term) {
         String normalizedTerm = normalizeSearchTerm(term);
         if (normalizedTerm == null || normalizedTerm.length() < 2) {
-            return List.of();
+            return listarTodos();
         }
 
         Map<String, ScoredConsulta> resultsByUser = new LinkedHashMap<>();
@@ -87,6 +87,25 @@ public class UsuarioRedContratoService {
                 .map(ScoredConsulta::dto)
                 .map(this::enrichContratosYVencimiento)
                 .limit(CONSULTA_LIMIT)
+                .toList();
+    }
+
+    private List<UsuarioRedConsultaDto> listarTodos() {
+        Map<String, UsuarioRedConsultaDto> resultados = new LinkedHashMap<>();
+
+        adUsuarioCacheRepository.findAll().forEach(user ->
+                resultados.putIfAbsent(resultKey(user.getSamAccountName(), "ad-" + user.getSamAccountName()), toConsultaDto(user)));
+
+        repository.findAll().forEach(contrato -> {
+            String key = resultKey(contrato.getUsuario(), "contrato-" + contrato.getId());
+            resultados.computeIfAbsent(key, k -> toConsultaDto(contrato));
+        });
+
+        return resultados.values().stream()
+                .map(this::enrichContratosYVencimiento)
+                .sorted(Comparator
+                        .comparing((UsuarioRedConsultaDto dto) -> blankToLast(dto.getDisplayName()))
+                        .thenComparing(dto -> blankToLast(dto.getUsuario())))
                 .toList();
     }
 

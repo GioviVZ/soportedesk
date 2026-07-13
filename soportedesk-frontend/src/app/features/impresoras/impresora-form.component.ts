@@ -46,6 +46,7 @@ export class ImpresoraFormComponent implements OnInit, OnChanges {
     serie:              [''],
     codigoInventario:   [''],
     codigoPatrimonial:  [''],
+    referencia:         [''],
     tipoConexion:       ['USB', Validators.required],
     ip:                 [''],
     estado:             ['Activa', Validators.required],
@@ -85,6 +86,7 @@ export class ImpresoraFormComponent implements OnInit, OnChanges {
         serie:             this.impresora.serie ?? '',
         codigoInventario:  this.impresora.codigoInventario ?? '',
         codigoPatrimonial: this.impresora.codigoPatrimonial ?? '',
+        referencia:        this.impresora.referencia ?? '',
         tipoConexion:      this.impresora.tipoConexion,
         ip:                this.impresora.ip,
         estado:            this.impresora.estado,
@@ -98,6 +100,7 @@ export class ImpresoraFormComponent implements OnInit, OnChanges {
       this.form.reset({
         modeloImpresoraId: null,
         tipoImpresoraId: null, serie: '', codigoInventario: '', codigoPatrimonial: '',
+        referencia: '',
         tipoConexion: 'USB', ip: '',
         estado: 'Activa',
       });

@@ -130,7 +130,7 @@ const KEY_LABELS: Record<string, string> = {
   standalone: true,
   imports: [CommonModule, FormsModule],
   templateUrl: './herramientas.component.html',
-  styleUrl: './herramientas.component.scss',
+  styleUrls: ['./herramientas.component.scss', './herramientas-tests.scss'],
 })
 export class HerramientasComponent implements AfterViewInit, OnDestroy {
   private service = inject(HerramientasService);

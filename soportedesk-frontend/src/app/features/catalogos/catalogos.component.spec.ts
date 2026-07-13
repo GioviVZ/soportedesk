@@ -20,6 +20,11 @@ describe('CatalogosComponent', () => {
     httpMock.expectOne((req) => req.url.includes('/catalogos/marcas-impresora')).flush(marcasImpresoraData);
     httpMock.expectOne((req) => req.url.includes('/catalogos/modelos-impresora')).flush([]);
     httpMock.expectOne((req) => req.url.includes('/catalogos/tipo-equipo')).flush([]);
+    // Dos peticiones a config-institucional: una de CatalogosComponent.loadVpnConfig()
+    // y otra de VpnConfigInstitucionalFormComponent, que se instancia eagerly como
+    // contenido proyectado dentro de app-modal aunque el modal este cerrado.
+    httpMock.match((req) => req.url.includes('/vpn/config-institucional'))
+      .forEach((req) => req.flush({ vencimientoAntivirus: null }));
   }
 
   beforeEach(async () => {

@@ -11,6 +11,16 @@
   gap: 12px;
 }
 
+.form-error {
+  padding: 10px 12px;
+  border: 1px solid #fecaca;
+  border-radius: var(--radius-sm);
+  background: #fef2f2;
+  color: #991b1b;
+  font-size: 13px;
+  font-weight: 700;
+}
+
 .field {
   display: flex;
   min-width: 0;

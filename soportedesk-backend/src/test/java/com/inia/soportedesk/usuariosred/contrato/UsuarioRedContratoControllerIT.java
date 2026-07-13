@@ -45,6 +45,15 @@ class UsuarioRedContratoControllerIT {
         return request;
     }
 
+    private UsuarioRedConsultaDto sampleConsultaDto() {
+        UsuarioRedConsultaDto dto = new UsuarioRedConsultaDto();
+        dto.setUsuario("jperez");
+        dto.setDisplayName("Juan Perez");
+        dto.setEnabled(true);
+        dto.setLocked(false);
+        return dto;
+    }
+
     private UsuarioRedContratoDto sampleDto() {
         UsuarioRedContratoDto dto = new UsuarioRedContratoDto();
         dto.setId(1L);
@@ -84,6 +93,23 @@ class UsuarioRedContratoControllerIT {
         mockMvc.perform(get("/api/usuarios-red/contratos/buscar").param("termino", "Juan"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].personalNombre", is("Juan")));
+    }
+
+    @Test
+    @WithMockUser(authorities = {"ROLE_SOPORTE", "READ_usuarios-red"})
+    void buscarConsultas_withoutTermino_allowsUserAndReturnsDirectory() throws Exception {
+        when(service.searchConsultas(null)).thenReturn(List.of(sampleConsultaDto()));
+
+        mockMvc.perform(get("/api/usuarios-red/contratos/consultas"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].usuario", is("jperez")));
+    }
+
+    @Test
+    @WithMockUser(roles = "SOPORTE")
+    void buscarConsultas_withoutReadAuthority_returnsForbidden() throws Exception {
+        mockMvc.perform(get("/api/usuarios-red/contratos/consultas"))
+                .andExpect(status().isForbidden());
     }
 
     @Test

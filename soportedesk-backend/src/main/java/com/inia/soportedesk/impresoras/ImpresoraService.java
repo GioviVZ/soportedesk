@@ -134,6 +134,7 @@ public class ImpresoraService {
         impresora.setSerie(emptyToNull(request.getSerie()));
         impresora.setCodigoInventario(emptyToNull(request.getCodigoInventario()));
         impresora.setCodigoPatrimonial(emptyToNull(request.getCodigoPatrimonial()));
+        impresora.setReferencia(emptyToNull(request.getReferencia()));
         impresora.setTipoConexion(request.getTipoConexion());
         impresora.setIp("IP".equals(request.getTipoConexion()) ? emptyToNull(request.getIp()) : null);
     }

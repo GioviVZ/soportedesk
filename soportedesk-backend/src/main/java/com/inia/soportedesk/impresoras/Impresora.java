@@ -36,6 +36,9 @@ public class Impresora {
     @Column(name = "codigo_patrimonial")
     private String codigoPatrimonial;
 
+    @Column(name = "referencia")
+    private String referencia;
+
     @Column(name = "tipo_conexion", nullable = false)
     private String tipoConexion;
 

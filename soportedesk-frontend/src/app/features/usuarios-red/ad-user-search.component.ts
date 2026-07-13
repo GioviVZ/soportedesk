@@ -81,48 +81,6 @@ type EstadoFiltro = 'all' | 'enabled' | 'locked' | 'disabled';
         </label>
       </div>
 
-      <div class="catalog-browser" *ngIf="organizationalUnits.length || offices.length">
-        <div class="browser-column" *ngIf="organizationalUnits.length">
-          <div class="browser-header">
-            <strong>Unidades organizativas</strong>
-            <span>{{ organizationalUnits.length }}</span>
-          </div>
-          <div class="browser-options">
-            <button
-              type="button"
-              class="browser-option"
-              *ngFor="let option of organizationalUnits"
-              [class.active]="ou === option.value"
-              (click)="selectOrganizationalUnit(option.value)"
-              [attr.aria-label]="'Filtrar por OU ' + option.value"
-            >
-              <span>{{ option.value }}</span>
-              <small>{{ option.total }}</small>
-            </button>
-          </div>
-        </div>
-
-        <div class="browser-column" *ngIf="offices.length">
-          <div class="browser-header">
-            <strong>Oficinas</strong>
-            <span>{{ offices.length }}</span>
-          </div>
-          <div class="browser-options">
-            <button
-              type="button"
-              class="browser-option"
-              *ngFor="let option of offices"
-              [class.active]="oficina === option.value"
-              (click)="selectOffice(option.value)"
-              [attr.aria-label]="'Filtrar por oficina ' + option.value"
-            >
-              <span>{{ option.value }}</span>
-              <small>{{ option.total }}</small>
-            </button>
-          </div>
-        </div>
-      </div>
-
       <div class="advanced-search" *ngIf="showAdvanced">
         <div class="field">
           <label>Usuario de red</label>
@@ -278,16 +236,6 @@ export class AdUserSearchComponent implements OnInit, OnDestroy {
     this.ou = '';
     this.estado = 'all';
     this.resetSearchState();
-  }
-
-  selectOrganizationalUnit(value: string): void {
-    this.ou = this.ou === value ? '' : value;
-    this.queueSearch();
-  }
-
-  selectOffice(value: string): void {
-    this.oficina = this.oficina === value ? '' : value;
-    this.queueSearch();
   }
 
   search(): void {

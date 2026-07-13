@@ -473,15 +473,6 @@
   color: var(--color-text-secondary);
 }
 
-.mobile-empty {
-  padding: 18px;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  background: var(--color-surface);
-  color: var(--color-text-secondary);
-  text-align: center;
-}
-
 :host ::ng-deep app-modal .dialog {
   width: min(880px, 100%);
 }
@@ -523,11 +514,6 @@
   text-transform: uppercase;
 }
 
-.badge.large {
-  min-height: 30px;
-  padding: 6px 11px;
-}
-
 .detail-grid,
 .usage-grid {
   display: grid;
@@ -562,62 +548,6 @@
     font-size: 13px;
     overflow-wrap: anywhere;
   }
-}
-
-.dashboard-toolbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  margin-top: -6px;
-
-  p {
-    margin: 0;
-    color: var(--color-text-secondary);
-    font-size: 13px;
-  }
-}
-
-.dashboard-grid {
-  display: grid;
-  grid-template-columns: minmax(0, 1.35fr) minmax(300px, .9fr);
-  gap: 14px;
-}
-
-.chart-card { min-height: 340px; padding: 16px; }
-
-.alert-list { display: grid; gap: 12px; align-content: start; }
-
-.alert-card { padding: 14px; }
-
-.alert-card header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 8px;
-}
-
-.alert-row {
-  display: grid;
-  width: 100%;
-  gap: 2px;
-  padding: 10px 4px;
-  border: none;
-  border-bottom: 1px solid var(--color-border);
-  background: transparent;
-  color: var(--color-text);
-  text-align: left;
-
-  &:last-of-type { border-bottom: none; }
-}
-
-.stat-highlight {
-  padding: 16px;
-  text-align: center;
-
-  strong { display: block; font-size: 32px; color: var(--color-accent); }
-  span { color: var(--color-text-secondary); font-size: 12.5px; }
 }
 
 .empty-state {
@@ -696,10 +626,6 @@
       flex: 1 1 150px;
     }
   }
-}
-
-@media (max-width: 900px) {
-  .dashboard-grid { grid-template-columns: 1fr; }
 }
 
 @media (max-width: 720px) {

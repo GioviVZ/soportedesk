@@ -11,7 +11,7 @@ import * as XLSX from 'xlsx';
   standalone: true,
   imports: [CommonModule, FormsModule, ModalComponent],
   templateUrl: './correos-consultas.component.html',
-  styleUrl: './correos.shared.scss',
+  styleUrls: ['./correos.shared.scss', './correos-consultas-empty.scss'],
 })
 export class CorreosConsultasComponent implements OnInit {
   private service = inject(CorreoService);

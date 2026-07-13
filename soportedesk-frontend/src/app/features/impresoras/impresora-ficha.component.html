@@ -38,6 +38,10 @@
           <span class="detail-value">{{ impresora.codigoPatrimonial || '—' }}</span>
         </div>
         <div class="detail-field">
+          <span class="detail-label">Referencia</span>
+          <span class="detail-value">{{ impresora.referencia || '—' }}</span>
+        </div>
+        <div class="detail-field">
           <span class="detail-label">Estado</span>
           <span class="detail-value">
             <app-status-badge [label]="impresora.estado" [tone]="impresoraEstadoTone(impresora.estado)" />

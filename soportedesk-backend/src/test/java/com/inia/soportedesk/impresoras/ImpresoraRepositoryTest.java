@@ -92,4 +92,19 @@ class ImpresoraRepositoryTest {
         assertThat(result).hasSize(1);
         assertThat(result.get(0).getModeloImpresora().getMarca().getNombre()).isEqualTo("Brother");
     }
+
+    @Test
+    void search_byReferencia_returnsMatchingImpresora() {
+        Impresora impresora = new Impresora();
+        impresora.setModeloImpresora(modeloImpresora("Xerox", "B210"));
+        impresora.setTipoConexion("USB");
+        impresora.setEstado("Activa");
+        impresora.setReferencia("Piso 3 - Oficina de Compras");
+        repository.save(impresora);
+
+        List<Impresora> result = repository.search("Oficina de Compras");
+
+        assertThat(result).hasSize(1);
+        assertThat(result.get(0).getReferencia()).isEqualTo("Piso 3 - Oficina de Compras");
+    }
 }

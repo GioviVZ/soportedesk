@@ -31,7 +31,7 @@ public class UsuarioRedContratoController {
 
     @GetMapping("/consultas")
     @PreAuthorize("hasRole('ADMIN') || hasAuthority('READ_usuarios-red')")
-    public List<UsuarioRedConsultaDto> buscarConsultas(@RequestParam String termino) {
+    public List<UsuarioRedConsultaDto> buscarConsultas(@RequestParam(required = false) String termino) {
         return service.searchConsultas(termino);
     }
 

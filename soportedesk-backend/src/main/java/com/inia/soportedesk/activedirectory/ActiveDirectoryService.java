@@ -57,6 +57,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -70,7 +71,11 @@ public class ActiveDirectoryService {
     private static final int ACCOUNT_DISABLED = 0x0002;
     private static final int PASSWORD_EXPIRED_DAYS = 90;
     private static final int INACTIVE_ACCOUNT_DAYS = 60;
+    private static final int LDAP_PAGE_SIZE = 1000;
+    private static final int LDAP_MAX_PREFIX_DEPTH = 3;
     private static final String LDAP_MATCHING_RULE_BIT_AND = "1.2.840.113556.1.4.803";
+    private static final String USER_SYNC_FILTER = "(&(objectCategory=person)(objectClass=user)(sAMAccountName=*))";
+    private static final String LDAP_BUCKET_CHARS = "abcdefghijklmnopqrstuvwxyz0123456789._-$";
     private static final String[] USER_ATTRIBUTES = {
             "sAMAccountName", "displayName", "givenName", "sn", "mail", "department", "company", "title",
             "telephoneNumber", "mobile", "physicalDeliveryOfficeName", "description", "distinguishedName",
@@ -408,9 +413,12 @@ public class ActiveDirectoryService {
     @Transactional
     public AdSyncResponse sincronizarCache() {
         LocalDateTime syncedAt = LocalDateTime.now();
-        int estimatedTotal = countPaged("(&(objectCategory=person)(objectClass=user)(sAMAccountName=*))");
+        int estimatedTotal = countPaged(USER_SYNC_FILTER);
         jobStatus.setTotal(estimatedTotal);
         List<AdUsuarioCache> users = collectCacheUsersFromAd(syncedAt);
+        if (users.size() > estimatedTotal) {
+            jobStatus.setTotal(users.size());
+        }
         int dcs = countPaged("(&(objectCategory=computer)(userAccountControl:" + LDAP_MATCHING_RULE_BIT_AND + ":=8192))");
         cacheRepository.saveAll(users);
         if (!users.isEmpty()) {
@@ -580,46 +588,81 @@ public class ActiveDirectoryService {
     }
 
     private List<AdUsuarioCache> collectCacheUsersFromAd(LocalDateTime syncedAt) {
-        List<AdUsuarioCache> users = new ArrayList<>();
         LdapContext context = null;
         try {
             context = contextFactory.openLdapContext();
-            byte[] cookie = null;
-            SearchControls controls = controls(USER_ATTRIBUTES, 0);
-            do {
-                context.setRequestControls(new Control[]{new PagedResultsControl(500, cookie, Control.CRITICAL)});
-                NamingEnumeration<SearchResult> results = context.search(
-                        contextFactory.baseDn(),
-                        "(&(objectCategory=person)(objectClass=user)(sAMAccountName=*))",
-                        controls
-                );
-                int pageCount = 0;
-                try {
-                    while (results.hasMore()) {
-                        users.add(toCache(results.next(), syncedAt));
-                        pageCount++;
-                    }
-                } catch (PartialResultException ignored) {
-                    jobStatus.incrementarProcesados(pageCount);
-                    break;
-                }
-                jobStatus.incrementarProcesados(pageCount);
-                cookie = null;
-                Control[] responseControls = context.getResponseControls();
-                if (responseControls != null) {
-                    for (Control control : responseControls) {
-                        if (control instanceof PagedResultsResponseControl paged) {
-                            cookie = paged.getCookie();
-                        }
-                    }
-                }
-            } while (cookie != null && cookie.length > 0);
+            Map<String, AdUsuarioCache> usersBySam = new LinkedHashMap<>();
+            for (char bucket : LDAP_BUCKET_CHARS.toCharArray()) {
+                collectCacheUsersByPrefix(context, String.valueOf(bucket), syncedAt, usersBySam);
+            }
+            collectCacheUsersForOtherPrefixes(context, syncedAt, usersBySam);
+            return new ArrayList<>(usersBySam.values());
         } catch (Exception e) {
             throw new RuntimeException("Error sincronizando cache de Active Directory: " + e.getMessage(), e);
         } finally {
             closeQuietly(context);
         }
+    }
+
+    private void collectCacheUsersByPrefix(LdapContext context, String prefix, LocalDateTime syncedAt,
+                                           Map<String, AdUsuarioCache> usersBySam) throws Exception {
+        List<AdUsuarioCache> users = searchCacheUsersFromAd(context, userSyncFilterForPrefix(prefix), syncedAt);
+        if (users.size() >= LDAP_PAGE_SIZE && prefix.length() < LDAP_MAX_PREFIX_DEPTH) {
+            for (char bucket : LDAP_BUCKET_CHARS.toCharArray()) {
+                collectCacheUsersByPrefix(context, prefix + bucket, syncedAt, usersBySam);
+            }
+            return;
+        }
+        mergeCacheUsers(usersBySam, users);
+    }
+
+    private void collectCacheUsersForOtherPrefixes(LdapContext context, LocalDateTime syncedAt,
+                                                   Map<String, AdUsuarioCache> usersBySam) throws Exception {
+        StringBuilder excludedPrefixes = new StringBuilder();
+        for (char bucket : LDAP_BUCKET_CHARS.toCharArray()) {
+            excludedPrefixes.append("(sAMAccountName=").append(LdapFilterUtils.escape(String.valueOf(bucket))).append("*)");
+        }
+        String filter = "(&(objectCategory=person)(objectClass=user)(sAMAccountName=*)(!(|"
+                + excludedPrefixes
+                + ")))";
+        mergeCacheUsers(usersBySam, searchCacheUsersFromAd(context, filter, syncedAt));
+    }
+
+    private List<AdUsuarioCache> searchCacheUsersFromAd(LdapContext context, String filter, LocalDateTime syncedAt) throws Exception {
+        List<AdUsuarioCache> users = new ArrayList<>();
+        byte[] cookie = null;
+        SearchControls controls = controls(USER_ATTRIBUTES, 0);
+        do {
+            context.setRequestControls(new Control[]{new PagedResultsControl(LDAP_PAGE_SIZE, cookie, false)});
+            NamingEnumeration<SearchResult> results = context.search(contextFactory.baseDn(), filter, controls);
+            int pageCount = 0;
+            try {
+                while (results.hasMore()) {
+                    users.add(toCache(results.next(), syncedAt));
+                    pageCount++;
+                }
+            } catch (PartialResultException ignored) {
+                jobStatus.incrementarProcesados(pageCount);
+                break;
+            }
+            jobStatus.incrementarProcesados(pageCount);
+            cookie = responseCookie(context);
+        } while (cookie != null && cookie.length > 0);
         return users;
+    }
+
+    private void mergeCacheUsers(Map<String, AdUsuarioCache> target, List<AdUsuarioCache> users) {
+        for (AdUsuarioCache user : users) {
+            if (user.getSamAccountName() != null && !user.getSamAccountName().isBlank()) {
+                target.put(user.getSamAccountName().toLowerCase(), user);
+            }
+        }
+    }
+
+    private String userSyncFilterForPrefix(String prefix) {
+        return "(&(objectCategory=person)(objectClass=user)(sAMAccountName="
+                + LdapFilterUtils.escape(prefix)
+                + "*))";
     }
 
     private AdUser refreshCachedUserFromAd(String samAccountName) {
@@ -720,7 +763,7 @@ public class ActiveDirectoryService {
             byte[] cookie = null;
             SearchControls controls = controls(new String[]{"distinguishedName"}, 0);
             do {
-                context.setRequestControls(new Control[]{new PagedResultsControl(500, cookie, Control.CRITICAL)});
+                context.setRequestControls(new Control[]{new PagedResultsControl(LDAP_PAGE_SIZE, cookie, false)});
                 NamingEnumeration<SearchResult> results = context.search(contextFactory.baseDn(), filter, controls);
                 while (results.hasMore()) {
                     results.next();
@@ -742,6 +785,18 @@ public class ActiveDirectoryService {
             closeQuietly(context);
         }
         return total;
+    }
+
+    private byte[] responseCookie(LdapContext context) throws Exception {
+        Control[] responseControls = context.getResponseControls();
+        if (responseControls != null) {
+            for (Control control : responseControls) {
+                if (control instanceof PagedResultsResponseControl paged) {
+                    return paged.getCookie();
+                }
+            }
+        }
+        return null;
     }
 
     private AdUser toUser(SearchResult result) throws Exception {

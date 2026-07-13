@@ -17,8 +17,9 @@ export class UsuarioRedContratoService {
     return this.http.get<UsuarioRedContrato[]>(`${this.apiUrl}/buscar`, { params: { termino } });
   }
 
-  buscarConsultas(termino: string): Observable<UsuarioRedConsultaResultado[]> {
-    return this.http.get<UsuarioRedConsultaResultado[]>(`${this.apiUrl}/consultas`, { params: { termino } });
+  buscarConsultas(termino?: string): Observable<UsuarioRedConsultaResultado[]> {
+    const params: Record<string, string> = termino ? { termino } : {};
+    return this.http.get<UsuarioRedConsultaResultado[]>(`${this.apiUrl}/consultas`, { params });
   }
 
   create(request: UsuarioRedContratoRequest): Observable<UsuarioRedContrato> {

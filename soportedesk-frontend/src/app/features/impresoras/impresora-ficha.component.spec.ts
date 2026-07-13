@@ -20,6 +20,7 @@ const mockImpresora: Impresora = {
   serie: 'SN-001',
   codigoInventario: 'INV-001',
   codigoPatrimonial: 'PAT-001',
+  referencia: null,
   tipoConexion: 'IP',
   ip: '192.168.1.100',
   sede: { id: 1, nombre: 'Sede Central' },

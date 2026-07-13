@@ -32,6 +32,8 @@ export class ModeloImpresoraFormComponent implements OnChanges {
   marcaId: number | null = null;
   driverVersionInput = '';
   driverSoInput = '';
+  saving = false;
+  errorMessage = '';
 
   form = this.fb.nonNullable.group({
     nombre: ['', Validators.required],
@@ -70,6 +72,7 @@ export class ModeloImpresoraFormComponent implements OnChanges {
   }
 
   submit(): void {
+    this.errorMessage = '';
     if (this.form.invalid || !this.marcaId) {
       return;
     }
@@ -87,11 +90,19 @@ export class ModeloImpresoraFormComponent implements OnChanges {
     const obs = this.modelo
       ? this.service.updateModeloImpresora(this.modelo.id, request)
       : this.service.createModeloImpresora(request);
-    obs.subscribe(() => {
-      this.form.reset({ nombre: '' });
-      this.marcaId = null;
-      this.setToners([this.emptyToner()]);
-      this.saved.emit();
+    this.saving = true;
+    obs.subscribe({
+      next: () => {
+        this.saving = false;
+        this.form.reset({ nombre: '' });
+        this.marcaId = null;
+        this.setToners([this.emptyToner()]);
+        this.saved.emit();
+      },
+      error: (err) => {
+        this.saving = false;
+        this.errorMessage = err?.error?.message || 'No se pudo guardar el modelo de impresora.';
+      },
     });
   }
 

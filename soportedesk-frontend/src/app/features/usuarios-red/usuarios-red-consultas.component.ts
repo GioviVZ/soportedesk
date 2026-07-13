@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, inject } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { finalize } from 'rxjs';
@@ -12,6 +12,10 @@ import { AdUser } from './active-directory.model';
 import { AdUserDetailComponent } from './ad-user-detail.component';
 import { UsuarioRedConsultaResultado } from './usuario-red-contrato.model';
 import { UsuarioRedContratoService } from './usuario-red-contrato.service';
+
+type EstadoFiltro = '' | 'HABILITADO' | 'DESHABILITADO' | 'BLOQUEADO' | 'SIN_FICHA_AD';
+type VencimientoFiltro = '' | 'VIGENTE' | 'POR_VENCER' | 'VENCIDO' | 'SIN_FECHA';
+type OrdenCampo = 'nombre' | 'oficina' | 'vencimiento';
 
 @Component({
   selector: 'app-usuarios-red-consultas',
@@ -53,11 +57,98 @@ import { UsuarioRedContratoService } from './usuario-red-contrato.service';
         </div>
       </section>
 
-      <section class="consulta-results" *ngIf="resultados.length">
+      <section class="directory-filter-panel" *ngIf="!buscandoActivo">
+        <div class="filter-header">
+          <div>
+            <span>Filtros</span>
+            <strong>{{ directorioFiltrado.length }} de {{ directorio.length }} usuarios</strong>
+          </div>
+          <div class="filter-actions">
+            <button type="button" class="ghost-action" (click)="clearFilters()" [disabled]="!hasActiveFilters">Limpiar</button>
+          </div>
+        </div>
+        <div class="filter-grid">
+          <label>
+            Oficina
+            <select [(ngModel)]="filters.oficina">
+              <option value="">Todas</option>
+              <option *ngFor="let oficina of oficinas" [value]="oficina">{{ oficina }}</option>
+            </select>
+          </label>
+          <label>
+            Estado
+            <select [(ngModel)]="filters.estado">
+              <option value="">Todos</option>
+              <option value="HABILITADO">Habilitado</option>
+              <option value="DESHABILITADO">Deshabilitado</option>
+              <option value="BLOQUEADO">Bloqueado</option>
+              <option value="SIN_FICHA_AD">Sin ficha AD</option>
+            </select>
+          </label>
+          <label>
+            Vencimiento red
+            <select [(ngModel)]="filters.vencimiento">
+              <option value="">Todos</option>
+              <option value="VIGENTE">Vigente</option>
+              <option value="POR_VENCER">Por vencer</option>
+              <option value="VENCIDO">Vencido</option>
+              <option value="SIN_FECHA">Sin fecha</option>
+            </select>
+          </label>
+          <label>
+            Ordenar por
+            <select [(ngModel)]="ordenarPor">
+              <option value="nombre">Nombre (A-Z)</option>
+              <option value="oficina">Oficina (A-Z)</option>
+              <option value="vencimiento">Vencimiento (mas proximo primero)</option>
+            </select>
+          </label>
+        </div>
+      </section>
+
+      <div class="usuarios-red-table-wrap" *ngIf="!buscandoActivo && directorioFiltrado.length">
+        <table class="usuarios-red-table">
+          <thead>
+            <tr>
+              <th>Usuario</th>
+              <th>Oficina</th>
+              <th>Estado</th>
+              <th>Vencimiento red</th>
+              <th>Contratos</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let item of directorioFiltrado; trackBy: trackByResultado" (click)="abrirResultado(item)">
+              <td class="col-usuario">
+                <span class="consulta-avatar">{{ initials(item) }}</span>
+                <span class="usuario-info">
+                  <strong>{{ item.displayName || item.usuario || 'Sin nombre' }}</strong>
+                  <span>{{ item.usuario || 'Sin usuario' }}</span>
+                </span>
+              </td>
+              <td>{{ item.office || 'Sin oficina' }}</td>
+              <td>
+                <span class="mini-badge" [class.success]="item.enabled === true" [class.neutral]="item.enabled === false" *ngIf="item.enabled !== null && item.enabled !== undefined">
+                  {{ item.enabled ? 'Habilitado' : 'Deshabilitado' }}
+                </span>
+                <span class="mini-badge danger" *ngIf="item.locked">Bloqueado</span>
+                <span class="mini-badge warning" *ngIf="!tieneFichaAd(item)">Sin ficha AD</span>
+              </td>
+              <td><app-vencimiento-badge [fecha]="item.vencimientoUsuarioRed" /></td>
+              <td>
+                <span class="mini-badge" *ngIf="item.contratos.length">{{ item.contratos.length }}</span>
+                <span class="muted" *ngIf="!item.contratos.length">&mdash;</span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <section class="consulta-results" [class.directory-cards]="!buscandoActivo" *ngIf="itemsVisibles.length">
         <button
           type="button"
           class="consulta-card"
-          *ngFor="let item of resultados; trackBy: trackByResultado"
+          *ngFor="let item of itemsVisibles; trackBy: trackByResultado"
           [class.no-ad]="!tieneFichaAd(item)"
           (click)="abrirResultado(item)"
         >
@@ -103,6 +194,19 @@ import { UsuarioRedContratoService } from './usuario-red-contrato.service';
       <div class="empty-state" *ngIf="searched && !searching && !resultados.length && !searchError">
         <strong>Sin resultados</strong>
         <span>{{ terminoBuscado }}</span>
+      </div>
+
+      <div class="empty-state" *ngIf="!buscandoActivo && directorioLoaded && directorio.length > 0 && !directorioFiltrado.length">
+        <strong>Sin resultados con estos filtros</strong>
+        <button type="button" class="ghost-action" (click)="clearFilters()">Limpiar filtros</button>
+      </div>
+
+      <div class="empty-state" *ngIf="!buscandoActivo && directorioLoaded && !directorio.length && !directorioError">
+        <strong>Sin usuarios registrados</strong>
+      </div>
+
+      <div class="empty-state" *ngIf="!buscandoActivo && directorioError">
+        <strong>{{ directorioError }}</strong>
       </div>
     </div>
 
@@ -180,9 +284,13 @@ import { UsuarioRedContratoService } from './usuario-red-contrato.service';
       </div>
     </app-modal>
   `,
-  styleUrl: './usuarios-red.shared.scss',
+  styleUrls: [
+    './usuarios-red.shared.scss',
+    './usuarios-red-consultas-directorio.scss',
+    './usuario-red-contratos-panel.scss',
+  ],
 })
-export class UsuariosRedConsultasComponent {
+export class UsuariosRedConsultasComponent implements OnInit {
   private adService = inject(ActiveDirectoryService);
   private contratoService = inject(UsuarioRedContratoService);
   private authService = inject(AuthService);
@@ -201,12 +309,108 @@ export class UsuariosRedConsultasComponent {
   searched = false;
   searchError = '';
 
+  directorio: UsuarioRedConsultaResultado[] = [];
+  directorioLoading = false;
+  directorioLoaded = false;
+  directorioError = '';
+
+  filters: { oficina: string; estado: EstadoFiltro; vencimiento: VencimientoFiltro } = {
+    oficina: '',
+    estado: '',
+    vencimiento: '',
+  };
+  ordenarPor: OrdenCampo = 'nombre';
+
   get canWrite(): boolean {
     return this.authService.canWrite('usuarios-red');
   }
 
   get canSearch(): boolean {
     return this.termino.trim().length >= 2 && !this.searching;
+  }
+
+  get buscandoActivo(): boolean {
+    return this.termino.trim().length >= 2;
+  }
+
+  get oficinas(): string[] {
+    return this.unique(this.directorio.map((item) => item.office || 'Sin oficina'));
+  }
+
+  get directorioFiltrado(): UsuarioRedConsultaResultado[] {
+    return this.directorio
+      .filter((item) => !this.filters.oficina || (item.office || 'Sin oficina') === this.filters.oficina)
+      .filter((item) => !this.filters.estado || this.matchesEstado(item, this.filters.estado))
+      .filter((item) => !this.filters.vencimiento || item.estadoVencimientoUsuarioRed === this.filters.vencimiento)
+      .sort(this.comparadorPara(this.ordenarPor));
+  }
+
+  get itemsVisibles(): UsuarioRedConsultaResultado[] {
+    return this.buscandoActivo ? this.resultados : this.directorioFiltrado;
+  }
+
+  get hasActiveFilters(): boolean {
+    return Boolean(this.filters.oficina || this.filters.estado || this.filters.vencimiento);
+  }
+
+  ngOnInit(): void {
+    this.cargarDirectorio();
+  }
+
+  private cargarDirectorio(): void {
+    this.directorioLoading = true;
+    this.directorioError = '';
+    this.contratoService.buscarConsultas()
+      .pipe(finalize(() => (this.directorioLoading = false)))
+      .subscribe({
+        next: (resultados) => {
+          this.directorio = resultados.map((item) => ({
+            ...item,
+            contratos: item.contratos ?? [],
+          }));
+          this.directorioLoaded = true;
+        },
+        error: () => {
+          this.directorioError = 'No se pudo cargar el directorio de usuarios.';
+        },
+      });
+  }
+
+  clearFilters(): void {
+    this.filters = { oficina: '', estado: '', vencimiento: '' };
+  }
+
+  private matchesEstado(item: UsuarioRedConsultaResultado, estado: EstadoFiltro): boolean {
+    switch (estado) {
+      case 'SIN_FICHA_AD':
+        return !this.tieneFichaAd(item);
+      case 'BLOQUEADO':
+        return !!item.locked;
+      case 'HABILITADO':
+        return item.enabled === true;
+      case 'DESHABILITADO':
+        return item.enabled === false;
+      default:
+        return true;
+    }
+  }
+
+  private comparadorPara(campo: OrdenCampo) {
+    return (a: UsuarioRedConsultaResultado, b: UsuarioRedConsultaResultado): number => {
+      if (campo === 'vencimiento') {
+        if (!a.vencimientoUsuarioRed && !b.vencimientoUsuarioRed) return 0;
+        if (!a.vencimientoUsuarioRed) return 1;
+        if (!b.vencimientoUsuarioRed) return -1;
+        return a.vencimientoUsuarioRed.localeCompare(b.vencimientoUsuarioRed);
+      }
+      const valorA = campo === 'oficina' ? (a.office || 'Sin oficina') : (a.displayName || a.usuario || '');
+      const valorB = campo === 'oficina' ? (b.office || 'Sin oficina') : (b.displayName || b.usuario || '');
+      return valorA.localeCompare(valorB, 'es');
+    };
+  }
+
+  private unique(values: string[]): string[] {
+    return [...new Set(values)].sort((a, b) => a.localeCompare(b, 'es'));
   }
 
   buscar(): void {

@@ -68,6 +68,7 @@ class ImpresoraServiceTest {
         request.setSerie("SN-12345");
         request.setCodigoInventario("INV-001");
         request.setCodigoPatrimonial("PAT-001");
+        request.setReferencia("Piso 3 - Oficina de Compras");
         request.setEstado("Activa");
         return request;
     }
@@ -81,6 +82,7 @@ class ImpresoraServiceTest {
         imp.setSerie("SN-12345");
         imp.setCodigoInventario("INV-001");
         imp.setCodigoPatrimonial("PAT-001");
+        imp.setReferencia("Piso 3 - Oficina de Compras");
         imp.setEstado("Activa");
         return imp;
     }
@@ -113,6 +115,7 @@ class ImpresoraServiceTest {
         assertThat(result.getModeloImpresora().getNombre()).isEqualTo("M404dn");
         assertThat(result.getModeloImpresora().getMarca().getNombre()).isEqualTo("HP");
         assertThat(result.getSerie()).isEqualTo("SN-12345");
+        assertThat(result.getReferencia()).isEqualTo("Piso 3 - Oficina de Compras");
     }
 
     @Test

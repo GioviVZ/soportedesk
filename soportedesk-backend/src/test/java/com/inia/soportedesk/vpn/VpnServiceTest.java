@@ -1,11 +1,13 @@
 package com.inia.soportedesk.vpn;
 
+import com.inia.soportedesk.activedirectory.ActiveDirectoryService;
 import com.inia.soportedesk.activedirectory.AdUsuarioCache;
 import com.inia.soportedesk.activedirectory.AdUsuarioCacheRepository;
 import com.inia.soportedesk.auth.UsuarioRepository;
 import com.inia.soportedesk.exception.ResourceNotFoundException;
 import com.inia.soportedesk.glpi.VwInvComputerFull;
 import com.inia.soportedesk.glpi.VwInvComputerFullRepository;
+import com.inia.soportedesk.usuariosred.contrato.UsuarioRedContratoRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -45,6 +47,12 @@ class VpnServiceTest {
 
     @Mock
     private VpnConfigInstitucionalService configInstitucionalService;
+
+    @Mock
+    private ActiveDirectoryService activeDirectoryService;
+
+    @Mock
+    private UsuarioRedContratoRepository contratoRepository;
 
     @InjectMocks
     private VpnService service;
@@ -135,6 +143,7 @@ class VpnServiceTest {
     void buscarUsuariosRed_normalizesIniaUpnForAdAutocomplete() {
         when(adUsuarioCacheRepository.autocompleteEnabled(eq("jruiz@inia.local"), eq("jruiz"), any(Pageable.class)))
                 .thenReturn(List.of(cacheUser()));
+        when(contratoRepository.searchAllFields(eq("jruiz@inia.local"), any(Pageable.class))).thenReturn(List.of());
 
         List<VpnUsuarioRedOption> result = service.buscarUsuariosRed("jruiz@inia.local");
 
@@ -146,6 +155,7 @@ class VpnServiceTest {
     void buscarUsuariosRed_normalizesDomainPrefixForAdAutocomplete() {
         when(adUsuarioCacheRepository.autocompleteEnabled(eq("INIA\\jruiz"), eq("jruiz"), any(Pageable.class)))
                 .thenReturn(List.of(cacheUser()));
+        when(contratoRepository.searchAllFields(eq("INIA\\jruiz"), any(Pageable.class))).thenReturn(List.of());
 
         List<VpnUsuarioRedOption> result = service.buscarUsuariosRed("INIA\\jruiz");
 
@@ -155,8 +165,9 @@ class VpnServiceTest {
 
     @Test
     void crearSolicitud_withoutGlpiEquipo_savesPendingRequest() {
-        when(adUsuarioCacheRepository.findFirstBySamAccountNameIgnoreCase("jruiz")).thenReturn(Optional.of(cacheUser()));
+        when(activeDirectoryService.buscarUsuarioCacheadoORefrescar("jruiz")).thenReturn(Optional.of(cacheUser()));
         when(usuarioRepository.findByUsername("jasistente")).thenReturn(Optional.empty());
+        when(contratoRepository.findByUsuarioIgnoreCaseOrderByFechaInicioDesc("jruiz")).thenReturn(List.of());
         when(repository.save(any(Vpn.class))).thenAnswer(inv -> inv.getArgument(0));
 
         Vpn result = service.crearSolicitud(sampleRequest(), authAs("jasistente"));
@@ -171,8 +182,9 @@ class VpnServiceTest {
 
     @Test
     void crearSolicitud_withIniaUpn_usesSamAccountNameForLookup() {
-        when(adUsuarioCacheRepository.findFirstBySamAccountNameIgnoreCase("jruiz")).thenReturn(Optional.of(cacheUser()));
+        when(activeDirectoryService.buscarUsuarioCacheadoORefrescar("jruiz")).thenReturn(Optional.of(cacheUser()));
         when(usuarioRepository.findByUsername(any())).thenReturn(Optional.empty());
+        when(contratoRepository.findByUsuarioIgnoreCaseOrderByFechaInicioDesc("jruiz")).thenReturn(List.of());
         when(repository.save(any(Vpn.class))).thenAnswer(inv -> inv.getArgument(0));
 
         VpnRequest request = sampleRequest();
@@ -181,12 +193,12 @@ class VpnServiceTest {
         Vpn result = service.crearSolicitud(request, authAs("jasistente"));
 
         assertThat(result.getAdSamAccountName()).isEqualTo("jruiz");
-        verify(adUsuarioCacheRepository).findFirstBySamAccountNameIgnoreCase("jruiz");
+        verify(activeDirectoryService).buscarUsuarioCacheadoORefrescar("jruiz");
     }
 
     @Test
     void crearSolicitud_withGlpiEquipo_snapshotsHostAndIp() {
-        when(adUsuarioCacheRepository.findFirstBySamAccountNameIgnoreCase("jruiz")).thenReturn(Optional.of(cacheUser()));
+        when(activeDirectoryService.buscarUsuarioCacheadoORefrescar("jruiz")).thenReturn(Optional.of(cacheUser()));
         when(usuarioRepository.findByUsername(any())).thenReturn(Optional.empty());
 
         VwInvComputerFull equipo = new VwInvComputerFull();
@@ -194,6 +206,7 @@ class VpnServiceTest {
         equipo.setNombreEquipo("PC-CONTABILIDAD-01");
         equipo.setIpEquipo("172.16.10.5");
         when(glpiRepository.findById(42L)).thenReturn(Optional.of(equipo));
+        when(contratoRepository.findByUsuarioIgnoreCaseOrderByFechaInicioDesc("jruiz")).thenReturn(List.of());
         when(repository.save(any(Vpn.class))).thenAnswer(inv -> inv.getArgument(0));
 
         VpnRequest request = sampleRequest();
@@ -211,7 +224,7 @@ class VpnServiceTest {
 
     @Test
     void crearSolicitud_withUnknownGlpiId_throwsResourceNotFoundException() {
-        when(adUsuarioCacheRepository.findFirstBySamAccountNameIgnoreCase("jruiz")).thenReturn(Optional.of(cacheUser()));
+        when(activeDirectoryService.buscarUsuarioCacheadoORefrescar("jruiz")).thenReturn(Optional.of(cacheUser()));
         when(glpiRepository.findById(999L)).thenReturn(Optional.empty());
 
         VpnRequest request = sampleRequest();
@@ -223,8 +236,9 @@ class VpnServiceTest {
 
     @Test
     void crearSolicitud_copiesSistemaOperativoForticlientAndVencimientoAntivirus() {
-        when(adUsuarioCacheRepository.findFirstBySamAccountNameIgnoreCase("jruiz")).thenReturn(Optional.of(cacheUser()));
+        when(activeDirectoryService.buscarUsuarioCacheadoORefrescar("jruiz")).thenReturn(Optional.of(cacheUser()));
         when(usuarioRepository.findByUsername(any())).thenReturn(Optional.empty());
+        when(contratoRepository.findByUsuarioIgnoreCaseOrderByFechaInicioDesc("jruiz")).thenReturn(List.of());
         when(repository.save(any(Vpn.class))).thenAnswer(inv -> inv.getArgument(0));
 
         VpnRequest request = sampleRequest();
@@ -241,8 +255,9 @@ class VpnServiceTest {
 
     @Test
     void crearSolicitud_forEquipoPersonal_setsVenceFromVencimientoAntivirus() {
-        when(adUsuarioCacheRepository.findFirstBySamAccountNameIgnoreCase("jruiz")).thenReturn(Optional.of(cacheUser()));
+        when(activeDirectoryService.buscarUsuarioCacheadoORefrescar("jruiz")).thenReturn(Optional.of(cacheUser()));
         when(usuarioRepository.findByUsername(any())).thenReturn(Optional.empty());
+        when(contratoRepository.findByUsuarioIgnoreCaseOrderByFechaInicioDesc("jruiz")).thenReturn(List.of());
         when(repository.save(any(Vpn.class))).thenAnswer(inv -> inv.getArgument(0));
 
         VpnRequest request = sampleRequest();
@@ -343,7 +358,8 @@ class VpnServiceTest {
         existing.setId(5L);
         existing.setEstadoSolicitud("OBSERVADO");
         when(repository.findById(5L)).thenReturn(Optional.of(existing));
-        when(adUsuarioCacheRepository.findFirstBySamAccountNameIgnoreCase("jruiz")).thenReturn(Optional.of(cacheUser()));
+        when(activeDirectoryService.buscarUsuarioCacheadoORefrescar("jruiz")).thenReturn(Optional.of(cacheUser()));
+        when(contratoRepository.findByUsuarioIgnoreCaseOrderByFechaInicioDesc("jruiz")).thenReturn(List.of());
         when(repository.save(any(Vpn.class))).thenAnswer(inv -> inv.getArgument(0));
 
         Vpn result = service.actualizarSolicitud(5L, sampleRequest(), authAs("jasistente"));

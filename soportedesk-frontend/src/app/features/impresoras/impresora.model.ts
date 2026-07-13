@@ -8,6 +8,7 @@ export interface Impresora {
   serie: string | null;
   codigoInventario: string | null;
   codigoPatrimonial: string | null;
+  referencia: string | null;
   tipoConexion: string;
   ip: string;
   sede: { id: number; nombre: string } | null;
@@ -22,6 +23,7 @@ export interface ImpresoraRequest {
   serie: string;
   codigoInventario: string;
   codigoPatrimonial: string;
+  referencia: string;
   tipoConexion: string;
   ip: string;
   sedeId: number | null;

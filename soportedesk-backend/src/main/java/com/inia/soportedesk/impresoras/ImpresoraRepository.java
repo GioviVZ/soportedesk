@@ -17,6 +17,7 @@ public interface ImpresoraRepository extends JpaRepository<Impresora, Long> {
            "LOWER(d.nombre) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
            "LOWER(i.serie) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
            "LOWER(i.codigoInventario) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
-           "LOWER(i.codigoPatrimonial) LIKE LOWER(CONCAT('%', :search, '%'))")
+           "LOWER(i.codigoPatrimonial) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
+           "LOWER(i.referencia) LIKE LOWER(CONCAT('%', :search, '%'))")
     List<Impresora> search(@Param("search") String search);
 }

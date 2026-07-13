@@ -22,6 +22,7 @@ describe('UsuariosRedAdministracionComponent - sincronizacion AD', () => {
   }
 
   function flushInitialRequests(): void {
+    httpMock.expectOne('/api/catalogos/dependencias').flush([]);
     httpMock.expectOne('/api/active-directory/dashboard').flush({
       usuariosHabilitados: 0,
       usuariosBloqueados: 0,
@@ -99,6 +100,7 @@ describe('UsuariosRedAdministracionComponent - sincronizacion AD', () => {
   it('retoma el polling si al entrar a la pantalla ya hay un sync corriendo', fakeAsync(() => {
     const component = createComponent();
     component.ngOnInit();
+    httpMock.expectOne('/api/catalogos/dependencias').flush([]);
     httpMock.expectOne('/api/active-directory/dashboard').flush({
       usuariosHabilitados: 0,
       usuariosBloqueados: 0,

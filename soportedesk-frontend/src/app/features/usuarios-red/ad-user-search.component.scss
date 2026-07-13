@@ -171,102 +171,6 @@
   }
 }
 
-.catalog-browser {
-  display: grid;
-  grid-template-columns: minmax(0, 1.05fr) minmax(0, .95fr);
-  gap: 12px;
-}
-
-.browser-column {
-  display: grid;
-  align-content: start;
-  gap: 8px;
-  min-width: 0;
-}
-
-.browser-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  min-height: 26px;
-
-  strong {
-    color: var(--color-text);
-    font-size: 12.5px;
-  }
-
-  span {
-    display: inline-grid;
-    place-items: center;
-    min-width: 28px;
-    height: 22px;
-    padding: 0 7px;
-    border-radius: var(--radius-sm);
-    background: var(--color-muted);
-    color: var(--color-text-secondary);
-    font-size: 11px;
-    font-weight: 850;
-  }
-}
-
-.browser-options {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-  gap: 6px;
-  max-height: 186px;
-  overflow: auto;
-  padding-right: 2px;
-}
-
-.browser-option {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 8px;
-  min-height: 34px;
-  padding: 7px 8px;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-sm);
-  background: var(--color-surface);
-  color: var(--color-text-secondary);
-  text-align: left;
-  transition: var(--transition);
-
-  &:hover,
-  &.active {
-    border-color: rgba(249, 115, 22, .45);
-    background: var(--color-usuarios-red-light);
-    color: var(--color-text);
-  }
-
-  &.active {
-    box-shadow: inset 3px 0 0 var(--color-accent);
-  }
-
-  span {
-    min-width: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    font-size: 12px;
-    font-weight: 750;
-  }
-
-  small {
-    display: inline-grid;
-    place-items: center;
-    min-width: 24px;
-    height: 20px;
-    padding: 0 6px;
-    border-radius: var(--radius-sm);
-    background: var(--color-muted);
-    color: var(--color-text-muted);
-    font-size: 11px;
-    font-weight: 850;
-  }
-}
-
 .query-summary {
   display: flex;
   flex-wrap: wrap;
@@ -396,7 +300,6 @@
   }
 
   .catalog-filters,
-  .catalog-browser,
   .advanced-search {
     grid-template-columns: 1fr;
   }

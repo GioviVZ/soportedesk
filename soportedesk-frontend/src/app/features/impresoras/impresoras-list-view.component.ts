@@ -86,6 +86,7 @@ export class ImpresorasListViewComponent {
         item.serie,
         item.codigoInventario,
         item.codigoPatrimonial,
+        item.referencia,
         item.ip,
         item.sede?.nombre,
         item.dependencia?.nombre,
@@ -171,6 +172,7 @@ export class ImpresorasListViewComponent {
       Serie: item.serie ?? '',
       'Codigo de Inventario': item.codigoInventario ?? '',
       'Codigo Patrimonial': item.codigoPatrimonial ?? '',
+      Referencia: item.referencia ?? '',
       Conexion: item.tipoConexion,
       IP: item.ip ?? '',
       Sede: item.sede?.nombre ?? '',
@@ -181,7 +183,7 @@ export class ImpresorasListViewComponent {
 
     const worksheet = XLSX.utils.json_to_sheet(rows);
     worksheet['!cols'] = [
-      { wch: 18 }, { wch: 26 }, { wch: 30 }, { wch: 18 }, { wch: 22 }, { wch: 22 },
+      { wch: 18 }, { wch: 26 }, { wch: 30 }, { wch: 18 }, { wch: 22 }, { wch: 22 }, { wch: 26 },
       { wch: 12 }, { wch: 16 }, { wch: 18 }, { wch: 34 }, { wch: 34 }, { wch: 18 },
     ];
 

@@ -317,6 +317,7 @@ CREATE TABLE dbo.impresoras (
     serie               NVARCHAR(100) NULL,
     codigo_inventario   NVARCHAR(100) NULL,
     codigo_patrimonial  NVARCHAR(100) NULL,
+    referencia          NVARCHAR(255) NULL,
     tipo_conexion       NVARCHAR(20)  NOT NULL DEFAULT 'USB',
     ip                  NVARCHAR(45)  NULL,
     sede_id             BIGINT        NULL,
@@ -330,6 +331,10 @@ CREATE TABLE dbo.impresoras (
     CONSTRAINT FK_impresoras_dep    FOREIGN KEY (dependencia_id)    REFERENCES dbo.dependencias (id)    ON UPDATE NO ACTION ON DELETE NO ACTION,
     CONSTRAINT FK_impresoras_subdep FOREIGN KEY (subdependencia_id) REFERENCES dbo.subdependencias (id) ON UPDATE NO ACTION ON DELETE NO ACTION
 );
+GO
+
+IF COL_LENGTH('dbo.impresoras', 'referencia') IS NULL
+    ALTER TABLE dbo.impresoras ADD referencia NVARCHAR(255) NULL;
 GO
 
 -- ============================================================

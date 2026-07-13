@@ -98,7 +98,7 @@ import { UsuarioRedContrato, UsuarioRedContratoRequest, esTipoContratoOs } from 
       </form>
     </app-modal>
   `,
-  styleUrl: './usuarios-red.shared.scss',
+  styleUrls: ['./usuarios-red.shared.scss', './usuario-red-contratos-panel.scss'],
 })
 export class UsuarioRedContratosPanelComponent implements OnChanges {
   private service = inject(UsuarioRedContratoService);

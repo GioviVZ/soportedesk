@@ -20,6 +20,8 @@ public class ImpresoraRequest {
 
     private String codigoPatrimonial;
 
+    private String referencia;
+
     @NotBlank
     private String tipoConexion;
 
