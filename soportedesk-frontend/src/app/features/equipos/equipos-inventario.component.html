@@ -5,76 +5,108 @@
   </article>
 </section>
 
-<section class="filter-bar">
-  <label class="mobile-search">
-    <span>Buscar</span>
+<section class="equipment-filter-panel">
+  <div class="filter-header">
+    <div>
+      <span>Filtros</span>
+      <strong>{{ filteredItems().length }} de {{ items().length }} equipos</strong>
+    </div>
+    <div class="filter-actions">
+      <button type="button" class="ghost-action" (click)="clearFilters()" [disabled]="!hasActiveFilters()">Limpiar</button>
+      <button type="button" class="primary-action" (click)="exportExcel()" [disabled]="filteredItems().length === 0">
+        Exportar Excel
+      </button>
+    </div>
+  </div>
+
+  <label class="inventory-search">
+    <span>Buscar equipo</span>
     <input
-      type="text"
+      type="search"
       [ngModel]="searchTerm()"
       (ngModelChange)="onSearch($event)"
-      placeholder="Equipo o usuario"
+      placeholder="Equipo, usuario, serie, código, IP, CPU..."
+      autocomplete="off"
     />
   </label>
 
-  <label>
-    <span>Sede</span>
-    <select [ngModel]="selectedSede()" (ngModelChange)="onSedeChange($event)">
-      <option value="">Todas</option>
-      <option *ngFor="let sede of sedes()" [value]="sede">{{ sede }}</option>
-    </select>
-  </label>
+  <div class="filter-grid">
+    <label>
+      Sede
+      <select [ngModel]="selectedSede()" (ngModelChange)="onSedeChange($event)">
+        <option value="">Todas</option>
+        <option *ngFor="let sede of sedes()" [value]="sede">{{ sede }}</option>
+      </select>
+    </label>
 
-  <label>
-    <span>Dependencia</span>
-    <select [ngModel]="selectedDependencia()" (ngModelChange)="onDependenciaChange($event)">
-      <option value="">Todas</option>
-      <option *ngFor="let dep of dependencias()" [value]="dep">{{ dep }}</option>
-    </select>
-  </label>
+    <label>
+      Dependencia
+      <select [ngModel]="selectedDependencia()" (ngModelChange)="onDependenciaChange($event)">
+        <option value="">Todas</option>
+        <option *ngFor="let dep of dependencias()" [value]="dep">{{ dep }}</option>
+      </select>
+    </label>
 
-  <label>
-    <span>Subdependencia</span>
-    <select [ngModel]="selectedSubdependencia()" (ngModelChange)="onSubdependenciaChange($event)"
-            [disabled]="!selectedDependencia()">
-      <option value="">Todas</option>
-      <option *ngFor="let sub of subdependencias()" [value]="sub">{{ sub }}</option>
-    </select>
-  </label>
+    <label>
+      Subdependencia
+      <select [ngModel]="selectedSubdependencia()" (ngModelChange)="onSubdependenciaChange($event)"
+              [disabled]="!selectedDependencia()">
+        <option value="">Todas</option>
+        <option *ngFor="let sub of subdependencias()" [value]="sub">{{ sub }}</option>
+      </select>
+    </label>
 
-  <label>
-    <span>Tipo</span>
-    <select [ngModel]="selectedTipo()" (ngModelChange)="onTipoChange($event)">
-      <option value="">Todos</option>
-      <option *ngFor="let tipo of tipos()" [value]="tipo">{{ tipo }}</option>
-    </select>
-  </label>
+    <label>
+      Tipo
+      <select [ngModel]="selectedTipo()" (ngModelChange)="onTipoChange($event)">
+        <option value="">Todos</option>
+        <option *ngFor="let tipo of tipos()" [value]="tipo">{{ tipo }}</option>
+      </select>
+    </label>
 
-  <label>
-    <span>Fabricante</span>
-    <select [ngModel]="selectedFabricante()" (ngModelChange)="onFabricanteChange($event)">
-      <option value="">Todos</option>
-      <option *ngFor="let fab of fabricantes()" [value]="fab">{{ fab }}</option>
-    </select>
-  </label>
+    <label>
+      Fabricante
+      <select [ngModel]="selectedFabricante()" (ngModelChange)="onFabricanteChange($event)">
+        <option value="">Todos</option>
+        <option *ngFor="let fab of fabricantes()" [value]="fab">{{ fab }}</option>
+      </select>
+    </label>
 
-  <button type="button" (click)="clearFilters()">Limpiar filtros</button>
+    <label>
+      Modelo
+      <select [ngModel]="selectedModelo()" (ngModelChange)="onModeloChange($event)">
+        <option value="">Todos</option>
+        <option *ngFor="let modelo of modelos()" [value]="modelo">{{ modelo }}</option>
+      </select>
+    </label>
+
+    <label>
+      IP
+      <input
+        type="text"
+        [ngModel]="ipFilter()"
+        (ngModelChange)="onIpChange($event)"
+        placeholder="Ej. 172.16"
+      />
+    </label>
+  </div>
 </section>
 
 <div class="desktop-table-shell">
   <app-generic-table
     [columns]="columns"
-    [data]="items()"
+    [data]="filteredItems()"
     [canEdit]="false"
     [canView]="true"
     [initialSearch]="searchTerm()"
+    [showSearch]="false"
     emptyMessage="Sin equipos activos registrados"
-    (searchChange)="onSearch($event)"
     (view)="onView($event)"
   />
 </div>
 
 <section class="mobile-equipment-list" aria-label="Equipos">
-  <article *ngFor="let item of items()" class="equipment-card">
+  <article *ngFor="let item of filteredItems()" class="equipment-card">
     <div class="card-head">
       <div>
         <strong>{{ item.nombreEquipo }}</strong>
@@ -121,5 +153,5 @@
     <button type="button" (click)="onView(item)">Ver detalle</button>
   </article>
 
-  <p class="mobile-empty" *ngIf="items().length === 0">Sin equipos activos registrados</p>
+  <p class="mobile-empty" *ngIf="filteredItems().length === 0">Sin equipos activos registrados</p>
 </section>

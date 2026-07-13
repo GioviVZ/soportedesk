@@ -42,10 +42,6 @@
         <input type="text" formControlName="codigoPatrimonial" />
       </div>
       <div class="field">
-        <label>Referencia</label>
-        <input type="text" formControlName="referencia" />
-      </div>
-      <div class="field">
         <label>Estado</label>
         <div class="estado-selector">
           <app-status-badge
@@ -57,6 +53,14 @@
             (select)="form.patchValue({ estado: opt.value })"
           />
         </div>
+      </div>
+      <div class="field field--full">
+        <label>Referencia</label>
+        <textarea
+          formControlName="referencia"
+          rows="3"
+          placeholder="Ubicación exacta, oficina, responsable o nota visible para consultas"
+        ></textarea>
       </div>
     </div>
   </app-section-card>

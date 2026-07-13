@@ -75,6 +75,14 @@ describe('ImpresoraFichaComponent', () => {
     expect(fixture.nativeElement.textContent).toContain('10.0.0.5');
   });
 
+  it('shows referencia in the detail modal content', () => {
+    component.impresora = { ...mockImpresora, referencia: 'Mesa de partes - segundo piso' };
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).toContain('Referencia');
+    expect(fixture.nativeElement.textContent).toContain('Mesa de partes - segundo piso');
+  });
+
   it('hides the IP row when tipoConexion is USB', () => {
     component.impresora = { ...mockImpresora, tipoConexion: 'USB', ip: '' };
     fixture.detectChanges();

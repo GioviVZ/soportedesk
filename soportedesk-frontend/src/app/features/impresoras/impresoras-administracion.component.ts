@@ -27,7 +27,7 @@ import { ImpresoraService } from './impresora.service';
       (delete)="onDelete($event)"
     />
 
-    <app-modal title="Ficha tecnica" [open]="viewing !== null" (closed)="closeView()">
+    <app-modal title="Ficha técnica" [open]="viewing !== null" size="wide" (closed)="closeView()">
       <app-impresora-ficha *ngIf="viewing" [impresora]="viewing" (editRequested)="onEdit($event)" />
     </app-modal>
 
@@ -40,16 +40,16 @@ import { ImpresoraService } from './impresora.service';
       <app-impresora-form *ngIf="formOpen" [impresora]="editing" (saved)="onSaved()" (cancelled)="closeForm()" />
     </app-modal>
 
-    <app-modal title="Confirmar eliminacion" [open]="deleting !== null" (closed)="closeDelete()">
+    <app-modal title="Confirmar eliminación" [open]="deleting !== null" (closed)="closeDelete()">
       <div class="delete-confirm" *ngIf="deleting as item">
         <div>
           <strong>{{ item.modeloImpresora.marca.nombre }} {{ item.modeloImpresora.nombre }}</strong>
           <span>{{ item.serie || item.codigoInventario || item.codigoPatrimonial || 'Sin identificador' }}</span>
         </div>
-        <p>Esta accion eliminara el registro de la impresora. Confirma solo si estas seguro.</p>
+        <p>Esta acción eliminará el registro de la impresora. Confirma solo si estás seguro.</p>
         <div class="delete-actions">
           <button type="button" class="secondary" (click)="closeDelete()">Cancelar</button>
-          <button type="button" class="danger" (click)="confirmDelete()">Si, eliminar</button>
+          <button type="button" class="danger" (click)="confirmDelete()">Sí, eliminar</button>
         </div>
       </div>
     </app-modal>

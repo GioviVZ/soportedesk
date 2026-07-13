@@ -120,6 +120,19 @@
   font-size: 14px;
 }
 
+.reference-note {
+  margin: 0;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-muted);
+  padding: 12px;
+  color: var(--color-text);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
 .download-btn {
   margin-top: 12px;
   padding: 8px 16px;

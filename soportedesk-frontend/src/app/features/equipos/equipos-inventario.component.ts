@@ -5,6 +5,7 @@ import { FormsModule } from '@angular/forms';
 import { GenericTableComponent, TableColumn } from '../../shared/generic-table/generic-table.component';
 import { EquipoKpis, EquipoResumen } from './equipo.model';
 import { EquipoService } from './equipo.service';
+import * as XLSX from 'xlsx';
 
 interface EquipoTableRow extends EquipoResumen {
   usuarioLimpio: string;
@@ -37,6 +38,8 @@ export class EquiposInventarioComponent implements OnInit {
   selectedDependencia = signal('');
   selectedSubdependencia = signal('');
   selectedFabricante = signal('');
+  selectedModelo = signal('');
+  ipFilter = signal('');
   searchTerm = signal('');
 
   kpiCards = computed(() => {
@@ -56,13 +59,74 @@ export class EquiposInventarioComponent implements OnInit {
     { key: 'usuarioLimpio', label: 'Usuario' },
     { key: 'sedeNombre', label: 'Sede' },
     { key: 'oficinaId', label: 'Dependencia' },
+    { key: 'unidadId', label: 'Subdependencia' },
     { key: 'tipoEquipo', label: 'Tipo' },
     { key: 'fabricanteModelo', label: 'Fabricante / Modelo' },
+    { key: 'numeroserie', label: 'Serie' },
+    { key: 'codigoInterno', label: 'Código' },
     { key: 'cpuCorto', label: 'CPU' },
     { key: 'ramLabel', label: 'RAM' },
     { key: 'diskLabel', label: 'Disco' },
     { key: 'ipEquipo', label: 'IP' },
   ];
+
+  filteredItems = computed(() => {
+    const search = this.normalize(this.searchTerm());
+    const ip = this.normalize(this.ipFilter());
+    const sede = this.selectedSede();
+    const tipo = this.selectedTipo();
+    const dependencia = this.selectedDependencia();
+    const subdependencia = this.selectedSubdependencia();
+    const fabricante = this.selectedFabricante();
+    const modelo = this.selectedModelo();
+
+    return this.items().filter((item) => {
+      if (sede && item.sedeNombre !== sede) return false;
+      if (tipo && item.tipoEquipo !== tipo) return false;
+      if (dependencia && item.oficinaId !== dependencia) return false;
+      if (subdependencia && item.unidadId !== subdependencia) return false;
+      if (fabricante && item.fabricanteEquipo !== fabricante) return false;
+      if (modelo && item.modeloEquipo !== modelo) return false;
+      if (ip && !this.normalize(item.ipEquipo).includes(ip)) return false;
+      if (!search) return true;
+
+      return this.normalize([
+        item.nombreEquipo,
+        item.usuarioLimpio,
+        item.usuarioContacto,
+        item.sedeNombre,
+        item.oficinaId,
+        item.unidadId,
+        item.tipoEquipo,
+        item.fabricanteEquipo,
+        item.modeloEquipo,
+        item.fabricanteModelo,
+        item.cpuModelos,
+        item.ramLabel,
+        item.diskLabel,
+        item.ipEquipo,
+        item.numeroserie,
+        item.codigoInterno,
+      ].filter(Boolean).join(' ')).includes(search);
+    });
+  });
+
+  modelos = computed(() => this.unique(
+    this.items()
+      .filter((item) => !this.selectedFabricante() || item.fabricanteEquipo === this.selectedFabricante())
+      .map((item) => item.modeloEquipo)
+  ));
+
+  hasActiveFilters = computed(() => Boolean(
+    this.searchTerm() ||
+      this.selectedSede() ||
+      this.selectedTipo() ||
+      this.selectedDependencia() ||
+      this.selectedSubdependencia() ||
+      this.selectedFabricante() ||
+      this.selectedModelo() ||
+      this.ipFilter()
+  ));
 
   ngOnInit(): void {
     this.loadKpis();
@@ -74,21 +138,11 @@ export class EquiposInventarioComponent implements OnInit {
   }
 
   load(): void {
-    this.service
-      .getAll({
-        search: this.searchTerm(),
-        sede: this.selectedSede(),
-        tipo: this.selectedTipo(),
-        dependencia: this.selectedDependencia(),
-        subdependencia: this.selectedSubdependencia(),
-        fabricante: this.selectedFabricante(),
-      })
-      .subscribe((data) => this.items.set(data.map((item) => this.toTableRow(item))));
+    this.service.getAll().subscribe((data) => this.items.set(data.map((item) => this.toTableRow(item))));
   }
 
   onSearch(term: string): void {
     this.searchTerm.set(term);
-    this.load();
   }
 
   onSedeChange(value: string): void {
@@ -97,29 +151,33 @@ export class EquiposInventarioComponent implements OnInit {
     this.selectedSubdependencia.set('');
     this.subdependencias.set([]);
     this.loadDependencias();
-    this.load();
   }
 
   onTipoChange(value: string): void {
     this.selectedTipo.set(value);
-    this.load();
   }
 
   onDependenciaChange(value: string): void {
     this.selectedDependencia.set(value);
     this.selectedSubdependencia.set('');
     this.loadSubdependencias();
-    this.load();
   }
 
   onSubdependenciaChange(value: string): void {
     this.selectedSubdependencia.set(value);
-    this.load();
   }
 
   onFabricanteChange(value: string): void {
     this.selectedFabricante.set(value);
-    this.load();
+    this.selectedModelo.set('');
+  }
+
+  onModeloChange(value: string): void {
+    this.selectedModelo.set(value);
+  }
+
+  onIpChange(value: string): void {
+    this.ipFilter.set(value);
   }
 
   clearFilters(): void {
@@ -129,13 +187,45 @@ export class EquiposInventarioComponent implements OnInit {
     this.selectedDependencia.set('');
     this.selectedSubdependencia.set('');
     this.selectedFabricante.set('');
+    this.selectedModelo.set('');
+    this.ipFilter.set('');
     this.loadDependencias();
     this.subdependencias.set([]);
-    this.load();
   }
 
   onView(item: EquipoTableRow): void {
     this.router.navigate(['/equipos', item.computerID]);
+  }
+
+  exportExcel(): void {
+    const rows = this.filteredItems().map((item) => ({
+      Equipo: item.nombreEquipo ?? '',
+      Usuario: item.usuarioLimpio ?? '',
+      'Usuario original': item.usuarioContacto ?? '',
+      Sede: item.sedeNombre ?? '',
+      Dependencia: item.oficinaId ?? '',
+      Subdependencia: item.unidadId ?? '',
+      Tipo: item.tipoEquipo ?? '',
+      Fabricante: item.fabricanteEquipo ?? '',
+      Modelo: item.modeloEquipo ?? '',
+      'Número de serie': item.numeroserie ?? '',
+      'Código interno': item.codigoInterno ?? '',
+      CPU: item.cpuModelos ?? '',
+      'RAM GB': item.ramTotalGb ?? '',
+      'Disco GB': item.diskTotalGb ?? '',
+      IP: item.ipEquipo ?? '',
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(rows);
+    worksheet['!cols'] = [
+      { wch: 22 }, { wch: 24 }, { wch: 28 }, { wch: 18 }, { wch: 32 },
+      { wch: 32 }, { wch: 16 }, { wch: 18 }, { wch: 26 }, { wch: 22 },
+      { wch: 18 }, { wch: 38 }, { wch: 10 }, { wch: 10 }, { wch: 16 },
+    ];
+
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Equipos');
+    XLSX.writeFile(workbook, `equipos-${this.exportDate()}.xlsx`);
   }
 
   private loadKpis(): void {
@@ -188,5 +278,26 @@ export class EquiposInventarioComponent implements OnInit {
 
   private gbLabel(value: number | null | undefined): string {
     return value == null ? '' : `${value} GB`;
+  }
+
+  private unique(values: Array<string | null | undefined>): string[] {
+    return [...new Set(values.filter((value): value is string => Boolean(value)))]
+      .sort((a, b) => a.localeCompare(b, 'es', { sensitivity: 'base' }));
+  }
+
+  private normalize(value: string | null | undefined): string {
+    return (value ?? '')
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase()
+      .trim();
+  }
+
+  private exportDate(): string {
+    const date = new Date();
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
   }
 }

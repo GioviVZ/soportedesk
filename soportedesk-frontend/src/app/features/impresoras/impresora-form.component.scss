@@ -23,7 +23,8 @@
   }
 
   input,
-  select {
+  select,
+  textarea {
     width: 100%;
     min-height: 36px;
     padding: 8px 10px;
@@ -40,6 +41,15 @@
       outline: none;
     }
   }
+
+  textarea {
+    min-height: 78px;
+    resize: vertical;
+  }
+}
+
+.field--full {
+  grid-column: 1 / -1;
 }
 
 .estado-selector {

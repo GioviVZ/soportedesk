@@ -43,6 +43,13 @@ describe('ImpresoraFormComponent', () => {
     expect(ipInput).not.toBeNull();
   });
 
+  it('shows referencia as a visible textarea', () => {
+    const referencia = fixture.nativeElement.querySelector('textarea[formControlName="referencia"]');
+
+    expect(referencia).not.toBeNull();
+    expect(referencia.getAttribute('placeholder')).toContain('Ubicación exacta');
+  });
+
   it('clears ip when switching tipoConexion back to USB', () => {
     component.form.patchValue({ tipoConexion: 'IP', ip: '10.0.0.5' });
 
