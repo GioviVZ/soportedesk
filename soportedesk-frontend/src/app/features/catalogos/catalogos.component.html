@@ -11,6 +11,18 @@
   </div>
 </div>
 
+<section class="appearance-card">
+  <div>
+    <span class="module-eyebrow">Preferencias</span>
+    <h3>Apariencia</h3>
+    <p>Elige como se ve el sistema en este navegador.</p>
+  </div>
+  <div class="theme-toggle" role="group" aria-label="Modo de color">
+    <button type="button" [class.active]="theme() === 'light'" (click)="setTheme('light')">Claro</button>
+    <button type="button" [class.active]="theme() === 'dark'" (click)="setTheme('dark')">Oscuro</button>
+  </div>
+</section>
+
 <section class="catalog-impact-map">
   <article
     class="impact-group"

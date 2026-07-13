@@ -2,6 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
 import { CatalogosComponent } from './catalogos.component';
 import { AuthService } from '../../core/auth/auth.service';
+import { ThemeService } from '../../core/services/theme.service';
 
 describe('CatalogosComponent', () => {
   let component: CatalogosComponent;
@@ -42,6 +43,20 @@ describe('CatalogosComponent', () => {
     httpMock = TestBed.inject(HttpTestingController);
 
     flushLoadAll();
+  });
+
+  it('setTheme delega en ThemeService y expone el tema actual', () => {
+    const themeService = TestBed.inject(ThemeService);
+
+    component.setTheme('dark');
+
+    expect(themeService.theme()).toBe('dark');
+    expect(component.theme()).toBe('dark');
+
+    component.setTheme('light');
+
+    expect(themeService.theme()).toBe('light');
+    expect(component.theme()).toBe('light');
   });
 
   afterEach(() => {

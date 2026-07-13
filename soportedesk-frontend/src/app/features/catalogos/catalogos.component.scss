@@ -488,3 +488,59 @@ td button {
     width: 100%;
   }
 }
+
+.appearance-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+  padding: 14px 16px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-sm);
+
+  h3 {
+    margin: 0;
+    color: var(--color-text);
+    font-size: 15px;
+  }
+
+  p {
+    margin: 4px 0 0;
+    color: var(--color-text-secondary);
+    font-size: 12.5px;
+  }
+}
+
+.theme-toggle {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-muted);
+
+  button {
+    min-height: 32px;
+    padding: 0 14px;
+    border: none;
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: var(--color-text-secondary);
+    font-size: 12px;
+    font-weight: 800;
+
+    &:hover {
+      color: var(--color-text);
+    }
+
+    &.active {
+      background: var(--color-surface);
+      color: var(--color-accent);
+    }
+  }
+}

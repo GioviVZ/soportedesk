@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { CatalogoService } from '../../core/catalogos/catalogo.service';
 import { AuthService } from '../../core/auth/auth.service';
+import { ThemeMode, ThemeService } from '../../core/services/theme.service';
 import { ModeloImpresoraFormComponent } from './modelo-impresora-form.component';
 import { ModalComponent } from '../../shared/modal/modal.component';
 import { VpnConfigInstitucionalFormComponent } from '../vpn/vpn-config-institucional-form.component';
@@ -65,6 +66,13 @@ export class CatalogosComponent implements OnInit {
   private service = inject(CatalogoService);
   private authService = inject(AuthService);
   private vpnService = inject(VpnService);
+  private themeService = inject(ThemeService);
+
+  readonly theme = this.themeService.theme;
+
+  setTheme(mode: ThemeMode): void {
+    this.themeService.setTheme(mode);
+  }
 
   activeTab: CatalogoTab = 'sedes';
 
