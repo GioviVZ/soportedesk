@@ -326,8 +326,8 @@ button:disabled {
   }
 
   &.warn {
-    border-left-color: #d97706;
-    background: #fffbeb;
+    border-left-color: var(--color-warning);
+    background: var(--color-warning-light);
   }
 
   &.bad {
@@ -508,7 +508,7 @@ button:disabled {
     height: 7px;
     overflow: hidden;
     border-radius: 999px;
-    background: #dbe3ea;
+    background: var(--color-border);
   }
 
   b {
@@ -553,7 +553,7 @@ button:disabled {
     height: 10px;
     overflow: hidden;
     border-radius: 999px;
-    background: #dbe3ea;
+    background: var(--color-border);
   }
 
   b {

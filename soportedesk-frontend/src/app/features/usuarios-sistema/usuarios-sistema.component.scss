@@ -286,7 +286,7 @@
     background: var(--color-surface);
 
     &:disabled {
-      background: #eef2f7;
+      background: var(--color-muted);
       color: var(--color-text-secondary);
     }
   }

@@ -32,7 +32,7 @@
   min-height: 38px;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-sm);
-  background: #fff;
+  background: var(--color-surface);
   color: var(--color-text);
   font-size: 12px;
   font-weight: 800;
@@ -62,7 +62,7 @@
   overflow: hidden;
   border: 1px dashed var(--color-border-strong);
   border-radius: var(--radius-sm);
-  background: linear-gradient(135deg, #f8fafc 0%, #ecfeff 100%);
+  background: linear-gradient(135deg, var(--color-muted) 0%, var(--color-accent-subtle) 100%);
   user-select: none;
 
   strong {

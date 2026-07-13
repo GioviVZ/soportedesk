@@ -9,9 +9,9 @@
   gap: 12px;
   margin-bottom: 12px;
   padding: 10px 12px;
-  border: 1px solid #bbf7d0;
+  border: 1px solid var(--color-success);
   border-radius: var(--radius-sm);
-  background: #f0fdf4;
+  background: var(--color-success-light);
 
   div {
     display: flex;
@@ -21,31 +21,31 @@
 
   strong {
     font-size: 12px;
-    color: #166534;
+    color: var(--color-success);
   }
 
   span {
     font-size: 13px;
-    color: #14532d;
+    color: var(--color-success);
   }
 
   &.warning {
-    border-color: #fed7aa;
-    background: #fff7ed;
+    border-color: var(--color-warning);
+    background: var(--color-warning-light);
 
     strong,
     span {
-      color: #7c2d12;
+      color: var(--color-warning);
     }
   }
 
   &.danger {
-    border-color: #fecaca;
-    background: #fef2f2;
+    border-color: var(--color-danger);
+    background: var(--color-danger-light);
 
     strong,
     span {
-      color: #991b1b;
+      color: var(--color-danger);
     }
   }
 }

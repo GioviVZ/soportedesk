@@ -29,11 +29,11 @@
 }
 
 .search-status {
-  color: #2563eb;
+  color: var(--color-info);
 }
 
 .search-error {
-  color: #b91c1c;
+  color: var(--color-danger);
 }
 
 .section-header {
@@ -48,21 +48,21 @@
   margin-bottom: 10px;
 
   &.ad-header {
-    color: #16a34a;
-    svg { color: #16a34a; }
+    color: var(--color-success);
+    svg { color: var(--color-success); }
   }
 }
 
 .ad-field {
   select {
-    border-color: #16a34a;
-    background-color: #f0fdf4;
+    border-color: var(--color-success);
+    background-color: var(--color-success-light);
   }
 }
 
 .ad-preview {
-  background: #f0fdf4;
-  border: 1px solid #bbf7d0;
+  background: var(--color-success-light);
+  border: 1px solid var(--color-success);
   border-radius: 6px;
   padding: 10px 12px;
   margin-bottom: 12px;
@@ -79,7 +79,7 @@
 
 .ad-label {
   font-weight: 600;
-  color: #15803d;
+  color: var(--color-success);
   min-width: 80px;
 }
 
@@ -144,16 +144,16 @@
 .equipo-preview {
   margin-top: 8px;
   font-size: 13px;
-  background: #f0fdf4;
-  border: 1px solid #bbf7d0;
+  background: var(--color-success-light);
+  border: 1px solid var(--color-success);
   border-radius: 6px;
   padding: 8px 10px;
 }
 
 /* Credential section */
 .credential-card {
-  border: 1px solid #a5b4fc;
-  background: #eef2ff;
+  border: 1px solid var(--color-info);
+  background: var(--color-info-light);
   border-radius: 8px;
   padding: 14px 14px 4px;
   margin-bottom: 12px;
@@ -165,18 +165,18 @@
   gap: 6px;
   font-size: 12px;
   font-weight: 700;
-  color: #4338ca;
+  color: var(--color-info);
   margin-bottom: 12px;
 
-  svg { color: #4338ca; flex-shrink: 0; }
+  svg { color: var(--color-info); flex-shrink: 0; }
 }
 
 .credential-badge {
   margin-left: auto;
   font-size: 10px;
   font-weight: 600;
-  background: #c7d2fe;
-  color: #3730a3;
+  background: var(--color-info-light);
+  color: var(--color-info);
   border-radius: 99px;
   padding: 2px 8px;
   text-transform: uppercase;
@@ -187,7 +187,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  background: #f8fafc;
+  background: var(--color-muted);
   border: 1px dashed var(--color-border);
   border-radius: 8px;
   padding: 12px 14px;
@@ -224,8 +224,8 @@
 }
 
 .titular-fallback {
-  background: #fff7ed;
-  border: 1px solid #fed7aa;
+  background: var(--color-warning-light);
+  border: 1px solid var(--color-warning);
   border-radius: 6px;
   padding: 10px 12px;
   margin-top: 8px;
@@ -233,6 +233,6 @@
   p {
     margin: 0 0 8px;
     font-size: 13px;
-    color: #7c2d12;
+    color: var(--color-warning);
   }
 }

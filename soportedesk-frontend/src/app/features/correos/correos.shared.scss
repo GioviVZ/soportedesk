@@ -459,13 +459,13 @@
 }
 
 .success {
-  background: #ecfdf5;
-  color: #047857;
+  background: var(--color-success-light);
+  color: var(--color-success);
 }
 
 .warning {
-  background: #fff7ed;
-  color: #c2410c;
+  background: var(--color-warning-light);
+  color: var(--color-warning);
 }
 
 .neutral {

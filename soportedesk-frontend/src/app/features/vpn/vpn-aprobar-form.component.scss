@@ -73,7 +73,7 @@ form {
   padding: 14px;
   border: 1px solid rgba(37, 99, 235, .24);
   border-radius: var(--radius-md);
-  background: #f8fafc;
+  background: var(--color-muted);
 }
 
 .field {
@@ -88,7 +88,7 @@ form {
 
 .field input[readonly] {
   border-style: dashed;
-  background: #f8fafc;
+  background: var(--color-muted);
   color: var(--color-text);
   font-family: Consolas, 'Courier New', monospace;
 }
