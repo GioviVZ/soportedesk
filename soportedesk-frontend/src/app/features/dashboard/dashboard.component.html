@@ -22,7 +22,7 @@
   </div>
 
   <div class="dash-notice" *ngIf="error">
-    No se pudo actualizar el panel. Se mantiene la ultima vista disponible.
+    No se pudo actualizar el panel. Se mantiene la última vista disponible.
   </div>
 
   <div class="summary-grid">
@@ -56,7 +56,7 @@
     <div class="ops-panel priority-panel" *ngIf="priorityItems.length">
       <div class="panel-heading">
         <div>
-          <h3>Atencion prioritaria</h3>
+          <h3>Atención prioritaria</h3>
           <p>Situaciones que conviene revisar primero.</p>
         </div>
       </div>
@@ -93,7 +93,7 @@
     <div class="ops-panel mix-panel" *ngIf="mixItems.length">
       <div class="panel-heading">
         <div>
-          <h3>Composicion operativa</h3>
+          <h3>Composición operativa</h3>
           <p>Peso relativo de los registros visibles.</p>
         </div>
       </div>
@@ -114,25 +114,47 @@
   <div class="section-heading">
     <div>
       <h3>Módulos principales</h3>
-      <p>Entradas directas a las áreas que se operan con más frecuencia.</p>
+      <p>Resumen completo de los datos disponibles por módulo.</p>
     </div>
   </div>
 
   <div class="cards-grid">
     <a
-      class="kpi-card"
+      class="module-card"
       *ngFor="let card of cards"
       [routerLink]="card.path"
       [queryParams]="card.queryParams"
       [style.--card-color]="card.color">
-      <div class="kpi-top">
-        <span class="kpi-icon" [innerHTML]="card.icon"></span>
-        <span class="kpi-dot"></span>
-        <span class="kpi-label">{{ card.label }}</span>
+
+      <div class="module-card__top">
+        <span class="module-card__icon" [innerHTML]="card.icon"></span>
+        <span
+          class="module-card__health"
+          [class.module-card__health--success]="card.healthState === 'success'"
+          [class.module-card__health--warning]="card.healthState === 'warning'">
+          {{ card.healthLabel }}
+        </span>
       </div>
-      <span class="kpi-value">{{ card.value }}</span>
-      <span class="kpi-description">{{ card.description }}</span>
-      <div class="kpi-arrow">
+
+      <div class="module-card__title">
+        <span>{{ card.category }}</span>
+        <strong>{{ card.label }}</strong>
+        <small>{{ card.description }}</small>
+      </div>
+
+      <div class="module-card__numbers">
+        <div class="module-card__total">
+          <strong>{{ card.value }}</strong>
+          <span>Total registros</span>
+        </div>
+        <div class="module-card__metric">
+          <span>{{ card.metricLabel }}</span>
+          <strong>{{ card.metricValue }}</strong>
+        </div>
+      </div>
+
+      <div class="module-card__footer">
+        <span>{{ card.actionLabel }}</span>
         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
           <polyline points="9 18 15 12 9 6"/>
         </svg>

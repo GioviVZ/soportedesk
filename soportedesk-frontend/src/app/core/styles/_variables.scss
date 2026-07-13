@@ -1,56 +1,58 @@
 :root {
   /* Brand */
-  --color-primary: #0f172a;
-  --color-primary-hover: #1e293b;
-  --color-accent: #16a34a;
-  --color-accent-hover: #15803d;
-  --color-accent-light: #dcfce7;
-  --color-accent-subtle: #f0fdf4;
+  --color-primary: #5d87ff;
+  --color-primary-hover: #4570ea;
+  --color-primary-light: #ecf2ff;
+  --color-secondary: #44b7f7;
+  --color-secondary-light: #e8f7ff;
+  --color-accent: #5d87ff;
+  --color-accent-hover: #4570ea;
+  --color-accent-light: #ecf2ff;
+  --color-accent-subtle: #f6f9fc;
 
   /* Neutral */
-  --color-bg: #f6f8fb;
+  --color-bg: #f0f4fc;
   --color-surface: #ffffff;
   --color-surface-raised: #ffffff;
-  --color-border: #e5e9f0;
-  --color-border-strong: #cbd3df;
-  --color-text: #111827;
-  --color-text-secondary: #5f6b7a;
-  --color-text-muted: #8a97a8;
-  --color-muted: #f7f9fc;
+  --color-border: #e5eaf2;
+  --color-border-strong: #d7deea;
+  --color-text: #2a3547;
+  --color-text-secondary: #7c8fac;
+  --color-text-muted: #adb5c5;
+  --color-muted: #f6f9fc;
 
   /* Status */
-  --color-success: #16a34a;
-  --color-success-light: #dcfce7;
-  --color-warning: #d97706;
-  --color-warning-light: #fef3c7;
-  --color-danger: #dc2626;
-  --color-danger-light: #fee2e2;
-  --color-info: #0369a1;
-  --color-info-light: #e0f2fe;
+  --color-success: #13deb9;
+  --color-success-light: #e6fffa;
+  --color-warning: #ffae1f;
+  --color-warning-light: #fef5e5;
+  --color-danger: #fa896b;
+  --color-danger-light: #fdede8;
+  --color-info: #539bff;
+  --color-info-light: #e8f2ff;
 
   /* Module colors */
-  --color-licencias: #3b82f6;
-  --color-licencias-light: #eff6ff;
-  --color-correos: #8b5cf6;
+  --color-licencias: #5d87ff;
+  --color-licencias-light: #ecf2ff;
+  --color-correos: #8754ec;
   --color-correos-light: #f5f3ff;
-  --color-usuarios-red: #f97316;
-  --color-usuarios-red-light: #fff7ed;
-  --color-vpn: #ef4444;
-  --color-vpn-light: #fef2f2;
-  --color-wifi: #06b6d4;
-  --color-wifi-light: #ecfeff;
-  --color-impresoras: #64748b;
+  --color-usuarios-red: #ffae1f;
+  --color-usuarios-red-light: #fef5e5;
+  --color-vpn: #fa896b;
+  --color-vpn-light: #fdede8;
+  --color-wifi: #44b7f7;
+  --color-wifi-light: #e8f7ff;
+  --color-impresoras: #7c8fac;
   --color-impresoras-light: #f8fafc;
-  --color-equipos: #16a34a;
-  --color-equipos-light: #f0fdf4;
+  --color-equipos: #13deb9;
+  --color-equipos-light: #e6fffa;
 
-  /* Shadows — reserved for floating/overlay surfaces (menus, modals, drawers).
-     Static cards and panels use a border, not a shadow. */
-  --shadow-sm: 0 1px 2px rgba(15,23,42,.05), 0 8px 20px -18px rgba(15,23,42,.22);
-  --shadow-md: 0 12px 28px -20px rgba(15,23,42,.28);
-  --shadow-lg: 0 24px 56px -28px rgba(15,23,42,.32);
+  /* Shadows */
+  --shadow-sm: 0 2px 16px rgba(145,158,171,.12);
+  --shadow-md: 0 6px 24px rgba(145,158,171,.18);
+  --shadow-lg: 0 18px 48px rgba(145,158,171,.24);
 
-  /* Radius — tighter, more deliberate scale */
+  /* Radius */
   --radius-sm: 5px;
   --radius-md: 7px;
   --radius-lg: 8px;
@@ -61,19 +63,19 @@
   --transition-md: 220ms ease;
 
   /* Layout */
-  --sidebar-width: 240px;
-  --sidebar-collapsed: 60px;
-  --header-height: 60px;
+  --sidebar-width: 270px;
+  --sidebar-collapsed: 80px;
+  --header-height: 70px;
 
   /* Legacy aliases */
-  --color-green: #16a34a;
-  --color-green-dark: #15803d;
-  --color-green-light: #dcfce7;
-  --color-yellow: #d97706;
-  --color-yellow-light: #fef3c7;
-  --color-red: #dc2626;
-  --color-red-light: #fee2e2;
-  --color-gray: #64748b;
-  --color-gray-light: #f1f5f9;
+  --color-green: #13deb9;
+  --color-green-dark: #0fb99a;
+  --color-green-light: #e6fffa;
+  --color-yellow: #ffae1f;
+  --color-yellow-light: #fef5e5;
+  --color-red: #fa896b;
+  --color-red-light: #fdede8;
+  --color-gray: #7c8fac;
+  --color-gray-light: #f6f9fc;
   --color-white: #ffffff;
 }

@@ -2,41 +2,54 @@
   height: var(--header-height);
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 0 clamp(14px, 2vw, 22px);
-  background: var(--color-surface);
+  gap: 14px;
+  padding: 0 clamp(16px, 2vw, 26px);
+  background: rgba(255, 255, 255, .92);
   border-bottom: 1px solid var(--color-border);
   position: sticky;
   top: 0;
   z-index: 100;
+  backdrop-filter: blur(10px);
 }
 
 .hamburger {
   display: none;
-  background: none;
-  border: none;
-  padding: 6px;
+  background: var(--color-muted);
+  border: 1px solid var(--color-border);
+  padding: 8px;
   border-radius: var(--radius-md);
   color: var(--color-text-secondary);
   flex-shrink: 0;
 
-  &:hover { background: var(--color-muted); color: var(--color-text); }
+  &:hover {
+    background: var(--color-primary-light);
+    color: var(--color-primary);
+    border-color: rgba(93, 135, 255, .3);
+  }
 }
 
 .header-left {
+  display: grid;
+  gap: 1px;
   flex: 1;
   min-width: 0;
 }
 
 .system-name {
-  font-size: 15px;
-  font-weight: 700;
+  font-size: 16px;
+  font-weight: 800;
   color: var(--color-text);
   letter-spacing: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   display: block;
+}
+
+.system-subtitle {
+  color: var(--color-text-secondary);
+  font-size: 12px;
+  font-weight: 650;
 }
 
 .inia {
@@ -55,69 +68,77 @@
   gap: 10px;
   position: relative;
   cursor: pointer;
-  padding: 4px 6px;
-  border-radius: var(--radius-sm);
+  padding: 6px 8px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
 
-  &:hover { background: var(--color-muted); }
+  &:hover {
+    background: var(--color-muted);
+    border-color: var(--color-border);
+  }
 }
 
 .user-menu {
   position: absolute;
-  top: calc(100% + 6px);
+  top: calc(100% + 8px);
   right: 0;
   background: var(--color-surface);
   border: 1px solid var(--color-border);
-  border-radius: var(--radius-sm);
-  box-shadow: var(--shadow-sm);
-  min-width: 180px;
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md);
+  min-width: 190px;
   z-index: 200;
   overflow: hidden;
 
   button {
     width: 100%;
     text-align: left;
-    padding: 10px 14px;
+    padding: 11px 14px;
     background: none;
     border: none;
     font-size: 13px;
     color: var(--color-text);
     cursor: pointer;
 
-    &:hover { background: var(--color-muted); }
+    &:hover {
+      background: var(--color-muted);
+      color: var(--color-primary);
+    }
   }
 }
 
 .avatar {
-  width: 34px;
-  height: 34px;
-  border-radius: var(--radius-sm);
-  background: var(--color-primary);
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-md);
+  background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
   color: #fff;
   font-size: 12px;
-  font-weight: 700;
+  font-weight: 800;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  box-shadow: 0 10px 20px -15px rgba(93, 135, 255, .95);
 }
 
 .user-info {
   display: flex;
   flex-direction: column;
-  gap: 1px;
+  gap: 2px;
   line-height: 1;
 }
 
 .nombre {
   font-size: 13px;
-  font-weight: 600;
+  font-weight: 750;
   color: var(--color-text);
 }
 
 .rol-badge {
   font-size: 10px;
-  font-weight: 600;
-  padding: 1px 6px;
+  font-weight: 800;
+  padding: 2px 7px;
   border-radius: var(--radius-sm);
   background: var(--color-muted);
   color: var(--color-text-secondary);
@@ -134,30 +155,41 @@
 .logout-btn {
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 7px 12px;
-  border-radius: var(--radius-sm);
+  gap: 7px;
+  padding: 8px 12px;
+  border-radius: var(--radius-md);
   border: 1px solid var(--color-border);
-  background: transparent;
+  background: var(--color-surface);
   color: var(--color-text-secondary);
   font-size: 13px;
-  font-weight: 500;
+  font-weight: 750;
   transition: var(--transition);
 
   &:hover {
     background: var(--color-danger-light);
-    border-color: var(--color-danger);
+    border-color: rgba(250, 137, 107, .38);
     color: var(--color-danger);
   }
 }
 
 @media (max-width: 768px) {
-  .hamburger { display: flex; }
-  .system-name { display: none; }
-  .user-info  { display: none; }
+  .hamburger {
+    display: flex;
+  }
 
-  .logout-btn span { display: none; }
-  .logout-btn { padding: 7px; }
+  .system-name,
+  .system-subtitle,
+  .user-info {
+    display: none;
+  }
+
+  .logout-btn span {
+    display: none;
+  }
+
+  .logout-btn {
+    padding: 8px;
+  }
 }
 
 @media (max-width: 420px) {

@@ -15,6 +15,12 @@ interface DashboardCard {
   path: string;
   color: string;
   icon: SafeHtml;
+  category: string;
+  metricLabel: string;
+  metricValue: number;
+  healthLabel: string;
+  healthState: 'neutral' | 'success' | 'warning';
+  actionLabel: string;
   queryParams?: Record<string, string>;
 }
 
@@ -88,9 +94,9 @@ export class DashboardComponent implements OnInit {
       next: (counts) => {
         this.loading = false;
         this.updatedAt = new Date();
-        this.cards = this.toCards(counts);
         this.totalRegistros = this.totalAllowedRecords(counts);
         this.usuariosActivos = Math.max(counts.usuariosRed - counts.usuariosRedInactivos, 0);
+        this.cards = this.toCards(counts);
         this.showUsuariosChart = this.authService.canRead('usuarios-red');
         this.showLicenciasChart = this.authService.canRead('licencias');
         this.summaryMetrics = this.toSummaryMetrics(counts);
@@ -110,13 +116,104 @@ export class DashboardComponent implements OnInit {
 
   private toCards(counts: DashboardCounts): DashboardCard[] {
     const cards: DashboardCard[] = [
-      { label: 'Licencias', description: 'Claves y software registrado', value: counts.licencias, path: '/licencias', color: '#2563eb', icon: this.svg('key') },
-      { label: 'Correos Institucionales', description: 'Cuentas y accesos de correo', value: counts.correos, path: '/correos', color: '#7c3aed', icon: this.svg('mail') },
-      { label: 'Usuarios de Red/AD', description: 'Cuentas activas e historicas', value: counts.usuariosRed, path: '/usuarios-red/consultas', color: '#ea580c', icon: this.svg('users') },
-      { label: 'VPN', description: 'Credenciales de acceso remoto', value: counts.vpn, path: '/vpn', color: '#dc2626', icon: this.svg('lock') },
-      { label: 'Claves WiFi', description: 'Redes y claves administradas', value: counts.wifi, path: '/wifi', color: '#0891b2', icon: this.svg('wifi') },
-      { label: 'Impresoras', description: 'Equipos de impresion registrados', value: counts.impresoras, path: '/impresoras', color: '#475569', icon: this.svg('printer') },
-      { label: 'Inventario de Equipos', description: 'Inventario operativo asignado', value: counts.equipos, path: '/equipos', color: '#16a34a', icon: this.svg('monitor') },
+      {
+        label: 'Licencias',
+        description: 'Claves y software registrado',
+        value: counts.licencias,
+        path: '/licencias',
+        color: '#5d87ff',
+        icon: this.svg('key'),
+        category: 'Software',
+        metricLabel: 'Licencias activas',
+        metricValue: counts.licencias,
+        healthLabel: 'Inventario visible',
+        healthState: 'neutral',
+        actionLabel: 'Abrir licencias',
+      },
+      {
+        label: 'Correos Institucionales',
+        description: 'Cuentas y accesos de correo',
+        value: counts.correos,
+        path: '/correos',
+        color: '#8754ec',
+        icon: this.svg('mail'),
+        category: 'Comunicaciones',
+        metricLabel: 'Cuentas registradas',
+        metricValue: counts.correos,
+        healthLabel: 'Directorio de correos',
+        healthState: 'neutral',
+        actionLabel: 'Abrir correos',
+      },
+      {
+        label: 'Usuarios de Red/AD',
+        description: 'Cuentas activas e historicas',
+        value: counts.usuariosRed,
+        path: '/usuarios-red/consultas',
+        color: '#ffae1f',
+        icon: this.svg('users'),
+        category: 'Active Directory',
+        metricLabel: 'Usuarios activos',
+        metricValue: this.usuariosActivos,
+        healthLabel: counts.usuariosRedInactivos > 0 ? `${counts.usuariosRedInactivos} inactivos` : 'Sin inactivos',
+        healthState: counts.usuariosRedInactivos > 0 ? 'warning' : 'success',
+        actionLabel: 'Buscar usuarios',
+      },
+      {
+        label: 'VPN',
+        description: 'Credenciales de acceso remoto',
+        value: counts.vpn,
+        path: '/vpn',
+        color: '#fa896b',
+        icon: this.svg('lock'),
+        category: 'Acceso remoto',
+        metricLabel: 'Solicitudes pendientes',
+        metricValue: counts.vpnPendientes,
+        healthLabel: counts.vpnPendientes > 0 ? 'Requiere atencion' : 'Sin pendientes',
+        healthState: counts.vpnPendientes > 0 ? 'warning' : 'success',
+        actionLabel: 'Gestionar VPN',
+      },
+      {
+        label: 'Claves WiFi',
+        description: 'Redes y claves administradas',
+        value: counts.wifi,
+        path: '/wifi',
+        color: '#44b7f7',
+        icon: this.svg('wifi'),
+        category: 'Conectividad',
+        metricLabel: 'Redes registradas',
+        metricValue: counts.wifi,
+        healthLabel: 'Claves administradas',
+        healthState: 'neutral',
+        actionLabel: 'Abrir WiFi',
+      },
+      {
+        label: 'Impresoras',
+        description: 'Equipos de impresion registrados',
+        value: counts.impresoras,
+        path: '/impresoras',
+        color: '#7c8fac',
+        icon: this.svg('printer'),
+        category: 'Perifericos',
+        metricLabel: 'Impresoras registradas',
+        metricValue: counts.impresoras,
+        healthLabel: 'Inventario de impresion',
+        healthState: 'neutral',
+        actionLabel: 'Abrir impresoras',
+      },
+      {
+        label: 'Inventario de Equipos',
+        description: 'Inventario operativo asignado',
+        value: counts.equipos,
+        path: '/equipos',
+        color: '#13deb9',
+        icon: this.svg('monitor'),
+        category: 'Infraestructura',
+        metricLabel: 'Equipos asignados',
+        metricValue: counts.equipos,
+        healthLabel: 'Inventario operativo',
+        healthState: 'success',
+        actionLabel: 'Abrir equipos',
+      },
     ];
 
     if (this.authService.canWrite('usuarios-red')) {
@@ -125,8 +222,14 @@ export class DashboardComponent implements OnInit {
         description: 'Cuentas marcadas como inactivas',
         value: counts.usuariosRedInactivos,
         path: '/usuarios-red/dashboard',
-        color: '#d97706',
+        color: '#ffae1f',
         icon: this.svg('userX'),
+        category: 'Alertas AD',
+        metricLabel: 'Cuentas por revisar',
+        metricValue: counts.usuariosRedInactivos,
+        healthLabel: counts.usuariosRedInactivos > 0 ? 'Revisar estado' : 'Sin alertas',
+        healthState: counts.usuariosRedInactivos > 0 ? 'warning' : 'success',
+        actionLabel: 'Ver desactivados',
       });
     }
 
@@ -228,9 +331,9 @@ export class DashboardComponent implements OnInit {
 
   private toMixItems(counts: DashboardCounts): MixItem[] {
     const raw = [
-      { label: 'Accesos', value: this.sumAllowed([['licencias', counts.licencias], ['correos', counts.correos], ['usuarios-red', counts.usuariosRed], ['vpn', counts.vpn], ['wifi', counts.wifi]]), color: '#2563eb' },
-      { label: 'Infraestructura', value: this.sumAllowed([['impresoras', counts.impresoras], ['equipos', counts.equipos]]), color: '#16a34a' },
-      { label: 'Alertas', value: this.sumAllowed([['usuarios-red', counts.usuariosRedInactivos]]) + (this.authService.canWrite('aprobar-vpn') ? counts.vpnPendientes : 0), color: '#d97706' },
+      { label: 'Accesos', value: this.sumAllowed([['licencias', counts.licencias], ['correos', counts.correos], ['usuarios-red', counts.usuariosRed], ['vpn', counts.vpn], ['wifi', counts.wifi]]), color: '#5d87ff' },
+      { label: 'Infraestructura', value: this.sumAllowed([['impresoras', counts.impresoras], ['equipos', counts.equipos]]), color: '#13deb9' },
+      { label: 'Alertas', value: this.sumAllowed([['usuarios-red', counts.usuariosRedInactivos]]) + (this.authService.canWrite('aprobar-vpn') ? counts.vpnPendientes : 0), color: '#ffae1f' },
     ].filter((item) => item.value > 0);
 
     const total = raw.reduce((sum, item) => sum + item.value, 0);

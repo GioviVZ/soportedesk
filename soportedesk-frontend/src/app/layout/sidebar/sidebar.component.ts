@@ -55,7 +55,7 @@ export class SidebarComponent {
     this.chevR = s.bypassSecurityTrustHtml(SVG_ICONS['chevR']);
 
     this.navItems = [
-      { path: '/dashboard', label: 'Dashboard', icon: s.bypassSecurityTrustHtml(SVG_ICONS['home']) },
+      { path: '/dashboard', label: 'Panel de Control', icon: s.bypassSecurityTrustHtml(SVG_ICONS['home']) },
       { path: '/usuarios-red/consultas', label: 'Usuarios de Red/AD', icon: s.bypassSecurityTrustHtml(SVG_ICONS['users']), permission: 'usuarios-red' },
       { path: '/correos', label: 'Correos Institucionales', icon: s.bypassSecurityTrustHtml(SVG_ICONS['mail']), permission: 'correos' },
       { path: '/equipos', label: 'Inventario de Equipos', icon: s.bypassSecurityTrustHtml(SVG_ICONS['monitor']), permission: 'equipos' },
@@ -66,7 +66,7 @@ export class SidebarComponent {
       { path: '/auditoria', label: 'Movimientos', icon: s.bypassSecurityTrustHtml(SVG_ICONS['activity']), permission: 'auditoria' },
       { path: '/herramientas', label: 'Herramientas', icon: s.bypassSecurityTrustHtml(SVG_ICONS['wrench']), permission: 'herramientas' },
       { path: '/usuarios-sistema', label: 'Usuarios del Sistema', icon: s.bypassSecurityTrustHtml(SVG_ICONS['shield']), adminOnly: true },
-      { path: '/catalogos', label: 'Catalogos', icon: s.bypassSecurityTrustHtml(SVG_ICONS['grid']), permission: 'catalogos' },
+      { path: '/catalogos', label: 'Catálogos', icon: s.bypassSecurityTrustHtml(SVG_ICONS['grid']), permission: 'catalogos' },
     ];
   }
 
