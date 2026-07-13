@@ -154,23 +154,23 @@ type Panel = 'create' | 'password' | 'groups' | 'ou' | 'info' | null;
     </div>
 
     <app-modal title="Crear usuario de red" size="wide" [open]="activePanel === 'create'" (closed)="closePanel()">
-      <app-ad-create-user-panel (saved)="onPanelSaved($event)" (cancelled)="closePanel()" />
+      <app-ad-create-user-panel *ngIf="activePanel === 'create'" (saved)="onPanelSaved($event)" (cancelled)="closePanel()" />
     </app-modal>
 
     <app-modal title="Restablecer contraseña" [open]="activePanel === 'password'" (closed)="closePanel()">
-      <app-ad-reset-password-panel *ngIf="user" [samAccountName]="user.samAccountName" (saved)="onPanelSaved($event)" (cancelled)="closePanel()" />
+      <app-ad-reset-password-panel *ngIf="activePanel === 'password' && user" [samAccountName]="user.samAccountName" (saved)="onPanelSaved($event)" (cancelled)="closePanel()" />
     </app-modal>
 
     <app-modal title="Membresias de grupos" [open]="activePanel === 'groups'" (closed)="closePanel()">
-      <app-ad-groups-panel *ngIf="user" [samAccountName]="user.samAccountName" (changed)="onPanelChanged($event)" />
+      <app-ad-groups-panel *ngIf="activePanel === 'groups' && user" [samAccountName]="user.samAccountName" (changed)="onPanelChanged($event)" />
     </app-modal>
 
     <app-modal title="Mover a unidad organizativa" [open]="activePanel === 'ou'" (closed)="closePanel()">
-      <app-ad-move-ou-panel *ngIf="user" [samAccountName]="user.samAccountName" (saved)="onPanelSaved($event)" />
+      <app-ad-move-ou-panel *ngIf="activePanel === 'ou' && user" [samAccountName]="user.samAccountName" (saved)="onPanelSaved($event)" />
     </app-modal>
 
     <app-modal title="Editar informacion AD" size="wide" [open]="activePanel === 'info'" (closed)="closePanel()">
-      <app-ad-edit-info-panel *ngIf="user" [user]="user" (saved)="onPanelSaved($event)" (cancelled)="closePanel()" />
+      <app-ad-edit-info-panel *ngIf="activePanel === 'info' && user" [user]="user" (saved)="onPanelSaved($event)" (cancelled)="closePanel()" />
     </app-modal>
   `,
   styleUrl: './usuarios-red.shared.scss',
