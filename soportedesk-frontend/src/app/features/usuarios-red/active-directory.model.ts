@@ -136,3 +136,8 @@ export interface UpdateUserInfoRequest {
   mail?: string | null;
   description?: string | null;
 }
+
+export interface AdPanelResult {
+  user: AdUser;
+  notice: { tone: 'success' | 'error'; text: string };
+}
