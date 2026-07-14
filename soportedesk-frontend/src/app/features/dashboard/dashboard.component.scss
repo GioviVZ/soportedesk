@@ -13,7 +13,7 @@
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
   background:
-    linear-gradient(135deg, rgba(93, 135, 255, .11), rgba(68, 183, 247, .08) 46%, rgba(255, 255, 255, .92)),
+    linear-gradient(135deg, rgba(93, 135, 255, .11), rgba(68, 183, 247, .08) 46%, color-mix(in srgb, var(--color-surface) 92%, transparent)),
     var(--color-surface);
   box-shadow: var(--shadow-sm);
 }
@@ -38,7 +38,7 @@
   width: fit-content;
   padding: 3px 9px;
   border-radius: var(--radius-sm);
-  background: rgba(255, 255, 255, .72);
+  background: color-mix(in srgb, var(--color-surface) 72%, transparent);
   color: var(--color-primary);
   font-size: 11px;
   font-weight: 800;
@@ -66,7 +66,7 @@
   padding: 14px 16px;
   border: 1px solid rgba(93, 135, 255, .18);
   border-radius: var(--radius-md);
-  background: rgba(255, 255, 255, .86);
+  background: color-mix(in srgb, var(--color-surface) 86%, transparent);
   box-shadow: var(--shadow-sm);
 }
 
@@ -528,7 +528,7 @@ a.priority-row {
   padding: 12px;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
-  background: rgba(246, 249, 252, .78);
+  background: color-mix(in srgb, var(--color-muted) 78%, transparent);
 }
 
 .module-card__total {
