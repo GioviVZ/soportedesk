@@ -192,7 +192,7 @@ export class UsuariosRedAdministracionComponent implements OnInit, OnDestroy {
     this.checkSyncStatus();
     this.route.queryParamMap.subscribe((params) => {
       const sam = params.get('sam');
-      if (sam) this.loadUser(sam);
+      if (sam) this.loadUser(sam, params.get('action') === 'edit');
     });
   }
 
@@ -309,7 +309,7 @@ export class UsuariosRedAdministracionComponent implements OnInit, OnDestroy {
     this.runAction(request);
   }
 
-  private loadUser(sam: string): void {
+  private loadUser(sam: string, openEdit = false): void {
     this.notice = null;
     this.adService.getUser(sam).subscribe({
       next: (response) => {
@@ -319,6 +319,7 @@ export class UsuariosRedAdministracionComponent implements OnInit, OnDestroy {
           return;
         }
         this.user = response.data;
+        if (openEdit) this.openPanel('info');
         this.flash('success', response.message);
       },
       error: () => {

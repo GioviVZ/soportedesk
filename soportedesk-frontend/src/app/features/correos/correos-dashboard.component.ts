@@ -36,6 +36,28 @@ import { CorreoDashboardCompleto } from './correo.model';
         <div class="module-dash-stat"><span>EEAs</span><strong>{{ d.kpis.eeasCount }}</strong><small>Asignaciones</small></div>
       </section>
 
+      <section class="module-dash-visual-grid" *ngIf="dashboard as d">
+        <article class="module-dash-card module-dash-mini-chart">
+          <header class="module-dash-card__header">
+            <div>
+              <strong>Licencias Workspace</strong>
+              <span>Asignadas frente a disponibles</span>
+            </div>
+          </header>
+          <canvas baseChart [data]="licenciasChartData" [options]="doughnutOptions" [type]="'doughnut'"></canvas>
+        </article>
+
+        <article class="module-dash-card module-dash-mini-chart">
+          <header class="module-dash-card__header">
+            <div>
+              <strong>Seguridad y uso</strong>
+              <span>2FA, cuentas activas y cuentas sin uso</span>
+            </div>
+          </header>
+          <canvas baseChart [data]="seguridadChartData" [options]="lineOptions" [type]="'line'"></canvas>
+        </article>
+      </section>
+
       <section class="module-dash-grid" *ngIf="dashboard as d">
         <article class="module-dash-card module-dash-chart">
           <header class="module-dash-card__header">
@@ -114,6 +136,16 @@ export class CorreosDashboardComponent implements OnInit {
     datasets: [{ data: [], label: 'Cuentas', backgroundColor: '#8b5cf6' }],
   };
 
+  licenciasChartData: ChartData<'doughnut', number[], string> = {
+    labels: [],
+    datasets: [{ data: [], backgroundColor: ['#8754ec', '#13deb9'] }],
+  };
+
+  seguridadChartData: ChartData<'line', number[], string> = {
+    labels: [],
+    datasets: [{ data: [], label: 'Cuentas', borderColor: '#8754ec', backgroundColor: 'rgba(135,84,236,.16)', tension: .35, fill: true, pointBackgroundColor: '#8754ec' }],
+  };
+
   chartOptions: ChartConfiguration<'bar'>['options'] = {
     indexAxis: 'y',
     responsive: true,
@@ -122,6 +154,23 @@ export class CorreosDashboardComponent implements OnInit {
     scales: {
       x: { beginAtZero: true, grid: { color: '#e2e8f0' }, ticks: { precision: 0 } },
       y: { grid: { display: false } },
+    },
+  };
+
+  doughnutOptions: ChartConfiguration<'doughnut'>['options'] = {
+    responsive: true,
+    maintainAspectRatio: false,
+    cutout: '62%',
+    plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, boxHeight: 10, usePointStyle: true } } },
+  };
+
+  lineOptions: ChartConfiguration<'line'>['options'] = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, boxHeight: 10, usePointStyle: true } } },
+    scales: {
+      x: { grid: { color: '#e5eaf2' } },
+      y: { beginAtZero: true, grid: { color: '#e5eaf2' }, ticks: { precision: 0 } },
     },
   };
 
@@ -153,6 +202,27 @@ export class CorreosDashboardComponent implements OnInit {
     this.chartData = {
       labels: rows.map((row) => row.dependencia),
       datasets: [{ data: rows.map((row) => row.total), label: 'Cuentas', backgroundColor: '#8b5cf6' }],
+    };
+
+    this.licenciasChartData = {
+      labels: ['Asignadas', 'Disponibles'],
+      datasets: [{
+        data: dashboard ? [dashboard.kpis.licenciasAsignadas, dashboard.kpis.licenciasDisponibles] : [],
+        backgroundColor: ['#8754ec', '#13deb9'],
+      }],
+    };
+
+    this.seguridadChartData = {
+      labels: ['Activas', 'Con 2FA', 'Suspendidas', 'Sin uso 30+'],
+      datasets: [{
+        data: dashboard ? [dashboard.kpis.activasCount, dashboard.cuentasCon2FA, dashboard.kpis.suspendidasCount, dashboard.totalSinUso] : [],
+        label: 'Cuentas',
+        borderColor: '#8754ec',
+        backgroundColor: 'rgba(135,84,236,.16)',
+        tension: .35,
+        fill: true,
+        pointBackgroundColor: '#8754ec',
+      }],
     };
   }
 

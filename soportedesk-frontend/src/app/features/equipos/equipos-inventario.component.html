@@ -133,6 +133,14 @@
         <dd>{{ item.fabricanteModelo || '-' }}</dd>
       </div>
       <div>
+        <dt>Serie</dt>
+        <dd>{{ item.numeroserie || '-' }}</dd>
+      </div>
+      <div>
+        <dt>Código</dt>
+        <dd>{{ item.codigoInterno || '-' }}</dd>
+      </div>
+      <div>
         <dt>CPU</dt>
         <dd>{{ item.cpuCorto || '-' }}</dd>
       </div>
@@ -150,7 +158,10 @@
       </div>
     </dl>
 
-    <button type="button" (click)="onView(item)">Ver detalle</button>
+    <footer>
+      <span>{{ item.fabricanteModelo || item.sedeNombre || 'Equipo registrado' }}</span>
+      <button type="button" (click)="onView(item)">Ver detalle</button>
+    </footer>
   </article>
 
   <p class="mobile-empty" *ngIf="filteredItems().length === 0">Sin equipos activos registrados</p>

@@ -111,6 +111,28 @@
     </div>
   </section>
 
+  <section class="overview-charts" *ngIf="cards.length">
+    <article class="overview-chart-card">
+      <div class="panel-heading">
+        <div>
+          <h3>Composición general</h3>
+          <p>Accesos, infraestructura y alertas visibles.</p>
+        </div>
+      </div>
+      <canvas baseChart [data]="composicionChartData" [options]="doughnutOptions" [type]="'doughnut'"></canvas>
+    </article>
+
+    <article class="overview-chart-card">
+      <div class="panel-heading">
+        <div>
+          <h3>Volumen por módulo</h3>
+          <p>Comparativo de registros disponibles.</p>
+        </div>
+      </div>
+      <canvas baseChart [data]="volumenChartData" [options]="lineOptions" [type]="'line'"></canvas>
+    </article>
+  </section>
+
   <div class="section-heading">
     <div>
       <h3>Módulos principales</h3>

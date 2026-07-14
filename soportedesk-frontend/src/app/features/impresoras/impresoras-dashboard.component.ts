@@ -34,6 +34,28 @@ import { ImpresoraDashboardCompleto } from './impresora.model';
         <div class="module-dash-stat tone-danger"><span>De baja</span><strong>{{ d.deBaja }}</strong><small>Fuera de servicio</small></div>
       </section>
 
+      <section class="module-dash-visual-grid" *ngIf="dashboard as d">
+        <article class="module-dash-card module-dash-mini-chart">
+          <header class="module-dash-card__header">
+            <div>
+              <strong>Estado de la flota</strong>
+              <span>Activas, mantenimiento y baja</span>
+            </div>
+          </header>
+          <canvas baseChart [data]="estadoChartData" [options]="doughnutOptions" [type]="'doughnut'"></canvas>
+        </article>
+
+        <article class="module-dash-card module-dash-mini-chart">
+          <header class="module-dash-card__header">
+            <div>
+              <strong>Impresoras por sede</strong>
+              <span>Distribución territorial de la flota</span>
+            </div>
+          </header>
+          <canvas baseChart [data]="sedeChartData" [options]="sedeChartOptions" [type]="'bar'"></canvas>
+        </article>
+      </section>
+
       <section class="module-dash-grid" *ngIf="dashboard as d">
         <article class="module-dash-card module-dash-chart">
           <header class="module-dash-card__header">
@@ -144,6 +166,16 @@ export class ImpresorasDashboardComponent implements OnInit {
     datasets: [{ data: [], label: 'Impresoras', backgroundColor: '#64748b' }],
   };
 
+  estadoChartData: ChartData<'doughnut', number[], string> = {
+    labels: [],
+    datasets: [{ data: [], backgroundColor: ['#13deb9', '#ffae1f', '#fa896b'] }],
+  };
+
+  sedeChartData: ChartData<'bar', number[], string> = {
+    labels: [],
+    datasets: [{ data: [], label: 'Impresoras', backgroundColor: '#539bff' }],
+  };
+
   chartOptions: ChartConfiguration<'bar'>['options'] = {
     indexAxis: 'y',
     responsive: true,
@@ -153,6 +185,23 @@ export class ImpresorasDashboardComponent implements OnInit {
       x: { beginAtZero: true, grid: { color: '#e2e8f0' }, ticks: { precision: 0 } },
       y: { grid: { display: false } },
     },
+  };
+
+  sedeChartOptions: ChartConfiguration<'bar'>['options'] = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, boxHeight: 10, usePointStyle: true } } },
+    scales: {
+      x: { grid: { display: false }, ticks: { maxRotation: 35, minRotation: 0 } },
+      y: { beginAtZero: true, grid: { color: '#e5eaf2' }, ticks: { precision: 0 } },
+    },
+  };
+
+  doughnutOptions: ChartConfiguration<'doughnut'>['options'] = {
+    responsive: true,
+    maintainAspectRatio: false,
+    cutout: '62%',
+    plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, boxHeight: 10, usePointStyle: true } } },
   };
 
   ngOnInit(): void {
@@ -183,6 +232,20 @@ export class ImpresorasDashboardComponent implements OnInit {
     this.chartData = {
       labels: rows.map((row) => row.marca),
       datasets: [{ data: rows.map((row) => row.total), label: 'Impresoras', backgroundColor: '#64748b' }],
+    };
+
+    this.estadoChartData = {
+      labels: ['Activas', 'Mantenimiento', 'De baja'],
+      datasets: [{
+        data: dashboard ? [dashboard.activas, dashboard.enMantenimiento, dashboard.deBaja] : [],
+        backgroundColor: ['#13deb9', '#ffae1f', '#fa896b'],
+      }],
+    };
+
+    const sedes = dashboard?.distribucionPorSede ?? [];
+    this.sedeChartData = {
+      labels: sedes.map((row) => row.sede),
+      datasets: [{ data: sedes.map((row) => row.total), label: 'Impresoras', backgroundColor: '#539bff' }],
     };
   }
 

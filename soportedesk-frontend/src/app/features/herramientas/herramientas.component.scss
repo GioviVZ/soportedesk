@@ -119,11 +119,21 @@ button:disabled {
 
 .tool-panel {
   display: none;
-  padding: 18px;
+  position: relative;
+  padding: 22px 18px 18px;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   background: var(--color-surface);
   box-shadow: var(--shadow-sm);
+  overflow: hidden;
+
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 0 0 auto;
+    height: 4px;
+    background: var(--color-primary);
+  }
 
   &.active {
     display: block;
@@ -386,11 +396,22 @@ button:disabled {
 .mouse-grid div,
 .gpu-stats div {
   display: grid;
+  position: relative;
   gap: 4px;
-  padding: 13px;
+  padding: 16px 13px 13px;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-sm);
-  background: var(--color-muted);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 0 0 auto;
+    height: 3px;
+    background: var(--color-primary);
+  }
 
   span {
     color: var(--color-text-secondary);

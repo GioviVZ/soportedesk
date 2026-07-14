@@ -36,6 +36,28 @@ import { VpnDashboardCompleto } from './vpn.model';
         <div class="module-dash-stat"><span>Total</span><strong>{{ dashboard.total }}</strong><small>Solicitudes registradas</small></div>
       </section>
 
+      <section class="module-dash-visual-grid" *ngIf="dashboard as d">
+        <article class="module-dash-card module-dash-mini-chart">
+          <header class="module-dash-card__header">
+            <div>
+              <strong>Estados de solicitudes</strong>
+              <span>Pendientes, aprobadas, observadas y rechazadas</span>
+            </div>
+          </header>
+          <canvas baseChart [data]="estadoChartData" [options]="doughnutOptions" [type]="'doughnut'"></canvas>
+        </article>
+
+        <article class="module-dash-card module-dash-mini-chart">
+          <header class="module-dash-card__header">
+            <div>
+              <strong>Flujo de atención</strong>
+              <span>Lectura lineal del estado operativo VPN</span>
+            </div>
+          </header>
+          <canvas baseChart [data]="flujoChartData" [options]="lineOptions" [type]="'line'"></canvas>
+        </article>
+      </section>
+
       <section class="module-dash-grid" *ngIf="dashboard">
         <article class="module-dash-card module-dash-chart">
           <header class="module-dash-card__header">
@@ -143,6 +165,16 @@ export class VpnDashboardComponent implements OnInit {
     datasets: [{ data: [], label: 'Solicitudes', backgroundColor: '#ef4444' }],
   };
 
+  estadoChartData: ChartData<'doughnut', number[], string> = {
+    labels: [],
+    datasets: [{ data: [], backgroundColor: ['#ffae1f', '#13deb9', '#539bff', '#fa896b'] }],
+  };
+
+  flujoChartData: ChartData<'line', number[], string> = {
+    labels: [],
+    datasets: [{ data: [], label: 'Solicitudes', borderColor: '#fa896b', backgroundColor: 'rgba(250,137,107,.16)', tension: .35, fill: true, pointBackgroundColor: '#fa896b' }],
+  };
+
   chartOptions: ChartConfiguration<'bar'>['options'] = {
     indexAxis: 'y',
     responsive: true,
@@ -151,6 +183,23 @@ export class VpnDashboardComponent implements OnInit {
     scales: {
       x: { beginAtZero: true, grid: { color: '#e2e8f0' }, ticks: { precision: 0 } },
       y: { grid: { display: false } },
+    },
+  };
+
+  doughnutOptions: ChartConfiguration<'doughnut'>['options'] = {
+    responsive: true,
+    maintainAspectRatio: false,
+    cutout: '62%',
+    plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, boxHeight: 10, usePointStyle: true } } },
+  };
+
+  lineOptions: ChartConfiguration<'line'>['options'] = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, boxHeight: 10, usePointStyle: true } } },
+    scales: {
+      x: { grid: { color: '#e5eaf2' } },
+      y: { beginAtZero: true, grid: { color: '#e5eaf2' }, ticks: { precision: 0 } },
     },
   };
 
@@ -186,6 +235,27 @@ export class VpnDashboardComponent implements OnInit {
     this.chartData = {
       labels: rows.map((row) => row.tipoEquipo),
       datasets: [{ data: rows.map((row) => row.total), label: 'Solicitudes', backgroundColor: '#ef4444' }],
+    };
+
+    this.estadoChartData = {
+      labels: ['Pendientes', 'Aprobadas', 'Observadas', 'Rechazadas'],
+      datasets: [{
+        data: dashboard ? [dashboard.pendientes, dashboard.aprobadas, dashboard.observadas, dashboard.rechazadas] : [],
+        backgroundColor: ['#ffae1f', '#13deb9', '#539bff', '#fa896b'],
+      }],
+    };
+
+    this.flujoChartData = {
+      labels: ['Pendientes', 'Aprobadas', 'Observadas', 'Rechazadas'],
+      datasets: [{
+        data: dashboard ? [dashboard.pendientes, dashboard.aprobadas, dashboard.observadas, dashboard.rechazadas] : [],
+        label: 'Solicitudes',
+        borderColor: '#fa896b',
+        backgroundColor: 'rgba(250,137,107,.16)',
+        tension: .35,
+        fill: true,
+        pointBackgroundColor: '#fa896b',
+      }],
     };
   }
 

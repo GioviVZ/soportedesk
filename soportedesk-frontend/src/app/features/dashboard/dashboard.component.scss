@@ -224,6 +224,27 @@ a.summary-card {
   margin-bottom: 22px;
 }
 
+.overview-charts {
+  display: grid;
+  grid-template-columns: minmax(0, .8fr) minmax(0, 1.2fr);
+  gap: 14px;
+  margin-bottom: 22px;
+}
+
+.overview-chart-card {
+  min-width: 0;
+  min-height: 310px;
+  padding: 17px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-sm);
+
+  canvas {
+    max-height: 230px;
+  }
+}
+
 .ops-panel {
   padding: 17px;
   border: 1px solid var(--color-border);
@@ -611,6 +632,7 @@ a.priority-row {
   }
 
   .ops-grid,
+  .overview-charts,
   .charts-grid {
     grid-template-columns: 1fr;
   }
@@ -638,6 +660,7 @@ a.priority-row {
 
   .summary-grid,
   .ops-grid,
+  .overview-charts,
   .cards-grid {
     grid-template-columns: repeat(auto-fit, minmax(min(100%, 230px), 1fr));
   }
@@ -651,6 +674,7 @@ a.priority-row {
 @media (max-width: 520px) {
   .summary-grid,
   .ops-grid,
+  .overview-charts,
   .cards-grid {
     grid-template-columns: 1fr;
   }

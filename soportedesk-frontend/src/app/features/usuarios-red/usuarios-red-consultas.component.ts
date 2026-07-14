@@ -494,7 +494,8 @@ export class UsuariosRedConsultasComponent implements OnInit {
   }
 
   goToAdmin(sam: string): void {
-    this.router.navigate(['/usuarios-red/administracion'], { queryParams: { sam } });
+    this.closeDetail();
+    this.router.navigate(['/usuarios-red/administracion'], { queryParams: { sam, action: 'edit' } });
   }
 
   private loadUser(sam: string): void {

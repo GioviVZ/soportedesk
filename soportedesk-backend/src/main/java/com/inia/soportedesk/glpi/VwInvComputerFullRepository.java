@@ -10,6 +10,8 @@ import java.util.List;
 @Repository
 public interface VwInvComputerFullRepository extends JpaRepository<VwInvComputerFull, Long> {
 
+    long countByEliminado(Integer eliminado);
+
     @Query("""
         SELECT v FROM VwInvComputerFull v
         WHERE v.eliminado = 0

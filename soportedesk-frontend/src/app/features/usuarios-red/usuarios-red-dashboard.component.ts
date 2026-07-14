@@ -32,6 +32,28 @@ import { ActiveDirectoryDashboardCompleto } from './active-directory.model';
           <div class="module-dash-stat tone-info"><span>Controladores</span><strong>{{ dashboard.controladoresDominio }}</strong><small>Dominio AD</small></div>
         </section>
 
+        <section class="module-dash-visual-grid" *ngIf="dashboard">
+          <article class="module-dash-card module-dash-mini-chart">
+            <header class="module-dash-card__header">
+              <div>
+                <strong>Estado de cuentas</strong>
+                <span>Habilitadas, deshabilitadas y bloqueadas</span>
+              </div>
+            </header>
+            <canvas baseChart [data]="estadoChartData" [options]="doughnutOptions" [type]="'doughnut'"></canvas>
+          </article>
+
+          <article class="module-dash-card module-dash-radar-chart">
+            <header class="module-dash-card__header">
+              <div>
+                <strong>Mapa de alertas AD</strong>
+                <span>Contraseñas, inactividad y bloqueos</span>
+              </div>
+            </header>
+            <canvas baseChart [data]="alertasRadarData" [options]="radarOptions" [type]="'radar'"></canvas>
+          </article>
+        </section>
+
         <section class="module-dash-grid" *ngIf="dashboard">
           <article class="module-dash-card module-dash-chart">
             <header class="module-dash-card__header">
@@ -147,6 +169,16 @@ export class UsuariosRedDashboardComponent implements OnInit {
     datasets: [{ data: [], label: 'Activos', backgroundColor: '#f97316' }],
   };
 
+  estadoChartData: ChartData<'doughnut', number[], string> = {
+    labels: [],
+    datasets: [{ data: [], backgroundColor: ['#13deb9', '#ffae1f', '#fa896b'] }],
+  };
+
+  alertasRadarData: ChartData<'radar', number[], string> = {
+    labels: [],
+    datasets: [{ data: [], label: 'Alertas', borderColor: '#ffae1f', backgroundColor: 'rgba(255,174,31,.18)', pointBackgroundColor: '#ffae1f' }],
+  };
+
   chartOptions: ChartConfiguration<'bar'>['options'] = {
     indexAxis: 'y',
     responsive: true,
@@ -165,6 +197,27 @@ export class UsuariosRedDashboardComponent implements OnInit {
       },
       y: {
         grid: { display: false },
+      },
+    },
+  };
+
+  doughnutOptions: ChartConfiguration<'doughnut'>['options'] = {
+    responsive: true,
+    maintainAspectRatio: false,
+    cutout: '62%',
+    plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, boxHeight: 10, usePointStyle: true } } },
+  };
+
+  radarOptions: ChartConfiguration<'radar'>['options'] = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, boxHeight: 10, usePointStyle: true } } },
+    scales: {
+      r: {
+        beginAtZero: true,
+        ticks: { precision: 0, backdropColor: 'transparent' },
+        grid: { color: '#e5eaf2' },
+        angleLines: { color: '#e5eaf2' },
       },
     },
   };
@@ -201,6 +254,25 @@ export class UsuariosRedDashboardComponent implements OnInit {
     this.chartData = {
       labels: rows.map((row) => row.ou),
       datasets: [{ data: rows.map((row) => row.activos), label: 'Activos', backgroundColor: '#f97316' }],
+    };
+
+    this.estadoChartData = {
+      labels: ['Habilitadas', 'Deshabilitadas', 'Bloqueadas'],
+      datasets: [{
+        data: dashboard ? [dashboard.usuariosHabilitados, dashboard.usuariosDeshabilitados, dashboard.usuariosBloqueados] : [],
+        backgroundColor: ['#13deb9', '#ffae1f', '#fa896b'],
+      }],
+    };
+
+    this.alertasRadarData = {
+      labels: ['Contraseñas vencidas', 'Inactivas', 'Bloqueadas'],
+      datasets: [{
+        data: dashboard ? [dashboard.totalPasswordsVencidas, dashboard.totalCuentasInactivas, dashboard.totalCuentasBloqueadas] : [],
+        label: 'Alertas',
+        borderColor: '#ffae1f',
+        backgroundColor: 'rgba(255,174,31,.18)',
+        pointBackgroundColor: '#ffae1f',
+      }],
     };
   }
 

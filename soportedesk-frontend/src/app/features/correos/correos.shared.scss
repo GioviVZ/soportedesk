@@ -357,12 +357,22 @@
 
 .account-card {
   display: grid;
+  position: relative;
   gap: 14px;
-  padding: 14px;
+  padding: 16px 14px 14px;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   background: var(--color-surface);
   box-shadow: var(--shadow-sm);
+  overflow: hidden;
+
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 0 0 auto;
+    height: 4px;
+    background: var(--color-correos);
+  }
 
   header,
   footer {

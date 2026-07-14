@@ -1,6 +1,8 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
+import { ChartConfiguration, ChartData } from 'chart.js';
+import { BaseChartDirective } from 'ng2-charts';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { AuthService } from '../../core/auth/auth.service';
 import { DashboardService } from './dashboard.service';
@@ -62,7 +64,7 @@ const ICONS: Record<string, string> = {
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, RouterLink, UsuariosRedPorUbicacionChartComponent, LicenciasPorTipoChartComponent],
+  imports: [CommonModule, RouterLink, BaseChartDirective, UsuariosRedPorUbicacionChartComponent, LicenciasPorTipoChartComponent],
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.scss',
 })
@@ -83,6 +85,33 @@ export class DashboardComponent implements OnInit {
   error = false;
   updatedAt: Date | null = null;
 
+  composicionChartData: ChartData<'doughnut', number[], string> = {
+    labels: [],
+    datasets: [{ data: [], backgroundColor: ['#5d87ff', '#13deb9', '#ffae1f'] }],
+  };
+
+  volumenChartData: ChartData<'line', number[], string> = {
+    labels: [],
+    datasets: [{ data: [], label: 'Registros', borderColor: '#5d87ff', backgroundColor: 'rgba(93,135,255,.16)', tension: .35, fill: true, pointBackgroundColor: '#5d87ff' }],
+  };
+
+  doughnutOptions: ChartConfiguration<'doughnut'>['options'] = {
+    responsive: true,
+    maintainAspectRatio: false,
+    cutout: '62%',
+    plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, boxHeight: 10, usePointStyle: true } } },
+  };
+
+  lineOptions: ChartConfiguration<'line'>['options'] = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, boxHeight: 10, usePointStyle: true } } },
+    scales: {
+      x: { grid: { color: '#e5eaf2' } },
+      y: { beginAtZero: true, grid: { color: '#e5eaf2' }, ticks: { precision: 0 } },
+    },
+  };
+
   ngOnInit(): void {
     this.load();
   }
@@ -102,6 +131,7 @@ export class DashboardComponent implements OnInit {
         this.summaryMetrics = this.toSummaryMetrics(counts);
         this.priorityItems = this.toPriorityItems(counts);
         this.mixItems = this.toMixItems(counts);
+        this.applyOverviewCharts(counts);
       },
       error: () => {
         this.loading = false;
@@ -341,6 +371,31 @@ export class DashboardComponent implements OnInit {
       ...item,
       percent: total > 0 ? Math.round((item.value / total) * 100) : 0,
     }));
+  }
+
+  private applyOverviewCharts(counts: DashboardCounts): void {
+    const accesos = this.sumAllowed([['licencias', counts.licencias], ['correos', counts.correos], ['usuarios-red', counts.usuariosRed], ['vpn', counts.vpn], ['wifi', counts.wifi]]);
+    const infraestructura = this.sumAllowed([['impresoras', counts.impresoras], ['equipos', counts.equipos]]);
+    const alertas = this.sumAllowed([['usuarios-red', counts.usuariosRedInactivos]]) + (this.authService.canWrite('aprobar-vpn') ? counts.vpnPendientes : 0);
+
+    this.composicionChartData = {
+      labels: ['Accesos', 'Infraestructura', 'Alertas'],
+      datasets: [{ data: [accesos, infraestructura, alertas], backgroundColor: ['#5d87ff', '#13deb9', '#ffae1f'] }],
+    };
+
+    const rows = this.cards.filter((card) => card.value > 0);
+    this.volumenChartData = {
+      labels: rows.map((card) => card.label),
+      datasets: [{
+        data: rows.map((card) => card.value),
+        label: 'Registros',
+        borderColor: '#5d87ff',
+        backgroundColor: 'rgba(93,135,255,.16)',
+        tension: .35,
+        fill: true,
+        pointBackgroundColor: '#5d87ff',
+      }],
+    };
   }
 
   private canOpen(path: string): boolean {

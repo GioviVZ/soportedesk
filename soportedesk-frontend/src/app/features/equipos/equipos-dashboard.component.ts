@@ -36,6 +36,28 @@ import { EquipoDashboardCompleto } from './equipo.model';
         <div class="module-dash-stat tone-info"><span>EEAs</span><strong>{{ d.eeasCount }}</strong><small>En estaciones experimentales</small></div>
       </section>
 
+      <section class="module-dash-visual-grid" *ngIf="dashboard as d">
+        <article class="module-dash-card module-dash-mini-chart">
+          <header class="module-dash-card__header">
+            <div>
+              <strong>Tipo de equipo</strong>
+              <span>Desktop, laptop y otros activos</span>
+            </div>
+          </header>
+          <canvas baseChart [data]="tipoChartData" [options]="doughnutOptions" [type]="'doughnut'"></canvas>
+        </article>
+
+        <article class="module-dash-card module-dash-radar-chart">
+          <header class="module-dash-card__header">
+            <div>
+              <strong>Salud del inventario</strong>
+              <span>Alertas y cumplimiento documental</span>
+            </div>
+          </header>
+          <canvas baseChart [data]="saludRadarData" [options]="radarOptions" [type]="'radar'"></canvas>
+        </article>
+      </section>
+
       <section class="module-dash-grid" *ngIf="dashboard as d">
         <article class="module-dash-card module-dash-chart">
           <header class="module-dash-card__header">
@@ -116,6 +138,16 @@ export class EquiposDashboardComponent implements OnInit {
     datasets: [{ data: [], label: 'Equipos', backgroundColor: '#16a34a' }],
   };
 
+  tipoChartData: ChartData<'doughnut', number[], string> = {
+    labels: [],
+    datasets: [{ data: [], backgroundColor: ['#5d87ff', '#13deb9', '#7c8fac'] }],
+  };
+
+  saludRadarData: ChartData<'radar', number[], string> = {
+    labels: [],
+    datasets: [{ data: [], label: 'Equipos', borderColor: '#13deb9', backgroundColor: 'rgba(19,222,185,.18)', pointBackgroundColor: '#13deb9' }],
+  };
+
   chartOptions: ChartConfiguration<'bar'>['options'] = {
     indexAxis: 'y',
     responsive: true,
@@ -124,6 +156,27 @@ export class EquiposDashboardComponent implements OnInit {
     scales: {
       x: { beginAtZero: true, grid: { color: '#e2e8f0' }, ticks: { precision: 0 } },
       y: { grid: { display: false } },
+    },
+  };
+
+  doughnutOptions: ChartConfiguration<'doughnut'>['options'] = {
+    responsive: true,
+    maintainAspectRatio: false,
+    cutout: '62%',
+    plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, boxHeight: 10, usePointStyle: true } } },
+  };
+
+  radarOptions: ChartConfiguration<'radar'>['options'] = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, boxHeight: 10, usePointStyle: true } } },
+    scales: {
+      r: {
+        beginAtZero: true,
+        ticks: { precision: 0, backdropColor: 'transparent' },
+        grid: { color: '#e5eaf2' },
+        angleLines: { color: '#e5eaf2' },
+      },
     },
   };
 
@@ -155,6 +208,32 @@ export class EquiposDashboardComponent implements OnInit {
     this.chartData = {
       labels: rows.map((row) => row.fabricante),
       datasets: [{ data: rows.map((row) => row.total), label: 'Equipos', backgroundColor: '#16a34a' }],
+    };
+
+    this.tipoChartData = {
+      labels: ['Desktop', 'Laptop', 'Otros'],
+      datasets: [{
+        data: dashboard ? [dashboard.desktopCount, dashboard.laptopCount, dashboard.otrosCount] : [],
+        backgroundColor: ['#5d87ff', '#13deb9', '#7c8fac'],
+      }],
+    };
+
+    this.saludRadarData = {
+      labels: ['OK', 'Amarillos', 'Rojos', 'Sin patrimonio', 'Sin usuario', 'Sin sede'],
+      datasets: [{
+        data: dashboard ? [
+          dashboard.salud.ok,
+          dashboard.salud.amarillos,
+          dashboard.salud.rojos,
+          dashboard.salud.sinPatrimonial,
+          dashboard.salud.sinUsuario,
+          dashboard.salud.sinSede,
+        ] : [],
+        label: 'Equipos',
+        borderColor: '#13deb9',
+        backgroundColor: 'rgba(19,222,185,.18)',
+        pointBackgroundColor: '#13deb9',
+      }],
     };
   }
 

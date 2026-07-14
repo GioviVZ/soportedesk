@@ -99,21 +99,76 @@ type EstadoSolicitud = 'PENDIENTE' | 'APROBADO' | 'RECHAZADO' | 'OBSERVADO';
       </div>
     </section>
 
-    <app-generic-table
-      [columns]="columns"
-      [data]="filteredItems"
-      [canAdd]="false"
-      [canEdit]="false"
-      [showSearch]="false"
-      emptyMessage="Sin solicitudes con los filtros aplicados"
-      extraColumnLabel="Vence VPN"
-      (view)="onView($event)"
-    >
-      <ng-template #extraCell let-row>
-        <app-status-badge [label]="row.estadoSolicitud" [tone]="estadoTone(row.estadoSolicitud)" />
-        <app-vencimiento-badge [fecha]="row.vence" />
-      </ng-template>
-    </app-generic-table>
+    <div class="desktop-vpn-table">
+      <app-generic-table
+        [columns]="columns"
+        [data]="filteredItems"
+        [canAdd]="false"
+        [canEdit]="false"
+        [showSearch]="false"
+        emptyMessage="Sin solicitudes con los filtros aplicados"
+        extraColumnLabel="Vence VPN"
+        (view)="onView($event)"
+      >
+        <ng-template #extraCell let-row>
+          <app-status-badge [label]="row.estadoSolicitud" [tone]="estadoTone(row.estadoSolicitud)" />
+          <app-vencimiento-badge [fecha]="row.vence" />
+        </ng-template>
+      </app-generic-table>
+    </div>
+
+    <section class="mobile-vpn-workspace" aria-label="Administración VPN">
+      <div class="mobile-vpn-toolbar">
+        <div>
+          <span>{{ filteredItems.length }} de {{ items.length }}</span>
+          <strong>{{ hasFilters ? 'Solicitudes filtradas' : 'Administración VPN' }}</strong>
+        </div>
+      </div>
+
+      <article class="vpn-mobile-card admin" *ngFor="let item of filteredItems">
+        <header>
+          <div>
+            <span>{{ item.titularOrigenLabel || item.titularTipo }}</span>
+            <strong>{{ item.titularNombreCompleto }}</strong>
+            <small>{{ item.adSamAccountName || item.titularCorreo || item.adMail || 'Sin usuario' }}</small>
+          </div>
+          <app-status-badge [label]="item.estadoSolicitud" [tone]="estadoTone(item.estadoSolicitud)" />
+        </header>
+
+        <dl>
+          <div>
+            <dt>Dependencia</dt>
+            <dd>{{ item.adOrganizationalUnit || 'Sin dependencia' }}</dd>
+          </div>
+          <div>
+            <dt>Oficina</dt>
+            <dd>{{ item.adOffice || 'Sin oficina' }}</dd>
+          </div>
+          <div>
+            <dt>Cargo</dt>
+            <dd>{{ item.titularCargo || 'Sin cargo' }}</dd>
+          </div>
+          <div>
+            <dt>Equipo</dt>
+            <dd>{{ item.glpiNombreEquipo || item.equipo?.host || item.tipoEquipo || 'Sin equipo' }}</dd>
+          </div>
+          <div>
+            <dt>Solicitado</dt>
+            <dd>{{ item.fechaSolicitud | date:'dd/MM/yyyy' }}</dd>
+          </div>
+          <div>
+            <dt>Vence VPN</dt>
+            <dd><app-vencimiento-badge [fecha]="item.vence" /></dd>
+          </div>
+        </dl>
+
+        <footer>
+          <button type="button" class="view" (click)="onView(item)">Revisar detalle</button>
+        </footer>
+      </article>
+
+      <p class="mobile-empty" *ngIf="filteredItems.length === 0">Sin solicitudes con los filtros aplicados.</p>
+    </section>
 
     <app-modal title="Detalle VPN" size="wide" [open]="viewing !== null" (closed)="closeView()">
       <app-vpn-detail

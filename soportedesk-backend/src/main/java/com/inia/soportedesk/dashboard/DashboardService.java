@@ -1,7 +1,7 @@
 package com.inia.soportedesk.dashboard;
 
 import com.inia.soportedesk.activedirectory.AdUsuarioCacheRepository;
-import com.inia.soportedesk.equipos.EquipoRepository;
+import com.inia.soportedesk.glpi.VwInvComputerFullRepository;
 import com.inia.soportedesk.impresoras.ImpresoraRepository;
 import com.inia.soportedesk.licencias.LicenciaRepository;
 import com.inia.soportedesk.gestiontiinia.VwGwDashboardRepository;
@@ -26,7 +26,7 @@ public class DashboardService {
     private final VpnRepository vpnRepository;
     private final WifiRepository wifiRepository;
     private final ImpresoraRepository impresoraRepository;
-    private final EquipoRepository equipoRepository;
+    private final VwInvComputerFullRepository equipoRepository;
 
     public DashboardCounts getCounts() {
         return new DashboardCounts(
@@ -37,7 +37,7 @@ public class DashboardService {
                 vpnRepository.countByEstadoSolicitud("PENDIENTE"),
                 wifiRepository.count(),
                 impresoraRepository.count(),
-                equipoRepository.count(),
+                equipoRepository.countByEliminado(0),
                 adUsuarioCacheRepository.countByEnabledFalse()
         );
     }

@@ -1,7 +1,7 @@
 package com.inia.soportedesk.dashboard;
 
 import com.inia.soportedesk.activedirectory.AdUsuarioCacheRepository;
-import com.inia.soportedesk.equipos.EquipoRepository;
+import com.inia.soportedesk.glpi.VwInvComputerFullRepository;
 import com.inia.soportedesk.gestiontiinia.VwGwDashboardRepository;
 import com.inia.soportedesk.impresoras.ImpresoraRepository;
 import com.inia.soportedesk.licencias.LicenciaRepository;
@@ -42,7 +42,7 @@ class DashboardServiceTest {
     private ImpresoraRepository impresoraRepository;
 
     @Mock
-    private EquipoRepository equipoRepository;
+    private VwInvComputerFullRepository equipoRepository;
 
     @InjectMocks
     private DashboardService service;
@@ -56,7 +56,7 @@ class DashboardServiceTest {
         when(vpnRepository.countByEstadoSolicitud("PENDIENTE")).thenReturn(2L);
         when(wifiRepository.count()).thenReturn(4L);
         when(impresoraRepository.count()).thenReturn(7L);
-        when(equipoRepository.count()).thenReturn(15L);
+        when(equipoRepository.countByEliminado(0)).thenReturn(15L);
         when(adUsuarioCacheRepository.countByEnabledFalse()).thenReturn(1L);
 
         DashboardCounts counts = service.getCounts();
