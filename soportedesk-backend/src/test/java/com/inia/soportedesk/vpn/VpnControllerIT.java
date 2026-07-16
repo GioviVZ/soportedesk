@@ -195,7 +195,7 @@ class VpnControllerIT {
 
         VpnAprobarRequest request = new VpnAprobarRequest();
         request.setUsuarioVpn("vpnuser1");
-        request.setCredencialVpn("Sup3rSecreta!");
+        request.setCredencialVpn("Sup3rSecretaVPN123");
         request.setEstado("Activo");
 
         mockMvc.perform(patch("/api/vpn/1/aprobar")
@@ -210,7 +210,7 @@ class VpnControllerIT {
     void aprobar_withoutAprobarAuthority_returnsForbidden() throws Exception {
         VpnAprobarRequest request = new VpnAprobarRequest();
         request.setUsuarioVpn("vpnuser1");
-        request.setCredencialVpn("Sup3rSecreta!");
+        request.setCredencialVpn("Sup3rSecretaVPN123");
         request.setEstado("Activo");
 
         mockMvc.perform(patch("/api/vpn/1/aprobar")
