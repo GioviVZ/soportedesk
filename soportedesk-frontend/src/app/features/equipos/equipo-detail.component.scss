@@ -142,3 +142,22 @@ tbody tr:hover { background: color-mix(in srgb, var(--color-accent) 3%, var(--co
   margin: 0 auto;
   border-radius: 9px;
 }
+
+.software-toggle {
+  margin-top: 10px;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--color-accent);
+  font-size: .8rem;
+  font-weight: 650;
+  cursor: pointer;
+
+  &:hover { text-decoration: underline; }
+}
+
+.detail-footer {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 20px;
+}

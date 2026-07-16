@@ -5,6 +5,20 @@
   </article>
 </section>
 
+<app-modal
+  [title]="'Detalle de equipo · ' + viewingName()"
+  size="wide"
+  [open]="viewingId() !== null"
+  (closed)="closeDetail()"
+>
+  <app-equipo-detail
+    *ngIf="viewingId() as id"
+    [id]="id"
+    [embedded]="true"
+    (closeRequested)="closeDetail()"
+  />
+</app-modal>
+
 <section class="equipment-filter-panel">
   <div class="filter-header">
     <div>
@@ -25,7 +39,7 @@
       type="search"
       [ngModel]="searchTerm()"
       (ngModelChange)="onSearch($event)"
-      placeholder="Equipo, usuario, serie, código, IP, CPU..."
+      placeholder="Equipo, usuario, serie, código, IP, modelo..."
       autocomplete="off"
     />
   </label>
@@ -116,46 +130,10 @@
     </div>
 
     <dl>
-      <div>
-        <dt>Sede</dt>
-        <dd>{{ item.sedeNombre || '-' }}</dd>
-      </div>
-      <div>
-        <dt>Dependencia</dt>
-        <dd>{{ item.oficinaId || '-' }}</dd>
-      </div>
-      <div>
-        <dt>Subdependencia</dt>
-        <dd>{{ item.unidadId || '-' }}</dd>
-      </div>
-      <div>
-        <dt>Marca / Modelo</dt>
-        <dd>{{ item.fabricanteModelo || '-' }}</dd>
-      </div>
-      <div>
-        <dt>Serie</dt>
-        <dd>{{ item.numeroserie || '-' }}</dd>
-      </div>
-      <div>
-        <dt>Código</dt>
-        <dd>{{ item.codigoInterno || '-' }}</dd>
-      </div>
-      <div>
-        <dt>CPU</dt>
-        <dd>{{ item.cpuCorto || '-' }}</dd>
-      </div>
-      <div>
-        <dt>RAM</dt>
-        <dd>{{ item.ramLabel || '-' }}</dd>
-      </div>
-      <div>
-        <dt>Disco</dt>
-        <dd>{{ item.diskLabel || '-' }}</dd>
-      </div>
-      <div>
-        <dt>IP</dt>
-        <dd>{{ item.ipEquipo || '-' }}</dd>
-      </div>
+      <div><dt>Ubicación</dt><dd>{{ item.sedeNombre || item.oficinaId || '-' }}</dd></div>
+      <div><dt>Marca / Modelo</dt><dd>{{ item.fabricanteModelo || '-' }}</dd></div>
+      <div><dt>Serie</dt><dd>{{ item.numeroserie || '-' }}</dd></div>
+      <div><dt>IP</dt><dd>{{ item.ipEquipo || '-' }}</dd></div>
     </dl>
 
     <footer>

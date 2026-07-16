@@ -1,4 +1,4 @@
-import { Component, Input, OnInit, OnDestroy, computed, inject, signal } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnInit, OnDestroy, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -33,6 +33,7 @@ export class EquipoDetailComponent implements OnInit, OnDestroy {
 
   @Input() id: number | null = null;
   @Input() embedded = false;
+  @Output() closeRequested = new EventEmitter<void>();
 
   equipo = signal<EquipoDetalle | null>(null);
   software = signal<EquipoSoftware[]>([]);
@@ -40,6 +41,8 @@ export class EquipoDetailComponent implements OnInit, OnDestroy {
   oficina = signal<EquipoOficina | null>(null);
   tipoEfectivo = signal<string | null>(null);
   softwareFilter = signal('');
+  softwareExpanded = signal(false);
+  readonly softwarePreviewCount = 6;
 
   evidencias = signal<EvidenciaView[]>([]);
   subiendoEvidencia = signal(false);
@@ -54,6 +57,12 @@ export class EquipoDetailComponent implements OnInit, OnDestroy {
     const term = this.softwareFilter().trim().toLowerCase();
     if (!term) return this.software();
     return this.software().filter((row) => row.software?.toLowerCase().includes(term));
+  });
+  visibleSoftware = computed(() => {
+    const all = this.filteredSoftware();
+    return this.softwareExpanded() || all.length <= this.softwarePreviewCount
+      ? all
+      : all.slice(0, this.softwarePreviewCount);
   });
 
   get canWrite(): boolean {
@@ -135,8 +144,15 @@ export class EquipoDetailComponent implements OnInit, OnDestroy {
   }
 
   back(): void {
-    if (this.embedded) return;
+    if (this.embedded) {
+      this.closeRequested.emit();
+      return;
+    }
     this.router.navigate(['/equipos']);
+  }
+
+  toggleSoftwareExpanded(): void {
+    this.softwareExpanded.set(!this.softwareExpanded());
   }
 
   stripDomain(value: string | null | undefined): string {

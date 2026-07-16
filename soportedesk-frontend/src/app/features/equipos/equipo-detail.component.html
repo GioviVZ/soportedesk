@@ -115,9 +115,12 @@
       <input type="search" placeholder="Buscar software" [ngModel]="softwareFilter()" (ngModelChange)="softwareFilter.set($event)" />
     </div>
     <div class="simple-table software-table"><table><thead><tr><th>Software</th><th>Versión</th><th>Fecha de instalación</th></tr></thead>
-      <tbody><tr *ngFor="let row of filteredSoftware()"><td><strong>{{ empty(row.software) }}</strong></td><td>{{ empty(row.version) }}</td><td>{{ dateOnly(row.fechaInstalacion) }}</td></tr>
+      <tbody><tr *ngFor="let row of visibleSoftware()"><td><strong>{{ empty(row.software) }}</strong></td><td>{{ empty(row.version) }}</td><td>{{ dateOnly(row.fechaInstalacion) }}</td></tr>
         <tr *ngIf="filteredSoftware().length === 0"><td colspan="3" class="empty-cell">Sin software para el filtro actual.</td></tr></tbody>
     </table></div>
+    <button type="button" class="link-button software-toggle" *ngIf="filteredSoftware().length > softwarePreviewCount" (click)="toggleSoftwareExpanded()">
+      {{ softwareExpanded() ? 'Mostrar menos' : 'Mostrar todo (' + filteredSoftware().length + ')' }}
+    </button>
   </section>
 
   <section class="section-band">
@@ -147,6 +150,10 @@
     </div>
     <ng-template #sinEvidencias><p class="empty-state">Sin evidencias registradas para este equipo.</p></ng-template>
   </section>
+
+  <footer class="detail-footer">
+    <button type="button" class="btn btn-ghost" (click)="back()">{{ embedded ? 'Cerrar' : '← Volver al inventario' }}</button>
+  </footer>
 </div>
 
 <app-modal title="Evidencia" [open]="visorUrl() !== null" (closed)="cerrarVisor()">
