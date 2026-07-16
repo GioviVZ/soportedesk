@@ -2,7 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { Equipo, EquipoDashboardCompleto, EquipoDetalleResponse, EquipoEnrichmentDto, EquipoKpis, EquipoResumen, EquipoSaludItem, HistorialItem } from './equipo.model';
+import { Equipo, EquipoDashboardCompleto, EquipoDetalleResponse, EquipoEnrichmentDto, EquipoEvidencia, EquipoKpis, EquipoResumen, EquipoSaludItem, HistorialItem } from './equipo.model';
 
 @Injectable({ providedIn: 'root' })
 export class EquipoService {
@@ -82,5 +82,24 @@ export class EquipoService {
 
   getDashboardCompleto(): Observable<EquipoDashboardCompleto> {
     return this.http.get<EquipoDashboardCompleto>(`${this.apiUrl}/dashboard/completo`);
+  }
+
+  getEvidencias(computerId: number): Observable<EquipoEvidencia[]> {
+    return this.http.get<EquipoEvidencia[]>(`${this.apiUrl}/${computerId}/evidencias`);
+  }
+
+  subirEvidencia(computerId: number, file: File, descripcion: string): Observable<EquipoEvidencia> {
+    const formData = new FormData();
+    formData.append('file', file);
+    if (descripcion) formData.append('descripcion', descripcion);
+    return this.http.post<EquipoEvidencia>(`${this.apiUrl}/${computerId}/evidencias`, formData);
+  }
+
+  descargarEvidencia(computerId: number, evidenciaId: number): Observable<Blob> {
+    return this.http.get(`${this.apiUrl}/${computerId}/evidencias/${evidenciaId}/archivo`, { responseType: 'blob' });
+  }
+
+  eliminarEvidencia(computerId: number, evidenciaId: number): Observable<void> {
+    return this.http.delete<void>(`${this.apiUrl}/${computerId}/evidencias/${evidenciaId}`);
   }
 }

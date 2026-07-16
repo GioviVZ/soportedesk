@@ -38,7 +38,10 @@ export interface EquipoDetalle extends EquipoResumen {
   monModelos: string | null;
   monFabricantes: string | null;
   monSeriales: string | null;
+  fechaCreacion: string | null;
+  ultimaActualizacion: string | null;
   ultimoEncendido: string | null;
+  eliminado: number;
   uuidEquipo: string | null;
 }
 
@@ -66,6 +69,9 @@ export interface EquipoEnrichmentDto {
   fabricanteOverride: string | null;
   modeloOverride: string | null;
   codigoPatrimonial: string | null;
+  codigoInternoOverride: string | null;
+  nombreAsignadoOverride: string | null;
+  usuarioAsignadoOverride: string | null;
   sedeId: number | null;
   sedeNombre: string | null;
   dependenciaId: number | null;
@@ -93,6 +99,7 @@ export interface EquipoSaludItem {
   sedeNombre: string | null;
   tipoEquipo: string | null;
   usuarioContacto: string | null;
+  fechaCreacion: string | null;
   sinEncendidoMeses: number;
   sinActualizacionMeses: number;
   nivelAlerta: 'ROJO' | 'AMARILLO' | 'OK';
@@ -148,9 +155,18 @@ export interface EquipoDashboardCompleto {
   otrosCount: number;
   sedeCentralCount: number;
   eeasCount: number;
+  recientes30Dias: number;
   distribucionPorFabricante: EquipoFabricanteCount[];
   topDependencias: EquipoDependenciaCount[];
   salud: EquipoSaludResumen;
+}
+
+export interface EquipoEvidencia {
+  id: number;
+  nombreOriginal: string;
+  descripcion: string | null;
+  subidoPor: string;
+  fechaSubida: string;
 }
 
 export interface Equipo {
