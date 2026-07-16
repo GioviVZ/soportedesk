@@ -24,6 +24,7 @@ agente:
 
 uploads:
   drivers-dir: build/test-uploads/drivers
+  evidencias-dir: build/test-uploads/evidencias
 
 glpi:
   datasource:
