@@ -221,6 +221,27 @@ no aplica aquí.
 - Historial de cambios (a diferencia de `EquipoEnrichment`, no hay "edición" de una evidencia, solo
   alta/baja — no aplica un historial de campo-por-campo).
 
+## 9.1 Riesgo conocido: duplicados de GLPI por renombre de hostname
+
+Evidencias se vincula por `computerId` (GLPI ComputerID), no por número de serie. Si un equipo se
+renombra y dispara el bug de enlace de GLPI ya diagnosticado (el agente regenera su identidad, la
+regla de enlace por serie+UUID falla cuando `uuid` está `NULL` en el registro existente, y GLPI cae
+a "importar por nombre" creando un `ComputerID` **nuevo** en vez de actualizar el viejo — ver
+limpieza de duplicados de equipos 51/52/54/410 hecha antes de este spec), las evidencias ya subidas
+quedan enlazadas al `ComputerID` **viejo**. La ficha del equipo (que ahora vive en el `ComputerID`
+nuevo) las mostrará como "Sin evidencias registradas" aunque los archivos y las filas en
+`equipos_evidencias` siguen existiendo intactos — no se pierden, quedan huérfanos.
+
+Mismo punto ciego que ya tiene `EquipoEnrichment` (código patrimonial, overrides) — mismo criterio
+de vínculo por `computerId`.
+
+**Decisión (2026-07-16):** no mitigar en código por ahora — el caso es poco frecuente mientras no se
+corrija la regla de enlace de GLPI (serie/UUID sobre nombre, ver hallazgo de esa investigación).
+**Mitigación manual:** al limpiar un duplicado de GLPI a mano (marcar el `ComputerID` viejo como
+eliminado), revisar primero si tiene evidencias u overrides de enrichment cargados y migrarlos al
+`ComputerID` nuevo antes de ocultar el viejo — mismo paso que ya se hizo (verificado vacío) al
+limpiar los 4 duplicados anteriores a este spec.
+
 ## 10. Decisiones registradas
 
 | Tema | Decisión |
