@@ -49,7 +49,7 @@ class EquipoServiceTest {
 
     @Test
     void getKpis_calculatesCountsByTypeAndSede() {
-        VwInvComputerFull desktopCentral = equipo("Desktop", "SEDE CENTRAL");
+        VwInvComputerFull desktopCentral = equipo("Computadora de Escritorio", "SEDE CENTRAL");
         VwInvComputerFull laptopEea = equipo("Laptop", "EEA ANDENES");
         VwInvComputerFull otroEea = equipo("Servidor", "EEA DONOSO");
         when(repository.findFiltered(null, null, null, null, null, null)).thenReturn(List.of(desktopCentral, laptopEea, otroEea));
@@ -124,7 +124,7 @@ class EquipoServiceTest {
 
     @Test
     void getSalud_rojoWhenSinEncendidoMasDe12Meses() {
-        VwInvComputerFull viejo = equipo("Desktop", "SEDE CENTRAL");
+        VwInvComputerFull viejo = equipo("Computadora de Escritorio", "SEDE CENTRAL");
         viejo.setComputerID(5L);
         viejo.setNombreEquipo("PC-VIEJA");
         viejo.setUsuarioContacto("juanito");
@@ -142,7 +142,7 @@ class EquipoServiceTest {
 
     @Test
     void getSalud_okEquiposExcluded_unlessDataMissing() {
-        VwInvComputerFull bueno = equipo("Desktop", "SEDE CENTRAL");
+        VwInvComputerFull bueno = equipo("Computadora de Escritorio", "SEDE CENTRAL");
         bueno.setComputerID(6L);
         bueno.setNombreEquipo("PC-BUENA");
         bueno.setUsuarioContacto("maria");
@@ -166,7 +166,7 @@ class EquipoServiceTest {
 
     @Test
     void getSalud_sinDependencia_trueWhenGlpiEmptyAndNoOverride() {
-        VwInvComputerFull equipo = equipo("Desktop", "SEDE CENTRAL");
+        VwInvComputerFull equipo = equipo("Computadora de Escritorio", "SEDE CENTRAL");
         equipo.setComputerID(40L);
         equipo.setUsuarioContacto("ana");
         equipo.setUnidadId("Soporte");
@@ -190,7 +190,7 @@ class EquipoServiceTest {
 
     @Test
     void getSalud_sinDependencia_falseWhenOverridePresent() {
-        VwInvComputerFull equipo = equipo("Desktop", "SEDE CENTRAL");
+        VwInvComputerFull equipo = equipo("Computadora de Escritorio", "SEDE CENTRAL");
         equipo.setComputerID(41L);
         equipo.setUsuarioContacto("ana");
         equipo.setUnidadId("Soporte");
@@ -217,7 +217,7 @@ class EquipoServiceTest {
 
     @Test
     void getSalud_sinDependencia_falseWhenGlpiHasData() {
-        VwInvComputerFull equipo = equipo("Desktop", "SEDE CENTRAL");
+        VwInvComputerFull equipo = equipo("Computadora de Escritorio", "SEDE CENTRAL");
         equipo.setComputerID(42L);
         equipo.setUsuarioContacto("ana");
         equipo.setOficinaId("UTI");
@@ -240,7 +240,7 @@ class EquipoServiceTest {
 
     @Test
     void getSalud_sinSubdependencia_trueWhenGlpiEmptyAndNoOverride() {
-        VwInvComputerFull equipo = equipo("Desktop", "SEDE CENTRAL");
+        VwInvComputerFull equipo = equipo("Computadora de Escritorio", "SEDE CENTRAL");
         equipo.setComputerID(43L);
         equipo.setUsuarioContacto("ana");
         equipo.setOficinaId("UTI");
@@ -264,7 +264,7 @@ class EquipoServiceTest {
 
     @Test
     void getSalud_sinNumeroSerie_trueWhenGlpiEmptyAndNoOverride() {
-        VwInvComputerFull equipo = equipo("Desktop", "SEDE CENTRAL");
+        VwInvComputerFull equipo = equipo("Computadora de Escritorio", "SEDE CENTRAL");
         equipo.setComputerID(44L);
         equipo.setUsuarioContacto("ana");
         equipo.setOficinaId("UTI");
@@ -288,7 +288,7 @@ class EquipoServiceTest {
 
     @Test
     void getSalud_sinNumeroSerie_falseWhenOverridePresent() {
-        VwInvComputerFull equipo = equipo("Desktop", "SEDE CENTRAL");
+        VwInvComputerFull equipo = equipo("Computadora de Escritorio", "SEDE CENTRAL");
         equipo.setComputerID(45L);
         equipo.setUsuarioContacto("ana");
         equipo.setOficinaId("UTI");
@@ -312,7 +312,7 @@ class EquipoServiceTest {
 
     @Test
     void getDashboardCompleto_aggregatesFabricanteDependenciaAndSaludCounts() {
-        VwInvComputerFull e1 = equipo("Desktop", "SEDE CENTRAL");
+        VwInvComputerFull e1 = equipo("Computadora de Escritorio", "SEDE CENTRAL");
         e1.setComputerID(1L);
         e1.setFabricanteEquipo("Dell");
         e1.setOficinaId("UTI");
