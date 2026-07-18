@@ -18,6 +18,7 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -110,6 +111,28 @@ class ImpresoraIntervencionServiceTest {
                 .isInstanceOf(ResourceNotFoundException.class);
 
         verifyNoInteractions(storageService);
+    }
+
+    @Test
+    void eliminarTodasDeImpresora_deletesAllAttachmentFilesAcrossAllIntervencionesWithoutTouchingRows() {
+        ImpresoraIntervencion int1 = new ImpresoraIntervencion();
+        int1.setId(1L);
+        ImpresoraIntervencion int2 = new ImpresoraIntervencion();
+        int2.setId(2L);
+        when(repository.findByImpresoraIdOrderByFechaDesc(7L)).thenReturn(List.of(int1, int2));
+        ImpresoraIntervencionAdjunto adj1 = new ImpresoraIntervencionAdjunto();
+        adj1.setArchivoPath("1/a.jpg");
+        ImpresoraIntervencionAdjunto adj2 = new ImpresoraIntervencionAdjunto();
+        adj2.setArchivoPath("2/b.pdf");
+        when(adjuntoRepository.findByIntervencionIdOrderByFechaSubidaAsc(1L)).thenReturn(List.of(adj1));
+        when(adjuntoRepository.findByIntervencionIdOrderByFechaSubidaAsc(2L)).thenReturn(List.of(adj2));
+
+        service.eliminarTodasDeImpresora(7L);
+
+        verify(storageService).delete("1/a.jpg");
+        verify(storageService).delete("2/b.pdf");
+        verify(repository, never()).delete(any());
+        verify(adjuntoRepository, never()).delete(any());
     }
 
     @Test

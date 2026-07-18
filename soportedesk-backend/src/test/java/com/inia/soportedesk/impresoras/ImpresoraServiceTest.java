@@ -9,6 +9,7 @@ import com.inia.soportedesk.catalogo.SubdependenciaRepository;
 import com.inia.soportedesk.catalogo.TipoImpresora;
 import com.inia.soportedesk.catalogo.TipoImpresoraRepository;
 import com.inia.soportedesk.exception.ResourceNotFoundException;
+import com.inia.soportedesk.impresoras.intervencion.ImpresoraIntervencionService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -44,6 +45,9 @@ class ImpresoraServiceTest {
 
     @Mock
     private ModeloImpresoraRepository modeloImpresoraRepository;
+
+    @Mock
+    private ImpresoraIntervencionService intervencionService;
 
     @InjectMocks
     private ImpresoraService service;
@@ -136,6 +140,7 @@ class ImpresoraServiceTest {
 
         service.delete(1L);
 
+        verify(intervencionService).eliminarTodasDeImpresora(1L);
         verify(repository).delete(impresora);
     }
 

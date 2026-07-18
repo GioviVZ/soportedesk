@@ -53,6 +53,10 @@ export class ImpresoraFichaComponent implements OnInit, OnDestroy {
     return this.authService.canWrite('impresoras');
   }
 
+  get canWriteIntervenciones(): boolean {
+    return this.isAdmin && this.allowActions;
+  }
+
   get tonersPorColor(): { color: string; variantes: ModeloImpresoraToner[] }[] {
     const grupos = new Map<string, ModeloImpresoraToner[]>();
     for (const toner of this.impresora.modeloImpresora?.toners ?? []) {

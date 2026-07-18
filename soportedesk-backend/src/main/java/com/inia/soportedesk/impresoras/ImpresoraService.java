@@ -6,6 +6,7 @@ import com.inia.soportedesk.catalogo.SedeRepository;
 import com.inia.soportedesk.catalogo.SubdependenciaRepository;
 import com.inia.soportedesk.catalogo.TipoImpresoraRepository;
 import com.inia.soportedesk.exception.ResourceNotFoundException;
+import com.inia.soportedesk.impresoras.intervencion.ImpresoraIntervencionService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,6 +23,7 @@ public class ImpresoraService {
     private final SubdependenciaRepository subdependenciaRepository;
     private final TipoImpresoraRepository tipoImpresoraRepository;
     private final ModeloImpresoraRepository modeloImpresoraRepository;
+    private final ImpresoraIntervencionService intervencionService;
 
     public List<Impresora> findAll(String search) {
         if (search == null || search.isBlank()) {
@@ -107,7 +109,9 @@ public class ImpresoraService {
     }
 
     public void delete(Long id) {
-        repository.delete(findById(id));
+        Impresora impresora = findById(id);
+        intervencionService.eliminarTodasDeImpresora(id);
+        repository.delete(impresora);
     }
 
     private void copyFields(Impresora impresora, ImpresoraRequest request) {

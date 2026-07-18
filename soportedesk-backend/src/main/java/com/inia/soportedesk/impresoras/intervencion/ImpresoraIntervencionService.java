@@ -38,6 +38,13 @@ public class ImpresoraIntervencionService {
     }
 
     @Transactional
+    public void eliminarTodasDeImpresora(Long impresoraId) {
+        repository.findByImpresoraIdOrderByFechaDesc(impresoraId)
+                .forEach(entity -> adjuntoRepository.findByIntervencionIdOrderByFechaSubidaAsc(entity.getId())
+                        .forEach(adjunto -> storageService.delete(adjunto.getArchivoPath())));
+    }
+
+    @Transactional
     public ImpresoraIntervencionDto crear(Long impresoraId, ImpresoraIntervencionRequest request, String username) {
         if (!impresoraRepository.existsById(impresoraId)) {
             throw new ResourceNotFoundException("Impresora no encontrada: " + impresoraId);

@@ -203,4 +203,15 @@ describe('ImpresoraFichaComponent — Intervenciones', () => {
 
     expect(component.intervenciones().length).toBe(0);
   });
+
+  it('hides intervencion write controls when allowActions is false, even if the user can write', () => {
+    httpMock.expectOne((r) => r.url.endsWith('/impresoras/1/intervenciones') && r.method === 'GET').flush([mockIntervencion]);
+
+    component.allowActions = false;
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('.intervencion-nueva')).toBeFalsy();
+    expect(fixture.nativeElement.querySelector('.intervencion-actions')).toBeFalsy();
+    expect(fixture.nativeElement.querySelector('.adjunto-upload-btn')).toBeFalsy();
+  });
 });

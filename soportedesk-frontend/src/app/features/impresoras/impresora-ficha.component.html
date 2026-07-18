@@ -147,7 +147,7 @@
         <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" />
       </svg>
 
-      <div class="intervencion-nueva" *ngIf="isAdmin">
+      <div class="intervencion-nueva" *ngIf="canWriteIntervenciones">
         <input type="date" [(ngModel)]="nuevaFecha" [ngModelOptions]="{standalone: true}" />
         <input type="text" placeholder="Observación" [(ngModel)]="nuevaObservacion" [ngModelOptions]="{standalone: true}" />
         <button type="button" class="btn btn-primary" [disabled]="guardandoIntervencion()" (click)="crearIntervencion()">
@@ -172,7 +172,7 @@
                 <strong>{{ it.observacion }}</strong>
                 <span>{{ it.fecha }} · {{ it.registradoPor }}</span>
               </div>
-              <div class="intervencion-actions" *ngIf="isAdmin">
+              <div class="intervencion-actions" *ngIf="canWriteIntervenciones">
                 <button type="button" class="btn btn-icon" (click)="iniciarEdicion(it)" aria-label="Editar intervención">✎</button>
                 <button type="button" class="btn btn-icon" (click)="eliminarIntervencion(it)" aria-label="Eliminar intervención">✕</button>
               </div>
@@ -190,11 +190,11 @@
                 <strong>{{ adj.nombreOriginal }}</strong>
                 <span>{{ adj.subidoPor }}</span>
               </div>
-              <button type="button" class="btn btn-icon adjunto-delete" *ngIf="isAdmin" (click)="eliminarAdjunto(it.id, adj)" aria-label="Eliminar adjunto">✕</button>
+              <button type="button" class="btn btn-icon adjunto-delete" *ngIf="canWriteIntervenciones" (click)="eliminarAdjunto(it.id, adj)" aria-label="Eliminar adjunto">✕</button>
             </div>
           </div>
 
-          <label class="btn btn-secondary adjunto-upload-btn" *ngIf="isAdmin">
+          <label class="btn btn-secondary adjunto-upload-btn" *ngIf="canWriteIntervenciones">
             Agregar adjuntos
             <input type="file" multiple accept="image/jpeg,image/png,image/webp,application/pdf,.docx,.xlsx" (change)="onAdjuntosSelected($event, it.id)" hidden />
           </label>
