@@ -1124,10 +1124,12 @@ public class ImpresoraIntervencionController {
 Run: `cd soportedesk-backend && mvn -q test -Dtest=ImpresoraIntervencionControllerIT`
 Expected: PASS, 8 tests green.
 
-- [ ] **Step 5: Run the full backend test suite**
+- [ ] **Step 5: Run the full Intervenciones test set together**
 
-Run: `cd soportedesk-backend && mvn -q verify`
-Expected: `BUILD SUCCESS`, no regressions in other modules.
+Run: `cd soportedesk-backend && mvn -q test -Dtest=IntervencionStorageServiceTest,ImpresoraIntervencionServiceTest,ImpresoraIntervencionControllerIT`
+Expected: `BUILD SUCCESS`, all tests from Tasks 2-4 green together.
+
+Do NOT run the unscoped `mvn -q verify`/`mvn -q test` (whole suite) as a completion check for this task. The branch baseline already has 2 pre-existing failing tests unrelated to this feature (`EquipoServiceTest.getDashboardCompleto_aggregatesFabricanteDependenciaAndSaludCounts` and `EquipoServiceTest.getKpis_calculatesCountsByTypeAndSede`, tied to an unrelated in-progress equipos-dashboard change) — running the whole suite will report failures that are not caused by and not fixable within this task. If a whole-suite run is needed later, treat only new failures outside that known pair as regressions.
 
 - [ ] **Step 6: Commit**
 
