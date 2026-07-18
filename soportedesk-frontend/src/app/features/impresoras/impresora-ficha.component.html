@@ -4,6 +4,7 @@
     <button type="button" [class.active]="activeTab === 'instalacion'" (click)="setTab('instalacion')">Instalación</button>
     <button type="button" [class.active]="activeTab === 'consumibles'" (click)="setTab('consumibles')">Consumibles</button>
     <button type="button" [class.active]="activeTab === 'driver'" (click)="setTab('driver')">Driver</button>
+    <button type="button" [class.active]="activeTab === 'intervenciones'" (click)="setTab('intervenciones')">Intervenciones</button>
   </div>
   <button *ngIf="isAdmin && allowActions" type="button" class="edit-btn" (click)="editRequested.emit(impresora)">Editar</button>
   </div>
@@ -139,4 +140,71 @@
       </ng-template>
     </app-section-card>
   </div>
+
+  <div class="content" *ngIf="activeTab === 'intervenciones'">
+    <app-section-card title="Intervenciones">
+      <svg icon xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" />
+      </svg>
+
+      <div class="intervencion-nueva" *ngIf="isAdmin">
+        <input type="date" [(ngModel)]="nuevaFecha" [ngModelOptions]="{standalone: true}" />
+        <input type="text" placeholder="Observación" [(ngModel)]="nuevaObservacion" [ngModelOptions]="{standalone: true}" />
+        <button type="button" class="btn btn-primary" [disabled]="guardandoIntervencion()" (click)="crearIntervencion()">
+          {{ guardandoIntervencion() ? 'Guardando...' : 'Nueva intervención' }}
+        </button>
+      </div>
+      <p class="intervencion-error" *ngIf="errorIntervencion()">{{ errorIntervencion() }}</p>
+
+      <div class="intervencion-list" *ngIf="intervenciones().length; else sinIntervenciones">
+        <div class="intervencion-card" *ngFor="let it of intervenciones()">
+          <ng-container *ngIf="editando?.id === it.id; else vistaIntervencion">
+            <div class="intervencion-edit">
+              <input type="date" [(ngModel)]="editFecha" [ngModelOptions]="{standalone: true}" />
+              <input type="text" [(ngModel)]="editObservacion" [ngModelOptions]="{standalone: true}" />
+              <button type="button" class="btn btn-primary" (click)="guardarEdicion()">Guardar</button>
+              <button type="button" class="btn btn-ghost" (click)="cancelarEdicion()">Cancelar</button>
+            </div>
+          </ng-container>
+          <ng-template #vistaIntervencion>
+            <div class="intervencion-header">
+              <div>
+                <strong>{{ it.observacion }}</strong>
+                <span>{{ it.fecha }} · {{ it.registradoPor }}</span>
+              </div>
+              <div class="intervencion-actions" *ngIf="isAdmin">
+                <button type="button" class="btn btn-icon" (click)="iniciarEdicion(it)" aria-label="Editar intervención">✎</button>
+                <button type="button" class="btn btn-icon" (click)="eliminarIntervencion(it)" aria-label="Eliminar intervención">✕</button>
+              </div>
+            </div>
+          </ng-template>
+
+          <div class="intervencion-adjuntos" *ngIf="it.adjuntos.length">
+            <div class="adjunto-card" *ngFor="let adj of it.adjuntos">
+              <button type="button" class="adjunto-thumb" (click)="abrirAdjunto(it.id, adj)">
+                <img *ngIf="adj.mimeType.startsWith('image/') && adj.previewUrl" [src]="adj.previewUrl" [alt]="adj.nombreOriginal" />
+                <span *ngIf="adj.mimeType.startsWith('image/') && !adj.previewUrl" class="adjunto-thumb-loading">Cargando…</span>
+                <span *ngIf="!adj.mimeType.startsWith('image/')" class="adjunto-file-icon">{{ adj.mimeType === 'application/pdf' ? 'PDF' : 'DOC' }}</span>
+              </button>
+              <div class="adjunto-meta">
+                <strong>{{ adj.nombreOriginal }}</strong>
+                <span>{{ adj.subidoPor }}</span>
+              </div>
+              <button type="button" class="btn btn-icon adjunto-delete" *ngIf="isAdmin" (click)="eliminarAdjunto(it.id, adj)" aria-label="Eliminar adjunto">✕</button>
+            </div>
+          </div>
+
+          <label class="btn btn-secondary adjunto-upload-btn" *ngIf="isAdmin">
+            Agregar adjuntos
+            <input type="file" multiple accept="image/jpeg,image/png,image/webp,application/pdf,.docx,.xlsx" (change)="onAdjuntosSelected($event, it.id)" hidden />
+          </label>
+        </div>
+      </div>
+      <ng-template #sinIntervenciones><p class="empty-message">Sin intervenciones registradas para esta impresora.</p></ng-template>
+    </app-section-card>
+  </div>
 </div>
+
+<app-modal title="Adjunto" [open]="visorUrl() !== null" (closed)="cerrarVisor()">
+  <img *ngIf="visorUrl()" [src]="visorUrl()" class="intervencion-visor-img" alt="Adjunto ampliado" />
+</app-modal>

@@ -1,8 +1,8 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
 import { ImpresoraFichaComponent } from './impresora-ficha.component';
 import { AuthService } from '../../core/auth/auth.service';
-import { Impresora } from './impresora.model';
+import { Impresora, ImpresoraIntervencion } from './impresora.model';
 
 const mockImpresora: Impresora = {
   id: 1,
@@ -135,5 +135,72 @@ describe('ImpresoraFichaComponent', () => {
     readOnlyFixture.detectChanges();
 
     expect(readOnlyFixture.nativeElement.querySelector('.edit-btn')).toBeFalsy();
+  });
+});
+
+describe('ImpresoraFichaComponent — Intervenciones', () => {
+  let component: ImpresoraFichaComponent;
+  let fixture: ComponentFixture<ImpresoraFichaComponent>;
+  let httpMock: HttpTestingController;
+
+  const mockIntervencion: ImpresoraIntervencion = {
+    id: 1,
+    fecha: '2026-07-17',
+    observacion: 'Cambio de fusor',
+    registradoPor: 'tecnico1',
+    fechaRegistro: '2026-07-17T10:00:00',
+    adjuntos: [],
+  };
+
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({
+      imports: [ImpresoraFichaComponent, HttpClientTestingModule],
+      providers: [{ provide: AuthService, useValue: { isAdmin: () => false, canWrite: () => true } }],
+    }).compileComponents();
+
+    fixture = TestBed.createComponent(ImpresoraFichaComponent);
+    component = fixture.componentInstance;
+    component.impresora = mockImpresora;
+    httpMock = TestBed.inject(HttpTestingController);
+    fixture.detectChanges();
+  });
+
+  afterEach(() => {
+    httpMock.verify();
+  });
+
+  it('loads intervenciones on init', () => {
+    const req = httpMock.expectOne((r) => r.url.endsWith('/impresoras/1/intervenciones') && r.method === 'GET');
+    req.flush([mockIntervencion]);
+
+    expect(component.intervenciones().length).toBe(1);
+    expect(component.intervenciones()[0].observacion).toBe('Cambio de fusor');
+  });
+
+  it('creates a new intervencion and prepends it to the list', () => {
+    httpMock.expectOne((r) => r.url.endsWith('/impresoras/1/intervenciones') && r.method === 'GET').flush([]);
+
+    component.nuevaFecha = '2026-07-17';
+    component.nuevaObservacion = 'Limpieza general';
+    component.crearIntervencion();
+
+    const req = httpMock.expectOne((r) => r.url.endsWith('/impresoras/1/intervenciones') && r.method === 'POST');
+    expect(req.request.body).toEqual({ fecha: '2026-07-17', observacion: 'Limpieza general' });
+    req.flush({ ...mockIntervencion, id: 2, observacion: 'Limpieza general' });
+
+    expect(component.intervenciones()[0].observacion).toBe('Limpieza general');
+    expect(component.nuevaObservacion).toBe('');
+  });
+
+  it('removes an intervencion from the list after deletion', () => {
+    httpMock.expectOne((r) => r.url.endsWith('/impresoras/1/intervenciones') && r.method === 'GET').flush([mockIntervencion]);
+    spyOn(window, 'confirm').and.returnValue(true);
+
+    component.eliminarIntervencion(component.intervenciones()[0]);
+
+    const req = httpMock.expectOne((r) => r.url.endsWith('/impresoras/1/intervenciones/1') && r.method === 'DELETE');
+    req.flush(null);
+
+    expect(component.intervenciones().length).toBe(0);
   });
 });
