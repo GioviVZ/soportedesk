@@ -20,3 +20,6 @@ soportedesk-backend/target/
 
 # Runtime uploads
 soportedesk-backend/uploads/
+
+# Git worktrees for isolated feature work
+.worktrees/
