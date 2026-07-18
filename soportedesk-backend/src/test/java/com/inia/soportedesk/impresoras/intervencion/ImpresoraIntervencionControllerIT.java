@@ -1,6 +1,7 @@
 package com.inia.soportedesk.impresoras.intervencion;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -10,11 +11,14 @@ import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.startsWith;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
@@ -24,12 +28,16 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringBootTest
 @AutoConfigureMockMvc
 class ImpresoraIntervencionControllerIT {
+
+    @TempDir
+    Path tempDir;
 
     @Autowired
     private MockMvc mockMvc;
@@ -132,5 +140,32 @@ class ImpresoraIntervencionControllerIT {
     void eliminarAdjunto_withoutWritePermission_returnsForbidden() throws Exception {
         mockMvc.perform(delete("/api/impresoras/7/intervenciones/1/adjuntos/10"))
                 .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @WithMockUser(authorities = "READ_impresoras")
+    void descargar_imagenAdjunto_returnsInlineDisposition() throws Exception {
+        Path archivo = tempDir.resolve("foto.jpg");
+        Files.writeString(archivo, "contenido-imagen");
+        ArchivoIntervencionAdjunto adjunto = new ArchivoIntervencionAdjunto(archivo, "image/jpeg", "foto.jpg");
+        when(service.cargarArchivo(eq(7L), eq(1L), eq(10L))).thenReturn(adjunto);
+
+        mockMvc.perform(get("/api/impresoras/7/intervenciones/1/adjuntos/10/archivo"))
+                .andExpect(status().isOk())
+                .andExpect(header().string("Content-Disposition", startsWith("inline")));
+    }
+
+    @Test
+    @WithMockUser(authorities = "READ_impresoras")
+    void descargar_documentoOffice_returnsAttachmentDisposition() throws Exception {
+        Path archivo = tempDir.resolve("informe.docx");
+        Files.writeString(archivo, "contenido-documento");
+        ArchivoIntervencionAdjunto adjunto = new ArchivoIntervencionAdjunto(archivo,
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "informe.docx");
+        when(service.cargarArchivo(eq(7L), eq(1L), eq(11L))).thenReturn(adjunto);
+
+        mockMvc.perform(get("/api/impresoras/7/intervenciones/1/adjuntos/11/archivo"))
+                .andExpect(status().isOk())
+                .andExpect(header().string("Content-Disposition", startsWith("attachment")));
     }
 }
