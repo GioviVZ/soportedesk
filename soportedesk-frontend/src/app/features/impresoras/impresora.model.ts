@@ -69,3 +69,25 @@ export interface ImpresoraDashboardCompleto {
   topConsumibles: ImpresoraConsumibleCount[];
   totalConsumiblesDistintos: number;
 }
+
+export interface ImpresoraIntervencionAdjunto {
+  id: number;
+  nombreOriginal: string;
+  mimeType: string;
+  subidoPor: string;
+  fechaSubida: string;
+}
+
+export interface ImpresoraIntervencion {
+  id: number;
+  fecha: string;
+  observacion: string;
+  registradoPor: string;
+  fechaRegistro: string;
+  adjuntos: ImpresoraIntervencionAdjunto[];
+}
+
+export interface ImpresoraIntervencionRequest {
+  fecha: string;
+  observacion: string;
+}
