@@ -32,6 +32,7 @@ agente:
 uploads:
   drivers-dir: uploads/drivers
   evidencias-dir: uploads/evidencias
+  intervenciones-dir: uploads/impresoras-intervenciones
 
 ad:
   url: ${AD_URL:ldaps://SRV-DC02.inia.local:636}
