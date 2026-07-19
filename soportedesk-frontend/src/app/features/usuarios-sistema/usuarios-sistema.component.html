@@ -85,6 +85,7 @@
   [title]="editingId ? 'Editar usuario' : 'Nuevo usuario de soporte'"
   [open]="formOpen"
   size="wide"
+  [hideDefaultFooter]="true"
   (closed)="closeForm()"
 >
   <div class="form">
@@ -152,9 +153,10 @@
       </div>
     </section>
 
-    <div class="form-actions">
-      <button type="button" class="secondary" (click)="closeForm()">Cancelar</button>
-      <button type="button" (click)="submit()">Guardar cambios</button>
-    </div>
+  </div>
+
+  <div modal-footer class="form-actions">
+    <button type="button" class="secondary" (click)="closeForm()">Cancelar</button>
+    <button type="button" (click)="submit()">Guardar cambios</button>
   </div>
 </app-modal>

@@ -1,5 +1,6 @@
-import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 import { EquipoSaludItem } from './equipo.model';
 import { EquipoService } from './equipo.service';
 import { EquipoEnrichmentModalComponent } from './equipo-enrichment-modal.component';
@@ -7,59 +8,39 @@ import { EquipoEnrichmentModalComponent } from './equipo-enrichment-modal.compon
 @Component({
   selector: 'app-equipos-mantenimiento',
   standalone: true,
-  imports: [CommonModule, EquipoEnrichmentModalComponent],
+  imports: [CommonModule, FormsModule, EquipoEnrichmentModalComponent],
   templateUrl: './equipos-mantenimiento.component.html',
   styleUrl: './equipos.shared.scss',
 })
 export class EquiposMantenimientoComponent implements OnInit {
   private service = inject(EquipoService);
+  items = signal<EquipoSaludItem[]>([]);
+  query = signal('');
+  onlyRecent = signal(false);
+  selected = signal<EquipoSaludItem | null>(null);
 
-  salud = signal<EquipoSaludItem[]>([]);
-  modalOpen = signal(false);
-  selectedComputerId = signal(0);
-  selectedNombreEquipo = signal('');
-
-  saludKpis = computed(() => {
-    const s = this.salud();
-    const rojos = s.filter((x) => x.nivelAlerta === 'ROJO').length;
-    const amarillos = s.filter((x) => x.nivelAlerta === 'AMARILLO').length;
-    const sinPatrimonial = s.filter((x) => x.sinCodigoPatrimonial).length;
-    const sinUsuario = s.filter((x) => x.sinUsuario).length;
-    const sinSede = s.filter((x) => x.sinSede).length;
-    return [
-      { label: 'Críticos (Rojo)', value: rojos, tone: 'red' },
-      { label: 'Advertencia (Amarillo)', value: amarillos, tone: 'yellow' },
-      { label: 'Sin cód. patrimonial', value: sinPatrimonial, tone: 'orange' },
-      { label: 'Sin usuario', value: sinUsuario, tone: 'gray' },
-      { label: 'Sin sede', value: sinSede, tone: 'gray' },
-    ];
+  recientes = computed(() => this.items().filter((item) => this.isRecent(item)));
+  filtered = computed(() => {
+    const term = this.normalize(this.query());
+    return this.items().filter((item) => {
+      if (this.onlyRecent() && !this.isRecent(item)) return false;
+      if (!term) return true;
+      return this.normalize([item.nombreEquipo, item.usuarioContacto, item.sedeNombre, item.tipoEquipo].filter(Boolean).join(' ')).includes(term);
+    });
   });
 
-  ngOnInit(): void {
-    this.loadSalud();
-  }
+  ngOnInit(): void { this.load(); }
+  load(): void { this.service.getSalud().subscribe((data) => this.items.set(data)); }
+  edit(item: EquipoSaludItem): void { this.selected.set(item); }
+  close(): void { this.selected.set(null); }
+  saved(): void { this.close(); this.load(); }
 
-  loadSalud(): void {
-    this.service.getSalud().subscribe((data) => this.salud.set(data));
+  private isRecent(item: EquipoSaludItem): boolean {
+    if (!item.fechaCreacion) return false;
+    const age = Date.now() - new Date(item.fechaCreacion).getTime();
+    return age >= 0 && age <= 30 * 86400000;
   }
-
-  abrirModal(item: EquipoSaludItem): void {
-    this.selectedComputerId.set(item.computerID);
-    this.selectedNombreEquipo.set(item.nombreEquipo);
-    this.modalOpen.set(true);
-  }
-
-  cerrarModal(): void {
-    this.modalOpen.set(false);
-  }
-
-  onGuardado(): void {
-    this.loadSalud();
-  }
-
-  mesesLabel(val: number): string {
-    if (val < 0) return 'Sin dato';
-    if (val === 0) return 'Este mes';
-    return `${val} mes${val === 1 ? '' : 'es'}`;
+  private normalize(value: string): string {
+    return value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
   }
 }

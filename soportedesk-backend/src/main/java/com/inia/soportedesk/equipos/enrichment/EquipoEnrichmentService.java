@@ -45,6 +45,9 @@ public class EquipoEnrichmentService {
         recordChange(computerId, "fabricante_override",   entity.getFabricanteOverride(),   dto.getFabricanteOverride(),   username);
         recordChange(computerId, "modelo_override",       entity.getModeloOverride(),       dto.getModeloOverride(),       username);
         recordChange(computerId, "codigo_patrimonial",    entity.getCodigoPatrimonial(),    dto.getCodigoPatrimonial(),    username);
+        recordChange(computerId, "codigo_interno", entity.getCodigoInternoOverride(), dto.getCodigoInternoOverride(), username);
+        recordChange(computerId, "nombre_asignado", entity.getNombreAsignadoOverride(), dto.getNombreAsignadoOverride(), username);
+        recordChange(computerId, "usuario_asignado", entity.getUsuarioAsignadoOverride(), dto.getUsuarioAsignadoOverride(), username);
         recordChange(computerId, "estado_depuracion",     entity.getEstadoDepuracion(),     dto.getEstadoDepuracion(),     username);
         recordChange(computerId, "observaciones",         entity.getObservaciones(),        dto.getObservaciones(),       username);
         recordChange(computerId, "numero_serie_override", entity.getNumeroSerieOverride(),  dto.getNumeroSerieOverride(), username);
@@ -56,6 +59,9 @@ public class EquipoEnrichmentService {
         entity.setFabricanteOverride(dto.getFabricanteOverride());
         entity.setModeloOverride(dto.getModeloOverride());
         entity.setCodigoPatrimonial(dto.getCodigoPatrimonial());
+        entity.setCodigoInternoOverride(dto.getCodigoInternoOverride());
+        entity.setNombreAsignadoOverride(dto.getNombreAsignadoOverride());
+        entity.setUsuarioAsignadoOverride(dto.getUsuarioAsignadoOverride());
         entity.setEstadoDepuracion(dto.getEstadoDepuracion());
         entity.setObservaciones(dto.getObservaciones());
         entity.setNumeroSerieOverride(dto.getNumeroSerieOverride());
@@ -83,6 +89,9 @@ public class EquipoEnrichmentService {
         dto.setFabricanteOverride(entity.getFabricanteOverride());
         dto.setModeloOverride(entity.getModeloOverride());
         dto.setCodigoPatrimonial(entity.getCodigoPatrimonial());
+        dto.setCodigoInternoOverride(entity.getCodigoInternoOverride());
+        dto.setNombreAsignadoOverride(entity.getNombreAsignadoOverride());
+        dto.setUsuarioAsignadoOverride(entity.getUsuarioAsignadoOverride());
         dto.setEstadoDepuracion(entity.getEstadoDepuracion());
         dto.setObservaciones(entity.getObservaciones());
         dto.setRevisadoPor(entity.getRevisadoPor());

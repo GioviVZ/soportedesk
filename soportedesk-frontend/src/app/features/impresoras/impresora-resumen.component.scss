@@ -36,7 +36,7 @@
 .export-btn {
   min-height: 32px;
   padding: 6px 12px;
-  border: 1px solid rgba(37, 99, 235, .24);
+  border: 1px solid color-mix(in srgb, var(--color-info) 28%, transparent);
   border-radius: var(--radius-sm);
   background: var(--color-info-light);
   color: var(--color-info);

@@ -1,113 +1,13 @@
-<app-modal [title]="nombreEquipo" [open]="open" size="wide" (closed)="close()">
-  <ng-container *ngIf="open">
-    <div class="info-grid">
-      <div>
-        <span>Código patrimonial</span>
-        <input
-          type="text"
-          [value]="form.codigoPatrimonial ?? ''"
-          (change)="updateField('codigoPatrimonial', $any($event.target).value)"
-          placeholder="Ej. PAT-2024-001"
-        />
-      </div>
-      <div>
-        <span>Tipo</span>
-        <select [value]="form.tipoOverride ?? ''" (change)="updateField('tipoOverride', $any($event.target).value)">
-          <option value="">-- Sin tipo --</option>
-          <option *ngFor="let tipo of tiposEquipo()" [value]="tipo">{{ tipo }}</option>
-        </select>
-      </div>
-      <div>
-        <span>Fabricante (override)</span>
-        <input
-          type="text"
-          [value]="form.fabricanteOverride ?? ''"
-          (change)="updateField('fabricanteOverride', $any($event.target).value)"
-          placeholder="Ej. Dell"
-        />
-      </div>
-      <div>
-        <span>Modelo (override)</span>
-        <input
-          type="text"
-          [value]="form.modeloOverride ?? ''"
-          (change)="updateField('modeloOverride', $any($event.target).value)"
-          placeholder="Ej. OptiPlex 7090"
-        />
-      </div>
-      <div>
-        <span>Número de serie (override)</span>
-        <input
-          type="text"
-          [value]="form.numeroSerieOverride ?? ''"
-          (change)="updateField('numeroSerieOverride', $any($event.target).value)"
-          placeholder="Ej. SN-12345"
-        />
-      </div>
-      <div>
-        <span>Estado depuración</span>
-        <select [value]="form.estadoDepuracion ?? ''" (change)="updateField('estadoDepuracion', $any($event.target).value)">
-          <option value="">-- Sin estado --</option>
-          <option value="PENDIENTE">Pendiente</option>
-          <option value="EN_REVISION">En revisión</option>
-          <option value="DEPURADO">Depurado</option>
-          <option value="ACTIVO">Activo</option>
-        </select>
-      </div>
-      <div class="obs-cell">
-        <span>Observaciones</span>
-        <textarea
-          rows="3"
-          [value]="form.observaciones ?? ''"
-          (change)="updateField('observaciones', $any($event.target).value)"
-          placeholder="Notas internas..."
-        ></textarea>
-      </div>
-    </div>
-
-    <div class="ubicacion-cell">
-      <span>Ubicación (override)</span>
-      <app-ubicacion-select
-        [showTipoContrato]="false"
-        [sedeId]="form.sedeId"
-        [dependenciaId]="form.dependenciaId"
-        [subdependenciaId]="form.subdependenciaId"
-        (sedeIdChange)="onSedeChange($event)"
-        (dependenciaIdChange)="onDependenciaChange($event)"
-        (subdependenciaIdChange)="onSubdependenciaChange($event)"
-      />
-    </div>
-
-    <div class="enrichment-meta" *ngIf="form.revisadoPor">
-      Última revisión por <strong>{{ form.revisadoPor }}</strong> el {{ formatDate(form.fechaRevision) }}
-    </div>
-
-    <div class="enrichment-actions">
-      <button type="button" class="save-btn" (click)="save()" [disabled]="saving()">
-        {{ saving() ? 'Guardando...' : 'Guardar cambios' }}
-      </button>
-      <span class="save-ok" *ngIf="saveSuccess()">Guardado correctamente</span>
-      <button type="button" class="ver-ficha-btn" (click)="verFicha()">Ver ficha completa</button>
-    </div>
-
-    <div class="historial-section" *ngIf="historial().length">
-      <h4>Historial de cambios</h4>
-      <div class="simple-table">
-        <table>
-          <thead>
-            <tr><th>Campo</th><th>Anterior</th><th>Nuevo</th><th>Por</th><th>Fecha</th></tr>
-          </thead>
-          <tbody>
-            <tr *ngFor="let h of historial()">
-              <td>{{ h.campo }}</td>
-              <td>{{ empty(h.valorAnterior) }}</td>
-              <td>{{ empty(h.valorNuevo) }}</td>
-              <td>{{ h.modificadoPor }}</td>
-              <td>{{ formatDate(h.fechaModificacion) }}</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-  </ng-container>
+<app-modal [title]="'Editar datos · ' + nombreEquipo" [open]="open" size="wide" [hideDefaultFooter]="true" (closed)="close()">
+  <div class="admin-edit-intro"><strong>Datos administrativos</strong><span>Completa únicamente la información necesaria para identificar y asignar el equipo.</span></div>
+  <div class="notice error" *ngIf="error()">{{ error() }}</div>
+  <div class="info-grid admin-edit-grid">
+    <label><span>Tipo de equipo</span><select [value]="form.tipoOverride || ''" (change)="update('tipoOverride', $any($event.target).value)"><option value="">Seleccione...</option><option *ngFor="let tipo of tiposEquipo()" [value]="tipo">{{ tipo }}</option></select></label>
+    <label><span>Nombre del usuario asignado</span><input type="text" [value]="form.nombreAsignadoOverride || ''" (input)="update('nombreAsignadoOverride', $any($event.target).value)" /></label>
+    <label><span>Usuario asignado</span><input type="text" [value]="form.usuarioAsignadoOverride || ''" (input)="update('usuarioAsignadoOverride', $any($event.target).value)" placeholder="Ej. jperez@INIA-RED" /></label>
+    <label><span>Código interno</span><input type="text" [value]="form.codigoInternoOverride || ''" (input)="update('codigoInternoOverride', $any($event.target).value)" /></label>
+    <label><span>Número de serie</span><input type="text" [value]="form.numeroSerieOverride || ''" (input)="update('numeroSerieOverride', $any($event.target).value)" /></label>
+  </div>
+  <div class="ubicacion-cell"><strong>Ubicación según catálogos</strong><app-ubicacion-select [showTipoContrato]="false" [sedeId]="form.sedeId" [dependenciaId]="form.dependenciaId" [subdependenciaId]="form.subdependenciaId" (sedeIdChange)="onSedeChange($event)" (dependenciaIdChange)="onDependenciaChange($event)" (subdependenciaIdChange)="onSubdependenciaChange($event)" /></div>
+  <footer modal-footer class="enrichment-actions"><button type="button" class="ver-ficha-btn" (click)="close()">Cancelar</button><button type="button" class="save-btn" (click)="save()" [disabled]="saving()">{{ saving() ? 'Guardando...' : 'Guardar cambios' }}</button></footer>
 </app-modal>

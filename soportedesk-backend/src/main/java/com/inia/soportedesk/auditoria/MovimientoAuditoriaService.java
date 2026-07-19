@@ -15,7 +15,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class MovimientoAuditoriaService {
 
-    private static final int MAX_LIMIT = 300;
+    private static final int MAX_LIMIT = 5_000;
 
     private final MovimientoAuditoriaRepository repository;
 

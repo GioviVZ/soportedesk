@@ -1,5 +1,23 @@
+/* This component always renders inside the fixed-width left column of
+   .admin-workspace (see usuarios-red.shared.scss), never the full page
+   width, so its responsive tiers key off the column's own size via
+   container queries instead of the viewport. The host is also height-bound
+   by that column (sticky + max-height), so it lays out as a column with
+   the query bar pinned and only the result list scrolling internally —
+   the page itself never has to scroll to browse results. */
+:host {
+  container-type: inline-size;
+  container-name: ad-user-search;
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  gap: 14px;
+  min-height: 0;
+}
+
 .ad-query-shell {
   display: grid;
+  flex: 0 0 auto;
   gap: 12px;
   padding: 16px;
   border: 1px solid var(--color-border);
@@ -10,9 +28,15 @@
 
 .ad-query-bar {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-columns: 1fr;
   gap: 10px;
   align-items: end;
+}
+
+@container ad-user-search (min-width: 480px) {
+  .ad-query-bar {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
 }
 
 .ad-query-input {
@@ -47,6 +71,14 @@
 .query-submit {
   min-height: 46px;
   padding-inline: 18px;
+  justify-content: center;
+  width: 100%;
+}
+
+@container ad-user-search (min-width: 480px) {
+  .query-submit {
+    width: auto;
+  }
 }
 
 .icon-button {
@@ -77,20 +109,35 @@
 
 .query-tools {
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
+  flex-direction: column;
+  align-items: stretch;
   gap: 10px;
 }
 
+@container ad-user-search (min-width: 480px) {
+  .query-tools {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+  }
+}
+
 .segmented-control {
-  display: inline-flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 4px;
   padding: 4px;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   background: var(--color-muted);
+}
+
+@container ad-user-search (min-width: 480px) {
+  .segmented-control {
+    display: inline-flex;
+    flex-wrap: wrap;
+  }
 }
 
 .segmented-control button,
@@ -141,7 +188,7 @@
 
 .advanced-search {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: 1fr;
   gap: 12px;
   padding-top: 12px;
   border-top: 1px solid var(--color-border);
@@ -149,12 +196,22 @@
 
 .catalog-filters {
   display: grid;
-  grid-template-columns: minmax(0, 1.05fr) minmax(0, .95fr);
+  grid-template-columns: 1fr;
   gap: 12px;
   padding: 12px;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   background: var(--color-muted);
+}
+
+@container ad-user-search (min-width: 480px) {
+  .advanced-search {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .catalog-filters {
+    grid-template-columns: minmax(0, 1.05fr) minmax(0, .95fr);
+  }
 }
 
 .catalog-field {
@@ -185,14 +242,24 @@
 
 .ad-result-list {
   display: grid;
+  align-content: start;
   gap: 8px;
+  flex: 1 1 auto;
+  min-height: 0;
+  padding: 2px 6px 2px 2px;
+  margin: -2px -6px -2px -2px;
+  overflow-y: auto;
+}
+
+.empty-state {
+  flex: 1 1 auto;
 }
 
 .ad-result-card {
   display: grid;
-  grid-template-columns: 42px minmax(180px, 1.1fr) minmax(190px, 1fr) minmax(150px, auto) 38px;
-  align-items: center;
-  gap: 12px;
+  grid-template-columns: 38px minmax(0, 1fr);
+  align-items: start;
+  gap: 10px 12px;
   min-width: 0;
   padding: 12px;
   border: 1px solid var(--color-border);
@@ -217,8 +284,8 @@
 .result-avatar {
   display: grid;
   place-items: center;
-  width: 42px;
-  height: 42px;
+  width: 38px;
+  height: 38px;
   border-radius: var(--radius-md);
   background: var(--color-usuarios-red-light);
   color: var(--color-accent);
@@ -238,7 +305,6 @@
   small {
     overflow: hidden;
     text-overflow: ellipsis;
-    white-space: nowrap;
   }
 }
 
@@ -246,44 +312,81 @@
   strong {
     color: var(--color-text);
     font-size: 14px;
+    white-space: nowrap;
   }
 
   span {
     color: var(--color-text-secondary);
     font-size: 12.5px;
     font-weight: 750;
+    white-space: nowrap;
   }
 
   a {
     font-size: 12px;
+    white-space: nowrap;
   }
 }
 
 .result-location {
+  grid-column: 1 / -1;
+
   span {
     color: var(--color-text);
     font-size: 13px;
     font-weight: 700;
+    white-space: normal;
+    overflow-wrap: anywhere;
   }
 
   small {
     color: var(--color-text-muted);
     font-size: 12px;
+    white-space: normal;
+    overflow-wrap: anywhere;
   }
 }
 
 .result-state {
+  grid-column: 1 / -1;
   display: flex;
   flex-wrap: wrap;
-  justify-content: flex-end;
+  justify-content: flex-start;
   gap: 6px;
 }
 
 .result-open {
+  display: none;
   justify-self: end;
 }
 
-@media (max-width: 1100px) {
+@container ad-user-search (min-width: 420px) {
+  .ad-result-card {
+    grid-template-columns: 42px minmax(0, 1fr) 38px;
+    align-items: center;
+  }
+
+  .result-avatar {
+    width: 42px;
+    height: 42px;
+  }
+
+  .result-location,
+  .result-state {
+    grid-column: 2 / 3;
+  }
+
+  .result-location span,
+  .result-location small {
+    white-space: nowrap;
+  }
+
+  .result-open {
+    display: flex;
+  }
+}
+
+@container ad-user-search (min-width: 640px) {
   .ad-result-card {
     grid-template-columns: 42px minmax(0, 1fr) minmax(150px, .8fr) 38px;
   }
@@ -294,76 +397,13 @@
   }
 }
 
-@media (max-width: 760px) {
-  .ad-query-bar {
-    grid-template-columns: 1fr;
-  }
-
-  .catalog-filters,
-  .advanced-search {
-    grid-template-columns: 1fr;
-  }
-
-  .query-submit {
-    justify-content: center;
-    width: 100%;
-  }
-
-  .query-tools {
-    align-items: stretch;
-    flex-direction: column;
-  }
-
-  .segmented-control {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .segmented-control button {
-    min-width: 0;
-  }
-
-  .link-button {
-    justify-content: center;
-  }
-
+@container ad-user-search (min-width: 900px) {
   .ad-result-card {
-    grid-template-columns: 42px minmax(0, 1fr) 36px;
-    align-items: start;
+    grid-template-columns: 42px minmax(180px, 1.1fr) minmax(190px, 1fr) minmax(150px, auto) 38px;
   }
 
-  .result-location,
   .result-state {
-    grid-column: 2 / 4;
-  }
-
-  .result-location span,
-  .result-location small {
-    white-space: normal;
-    overflow-wrap: anywhere;
-  }
-}
-
-@media (max-width: 460px) {
-  .segmented-control {
-    grid-template-columns: 1fr;
-  }
-
-  .ad-result-card {
-    grid-template-columns: 38px minmax(0, 1fr);
-  }
-
-  .result-avatar {
-    width: 38px;
-    height: 38px;
-  }
-
-  .result-open {
-    display: none;
-  }
-
-  .result-location,
-  .result-state {
-    grid-column: 1 / -1;
+    grid-column: auto;
+    justify-content: flex-end;
   }
 }

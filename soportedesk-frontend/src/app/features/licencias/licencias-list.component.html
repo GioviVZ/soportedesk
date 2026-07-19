@@ -1,5 +1,5 @@
 <div class="module-page licencias-page">
-  <div class="module-header">
+  <div class="module-header" *ngIf="false">
     <div>
       <span class="module-eyebrow">Activos de software</span>
       <h2>Licencias</h2>
@@ -53,7 +53,7 @@
       </label>
 
       <label>
-        Anio
+        Año
         <select [(ngModel)]="filters.anio">
           <option value="">Todos</option>
           <option *ngFor="let value of anios" [value]="value">{{ value }}</option>
@@ -70,7 +70,8 @@
   <app-generic-table
     [columns]="columns"
     [data]="filteredLicencias"
-    [canEdit]="canWrite"
+    [canAdd]="canManage"
+    [canEdit]="canManage"
     [initialSearch]="searchTerm"
     (searchChange)="onSearch($event)"
     (add)="onAdd()"
@@ -95,7 +96,7 @@
       <app-field label="Tipo de Bien">{{ viewing.tipoBien.nombre || '-' }}</app-field>
       <app-field label="Descripcion">{{ viewing.descripcion }}</app-field>
       <app-field label="Orden de Compra">{{ viewing.ordenCompra }}</app-field>
-      <app-field label="Anio">{{ viewing.anio }}</app-field>
+      <app-field label="Año">{{ viewing.anio }}</app-field>
       <app-field label="Cantidad">{{ viewing.cantidad }}</app-field>
     </div>
 
@@ -121,6 +122,7 @@
 <app-modal
   [title]="editing ? 'Editar licencia' : 'Agregar licencia'"
   [open]="formOpen"
+  [hideDefaultFooter]="true"
   (closed)="closeForm()"
 >
   <app-licencia-form [licencia]="editing" (saved)="onSaved()" (cancelled)="closeForm()" />

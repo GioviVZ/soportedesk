@@ -1,6 +1,6 @@
 .licencias-page {
   --color-accent: var(--color-licencias);
-  --color-accent-hover: #2563eb;
+  --color-accent-hover: var(--color-licencias-hover);
 }
 
 .license-filter-panel {
@@ -59,7 +59,7 @@
   }
 
   .ghost-action {
-    border: 1px solid rgba(37, 99, 235, .22);
+    border: 1px solid color-mix(in srgb, var(--color-licencias) 28%, transparent);
     background: var(--color-surface);
     color: var(--color-accent);
   }
@@ -102,7 +102,7 @@
 
     &:focus {
       border-color: var(--color-accent);
-      box-shadow: 0 0 0 3px rgba(37, 99, 235, .12);
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-licencias) 14%, transparent);
     }
   }
 }
@@ -223,3 +223,11 @@
     overflow-wrap: anywhere;
   }
 }
+.ad-tabs {
+  display: flex; gap: 4px; margin-bottom: 18px; padding: 4px;
+  border: 1px solid var(--color-border); border-radius: var(--radius-md);
+  background: var(--color-surface); width: fit-content; max-width: 100%; overflow-x: auto;
+}
+.ad-tabs a { padding: 9px 16px; border-radius: var(--radius-sm); color: var(--color-text-secondary); font-size: 13px; font-weight: 600; text-decoration: none; white-space: nowrap; }
+.ad-tabs a:hover { background: var(--color-muted); color: var(--color-text); }
+.ad-tabs a.active { background: var(--color-licencias); color: #fff; }

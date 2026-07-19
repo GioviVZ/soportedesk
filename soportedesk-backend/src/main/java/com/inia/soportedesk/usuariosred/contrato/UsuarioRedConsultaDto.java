@@ -20,5 +20,6 @@ public class UsuarioRedConsultaDto {
     private Boolean locked;
     private LocalDate vencimientoUsuarioRed;
     private String estadoVencimientoUsuarioRed;
+    private List<String> hosts = new ArrayList<>();
     private List<UsuarioRedContratoDto> contratos = new ArrayList<>();
 }

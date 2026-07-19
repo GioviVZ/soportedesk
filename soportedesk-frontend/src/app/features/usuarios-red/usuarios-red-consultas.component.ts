@@ -3,6 +3,7 @@ import { Component, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { finalize } from 'rxjs';
+import * as XLSX from 'xlsx';
 import { AuthService } from '../../core/auth/auth.service';
 import { ModalComponent } from '../../shared/modal/modal.component';
 import { SectionCardComponent } from '../../shared/section-card/section-card.component';
@@ -47,6 +48,9 @@ type OrdenCampo = 'nombre' | 'oficina' | 'vencimiento';
               <path d="m9 18 6-6-6-6" />
             </svg>
             Buscar
+          </button>
+          <button type="button" class="btn btn-secondary consulta-submit" (click)="exportExcel()" [disabled]="!itemsVisibles.length || searching || directorioLoading">
+            Exportar Excel
           </button>
         </form>
 
@@ -113,12 +117,14 @@ type OrdenCampo = 'nombre' | 'oficina' | 'vencimiento';
               <th>Usuario</th>
               <th>Oficina</th>
               <th>Estado</th>
+              <th>Host GLPI reportado</th>
               <th>Vencimiento red</th>
               <th>Contratos</th>
+              <th>Acciones</th>
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let item of directorioFiltrado; trackBy: trackByResultado" (click)="abrirResultado(item)">
+            <tr *ngFor="let item of directorioFiltrado; trackBy: trackByResultado">
               <td class="col-usuario">
                 <span class="consulta-avatar">{{ initials(item) }}</span>
                 <span class="usuario-info">
@@ -134,10 +140,17 @@ type OrdenCampo = 'nombre' | 'oficina' | 'vencimiento';
                 <span class="mini-badge danger" *ngIf="item.locked">Bloqueado</span>
                 <span class="mini-badge warning" *ngIf="!tieneFichaAd(item)">Sin ficha AD</span>
               </td>
+              <td>
+                <span *ngIf="item.hosts.length">{{ item.hosts.join(', ') }}</span>
+                <span class="muted" *ngIf="!item.hosts.length">Sin host</span>
+              </td>
               <td><app-vencimiento-badge [fecha]="item.vencimientoUsuarioRed" /></td>
               <td>
                 <span class="mini-badge" *ngIf="item.contratos.length">{{ item.contratos.length }}</span>
                 <span class="muted" *ngIf="!item.contratos.length">&mdash;</span>
+              </td>
+              <td class="consulta-row-actions">
+                <button type="button" class="ghost-action" (click)="abrirResultado(item)">Ver</button>
               </td>
             </tr>
           </tbody>
@@ -175,6 +188,7 @@ type OrdenCampo = 'nombre' | 'oficina' | 'vencimiento';
               <span *ngIf="item.mail">{{ item.mail }}</span>
               <span *ngIf="item.office">{{ item.office }}</span>
               <span *ngIf="item.organizationalUnit">{{ item.organizationalUnit }}</span>
+              <span *ngIf="item.hosts.length">Host: {{ item.hosts.join(', ') }}</span>
             </span>
 
             <span class="consulta-contratos" *ngIf="item.contratos.length">
@@ -187,7 +201,7 @@ type OrdenCampo = 'nombre' | 'oficina' | 'vencimiento';
             </span>
           </span>
 
-          <span class="consulta-action">{{ tieneFichaAd(item) ? 'Ver ficha' : 'Ver contrato' }}</span>
+          <span class="consulta-action">Ver</span>
         </button>
       </section>
 
@@ -226,6 +240,18 @@ type OrdenCampo = 'nombre' | 'oficina' | 'vencimiento';
           [puedeEditarContratos]="false"
           (manage)="goToAdmin($event)"
         />
+        <app-section-card title="Hosts GLPI reportados" *ngIf="!loading && selectedUser && selectedConsulta">
+          <div class="detail-grid">
+            <div class="detail-field">
+              <span class="detail-label">Equipo(s) con este usuario</span>
+              <span class="detail-value">{{ selectedConsulta.hosts.length ? selectedConsulta.hosts.join(', ') : 'Sin host asociado en GLPI' }}</span>
+            </div>
+            <div class="detail-field">
+              <span class="detail-label">Origen</span>
+              <span class="detail-value">Último inventario automático reportado por el agente GLPI.</span>
+            </div>
+          </div>
+        </app-section-card>
         <section class="consulta-only-detail" *ngIf="!loading && !selectedUser && selectedConsulta">
           <section class="identity-band">
             <div class="avatar">{{ initials(selectedConsulta) }}</div>
@@ -366,6 +392,7 @@ export class UsuariosRedConsultasComponent implements OnInit {
         next: (resultados) => {
           this.directorio = resultados.map((item) => ({
             ...item,
+            hosts: item.hosts ?? [],
             contratos: item.contratos ?? [],
           }));
           this.directorioLoaded = true;
@@ -431,6 +458,7 @@ export class UsuariosRedConsultasComponent implements OnInit {
         next: (resultados) => {
           this.resultados = resultados.map((item) => ({
             ...item,
+            hosts: item.hosts ?? [],
             contratos: item.contratos ?? [],
             vencimientoUsuarioRed: item.vencimientoUsuarioRed ?? this.vencimientoDesdeContratos(item.contratos ?? []),
             estadoVencimientoUsuarioRed: item.estadoVencimientoUsuarioRed ?? null,
@@ -449,6 +477,63 @@ export class UsuariosRedConsultasComponent implements OnInit {
     this.resultados = [];
     this.searched = false;
     this.searchError = '';
+  }
+
+  exportExcel(): void {
+    const rows = this.itemsVisibles.map((item) => ({
+      Usuario: item.usuario ?? '',
+      Nombre: item.displayName ?? '',
+      Correo: item.mail ?? '',
+      Oficina: item.office ?? '',
+      'Unidad organizativa': item.organizationalUnit ?? '',
+      'Host GLPI reportado': item.hosts.join(' | '),
+      Estado: this.estadoParaExportar(item),
+      Bloqueo: item.locked === null || item.locked === undefined ? '' : item.locked ? 'Bloqueado' : 'Sin bloqueo',
+      'Vencimiento de usuario de red': this.fechaParaExportar(item.vencimientoUsuarioRed),
+      'Estado de vencimiento': this.estadoVencimientoParaExportar(item.estadoVencimientoUsuarioRed),
+      'Cantidad de contratos': item.contratos.length,
+      Contratos: item.contratos.map((contrato) => {
+        const numero = contrato.numeroContrato ? ` N.° ${contrato.numeroContrato}` : '';
+        const periodo = `${this.fechaParaExportar(contrato.fechaInicio)} - ${this.fechaParaExportar(contrato.fechaFin) || 'Vigente'}`;
+        return `${contrato.tipoContratoNombre}${numero} (${periodo})`;
+      }).join(' | '),
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(rows);
+    worksheet['!cols'] = [
+      { wch: 20 }, { wch: 35 }, { wch: 32 }, { wch: 28 }, { wch: 40 }, { wch: 28 },
+      { wch: 18 }, { wch: 16 }, { wch: 25 }, { wch: 22 }, { wch: 22 }, { wch: 70 },
+    ];
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Usuarios de red');
+    XLSX.writeFile(workbook, `usuarios-red-${this.exportDate()}.xlsx`);
+  }
+
+  private estadoParaExportar(item: UsuarioRedConsultaResultado): string {
+    if (!this.tieneFichaAd(item)) return 'Sin ficha AD';
+    return item.enabled ? 'Habilitado' : 'Deshabilitado';
+  }
+
+  private estadoVencimientoParaExportar(estado: UsuarioRedConsultaResultado['estadoVencimientoUsuarioRed']): string {
+    const labels: Record<NonNullable<UsuarioRedConsultaResultado['estadoVencimientoUsuarioRed']>, string> = {
+      VENCIDO: 'Vencido',
+      POR_VENCER: 'Por vencer',
+      VIGENTE: 'Vigente',
+      SIN_FECHA: 'Sin fecha',
+    };
+    return estado ? labels[estado] : 'Sin fecha';
+  }
+
+  private fechaParaExportar(fecha: string | null): string {
+    if (!fecha) return '';
+    const [year, month, day] = fecha.substring(0, 10).split('-');
+    return year && month && day ? `${day}/${month}/${year}` : fecha;
+  }
+
+  private exportDate(): string {
+    const now = new Date();
+    const twoDigits = (value: number) => String(value).padStart(2, '0');
+    return `${now.getFullYear()}${twoDigits(now.getMonth() + 1)}${twoDigits(now.getDate())}-${twoDigits(now.getHours())}${twoDigits(now.getMinutes())}`;
   }
 
   abrirResultado(item: UsuarioRedConsultaResultado): void {

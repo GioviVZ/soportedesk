@@ -1,11 +1,14 @@
 package com.inia.soportedesk.equipos;
 
+import java.time.LocalDateTime;
+
 public record EquipoSaludDto(
         Long computerID,
         String nombreEquipo,
         String sedeNombre,
         String tipoEquipo,
         String usuarioContacto,
+        LocalDateTime fechaCreacion,
         Long sinEncendidoMeses,
         Long sinActualizacionMeses,
         String nivelAlerta,

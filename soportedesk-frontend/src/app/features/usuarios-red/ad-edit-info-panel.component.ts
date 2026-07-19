@@ -12,7 +12,7 @@ import { AdPanelResult, AdUser, UpdateUserInfoRequest } from './active-directory
   standalone: true,
   imports: [CommonModule, FormsModule, SectionCardComponent],
   template: `
-    <form class="modal-form form-grid" (ngSubmit)="submit()">
+    <form class="modal-form form-grid" (ngSubmit)="submit()" id="ad-edit-info-edit-form">
       <app-section-card title="Datos de AD" class="full">
         <svg icon xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
@@ -43,11 +43,12 @@ import { AdPanelResult, AdUser, UpdateUserInfoRequest } from './active-directory
         <div class="field full"><label>Descripcion</label><textarea name="description" rows="3" [(ngModel)]="form.description"></textarea></div>
       </app-section-card>
 
-      <footer class="modal-actions full">
-        <button type="button" class="btn btn-ghost" (click)="cancelled.emit()">Cancelar</button>
-        <button type="submit" class="btn btn-primary" [disabled]="working">Guardar</button>
-      </footer>
     </form>
+
+    <footer modal-footer class="modal-actions full">
+      <button type="button" class="btn btn-ghost" (click)="cancelled.emit()">Cancelar</button>
+      <button type="submit" form="ad-edit-info-edit-form" class="btn btn-primary" [disabled]="working">Guardar</button>
+    </footer>
   `,
   styleUrl: './usuarios-red.shared.scss',
 })

@@ -14,6 +14,9 @@ export interface EquipoResumen {
   ipEquipo: string | null;
   numeroserie: string | null;
   codigoInterno: string | null;
+  fechaCreacion: string | null;
+  ultimaActualizacion: string | null;
+  ultimoEncendido: string | null;
 }
 
 export interface EquipoDetalle extends EquipoResumen {
@@ -156,6 +159,7 @@ export interface EquipoDashboardCompleto {
   sedeCentralCount: number;
   eeasCount: number;
   recientes30Dias: number;
+  sinActualizarMasTresMeses: number;
   distribucionPorFabricante: EquipoFabricanteCount[];
   topDependencias: EquipoDependenciaCount[];
   salud: EquipoSaludResumen;

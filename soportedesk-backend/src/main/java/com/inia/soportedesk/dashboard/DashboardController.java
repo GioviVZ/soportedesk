@@ -1,5 +1,6 @@
 package com.inia.soportedesk.dashboard;
 
+import com.inia.soportedesk.herramientas.ordenes.OrdenServicioResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
@@ -32,5 +33,11 @@ public class DashboardController {
     @PreAuthorize("hasRole('ADMIN') || hasAuthority('READ_licencias')")
     public List<LicenciaTipoCount> licenciasPorTipo() {
         return service.licenciasPorTipo();
+    }
+
+    @GetMapping("/ordenes-servicio")
+    @PreAuthorize("hasRole('ADMIN') || hasAuthority('READ_herramientas')")
+    public List<OrdenServicioResponse> ordenesServicio() {
+        return service.ordenesServicioProximas();
     }
 }

@@ -5,6 +5,7 @@ import { environment } from '../../../environments/environment';
 import { DashboardCounts } from './dashboard-counts.model';
 import { UbicacionUsuariosCount } from './ubicacion-usuarios-count.model';
 import { LicenciaTipoCount } from './licencia-tipo-count.model';
+import { OrdenServicio } from '../herramientas/herramientas.model';
 
 @Injectable({ providedIn: 'root' })
 export class DashboardService {
@@ -23,5 +24,9 @@ export class DashboardService {
 
   getLicenciasPorTipo(): Observable<LicenciaTipoCount[]> {
     return this.http.get<LicenciaTipoCount[]>(`${this.apiUrl}/licencias-por-tipo`);
+  }
+
+  getOrdenesServicio(): Observable<OrdenServicio[]> {
+    return this.http.get<OrdenServicio[]>(`${this.apiUrl}/ordenes-servicio`);
   }
 }

@@ -5,6 +5,12 @@
   background: var(--color-bg);
 }
 
+:host-context(:root[data-theme='dark']) .shell {
+  background:
+    radial-gradient(circle at 88% 4%, rgba(99, 164, 49, .045), transparent 24%),
+    #050706;
+}
+
 .content {
   flex: 1;
   display: flex;

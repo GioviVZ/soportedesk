@@ -2,7 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { EquipoDatosResult, PingResult } from './herramientas.model';
+import { EquipoDatosResult, OrdenServicio, OrdenServicioRequest, PingResult } from './herramientas.model';
 
 @Injectable({ providedIn: 'root' })
 export class HerramientasService {
@@ -16,5 +16,22 @@ export class HerramientasService {
   datosEquipo(referencia?: string): Observable<EquipoDatosResult> {
     const params = referencia?.trim() ? { referencia: referencia.trim() } : undefined;
     return this.http.get<EquipoDatosResult>(`${this.apiUrl}/datos-equipo`, { params });
+  }
+
+  getOrdenesServicio(): Observable<OrdenServicio[]> {
+    return this.http.get<OrdenServicio[]>(`${this.apiUrl}/ordenes-servicio`);
+  }
+
+  createOrdenServicio(request: OrdenServicioRequest): Observable<OrdenServicio> {
+    return this.http.post<OrdenServicio>(`${this.apiUrl}/ordenes-servicio`, request);
+  }
+
+  setOrdenFinalizada(id: number, finalizada: boolean): Observable<OrdenServicio> {
+    const action = finalizada ? 'finalizar' : 'reactivar';
+    return this.http.patch<OrdenServicio>(`${this.apiUrl}/ordenes-servicio/${id}/${action}`, {});
+  }
+
+  deleteOrdenServicio(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.apiUrl}/ordenes-servicio/${id}`);
   }
 }

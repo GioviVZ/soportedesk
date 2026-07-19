@@ -17,7 +17,7 @@
   margin-bottom: 12px;
   flex-wrap: wrap;
   padding: 12px;
-  border: 1px solid var(--color-border);
+  border: none;
   border-radius: var(--radius-md);
   background: var(--color-surface);
   box-shadow: var(--shadow-sm);
@@ -41,7 +41,7 @@
     input {
       width: 100%;
       padding: 8px 12px 8px 34px;
-      border: 1px solid var(--color-border);
+      border: 1px solid var(--color-border-strong);
       border-radius: var(--radius-sm);
       background: var(--color-surface);
       font-size: 13px;
@@ -86,12 +86,14 @@
 /* Wrap table in a card */
 .table-wrap {
   background: var(--color-surface);
-  border: 1px solid var(--color-border);
+  border: 1px solid transparent;
   border-radius: var(--radius-md);
+  max-height: min(64dvh, 620px);
   max-width: 100%;
   width: 100%;
-  overflow-x: auto;
-  overflow-y: hidden;
+  overflow: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
   box-shadow: var(--shadow-sm);
   -webkit-overflow-scrolling: touch;
 }
@@ -106,6 +108,13 @@
 .table-wrap td {
   vertical-align: middle;
   overflow-wrap: anywhere;
+}
+
+.table-wrap thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  box-shadow: 0 1px 0 var(--color-border);
 }
 
 .actions {
@@ -154,6 +163,7 @@
 
   .table-wrap {
     border-radius: var(--radius-sm);
+    max-height: min(66dvh, 560px);
   }
 
   .table-wrap table {

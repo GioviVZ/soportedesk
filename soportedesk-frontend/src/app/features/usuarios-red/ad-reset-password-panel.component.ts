@@ -10,7 +10,7 @@ import { AdPanelResult } from './active-directory.model';
   standalone: true,
   imports: [CommonModule, FormsModule, SectionCardComponent],
   template: `
-    <form class="modal-form" (ngSubmit)="submit()">
+    <form class="modal-form" (ngSubmit)="submit()" id="ad-reset-password-edit-form">
       <app-section-card title="Nueva contraseña">
         <svg icon xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <circle cx="7.5" cy="15.5" r="5.5" /><path d="m21 2-9.6 9.6" /><path d="m15.5 7.5 3 3L22 7l-3-3" />
@@ -28,11 +28,12 @@ import { AdPanelResult } from './active-directory.model';
         </label>
       </app-section-card>
 
-      <footer class="modal-actions">
-        <button type="button" class="btn btn-ghost" (click)="cancelled.emit()">Cancelar</button>
-        <button type="submit" class="btn btn-primary" [disabled]="working">Guardar</button>
-      </footer>
     </form>
+
+    <footer modal-footer class="modal-actions">
+      <button type="button" class="btn btn-ghost" (click)="cancelled.emit()">Cancelar</button>
+      <button type="submit" form="ad-reset-password-edit-form" class="btn btn-primary" [disabled]="working">Guardar</button>
+    </footer>
   `,
   styleUrl: './usuarios-red.shared.scss',
 })

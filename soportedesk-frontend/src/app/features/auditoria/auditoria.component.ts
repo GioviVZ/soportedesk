@@ -1,11 +1,13 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import * as XLSX from 'xlsx';
+import { ModalComponent } from '../../shared/modal/modal.component';
 import { AuditoriaService } from './auditoria.service';
 import { MovimientoAuditoria, MovimientoAuditoriaFilters } from './movimiento-auditoria.model';
 
 const MODULOS: Record<string, string> = {
-  auth: 'Autenticacion',
+  auth: 'Autenticación',
   'usuarios-red': 'Usuarios de Red/AD',
   correos: 'Correos',
   equipos: 'Inventario de Equipos',
@@ -15,12 +17,15 @@ const MODULOS: Record<string, string> = {
   licencias: 'Licencias',
   'usuarios-sistema': 'Usuarios del Sistema',
   catalogos: 'Configuración',
+  herramientas: 'Herramientas',
 };
+
+const EXPORT_LIMIT = 5000;
 
 @Component({
   selector: 'app-auditoria',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, ModalComponent],
   templateUrl: './auditoria.component.html',
   styleUrl: './auditoria.component.scss',
 })
@@ -31,8 +36,19 @@ export class AuditoriaComponent implements OnInit {
     'LOGIN',
     'LOGIN_FALLIDO',
     'CREAR',
+    'CREAR_USUARIO',
     'ACTUALIZAR',
     'ELIMINAR',
+    'APROBAR',
+    'RECHAZAR',
+    'OBSERVAR',
+    'ACTUALIZAR_ANTIVIRUS',
+    'CAMBIAR_PASSWORD',
+    'ADJUNTAR_ARCHIVO',
+    'ELIMINAR_ADJUNTO',
+    'SUBIR_DRIVER',
+    'SINCRONIZAR',
+    'EJECUTAR_DIAGNOSTICO',
     'DESBLOQUEAR_CUENTA',
     'RESET_PASSWORD',
     'HABILITAR_CUENTA',
@@ -46,7 +62,10 @@ export class AuditoriaComponent implements OnInit {
 
   movimientos: MovimientoAuditoria[] = [];
   loading = false;
+  exporting = false;
   error = '';
+  exportMessage = '';
+  movimientoSeleccionado: MovimientoAuditoria | null = null;
 
   filters: MovimientoAuditoriaFilters = {
     search: '',
@@ -76,6 +95,7 @@ export class AuditoriaComponent implements OnInit {
   load(): void {
     this.loading = true;
     this.error = '';
+    this.exportMessage = '';
     this.service.getMovimientos(this.filters).subscribe({
       next: (rows) => {
         this.movimientos = rows;
@@ -93,6 +113,70 @@ export class AuditoriaComponent implements OnInit {
     this.load();
   }
 
+  verDetalle(movimiento: MovimientoAuditoria): void {
+    this.movimientoSeleccionado = movimiento;
+  }
+
+  cerrarDetalle(): void {
+    this.movimientoSeleccionado = null;
+  }
+
+  exportarExcel(): void {
+    if (this.exporting) {
+      return;
+    }
+
+    this.exporting = true;
+    this.error = '';
+    this.exportMessage = '';
+    this.service.getMovimientos({ ...this.filters, limit: EXPORT_LIMIT }).subscribe({
+      next: (rows) => {
+        if (rows.length === 0) {
+          this.exportMessage = 'No hay movimientos para exportar con los filtros seleccionados.';
+          this.exporting = false;
+          return;
+        }
+
+        const data = rows.map((movimiento) => ({
+          Fecha: this.formatFechaDia(movimiento.fecha),
+          Hora: this.formatHora(movimiento.fecha),
+          Usuario: movimiento.usuario,
+          Módulo: this.moduloLabel(movimiento.modulo),
+          Acción: movimiento.accion,
+          'Detalle del cambio': this.detalleMovimiento(movimiento),
+          Método: movimiento.metodo,
+          Ruta: movimiento.ruta,
+          'ID de registro': movimiento.entidadId ?? '',
+          Resultado: this.resultadoLabel(movimiento.estadoHttp),
+          'Estado HTTP': movimiento.estadoHttp ?? '',
+          'Dirección IP': movimiento.ip ?? '',
+        }));
+
+        const worksheet = XLSX.utils.json_to_sheet(data);
+        worksheet['!cols'] = [
+          { wch: 12 }, { wch: 11 }, { wch: 20 }, { wch: 24 }, { wch: 24 }, { wch: 72 },
+          { wch: 10 }, { wch: 48 }, { wch: 18 }, { wch: 14 }, { wch: 12 }, { wch: 18 },
+        ];
+        if (worksheet['!ref']) {
+          worksheet['!autofilter'] = { ref: worksheet['!ref'] };
+        }
+
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, 'Movimientos');
+        XLSX.writeFile(workbook, `movimientos_${this.exportTimestamp()}.xlsx`, { compression: true });
+
+        this.exportMessage = rows.length === EXPORT_LIMIT
+          ? `Se exportaron los primeros ${EXPORT_LIMIT.toLocaleString('es-PE')} movimientos filtrados.`
+          : `Excel generado con ${rows.length.toLocaleString('es-PE')} movimientos.`;
+        this.exporting = false;
+      },
+      error: (err) => {
+        this.error = err?.error?.message ?? 'No se pudo generar el archivo Excel';
+        this.exporting = false;
+      },
+    });
+  }
+
   moduloLabel(modulo: string): string {
     return MODULOS[modulo] ?? modulo;
   }
@@ -102,9 +186,62 @@ export class AuditoriaComponent implements OnInit {
   }
 
   formatFecha(fecha: string): string {
+    return `${this.formatFechaDia(fecha)} ${this.formatHora(fecha)}`;
+  }
+
+  formatFechaDia(fecha: string): string {
     return new Intl.DateTimeFormat('es-PE', {
-      dateStyle: 'short',
-      timeStyle: 'short',
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
     }).format(new Date(fecha));
+  }
+
+  formatHora(fecha: string): string {
+    return new Intl.DateTimeFormat('es-PE', {
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false,
+    }).format(new Date(fecha));
+  }
+
+  detalleMovimiento(movimiento: MovimientoAuditoria): string {
+    const legacyDetail = `${movimiento.metodo} ${movimiento.ruta}`;
+    if (movimiento.detalle && movimiento.detalle.trim() !== legacyDetail) {
+      return movimiento.detalle;
+    }
+
+    const modulo = this.moduloLabel(movimiento.modulo);
+    const id = movimiento.entidadId ? ` (ID ${movimiento.entidadId})` : '';
+    return `${this.accionLabel(movimiento.accion)} en ${modulo}${id}`;
+  }
+
+  accionLabel(accion: string): string {
+    const labels: Record<string, string> = {
+      LOGIN: 'Inicio de sesión',
+      LOGIN_FALLIDO: 'Intento de acceso fallido',
+      CREAR: 'Creación de registro',
+      ACTUALIZAR: 'Actualización de registro',
+      ELIMINAR: 'Eliminación de registro',
+      APROBAR: 'Aprobación de solicitud',
+      RECHAZAR: 'Rechazo de solicitud',
+      OBSERVAR: 'Observación de solicitud',
+      CAMBIAR_PASSWORD: 'Cambio de contraseña',
+    };
+    return labels[accion] ?? accion.replaceAll('_', ' ').toLocaleLowerCase('es-PE');
+  }
+
+  resultadoLabel(status: number | null): string {
+    if (status == null) {
+      return 'Sin estado';
+    }
+    return status >= 400 ? 'Con error' : 'Completado';
+  }
+
+  private exportTimestamp(): string {
+    const now = new Date();
+    const part = (value: number) => value.toString().padStart(2, '0');
+    return `${now.getFullYear()}-${part(now.getMonth() + 1)}-${part(now.getDate())}_${part(now.getHours())}${part(now.getMinutes())}`;
   }
 }

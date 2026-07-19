@@ -34,6 +34,8 @@ import { EquipoDashboardCompleto } from './equipo.model';
         <div class="module-dash-stat"><span>Otros</span><strong>{{ d.otrosCount }}</strong><small>Servidores y demas</small></div>
         <div class="module-dash-stat tone-info"><span>Sede Central</span><strong>{{ d.sedeCentralCount }}</strong><small>En sede central</small></div>
         <div class="module-dash-stat tone-info"><span>EEAs</span><strong>{{ d.eeasCount }}</strong><small>En estaciones experimentales</small></div>
+        <div class="module-dash-stat tone-warning"><span>Agregados recientemente</span><strong>{{ d.recientes30Dias }}</strong><small>Últimos 30 días</small></div>
+        <div class="module-dash-stat tone-warning"><span>Sin actualizar +3 meses</span><strong>{{ d.sinActualizarMasTresMeses }}</strong><small>Inventario GLPI atrasado o sin fecha</small></div>
       </section>
 
       <section class="module-dash-visual-grid" *ngIf="dashboard as d">

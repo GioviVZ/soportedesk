@@ -14,7 +14,7 @@ import { UsuarioRedContratoService } from './usuario-red-contrato.service';
   standalone: true,
   imports: [CommonModule, FormsModule, SectionCardComponent],
   template: `
-    <form class="modal-form" (ngSubmit)="submit()">
+    <form class="modal-form" (ngSubmit)="submit()" id="ad-create-user-edit-form">
       <div class="notice error" *ngIf="error">{{ error }}</div>
 
       <app-section-card title="Cuenta">
@@ -156,11 +156,12 @@ import { UsuarioRedContratoService } from './usuario-red-contrato.service';
         </div>
       </app-section-card>
 
-      <footer class="modal-actions">
-        <button type="button" class="btn btn-ghost" (click)="cancelled.emit()">Cancelar</button>
-        <button type="submit" class="btn btn-primary" [disabled]="working">{{ contratoEnabled ? 'Crear en AD y registrar contrato' : 'Crear en AD' }}</button>
-      </footer>
     </form>
+
+    <footer modal-footer class="modal-actions">
+      <button type="button" class="btn btn-ghost" (click)="cancelled.emit()">Cancelar</button>
+      <button type="submit" form="ad-create-user-edit-form" class="btn btn-primary" [disabled]="working">{{ contratoEnabled ? 'Crear en AD y registrar contrato' : 'Crear en AD' }}</button>
+    </footer>
   `,
   styleUrl: './usuarios-red.shared.scss',
 })

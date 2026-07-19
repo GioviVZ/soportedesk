@@ -6,6 +6,7 @@ import com.inia.soportedesk.activedirectory.AdUsuarioCacheRepository;
 import com.inia.soportedesk.catalogo.TipoContrato;
 import com.inia.soportedesk.catalogo.TipoContratoRepository;
 import com.inia.soportedesk.exception.ResourceNotFoundException;
+import com.inia.soportedesk.glpi.VwInvComputerFullRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -35,6 +36,9 @@ class UsuarioRedContratoServiceTest {
 
     @Mock
     private ActiveDirectoryService activeDirectoryService;
+
+    @Mock
+    private VwInvComputerFullRepository equipoRepository;
 
     @InjectMocks
     private UsuarioRedContratoService service;

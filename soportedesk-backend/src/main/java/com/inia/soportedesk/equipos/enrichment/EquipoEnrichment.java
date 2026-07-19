@@ -36,6 +36,15 @@ public class EquipoEnrichment {
     @Column(name = "codigo_patrimonial")
     private String codigoPatrimonial;
 
+    @Column(name = "codigo_interno_override")
+    private String codigoInternoOverride;
+
+    @Column(name = "nombre_asignado_override")
+    private String nombreAsignadoOverride;
+
+    @Column(name = "usuario_asignado_override")
+    private String usuarioAsignadoOverride;
+
     @ManyToOne
     @JoinColumn(name = "sede_id")
     private Sede sede;

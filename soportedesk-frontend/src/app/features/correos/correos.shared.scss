@@ -33,7 +33,7 @@
 
 .correos-page {
   --color-accent: var(--color-correos);
-  --color-accent-hover: #7c3aed;
+  --color-accent-hover: var(--color-correos-hover);
 }
 
 .filtros-bar {

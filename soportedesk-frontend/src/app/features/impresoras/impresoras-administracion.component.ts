@@ -35,6 +35,7 @@ import { ImpresoraService } from './impresora.service';
       [title]="editing ? 'Editar impresora' : 'Agregar impresora'"
       [open]="formOpen"
       size="wide"
+      [hideDefaultFooter]="true"
       (closed)="closeForm()"
     >
       <app-impresora-form *ngIf="formOpen" [impresora]="editing" (saved)="onSaved()" (cancelled)="closeForm()" />

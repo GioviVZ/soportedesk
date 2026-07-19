@@ -35,6 +35,6 @@
   </div>
 </header>
 
-<app-modal title="Cambiar contraseña" [open]="cambiarPasswordOpen" (closed)="closeCambiarPassword()">
+<app-modal title="Cambiar contraseña" [open]="cambiarPasswordOpen" [hideDefaultFooter]="true" (closed)="closeCambiarPassword()">
   <app-cambiar-password-modal (saved)="onPasswordChanged()" (cancelled)="closeCambiarPassword()" />
 </app-modal>

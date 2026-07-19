@@ -2,7 +2,6 @@ import { CommonModule } from '@angular/common';
 import { Component, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../core/auth/auth.service';
-import { GenericTableComponent, TableColumn } from '../../shared/generic-table/generic-table.component';
 import { ModalComponent } from '../../shared/modal/modal.component';
 import { StatusBadgeComponent } from '../../shared/status-badge/status-badge.component';
 import { VencimientoBadgeComponent } from '../../shared/vencimiento-badge/vencimiento-badge.component';
@@ -25,7 +24,7 @@ const EDITABLE_STATES = new Set(['PENDIENTE', 'OBSERVADO']);
 @Component({
   selector: 'app-vpn-registros',
   standalone: true,
-  imports: [CommonModule, FormsModule, GenericTableComponent, ModalComponent, StatusBadgeComponent, VencimientoBadgeComponent, VpnFormComponent, VpnDetailComponent],
+  imports: [CommonModule, FormsModule, ModalComponent, StatusBadgeComponent, VencimientoBadgeComponent, VpnFormComponent, VpnDetailComponent],
   template: `
     <section class="vpn-filter-panel">
       <label class="vpn-search-field">
@@ -88,22 +87,31 @@ const EDITABLE_STATES = new Set(['PENDIENTE', 'OBSERVADO']);
     </section>
 
     <div class="desktop-vpn-table">
-      <app-generic-table
-        [columns]="columns"
-        [data]="filteredItems"
-        [canAdd]="canWriteSolicitar"
-        [canEdit]="false"
-        [showSearch]="false"
-        emptyMessage="Sin solicitudes con los filtros aplicados"
-        extraColumnLabel="Vence VPN"
-        (add)="onAdd()"
-        (view)="onView($event)"
-      >
-        <ng-template #extraCell let-row>
-          <app-status-badge [label]="row.estadoSolicitud" [tone]="estadoTone(row.estadoSolicitud)" />
-          <app-vencimiento-badge [fecha]="row.vence" />
-        </ng-template>
-      </app-generic-table>
+      <div class="vpn-list-heading">
+        <div><strong>Solicitudes VPN</strong><span>{{ filteredItems.length }} de {{ items.length }} registros</span></div>
+        <button type="button" class="btn btn-primary" *ngIf="canWriteSolicitar" (click)="onAdd()">Nueva solicitud</button>
+      </div>
+      <div class="vpn-table-scroll" *ngIf="filteredItems.length; else emptyDesktop">
+        <table class="vpn-essential-table">
+          <thead><tr><th>Solicitante</th><th>Ubicación</th><th>Equipo</th><th>Solicitud</th><th>Estado</th><th></th></tr></thead>
+          <tbody>
+            <tr *ngFor="let item of filteredItems">
+              <td>
+                <button type="button" class="vpn-person-link" (click)="onView(item)">
+                  <strong>{{ item.titularNombreCompleto || 'Sin nombre registrado' }}</strong>
+                  <span>{{ item.adSamAccountName || item.titularCorreo || item.adMail || 'Sin usuario de red' }}</span>
+                </button>
+              </td>
+              <td><strong>{{ item.adOffice || item.adOrganizationalUnit || 'Sin ubicación' }}</strong><span *ngIf="item.adOffice && item.adOrganizationalUnit">{{ item.adOrganizationalUnit }}</span></td>
+              <td><strong>{{ item.glpiNombreEquipo || item.equipo?.host || item.tipoEquipo || 'Sin equipo' }}</strong><span>{{ item.tipoEquipo }}</span></td>
+              <td><strong>{{ item.fechaSolicitud | date:'dd/MM/yyyy' }}</strong><app-vencimiento-badge [fecha]="item.vence" /></td>
+              <td><app-status-badge [label]="item.estadoSolicitud" [tone]="estadoTone(item.estadoSolicitud)" /></td>
+              <td class="vpn-row-actions"><button type="button" (click)="onView(item)">Ver</button><button type="button" *ngIf="canEditSolicitud(item)" (click)="onEdit(item)">Editar</button></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <ng-template #emptyDesktop><p class="vpn-list-empty">Sin solicitudes con los filtros aplicados.</p></ng-template>
     </div>
 
     <section class="mobile-vpn-workspace" aria-label="Solicitudes VPN">
@@ -127,16 +135,8 @@ const EDITABLE_STATES = new Set(['PENDIENTE', 'OBSERVADO']);
 
         <dl>
           <div>
-            <dt>Dependencia</dt>
-            <dd>{{ item.adOrganizationalUnit || 'Sin dependencia' }}</dd>
-          </div>
-          <div>
-            <dt>Oficina</dt>
-            <dd>{{ item.adOffice || 'Sin oficina' }}</dd>
-          </div>
-          <div>
-            <dt>Cargo</dt>
-            <dd>{{ item.titularCargo || 'Sin cargo' }}</dd>
+            <dt>Ubicación</dt>
+            <dd>{{ item.adOffice || item.adOrganizationalUnit || 'Sin ubicación' }}</dd>
           </div>
           <div>
             <dt>Equipo</dt>
@@ -146,14 +146,11 @@ const EDITABLE_STATES = new Set(['PENDIENTE', 'OBSERVADO']);
             <dt>Solicitud</dt>
             <dd>{{ item.fechaSolicitud | date:'dd/MM/yyyy' }}</dd>
           </div>
-          <div>
-            <dt>Vence VPN</dt>
-            <dd><app-vencimiento-badge [fecha]="item.vence" /></dd>
-          </div>
         </dl>
 
         <footer>
-          <button type="button" class="view" (click)="onView(item)">Ver detalle</button>
+          <app-vencimiento-badge [fecha]="item.vence" />
+          <button type="button" class="view" (click)="onView(item)">Ver</button>
           <button type="button" class="edit" *ngIf="canEditSolicitud(item)" (click)="onEdit(item)">Editar</button>
         </footer>
       </article>
@@ -177,6 +174,7 @@ const EDITABLE_STATES = new Set(['PENDIENTE', 'OBSERVADO']);
     <app-modal
       [title]="editing ? 'Editar solicitud VPN' : 'Nueva solicitud VPN'"
       [open]="formOpen"
+      [hideDefaultFooter]="true"
       (closed)="closeForm()"
     >
       <app-vpn-form [vpn]="editing" (saved)="onSaved()" (cancelled)="closeForm()" />
@@ -193,16 +191,6 @@ export class VpnRegistrosComponent implements OnInit {
   viewing: Vpn | null = null;
   editing: Vpn | null = null;
   formOpen = false;
-
-  columns: TableColumn[] = [
-    { key: 'titularNombreCompleto', label: 'Nombre' },
-    { key: 'adOrganizationalUnit', label: 'Dependencia' },
-    { key: 'adOffice', label: 'Subdependencia' },
-    { key: 'titularCargo', label: 'Cargo' },
-    { key: 'titularOrigenLabel', label: 'Origen' },
-    { key: 'estadoSolicitud', label: 'Estado solicitud' },
-    { key: 'estado', label: 'Estado' },
-  ];
 
   get canWriteSolicitar(): boolean {
     return this.authService.isAdmin() || this.authService.canWrite('solicitar-vpn');

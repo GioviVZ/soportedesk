@@ -28,15 +28,25 @@ export const routes: Routes = [
       },
       {
         path: 'licencias',
-        canActivate: [moduloGuard('licencias')],
         loadComponent: () =>
-          import('./features/licencias/licencias-list.component').then((m) => m.LicenciasListComponent),
+          import('./features/licencias/licencias-shell.component').then((m) => m.LicenciasShellComponent),
+        children: [
+          { path: '', redirectTo: 'consultas', pathMatch: 'full' },
+          { path: 'consultas', canActivate: [moduloGuard('licencias')], data: { mode: 'consultas' }, loadComponent: () => import('./features/licencias/licencias-list.component').then((m) => m.LicenciasListComponent) },
+          { path: 'administracion', canActivate: [moduloGuard('licencias', { write: true })], data: { mode: 'administracion' }, loadComponent: () => import('./features/licencias/licencias-list.component').then((m) => m.LicenciasListComponent) },
+          { path: 'dashboard', canActivate: [moduloGuard('licencias', { write: true })], loadComponent: () => import('./features/licencias/licencias-dashboard.component').then((m) => m.LicenciasDashboardComponent) },
+        ],
       },
       {
         path: 'wifi',
-        canActivate: [moduloGuard('wifi')],
         loadComponent: () =>
-          import('./features/wifi/wifi-list.component').then((m) => m.WifiListComponent),
+          import('./features/wifi/wifi-shell.component').then((m) => m.WifiShellComponent),
+        children: [
+          { path: '', redirectTo: 'consultas', pathMatch: 'full' },
+          { path: 'consultas', canActivate: [moduloGuard('wifi')], data: { mode: 'consultas' }, loadComponent: () => import('./features/wifi/wifi-list.component').then((m) => m.WifiListComponent) },
+          { path: 'administracion', canActivate: [moduloGuard('wifi', { write: true })], data: { mode: 'administracion' }, loadComponent: () => import('./features/wifi/wifi-list.component').then((m) => m.WifiListComponent) },
+          { path: 'dashboard', canActivate: [moduloGuard('wifi', { write: true })], loadComponent: () => import('./features/wifi/wifi-dashboard.component').then((m) => m.WifiDashboardComponent) },
+        ],
       },
       {
         path: 'equipos',

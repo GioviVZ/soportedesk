@@ -18,6 +18,7 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
         "com.inia.soportedesk.activedirectory",
         "com.inia.soportedesk.wifi",
         "com.inia.soportedesk.licencias",
+        "com.inia.soportedesk.herramientas",
         "com.inia.soportedesk.gestiontiinia"
 })
 @EnableJpaRepositories(basePackages = {
@@ -32,6 +33,7 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
         "com.inia.soportedesk.activedirectory",
         "com.inia.soportedesk.wifi",
         "com.inia.soportedesk.licencias",
+        "com.inia.soportedesk.herramientas",
         "com.inia.soportedesk.gestiontiinia"
 }, entityManagerFactoryRef = "entityManagerFactory", transactionManagerRef = "transactionManager")
 public class SoportedeskApplication {

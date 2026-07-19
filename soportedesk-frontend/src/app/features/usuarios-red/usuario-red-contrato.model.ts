@@ -34,6 +34,7 @@ export interface UsuarioRedConsultaResultado {
   locked: boolean | null;
   vencimientoUsuarioRed: string | null;
   estadoVencimientoUsuarioRed: 'VENCIDO' | 'POR_VENCER' | 'VIGENTE' | 'SIN_FECHA' | null;
+  hosts: string[];
   contratos: UsuarioRedContrato[];
 }
 

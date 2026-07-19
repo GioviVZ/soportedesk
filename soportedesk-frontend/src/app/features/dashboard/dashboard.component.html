@@ -195,4 +195,53 @@
     <app-usuarios-red-por-ubicacion-chart *ngIf="showUsuariosChart" />
     <app-licencias-por-tipo-chart *ngIf="showLicenciasChart" />
   </div>
+
+  <section class="service-orders-card" *ngIf="showOrdenesServicio">
+    <div class="service-orders-heading">
+      <div>
+        <span class="eyebrow">Conteo de días</span>
+        <h3>Órdenes de servicio</h3>
+        <p>Relojes activos ordenados por el vencimiento más próximo.</p>
+      </div>
+      <a routerLink="/herramientas" [queryParams]="{ tab: 'vencimientos' }">Gestionar órdenes</a>
+    </div>
+
+    <div class="service-orders-state" *ngIf="ordenesLoading">Cargando órdenes de servicio...</div>
+    <div class="service-orders-state" *ngIf="!ordenesLoading && !ordenesServicio.length">
+      No hay órdenes activas registradas.
+    </div>
+
+    <div class="service-orders-list" *ngIf="!ordenesLoading && ordenesServicio.length">
+      <article
+        class="service-order-tile"
+        *ngFor="let orden of ordenesServicio; let index = index"
+        [style.--tile-index]="index"
+        [class.service-order-tile--warning]="ordenEstadoClass(orden) === 'warn'"
+        [class.service-order-tile--danger]="ordenEstadoClass(orden) === 'bad'"
+      >
+        <div class="service-order-state">
+          <span aria-hidden="true"></span>
+          {{ ordenSemaforo(orden) }}
+        </div>
+
+        <div class="flip-clock" [attr.aria-label]="ordenEstado(orden)">
+          <div class="flip-clock__face">
+            <strong class="flip-clock__value">{{ ordenConteoValor(orden) }}</strong>
+            <span>{{ ordenUnidadDias(orden) }}</span>
+          </div>
+        </div>
+
+        <div class="service-order-main">
+          <strong>{{ orden.numeroOrden }}</strong>
+          <span>{{ orden.descripcion }}</span>
+          <small>{{ orden.proveedor || 'Sin proveedor' }}</small>
+        </div>
+
+        <footer class="service-order-footer">
+          <span>{{ ordenEstado(orden) }}</span>
+          <time [attr.datetime]="orden.fechaVencimiento">{{ orden.fechaVencimiento | date:'dd/MM/yyyy':'UTC' }}</time>
+        </footer>
+      </article>
+    </div>
+  </section>
 </div>

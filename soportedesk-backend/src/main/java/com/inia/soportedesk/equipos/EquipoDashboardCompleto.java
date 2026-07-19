@@ -9,6 +9,8 @@ public record EquipoDashboardCompleto(
         long otrosCount,
         long sedeCentralCount,
         long eeasCount,
+        long recientes30Dias,
+        long sinActualizarMasTresMeses,
         List<EquipoFabricanteCount> distribucionPorFabricante,
         List<EquipoDependenciaCount> topDependencias,
         EquipoSaludResumen salud

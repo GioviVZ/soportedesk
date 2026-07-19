@@ -8,6 +8,7 @@ import { WifiFormComponent } from './wifi-form.component';
 import { Wifi } from './wifi.model';
 import { WifiService } from './wifi.service';
 import QRCode from 'qrcode';
+import { ActivatedRoute } from '@angular/router';
 
 @Component({
   selector: 'app-wifi-list',
@@ -19,6 +20,7 @@ import QRCode from 'qrcode';
 export class WifiListComponent implements OnInit {
   private service = inject(WifiService);
   private authService = inject(AuthService);
+  private route = inject(ActivatedRoute);
 
   items: Wifi[] = [];
   columns: TableColumn[] = [
@@ -46,6 +48,10 @@ export class WifiListComponent implements OnInit {
 
   get canWrite(): boolean {
     return this.authService.canWrite('wifi');
+  }
+
+  get canManage(): boolean {
+    return this.route.snapshot.data['mode'] === 'administracion' && this.canWrite;
   }
 
   ngOnInit(): void {

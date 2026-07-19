@@ -3,6 +3,7 @@ import {
   Component,
   ElementRef,
   HostListener,
+  OnInit,
   OnDestroy,
   ViewChild,
   inject,
@@ -11,7 +12,9 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import * as THREE from 'three';
 import QRCode from 'qrcode';
-import { EquipoDatosResult, PingResult } from './herramientas.model';
+import { ActivatedRoute } from '@angular/router';
+import { AuthService } from '../../core/auth/auth.service';
+import { EquipoDatosResult, OrdenServicio, PingResult } from './herramientas.model';
 import { HerramientasService } from './herramientas.service';
 
 type ToolTab = 'equipo' | 'ping' | 'qr' | 'vencimientos' | 'gpu' | 'ram' | 'teclado' | 'mouse' | 'microfono' | 'camara';
@@ -86,15 +89,6 @@ interface CamStats {
   message: string;
 }
 
-interface DeadlineEntry {
-  id: string;
-  titulo: string;
-  fechaNotificacion: string;
-  dias: number;
-  fechaVencimiento: string;
-  creadoEn: string;
-}
-
 const KEY_ROWS = [
   ['Escape', 'F1', 'F2', 'F3', 'F4', 'F5', 'F6', 'F7', 'F8', 'F9', 'F10', 'F11', 'F12'],
   ['Backquote', 'Digit1', 'Digit2', 'Digit3', 'Digit4', 'Digit5', 'Digit6', 'Digit7', 'Digit8', 'Digit9', 'Digit0', 'Minus', 'Equal', 'Backspace'],
@@ -132,8 +126,10 @@ const KEY_LABELS: Record<string, string> = {
   templateUrl: './herramientas.component.html',
   styleUrls: ['./herramientas.component.scss', './herramientas-tests.scss'],
 })
-export class HerramientasComponent implements AfterViewInit, OnDestroy {
+export class HerramientasComponent implements OnInit, AfterViewInit, OnDestroy {
   private service = inject(HerramientasService);
+  private authService = inject(AuthService);
+  private route = inject(ActivatedRoute);
 
   @ViewChild('gpuCanvas') gpuCanvas?: ElementRef<HTMLCanvasElement>;
   @ViewChild('cameraVideo') cameraVideo?: ElementRef<HTMLVideoElement>;
@@ -142,7 +138,7 @@ export class HerramientasComponent implements AfterViewInit, OnDestroy {
     { id: 'equipo', label: 'Equipo', detail: 'Datos' },
     { id: 'ping', label: 'Ping', detail: 'Red' },
     { id: 'qr', label: 'QR', detail: 'Link' },
-    { id: 'vencimientos', label: 'Vencimientos', detail: 'Informes' },
+    { id: 'vencimientos', label: 'Conteo de días', detail: 'Órdenes' },
     { id: 'gpu', label: 'GPU', detail: 'WebGL' },
     { id: 'ram', label: 'RAM', detail: 'Memoria web' },
     { id: 'teclado', label: 'Teclado', detail: 'Entrada' },
@@ -170,11 +166,16 @@ export class HerramientasComponent implements AfterViewInit, OnDestroy {
   qrError = '';
   qrSize = 512;
 
-  deadlineTitle = '';
-  deadlineStartDate = this.todayInputValue();
-  deadlineDays = 10;
-  deadlineError = '';
-  deadlineSaved: DeadlineEntry[] = this.loadDeadlines();
+  ordenNumero = '';
+  ordenDescripcion = '';
+  ordenProveedor = '';
+  ordenFechaInicio = this.todayInputValue();
+  ordenPlazoDias = 10;
+  ordenesServicio: OrdenServicio[] = [];
+  ordenesLoading = false;
+  ordenesLoadFailed = false;
+  ordenSaving = false;
+  ordenError = '';
 
   clientInfo: ClientInfo = this.readClientInfo();
 
@@ -257,6 +258,22 @@ export class HerramientasComponent implements AfterViewInit, OnDestroy {
 
   get keyboardTotal(): number {
     return KEY_ROWS.reduce((total, row) => total + row.length, 0);
+  }
+
+  get canManageOrders(): boolean {
+    return this.authService.canWrite('herramientas');
+  }
+
+  get ordenesActivasCount(): number {
+    return this.ordenesServicio.filter((orden) => !orden.finalizada).length;
+  }
+
+  ngOnInit(): void {
+    const requestedTab = this.route.snapshot.queryParamMap.get('tab') as ToolTab | null;
+    if (requestedTab && this.tabs.some((tab) => tab.id === requestedTab)) {
+      this.activeTab = requestedTab;
+    }
+    this.loadOrdenesServicio();
   }
 
   ngAfterViewInit(): void {
@@ -376,89 +393,143 @@ export class HerramientasComponent implements AfterViewInit, OnDestroy {
     this.qrError = '';
   }
 
-  get deadlineResultDate(): string {
-    return this.calculateDeadlineDate(this.deadlineStartDate, this.deadlineDays);
+  get ordenFechaVencimiento(): string {
+    return this.calculateDeadlineDate(this.ordenFechaInicio, this.ordenPlazoDias);
   }
 
-  get sortedDeadlines(): DeadlineEntry[] {
-    return [...this.deadlineSaved].sort((a, b) => {
-      const remainingDiff = this.daysUntil(a.fechaVencimiento) - this.daysUntil(b.fechaVencimiento);
-      return remainingDiff || a.fechaVencimiento.localeCompare(b.fechaVencimiento);
+  get ordenesOrdenadas(): OrdenServicio[] {
+    return [...this.ordenesServicio].sort((a, b) => {
+      if (a.finalizada !== b.finalizada) {
+        return a.finalizada ? 1 : -1;
+      }
+      return a.fechaVencimiento.localeCompare(b.fechaVencimiento);
     });
   }
 
-  calculateDeadline(): void {
-    this.deadlineError = this.deadlineResultDate ? '' : 'Selecciona una fecha valida e ingresa una cantidad de dias.';
+  calcularOrdenVencimiento(): void {
+    this.ordenError = this.ordenFechaVencimiento ? '' : 'Selecciona una fecha válida e ingresa un plazo en días.';
   }
 
-  saveDeadline(): void {
-    const fechaVencimiento = this.deadlineResultDate;
-    const dias = Number(this.deadlineDays);
-    if (!fechaVencimiento || !this.deadlineStartDate || !Number.isFinite(dias) || dias < 0) {
-      this.deadlineError = 'Selecciona una fecha valida e ingresa una cantidad de dias.';
+  loadOrdenesServicio(): void {
+    this.ordenesLoading = true;
+    this.ordenesLoadFailed = false;
+    this.ordenError = '';
+    this.service.getOrdenesServicio().subscribe({
+      next: (ordenes) => {
+        this.ordenesServicio = Array.isArray(ordenes) ? ordenes : [];
+        this.ordenesLoading = false;
+      },
+      error: (err) => {
+        this.ordenesServicio = [];
+        this.ordenesLoadFailed = true;
+        this.ordenError = err?.error?.message ?? 'No se pudieron cargar las órdenes de servicio.';
+        this.ordenesLoading = false;
+      },
+    });
+  }
+
+  guardarOrdenServicio(): void {
+    const plazoDias = Number(this.ordenPlazoDias);
+    if (!this.ordenNumero.trim() || !this.ordenDescripcion.trim()) {
+      this.ordenError = 'Ingresa el número de orden y la descripción del servicio.';
+      return;
+    }
+    if (!this.ordenFechaVencimiento || !Number.isFinite(plazoDias) || plazoDias < 0) {
+      this.ordenError = 'Selecciona una fecha válida e ingresa un plazo en días.';
       return;
     }
 
-    const entry: DeadlineEntry = {
-      id: `${Date.now()}-${Math.round(Math.random() * 1000)}`,
-      titulo: this.deadlineTitle.trim() || 'Informe de actividades',
-      fechaNotificacion: this.deadlineStartDate,
-      dias: Math.round(dias),
-      fechaVencimiento,
-      creadoEn: new Date().toISOString(),
-    };
-
-    this.deadlineSaved = [entry, ...this.deadlineSaved];
-    this.persistDeadlines();
-    this.deadlineTitle = '';
-    this.deadlineError = '';
-    this.addReport('Vencimientos', `${entry.titulo}: vence el ${this.formatDate(entry.fechaVencimiento)}`);
+    this.ordenSaving = true;
+    this.ordenError = '';
+    this.service.createOrdenServicio({
+      numeroOrden: this.ordenNumero.trim(),
+      descripcion: this.ordenDescripcion.trim(),
+      proveedor: this.ordenProveedor.trim(),
+      fechaInicio: this.ordenFechaInicio,
+      plazoDias: Math.round(plazoDias),
+    }).subscribe({
+      next: (orden) => {
+        this.ordenesServicio = [orden, ...this.ordenesServicio];
+        this.addReport('Orden de servicio', `${orden.numeroOrden}: vence el ${this.formatDate(orden.fechaVencimiento)}`);
+        this.limpiarOrdenForm();
+        this.ordenSaving = false;
+      },
+      error: (err) => {
+        this.ordenError = err?.error?.message ?? 'No se pudo guardar la orden de servicio.';
+        this.ordenSaving = false;
+      },
+    });
   }
 
-  deleteDeadline(id: string): void {
-    this.deadlineSaved = this.deadlineSaved.filter((entry) => entry.id !== id);
-    this.persistDeadlines();
+  cambiarEstadoOrden(orden: OrdenServicio): void {
+    this.ordenError = '';
+    this.service.setOrdenFinalizada(orden.id, !orden.finalizada).subscribe({
+      next: (updated) => {
+        this.ordenesServicio = this.ordenesServicio.map((item) => item.id === updated.id ? updated : item);
+      },
+      error: (err) => {
+        this.ordenError = err?.error?.message ?? 'No se pudo actualizar la orden.';
+      },
+    });
   }
 
-  clearDeadlineForm(): void {
-    this.deadlineTitle = '';
-    this.deadlineStartDate = this.todayInputValue();
-    this.deadlineDays = 10;
-    this.deadlineError = '';
-  }
-
-  daysUntil(dateValue: string): number {
-    const today = this.dateOnly(new Date());
-    const target = this.parseInputDate(dateValue);
-    if (!target) {
-      return 0;
+  eliminarOrden(orden: OrdenServicio): void {
+    if (!window.confirm(`¿Eliminar la orden de servicio ${orden.numeroOrden}?`)) {
+      return;
     }
-    return Math.ceil((target.getTime() - today.getTime()) / 86400000);
+    this.ordenError = '';
+    this.service.deleteOrdenServicio(orden.id).subscribe({
+      next: () => {
+        this.ordenesServicio = this.ordenesServicio.filter((item) => item.id !== orden.id);
+      },
+      error: (err) => {
+        this.ordenError = err?.error?.message ?? 'No se pudo eliminar la orden.';
+      },
+    });
   }
 
-  deadlineStatus(entry: DeadlineEntry): string {
-    const days = this.daysUntil(entry.fechaVencimiento);
+  limpiarOrdenForm(): void {
+    this.ordenNumero = '';
+    this.ordenDescripcion = '';
+    this.ordenProveedor = '';
+    this.ordenFechaInicio = this.todayInputValue();
+    this.ordenPlazoDias = 10;
+    this.ordenError = '';
+  }
+
+  ordenStatus(orden: OrdenServicio): string {
+    if (orden.finalizada) {
+      return 'Finalizada';
+    }
+    const days = orden.diasRestantes;
     if (days > 1) {
-      return `Faltan ${days} dias`;
+      return `Faltan ${days} días`;
     }
     if (days === 1) {
-      return 'Falta 1 dia';
+      return 'Falta 1 día';
     }
     if (days === 0) {
       return 'Vence hoy';
     }
     if (days === -1) {
-      return 'Vencio ayer';
+      return 'Venció ayer';
     }
-    return `Vencido hace ${Math.abs(days)} dias`;
+    return `Vencida hace ${Math.abs(days)} días`;
   }
 
-  deadlineStatusClass(entry: DeadlineEntry): 'ok' | 'warn' | 'bad' {
-    const days = this.daysUntil(entry.fechaVencimiento);
+  ordenConteoValor(orden: OrdenServicio): number {
+    return Math.abs(orden.diasRestantes);
+  }
+
+  ordenStatusClass(orden: OrdenServicio): 'ok' | 'warn' | 'bad' | 'done' {
+    if (orden.finalizada) {
+      return 'done';
+    }
+    const days = orden.diasRestantes;
     if (days < 0) {
       return 'bad';
     }
-    if (days <= 2) {
+    if (days <= 5) {
       return 'warn';
     }
     return 'ok';
@@ -970,26 +1041,6 @@ export class HerramientasComponent implements AfterViewInit, OnDestroy {
     const result = new Date(start);
     result.setDate(result.getDate() + Math.round(safeDays));
     return this.toInputDate(result);
-  }
-
-  private loadDeadlines(): DeadlineEntry[] {
-    try {
-      const raw = localStorage.getItem('soportedesk.deadlines');
-      if (!raw) {
-        return [];
-      }
-      const parsed = JSON.parse(raw) as DeadlineEntry[];
-      if (!Array.isArray(parsed)) {
-        return [];
-      }
-      return parsed.filter((entry) => entry.id && entry.fechaNotificacion && entry.fechaVencimiento);
-    } catch {
-      return [];
-    }
-  }
-
-  private persistDeadlines(): void {
-    localStorage.setItem('soportedesk.deadlines', JSON.stringify(this.deadlineSaved));
   }
 
   private todayInputValue(): string {

@@ -21,7 +21,7 @@
     margin: 4px 0 4px;
     font-size: 24px;
     font-weight: 750;
-    color: var(--color-text);
+    color: var(--color-heading);
   }
 
   p {
@@ -107,7 +107,7 @@ button:disabled {
 
     &.active {
       border-color: var(--color-accent);
-      box-shadow: 0 0 0 3px rgba(22, 163, 74, .12);
+      box-shadow: 0 0 0 3px rgba(71, 124, 33, .14);
     }
 
     span {
@@ -252,6 +252,41 @@ button:disabled {
   border: 1px solid var(--color-border);
   border-radius: var(--radius-sm);
   background: var(--color-muted);
+
+  textarea {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-surface);
+    color: var(--color-text);
+    font: inherit;
+    resize: vertical;
+
+    &:focus {
+      border-color: var(--color-accent);
+      outline: 3px solid color-mix(in srgb, var(--color-accent) 14%, transparent);
+    }
+  }
+}
+
+.deadline-readonly {
+  display: grid;
+  gap: 5px;
+  padding: 16px;
+  border-left: 3px solid var(--color-accent);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  background: var(--color-muted);
+
+  strong {
+    color: var(--color-heading);
+  }
+
+  span {
+    color: var(--color-text-secondary);
+    font-size: 12.5px;
+    line-height: 1.45;
+  }
 }
 
 .deadline-fields {
@@ -316,7 +351,7 @@ button:disabled {
 
 .deadline-item {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 150px auto;
+  grid-template-columns: minmax(0, 1fr) 130px auto;
   align-items: center;
   gap: 12px;
   padding: 12px;
@@ -344,10 +379,45 @@ button:disabled {
     border-left-color: var(--color-danger);
     background: var(--color-danger-light);
   }
+
+  &.done {
+    border-left-color: var(--color-text-muted);
+    background: var(--color-muted);
+    opacity: .78;
+  }
 }
 
 .deadline-count {
   text-align: right;
+
+  b {
+    display: block;
+    color: var(--color-accent);
+    font-size: 26px;
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+  }
+
+  span {
+    font-size: 10.5px;
+  }
+}
+
+.deadline-info {
+  min-width: 0;
+
+  span {
+    overflow-wrap: anywhere;
+  }
+}
+
+.deadline-actions {
+  display: grid;
+  gap: 6px;
+}
+
+.danger-action {
+  color: var(--color-danger);
 }
 
 .compact {

@@ -61,7 +61,7 @@ class EquipoControllerIT {
     @WithMockUser(authorities = {"ROLE_SOPORTE", "WRITE_equipos"})
     void dashboardCompleto_withWriteAuthority_returnsOk() throws Exception {
         when(service.getDashboardCompleto()).thenReturn(new EquipoDashboardCompleto(
-                10, 5, 3, 2, 6, 4, List.of(), List.of(), new EquipoSaludResumen(0, 0, 10, 0, 0, 0)));
+                10, 5, 3, 2, 6, 4, 1, 2, List.of(), List.of(), new EquipoSaludResumen(0, 0, 10, 0, 0, 0)));
 
         mockMvc.perform(get("/api/equipos/dashboard/completo"))
                 .andExpect(status().isOk())

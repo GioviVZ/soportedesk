@@ -1,61 +1,23 @@
-<section class="kpi-grid">
-  <article *ngFor="let card of saludKpis()" class="kpi-card" [class]="'tone-' + card.tone">
-    <span>{{ card.label }}</span>
-    <strong>{{ card.value }}</strong>
-  </article>
+<section class="equipment-admin-head">
+  <div><span>Administración de inventario</span><strong>Completa y corrige los datos administrativos</strong><small>Los cambios se guardan sin modificar la información original de GLPI.</small></div>
+  <div class="equipment-admin-count"><strong>{{ filtered().length }}</strong><span>equipos</span></div>
 </section>
 
-<div class="salud-table-shell" *ngIf="salud().length; else sinAlertas">
-  <table class="salud-table">
-    <thead>
-      <tr>
-        <th>Alerta</th>
-        <th>Equipo</th>
-        <th>Sede</th>
-        <th>Tipo</th>
-        <th>Usuario</th>
-        <th>Sin encendido</th>
-        <th>Sin actualiz.</th>
-        <th>Problemas</th>
-        <th>Estado dep.</th>
-        <th></th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr *ngFor="let s of salud()" [class]="'row-' + s.nivelAlerta.toLowerCase()">
-        <td>
-          <span class="nivel-badge" [class]="'nivel-' + s.nivelAlerta.toLowerCase()">
-            {{ s.nivelAlerta }}
-          </span>
-        </td>
-        <td>{{ s.nombreEquipo }}</td>
-        <td>{{ s.sedeNombre || '-' }}</td>
-        <td>{{ s.tipoEquipo || '-' }}</td>
-        <td>{{ s.usuarioContacto || '-' }}</td>
-        <td>{{ mesesLabel(s.sinEncendidoMeses) }}</td>
-        <td>{{ mesesLabel(s.sinActualizacionMeses) }}</td>
-        <td>
-          <span class="tag-warn" *ngIf="s.sinCodigoPatrimonial">Sin patrimonial</span>
-          <span class="tag-warn" *ngIf="s.sinUsuario">Sin usuario</span>
-          <span class="tag-warn" *ngIf="s.sinSede">Sin sede</span>
-          <span class="tag-warn" *ngIf="s.sinDependencia">Sin dependencia</span>
-          <span class="tag-warn" *ngIf="s.sinSubdependencia">Sin subdependencia</span>
-          <span class="tag-warn" *ngIf="s.sinNumeroSerie">Sin nro. serie</span>
-        </td>
-        <td>{{ s.estadoDepuracion || '-' }}</td>
-        <td><button type="button" class="view-link" (click)="abrirModal(s)">Ver</button></td>
-      </tr>
-    </tbody>
+<section class="equipment-admin-filters">
+  <label><span>Buscar equipo o usuario asignado</span><input type="search" [ngModel]="query()" (ngModelChange)="query.set($event)" placeholder="Nombre del equipo, usuario, sede o tipo" /></label>
+  <button type="button" [class.active]="onlyRecent()" (click)="onlyRecent.set(!onlyRecent())">Recientes <strong>{{ recientes().length }}</strong></button>
+</section>
+
+<div class="equipment-admin-table" *ngIf="filtered().length; else emptyAdmin">
+  <table><thead><tr><th>Equipo</th><th>Usuario asignado</th><th>Sede</th><th>Tipo</th><th>Datos pendientes</th><th></th></tr></thead>
+    <tbody><tr *ngFor="let item of filtered()">
+      <td><strong>{{ item.nombreEquipo }}</strong><small *ngIf="item.fechaCreacion">Agregado {{ item.fechaCreacion | date:'dd/MM/yyyy' }}</small></td>
+      <td>{{ item.usuarioContacto || 'Sin usuario' }}</td><td>{{ item.sedeNombre || 'Sin sede' }}</td><td>{{ item.tipoEquipo || 'Sin tipo' }}</td>
+      <td><span class="tag-warn" *ngIf="item.sinUsuario">Usuario</span><span class="tag-warn" *ngIf="item.sinSede">Sede</span><span class="tag-warn" *ngIf="item.sinDependencia">Dependencia</span><span class="tag-warn" *ngIf="item.sinSubdependencia">Subdependencia</span><span class="tag-warn" *ngIf="item.sinNumeroSerie">Serie</span><span class="tag-warn" *ngIf="item.sinCodigoPatrimonial">Código</span></td>
+      <td><button type="button" class="view-link" (click)="edit(item)">Editar datos</button></td>
+    </tr></tbody>
   </table>
 </div>
-<ng-template #sinAlertas>
-  <p class="salud-ok">Todo el inventario está al día. No hay alertas.</p>
-</ng-template>
+<ng-template #emptyAdmin><p class="salud-ok">No hay equipos para los filtros seleccionados.</p></ng-template>
 
-<app-equipo-enrichment-modal
-  [open]="modalOpen()"
-  [computerId]="selectedComputerId()"
-  [nombreEquipo]="selectedNombreEquipo()"
-  (closed)="cerrarModal()"
-  (saved)="onGuardado()"
-/>
+<app-equipo-enrichment-modal *ngIf="selected() as item" [open]="true" [computerId]="item.computerID" [nombreEquipo]="item.nombreEquipo" (closed)="close()" (saved)="saved()" />

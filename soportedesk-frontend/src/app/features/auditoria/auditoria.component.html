@@ -1,9 +1,9 @@
 <div class="auditoria-page module-page">
   <div class="module-header">
     <div>
-      <span class="module-eyebrow">Auditoria</span>
+      <span class="module-eyebrow">Auditoría</span>
       <h2>Movimientos del Sistema</h2>
-      <p>Monitoreo de accesos, cambios y operaciones realizadas en los modulos.</p>
+      <p>Trazabilidad detallada de quién realizó cada cambio, cuándo lo hizo y sobre qué registro.</p>
     </div>
     <div class="module-stats">
       <div class="stat-pill">
@@ -34,7 +34,7 @@
       </select>
     </div>
     <div class="field">
-      <label>Accion</label>
+      <label>Acción</label>
       <select [(ngModel)]="filters.accion">
         <option value="">Todas</option>
         <option *ngFor="let accion of acciones" [value]="accion">{{ accion }}</option>
@@ -48,17 +48,30 @@
       <label>Hasta</label>
       <input type="date" [(ngModel)]="filters.hasta" />
     </div>
+    <div class="field field-limit">
+      <label>Mostrar</label>
+      <select [(ngModel)]="filters.limit">
+        <option [ngValue]="100">100 movimientos</option>
+        <option [ngValue]="250">250 movimientos</option>
+        <option [ngValue]="500">500 movimientos</option>
+      </select>
+    </div>
     <div class="filter-actions">
       <button type="button" class="btn btn-primary" (click)="load()">Filtrar</button>
       <button type="button" class="btn btn-ghost" (click)="clearFilters()">Limpiar</button>
       <button type="button" class="btn btn-ghost" (click)="load()" [disabled]="loading">Actualizar</button>
+      <button type="button" class="btn btn-export" (click)="exportarExcel()" [disabled]="loading || exporting">
+        {{ exporting ? 'Generando Excel...' : 'Exportar Excel' }}
+      </button>
     </div>
   </section>
 
+  <p class="export-message" *ngIf="exportMessage">{{ exportMessage }}</p>
+
   <section class="audit-table">
     <div class="table-meta">
-      <span>Ultima actividad: {{ ultimaActividad }}</span>
-      <span>{{ filters.limit }} max.</span>
+      <span>Última actividad: {{ ultimaActividad }}</span>
+      <span>{{ movimientos.length }} de hasta {{ filters.limit }} movimientos</span>
     </div>
 
     <div class="table-state" *ngIf="loading">Cargando movimientos...</div>
@@ -68,41 +81,125 @@
       <table>
         <thead>
           <tr>
-            <th>Fecha</th>
+            <th>Fecha y hora</th>
             <th>Usuario</th>
-            <th>Accion</th>
             <th>Módulo</th>
-            <th>Ruta / detalle</th>
-            <th>Estado</th>
-            <th>IP</th>
+            <th>Acción</th>
+            <th>Resultado</th>
+            <th class="actions-heading">Detalle</th>
           </tr>
         </thead>
         <tbody>
           <tr *ngFor="let movimiento of movimientos">
-            <td class="fecha">{{ formatFecha(movimiento.fecha) }}</td>
-            <td class="usuario">{{ movimiento.usuario }}</td>
-            <td>
+            <td class="fecha" data-label="Fecha y hora">
+              <div class="fecha-value">
+                <strong>{{ formatFechaDia(movimiento.fecha) }}</strong>
+                <span>{{ formatHora(movimiento.fecha) }}</span>
+              </div>
+            </td>
+            <td data-label="Usuario">
+              <div class="usuario">
+                <span class="user-avatar">{{ movimiento.usuario.charAt(0).toUpperCase() }}</span>
+                <strong>{{ movimiento.usuario }}</strong>
+              </div>
+            </td>
+            <td data-label="Módulo" class="modulo">{{ moduloLabel(movimiento.modulo) }}</td>
+            <td data-label="Acción">
               <span class="accion-badge" [ngClass]="accionClass(movimiento.accion)">
                 {{ movimiento.accion }}
               </span>
             </td>
-            <td>{{ moduloLabel(movimiento.modulo) }}</td>
-            <td class="ruta">
-              <span>{{ movimiento.detalle || movimiento.ruta }}</span>
-              <small *ngIf="movimiento.entidadId">ID {{ movimiento.entidadId }}</small>
+            <td data-label="Resultado">
+              <div class="resultado">
+                <span class="http-badge" [class.http-badge--error]="(movimiento.estadoHttp || 0) >= 400">
+                  {{ resultadoLabel(movimiento.estadoHttp) }}
+                </span>
+                <small>HTTP {{ movimiento.estadoHttp || '-' }}</small>
+              </div>
             </td>
-            <td>
-              <span class="http-badge" [class.http-badge--error]="(movimiento.estadoHttp || 0) >= 400">
-                {{ movimiento.estadoHttp || '-' }}
-              </span>
+            <td data-label="Detalle" class="actions-cell">
+              <button
+                type="button"
+                class="btn-detail"
+                (click)="verDetalle(movimiento)"
+                [attr.aria-label]="'Ver detalle del movimiento de ' + movimiento.usuario"
+              >
+                Ver detalle
+              </button>
             </td>
-            <td>{{ movimiento.ip || '-' }}</td>
           </tr>
           <tr *ngIf="movimientos.length === 0">
-            <td colspan="7" class="empty">No hay movimientos para los filtros seleccionados</td>
+            <td colspan="6" class="empty">No hay movimientos para los filtros seleccionados</td>
           </tr>
         </tbody>
       </table>
     </div>
   </section>
+
+  <app-modal
+    *ngIf="movimientoSeleccionado as movimiento"
+    title="Detalle del movimiento"
+    [open]="true"
+    (closed)="cerrarDetalle()"
+  >
+    <div class="movement-detail">
+      <div class="detail-summary">
+        <div class="detail-user">
+          <span class="user-avatar user-avatar--large">{{ movimiento.usuario.charAt(0).toUpperCase() }}</span>
+          <div>
+            <small>Realizado por</small>
+            <strong>{{ movimiento.usuario }}</strong>
+          </div>
+        </div>
+        <span class="http-badge" [class.http-badge--error]="(movimiento.estadoHttp || 0) >= 400">
+          {{ resultadoLabel(movimiento.estadoHttp) }}
+        </span>
+      </div>
+
+      <section class="change-detail">
+        <span>CAMBIO REALIZADO</span>
+        <p>{{ detalleMovimiento(movimiento) }}</p>
+      </section>
+
+      <dl class="detail-grid">
+        <div>
+          <dt>Fecha</dt>
+          <dd>{{ formatFechaDia(movimiento.fecha) }}</dd>
+        </div>
+        <div>
+          <dt>Hora exacta</dt>
+          <dd>{{ formatHora(movimiento.fecha) }}</dd>
+        </div>
+        <div>
+          <dt>Módulo</dt>
+          <dd>{{ moduloLabel(movimiento.modulo) }}</dd>
+        </div>
+        <div>
+          <dt>Acción</dt>
+          <dd><span class="accion-badge" [ngClass]="accionClass(movimiento.accion)">{{ movimiento.accion }}</span></dd>
+        </div>
+        <div>
+          <dt>Método</dt>
+          <dd><span class="method-badge">{{ movimiento.metodo }}</span></dd>
+        </div>
+        <div>
+          <dt>Estado HTTP</dt>
+          <dd>{{ movimiento.estadoHttp || '-' }}</dd>
+        </div>
+        <div>
+          <dt>ID del registro</dt>
+          <dd>{{ movimiento.entidadId || 'No aplica' }}</dd>
+        </div>
+        <div>
+          <dt>Dirección IP</dt>
+          <dd class="monospace">{{ movimiento.ip || 'No disponible' }}</dd>
+        </div>
+      </dl>
+
+      <div class="route-detail">
+        <span>RUTA DEL RECURSO</span>
+        <code>{{ movimiento.ruta }}</code>
+      </div>
+    </div>
+  </app-modal>
 </div>

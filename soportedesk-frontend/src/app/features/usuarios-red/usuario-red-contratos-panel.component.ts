@@ -59,8 +59,8 @@ import { UsuarioRedContrato, UsuarioRedContratoRequest, esTipoContratoOs } from 
       </div>
     </app-section-card>
 
-    <app-modal [title]="editingId ? 'Editar contrato' : 'Agregar contrato'" [open]="modalOpen" (closed)="closeModal()">
-      <form class="modal-form form-grid" (ngSubmit)="save()">
+    <app-modal [title]="editingId ? 'Editar contrato' : 'Agregar contrato'" [open]="modalOpen" [hideDefaultFooter]="true" (closed)="closeModal()">
+      <form class="modal-form form-grid" (ngSubmit)="save()" id="usuario-red-contrato-edit-form">
         <div class="field">
           <label>Tipo de contrato</label>
           <select name="tipoContratoId" [(ngModel)]="form.tipoContratoId" required>
@@ -91,11 +91,12 @@ import { UsuarioRedContrato, UsuarioRedContratoRequest, esTipoContratoOs } from 
           </div>
         </ng-container>
 
-        <footer class="modal-actions full">
-          <button type="button" class="btn btn-ghost" (click)="closeModal()">Cancelar</button>
-          <button type="submit" class="btn btn-primary" [disabled]="saving">Guardar</button>
-        </footer>
       </form>
+
+      <footer modal-footer class="modal-actions full">
+        <button type="button" class="btn btn-ghost" (click)="closeModal()">Cancelar</button>
+        <button type="submit" form="usuario-red-contrato-edit-form" class="btn btn-primary" [disabled]="saving">Guardar</button>
+      </footer>
     </app-modal>
   `,
   styleUrls: ['./usuarios-red.shared.scss', './usuario-red-contratos-panel.scss'],

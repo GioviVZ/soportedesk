@@ -418,8 +418,11 @@
         <input [(ngModel)]="glpiValorForm" placeholder="Ej. Laptop" />
       </label>
       <label>
-        Tipo normalizado (nombre a mostrar en SoporteDesk)
-        <input [(ngModel)]="tipoNormalizadoForm" placeholder="Ej. Portátil" />
+        Tipo estándar del inventario
+        <select [(ngModel)]="tipoNormalizadoForm">
+          <option value="">Seleccione...</option>
+          <option *ngFor="let tipo of tiposComputoEstandar" [value]="tipo">{{ tipo }}</option>
+        </select>
       </label>
     </ng-container>
 
@@ -437,7 +440,7 @@
   </div>
 </app-modal>
 
-<app-modal *ngIf="canWrite" title="Antivirus institucional" [open]="vpnConfigOpen" (closed)="closeVpnConfig()">
+<app-modal *ngIf="canWrite" title="Antivirus institucional" [open]="vpnConfigOpen" [hideDefaultFooter]="true" (closed)="closeVpnConfig()">
   <app-vpn-config-institucional-form
     (saved)="onVpnConfigSaved()"
     (cancelled)="closeVpnConfig()"
@@ -449,6 +452,7 @@
   [title]="editingModeloImpresora ? 'Editar modelo de impresora' : 'Agregar modelo de impresora'"
   [open]="modeloFormOpen"
   size="wide"
+  [hideDefaultFooter]="true"
   (closed)="onModeloImpresoraCancelled()"
 >
   <app-modelo-impresora-form

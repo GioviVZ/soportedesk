@@ -3,6 +3,8 @@ package com.inia.soportedesk.dashboard;
 import com.inia.soportedesk.activedirectory.AdUsuarioCacheRepository;
 import com.inia.soportedesk.glpi.VwInvComputerFullRepository;
 import com.inia.soportedesk.gestiontiinia.VwGwDashboardRepository;
+import com.inia.soportedesk.herramientas.ordenes.OrdenServicioResponse;
+import com.inia.soportedesk.herramientas.ordenes.OrdenServicioService;
 import com.inia.soportedesk.impresoras.ImpresoraRepository;
 import com.inia.soportedesk.licencias.LicenciaRepository;
 import com.inia.soportedesk.vpn.VpnRepository;
@@ -43,6 +45,9 @@ class DashboardServiceTest {
 
     @Mock
     private VwInvComputerFullRepository equipoRepository;
+
+    @Mock
+    private OrdenServicioService ordenServicioService;
 
     @InjectMocks
     private DashboardService service;
@@ -124,5 +129,14 @@ class DashboardServiceTest {
                 new LicenciaTipoCount("Office", 450L),
                 new LicenciaTipoCount("Antivirus", 200L)
         );
+    }
+
+    @Test
+    void ordenesServicioProximas_returnsActiveOrdersFromService() {
+        OrdenServicioResponse orden = new OrdenServicioResponse(
+                1L, "OS-2026-001", "Soporte", null, null, 10, null, 5, false, "admin", null);
+        when(ordenServicioService.listarProximas()).thenReturn(List.of(orden));
+
+        assertThat(service.ordenesServicioProximas()).containsExactly(orden);
     }
 }

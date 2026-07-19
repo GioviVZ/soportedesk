@@ -15,6 +15,7 @@ function consulta(overrides: Partial<UsuarioRedConsultaResultado> = {}): Usuario
     locked: false,
     vencimientoUsuarioRed: null,
     estadoVencimientoUsuarioRed: null,
+    hosts: [],
     contratos: [],
     ...overrides,
   };

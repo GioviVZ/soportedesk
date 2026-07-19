@@ -1,11 +1,12 @@
-<form [formGroup]="form" (ngSubmit)="submit()">
+<form [formGroup]="form" (ngSubmit)="submit()" id="vpn-config-institucional-edit-form">
   <div class="field">
     <label>Fecha de vencimiento del antivirus institucional *</label>
     <input type="date" formControlName="vencimientoAntivirus" />
   </div>
 
-  <div class="actions">
-    <button type="button" class="secondary" (click)="cancelled.emit()">Cancelar</button>
-    <button type="submit" [disabled]="form.invalid">Guardar</button>
-  </div>
 </form>
+
+<div modal-footer class="actions">
+  <button type="button" class="secondary" (click)="cancelled.emit()">Cancelar</button>
+  <button type="submit" form="vpn-config-institucional-edit-form" [disabled]="form.invalid">Guardar</button>
+</div>

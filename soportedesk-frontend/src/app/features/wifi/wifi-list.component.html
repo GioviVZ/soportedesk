@@ -1,5 +1,5 @@
 <div class="module-page wifi-page">
-  <div class="module-header">
+  <div class="module-header" *ngIf="false">
     <div>
       <span class="module-eyebrow">Conectividad</span>
       <h2>Claves WiFi</h2>
@@ -24,7 +24,8 @@
   <app-generic-table
     [columns]="columns"
     [data]="items"
-    [canEdit]="canWrite"
+    [canAdd]="canManage"
+    [canEdit]="canManage"
     (searchChange)="onSearch($event)"
     (add)="onAdd()"
     (view)="onView($event)"
@@ -72,6 +73,7 @@
 <app-modal
   [title]="editing ? 'Editar red WiFi' : 'Agregar red WiFi'"
   [open]="formOpen"
+  [hideDefaultFooter]="true"
   (closed)="closeForm()"
 >
   <app-wifi-form [wifi]="editing" (saved)="onSaved()" (cancelled)="closeForm()" />

@@ -5,6 +5,8 @@ import com.inia.soportedesk.glpi.VwInvComputerFullRepository;
 import com.inia.soportedesk.impresoras.ImpresoraRepository;
 import com.inia.soportedesk.licencias.LicenciaRepository;
 import com.inia.soportedesk.gestiontiinia.VwGwDashboardRepository;
+import com.inia.soportedesk.herramientas.ordenes.OrdenServicioResponse;
+import com.inia.soportedesk.herramientas.ordenes.OrdenServicioService;
 import com.inia.soportedesk.vpn.VpnRepository;
 import com.inia.soportedesk.wifi.WifiRepository;
 import lombok.RequiredArgsConstructor;
@@ -27,6 +29,7 @@ public class DashboardService {
     private final WifiRepository wifiRepository;
     private final ImpresoraRepository impresoraRepository;
     private final VwInvComputerFullRepository equipoRepository;
+    private final OrdenServicioService ordenServicioService;
 
     public DashboardCounts getCounts() {
         return new DashboardCounts(
@@ -68,6 +71,10 @@ public class DashboardService {
         return licenciaRepository.sumCantidadGroupedByTipoLicencia().stream()
                 .map(row -> new LicenciaTipoCount((String) row[0], ((Number) row[1]).longValue()))
                 .toList();
+    }
+
+    public List<OrdenServicioResponse> ordenesServicioProximas() {
+        return ordenServicioService.listarProximas();
     }
 
     private List<UbicacionUsuariosCount> pivot(List<Object[]> rows) {

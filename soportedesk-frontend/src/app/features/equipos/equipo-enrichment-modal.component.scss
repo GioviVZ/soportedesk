@@ -5,6 +5,7 @@
 }
 
 .info-grid div,
+.info-grid label,
 .ubicacion-cell {
   border: 1px solid var(--color-border);
   border-radius: 8px;
@@ -17,6 +18,7 @@
 }
 
 .info-grid span,
+.info-grid label > span,
 .ubicacion-cell > span {
   display: block;
   color: var(--color-text-secondary);
@@ -24,6 +26,11 @@
   font-weight: 700;
   margin-bottom: 5px;
 }
+
+.admin-edit-intro { display: grid; gap: 4px; margin-bottom: 14px; }
+.admin-edit-intro strong { color: var(--color-text); }
+.admin-edit-intro span { color: var(--color-text-secondary); font-size: .82rem; }
+.ubicacion-cell > strong { display: block; margin-bottom: 10px; color: var(--color-text); }
 
 .info-grid input,
 .info-grid select,
@@ -56,7 +63,6 @@
   display: flex;
   align-items: center;
   gap: 14px;
-  margin-top: 14px;
   flex-wrap: wrap;
 }
 

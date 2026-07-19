@@ -14,6 +14,9 @@ public class EquipoEnrichmentDto {
     private String fabricanteOverride;
     private String modeloOverride;
     private String codigoPatrimonial;
+    private String codigoInternoOverride;
+    private String nombreAsignadoOverride;
+    private String usuarioAsignadoOverride;
     private Long sedeId;
     private String sedeNombre;
     private Long dependenciaId;

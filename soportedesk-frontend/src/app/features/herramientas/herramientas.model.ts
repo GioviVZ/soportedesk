@@ -21,3 +21,25 @@ export interface EquipoDatosResult {
   fuente: string;
   capturadoEn: string;
 }
+
+export interface OrdenServicio {
+  id: number;
+  numeroOrden: string;
+  descripcion: string;
+  proveedor: string | null;
+  fechaInicio: string;
+  plazoDias: number;
+  fechaVencimiento: string;
+  diasRestantes: number;
+  finalizada: boolean;
+  registradoPor: string;
+  fechaRegistro: string;
+}
+
+export interface OrdenServicioRequest {
+  numeroOrden: string;
+  descripcion: string;
+  proveedor?: string;
+  fechaInicio: string;
+  plazoDias: number;
+}

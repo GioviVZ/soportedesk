@@ -33,7 +33,7 @@
 
 .equipos-page {
   --color-accent: var(--color-equipos);
-  --color-accent-hover: #15803d;
+  --color-accent-hover: var(--color-equipos-hover);
   min-width: 0;
 }
 
@@ -49,7 +49,7 @@
   display: grid;
   gap: 8px;
   min-height: 116px;
-  border: 1px solid var(--color-border);
+  border: 1px solid transparent;
   border-radius: 8px;
   padding: 16px;
   background: var(--color-surface);
@@ -216,7 +216,7 @@
   display: grid;
   gap: 14px;
   margin-bottom: 14px;
-  border: 1px solid var(--color-border);
+  border: 1px solid transparent;
   border-radius: 8px;
   background: var(--color-surface);
   padding: 14px;
@@ -321,6 +321,33 @@
   min-width: 0;
 }
 
+.recent-equipment-alert {
+  display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  margin: 14px 0; padding: 14px 16px; border: 1px solid var(--color-warning);
+  border-radius: var(--radius-lg); background: var(--color-warning-light);
+  div { display: grid; gap: 4px; }
+  strong { color: var(--color-text); }
+  span { color: var(--color-text-secondary); font-size: .82rem; }
+  button { padding: 8px 12px; border: 0; border-radius: 8px; background: var(--color-warning); color: #fff; cursor: pointer; font-weight: 700; }
+}
+
+.equipment-admin-head, .equipment-admin-filters { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 16px; border: 1px solid transparent; border-radius: var(--radius-lg); background: var(--color-surface); box-shadow: var(--shadow-sm); }
+.equipment-admin-head > div:first-child { display: grid; gap: 4px; }
+.equipment-admin-head span, .equipment-admin-head small { color: var(--color-text-secondary); }
+.equipment-admin-head > div:first-child > span { color: var(--color-accent); font-size: .72rem; font-weight: 800; text-transform: uppercase; }
+.equipment-admin-count { text-align: center; }
+.equipment-admin-count strong { display: block; color: var(--color-accent); font-size: 1.8rem; }
+.equipment-admin-filters { margin: 12px 0; }
+.equipment-admin-filters label { display: grid; flex: 1; gap: 5px; }
+.equipment-admin-filters label span { color: var(--color-text-secondary); font-size: .75rem; font-weight: 700; }
+.equipment-admin-filters input { min-height: 42px; padding: 0 11px; border: 1px solid var(--color-border); border-radius: 8px; background: var(--color-muted); color: var(--color-text); }
+.equipment-admin-filters button { padding: 9px 13px; border: 1px solid var(--color-border); border-radius: 8px; background: var(--color-surface); color: var(--color-text); cursor: pointer; }
+.equipment-admin-filters button.active { border-color: var(--color-warning); background: var(--color-warning-light); }
+.equipment-admin-table { overflow-x: auto; border: 1px solid transparent; border-radius: var(--radius-lg); background: var(--color-surface); box-shadow: var(--shadow-sm); }
+.equipment-admin-table table { min-width: 900px; }
+.equipment-admin-table td strong, .equipment-admin-table td small { display: block; }
+.equipment-admin-table td small { margin-top: 3px; color: var(--color-text-secondary); }
+
 .mobile-equipment-list {
   display: none;
 }
@@ -372,7 +399,7 @@
     display: grid;
     gap: 12px;
     padding: 17px 14px 14px;
-    border: 1px solid var(--color-border);
+    border: 1px solid transparent;
     border-radius: var(--radius-md);
     background: var(--color-surface);
     box-shadow: var(--shadow-sm);

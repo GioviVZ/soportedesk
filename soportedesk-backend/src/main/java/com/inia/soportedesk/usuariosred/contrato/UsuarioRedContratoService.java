@@ -6,6 +6,8 @@ import com.inia.soportedesk.activedirectory.ActiveDirectoryService;
 import com.inia.soportedesk.catalogo.TipoContrato;
 import com.inia.soportedesk.catalogo.TipoContratoRepository;
 import com.inia.soportedesk.exception.ResourceNotFoundException;
+import com.inia.soportedesk.glpi.VwInvComputerFull;
+import com.inia.soportedesk.glpi.VwInvComputerFullRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
@@ -20,6 +22,7 @@ import java.util.Map;
 import java.util.Comparator;
 import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -33,6 +36,7 @@ public class UsuarioRedContratoService {
     private final TipoContratoRepository tipoContratoRepository;
     private final AdUsuarioCacheRepository adUsuarioCacheRepository;
     private final ActiveDirectoryService activeDirectoryService;
+    private final VwInvComputerFullRepository equipoRepository;
 
     public List<UsuarioRedContratoDto> findByUsuario(String usuario) {
         return repository.findByUsuarioIgnoreCaseOrderByFechaInicioDesc(usuario)
@@ -58,13 +62,13 @@ public class UsuarioRedContratoService {
         if (isNamelessQuery(normalizedTerm)) {
             adUsuarioCacheRepository.findNameless(PageRequest.of(0, CONSULTA_LIMIT))
                     .forEach(user -> mergeUsuario(resultsByUser, user, normalizedTerm));
-            return resultsByUser.values().stream()
+            return enrichHosts(resultsByUser.values().stream()
                     .sorted(Comparator
                             .comparing((ScoredConsulta item) -> blankToLast(item.dto().getUsuario()))
                             .thenComparing(item -> blankToLast(item.dto().getDisplayName())))
                     .map(ScoredConsulta::dto)
                     .map(this::enrichContratosYVencimiento)
-                    .toList();
+                    .toList());
         }
 
         List<String> terms = expandedTerms(normalizedTerm);
@@ -79,7 +83,7 @@ public class UsuarioRedContratoService {
         }
         mergeAcronymMatches(resultsByUser, normalizedTerm);
 
-        return resultsByUser.values().stream()
+        return enrichHosts(resultsByUser.values().stream()
                 .sorted(Comparator
                         .comparingInt(ScoredConsulta::score).reversed()
                         .thenComparing(item -> blankToLast(item.dto().getDisplayName()))
@@ -87,7 +91,7 @@ public class UsuarioRedContratoService {
                 .map(ScoredConsulta::dto)
                 .map(this::enrichContratosYVencimiento)
                 .limit(CONSULTA_LIMIT)
-                .toList();
+                .toList());
     }
 
     private List<UsuarioRedConsultaDto> listarTodos() {
@@ -101,12 +105,29 @@ public class UsuarioRedContratoService {
             resultados.computeIfAbsent(key, k -> toConsultaDto(contrato));
         });
 
-        return resultados.values().stream()
+        return enrichHosts(resultados.values().stream()
                 .map(this::enrichContratosYVencimiento)
                 .sorted(Comparator
                         .comparing((UsuarioRedConsultaDto dto) -> blankToLast(dto.getDisplayName()))
                         .thenComparing(dto -> blankToLast(dto.getUsuario())))
-                .toList();
+                .toList());
+    }
+
+    private List<UsuarioRedConsultaDto> enrichHosts(List<UsuarioRedConsultaDto> consultas) {
+        Map<String, List<String>> hostsPorUsuario = equipoRepository
+                .findFiltered(null, null, null, null, null, null).stream()
+                .filter(equipo -> equipo.getUsuarioContacto() != null && !equipo.getUsuarioContacto().isBlank()
+                        && equipo.getNombreEquipo() != null && !equipo.getNombreEquipo().isBlank())
+                .collect(Collectors.groupingBy(
+                        equipo -> normalizeAccountSearchTerm(equipo.getUsuarioContacto()),
+                        LinkedHashMap::new,
+                        Collectors.mapping(VwInvComputerFull::getNombreEquipo,
+                                Collectors.collectingAndThen(Collectors.toCollection(java.util.TreeSet::new), ArrayList::new))));
+        consultas.forEach(consulta -> {
+            String usuario = normalizeAccountSearchTerm(consulta.getUsuario());
+            consulta.setHosts(usuario == null ? List.of() : hostsPorUsuario.getOrDefault(usuario, List.of()));
+        });
+        return consultas;
     }
 
     @Transactional

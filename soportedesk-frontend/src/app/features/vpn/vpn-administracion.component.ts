@@ -163,7 +163,7 @@ type EstadoSolicitud = 'PENDIENTE' | 'APROBADO' | 'RECHAZADO' | 'OBSERVADO';
         </dl>
 
         <footer>
-          <button type="button" class="view" (click)="onView(item)">Revisar detalle</button>
+          <button type="button" class="view" (click)="onView(item)">Ver</button>
         </footer>
       </article>
 
@@ -185,15 +185,15 @@ type EstadoSolicitud = 'PENDIENTE' | 'APROBADO' | 'RECHAZADO' | 'OBSERVADO';
       />
     </app-modal>
 
-    <app-modal title="Antivirus" [open]="antivirusOpen" (closed)="closeAntivirus()">
+    <app-modal title="Antivirus" [open]="antivirusOpen" [hideDefaultFooter]="true" (closed)="closeAntivirus()">
       <app-vpn-antivirus-form [vpn]="antivirusEditing" (saved)="onAntivirusSaved()" (cancelled)="closeAntivirus()" />
     </app-modal>
 
-    <app-modal title="Aprobar solicitud VPN" [open]="aprobarOpen" (closed)="closeAprobar()">
+    <app-modal title="Aprobar solicitud VPN" [open]="aprobarOpen" [hideDefaultFooter]="true" (closed)="closeAprobar()">
       <app-vpn-aprobar-form [vpn]="aprobarEditing" (saved)="onAprobarSaved()" (cancelled)="closeAprobar()" />
     </app-modal>
 
-    <app-modal [title]="resolucionModo === 'RECHAZAR' ? 'Rechazar solicitud VPN' : 'Observar solicitud VPN'" [open]="resolucionOpen" (closed)="closeResolucion()">
+    <app-modal [title]="resolucionModo === 'RECHAZAR' ? 'Rechazar solicitud VPN' : 'Observar solicitud VPN'" [open]="resolucionOpen" [hideDefaultFooter]="true" (closed)="closeResolucion()">
       <app-vpn-resolucion-form [vpn]="resolucionEditing" [modo]="resolucionModo" (saved)="onResolucionSaved()" (cancelled)="closeResolucion()" />
     </app-modal>
   `,

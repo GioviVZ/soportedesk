@@ -1,4 +1,4 @@
-<form [formGroup]="form" (ngSubmit)="submit()" class="impresora-form">
+<form [formGroup]="form" (ngSubmit)="submit()" class="impresora-form" id="impresora-edit-form">
   <app-section-card title="Identificación">
     <svg icon xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
       <path d="M4 7h16" />
@@ -121,8 +121,9 @@
     </ng-template>
   </app-section-card>
 
-  <div class="actions">
-    <button type="button" class="secondary" (click)="cancelled.emit()">Cancelar</button>
-    <button type="submit" [disabled]="form.invalid">Guardar</button>
-  </div>
 </form>
+
+<div modal-footer class="actions">
+  <button type="button" class="secondary" (click)="cancelled.emit()">Cancelar</button>
+  <button type="submit" form="impresora-edit-form" [disabled]="form.invalid">Guardar</button>
+</div>

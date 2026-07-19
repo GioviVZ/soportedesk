@@ -22,7 +22,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class EquipoService {
 
-    private static final String DESKTOP = "Desktop";
+    private static final String DESKTOP = "Computadora de Escritorio";
     private static final String LAPTOP = "Laptop";
     private static final String SEDE_CENTRAL = "SEDE CENTRAL";
 
@@ -34,13 +34,16 @@ public class EquipoService {
 
     public List<VwInvComputerFull> findAll(String search, String sede, String tipo,
                                             String dependencia, String subdependencia, String fabricante) {
-        return repository.findFiltered(
+        List<VwInvComputerFull> items = repository.findFiltered(
                 blankToNull(search), blankToNull(sede), blankToNull(tipo),
                 blankToNull(dependencia), blankToNull(subdependencia), blankToNull(fabricante));
+        applyEnrichments(items);
+        return items;
     }
 
     public EquipoKpisDto getKpis() {
         List<VwInvComputerFull> equipos = repository.findFiltered(null, null, null, null, null, null);
+        applyEnrichments(equipos);
         long totalActivos = equipos.size();
         long desktopCount = equipos.stream().filter(e -> DESKTOP.equals(e.getTipoEquipo())).count();
         long laptopCount = equipos.stream().filter(e -> LAPTOP.equals(e.getTipoEquipo())).count();
@@ -62,6 +65,7 @@ public class EquipoService {
                 .orElseThrow(() -> new ResourceNotFoundException("Equipo no encontrado: " + id));
 
         EquipoEnrichment enrichment = enrichmentRepository.findByComputerId(id).orElse(null);
+        applyEnrichment(equipo, enrichment);
         String tipoEfectivo = resolveTipo(equipo.getTipoEquipo(), enrichment);
 
         return new EquipoDetalleResponse(
@@ -74,6 +78,7 @@ public class EquipoService {
 
     public List<EquipoSaludDto> getSalud() {
         List<VwInvComputerFull> all = repository.findFiltered(null, null, null, null, null, null);
+        applyEnrichments(all);
         List<Long> ids = all.stream().map(VwInvComputerFull::getComputerID).toList();
         Map<Long, EquipoEnrichment> enrichmentMap = enrichmentRepository.findByComputerIdIn(ids).stream()
                 .collect(Collectors.toMap(EquipoEnrichment::getComputerId, e -> e));
@@ -131,7 +136,7 @@ public class EquipoService {
 
         return new EquipoSaludDto(
                 e.getComputerID(), e.getNombreEquipo(), e.getSedeNombre(), e.getTipoEquipo(),
-                e.getUsuarioContacto(),
+                e.getUsuarioContacto(), e.getFechaCreacion(),
                 calculo.sinEncendidoMeses(), calculo.sinActualizacionMeses(),
                 calculo.nivel(), calculo.sinPatrimonial(), calculo.sinUsuario(), calculo.sinSede(),
                 calculo.sinDependencia(), calculo.sinSubdependencia(), calculo.sinNumeroSerie(),
@@ -141,6 +146,7 @@ public class EquipoService {
     public EquipoDashboardCompleto getDashboardCompleto() {
         try {
             List<VwInvComputerFull> equipos = repository.findFiltered(null, null, null, null, null, null);
+            applyEnrichments(equipos);
 
             long total = equipos.size();
             long desktopCount = equipos.stream().filter(e -> DESKTOP.equals(e.getTipoEquipo())).count();
@@ -148,6 +154,13 @@ public class EquipoService {
             long otrosCount = total - desktopCount - laptopCount;
             long sedeCentralCount = equipos.stream().filter(e -> SEDE_CENTRAL.equals(e.getSedeNombre())).count();
             long eeasCount = total - sedeCentralCount;
+            long recientes30Dias = equipos.stream().filter(e -> e.getFechaCreacion() != null
+                    && !e.getFechaCreacion().isBefore(LocalDateTime.now().minusDays(30))).count();
+            LocalDateTime limiteActualizacion = LocalDateTime.now().minusMonths(3);
+            long sinActualizarMasTresMeses = equipos.stream()
+                    .filter(e -> e.getUltimaActualizacion() == null
+                            || e.getUltimaActualizacion().isBefore(limiteActualizacion))
+                    .count();
 
             List<EquipoFabricanteCount> distribucionPorFabricante = equipos.stream()
                     .collect(Collectors.groupingBy(
@@ -193,10 +206,11 @@ public class EquipoService {
             EquipoSaludResumen salud = new EquipoSaludResumen(rojos, amarillos, ok, sinPatrimonial, sinUsuario, sinSede);
 
             return new EquipoDashboardCompleto(
-                    total, desktopCount, laptopCount, otrosCount, sedeCentralCount, eeasCount,
+                    total, desktopCount, laptopCount, otrosCount, sedeCentralCount, eeasCount, recientes30Dias,
+                    sinActualizarMasTresMeses,
                     distribucionPorFabricante, topDependencias, salud);
         } catch (Exception ex) {
-            return new EquipoDashboardCompleto(0, 0, 0, 0, 0, 0, List.of(), List.of(),
+            return new EquipoDashboardCompleto(0, 0, 0, 0, 0, 0, 0, 0, List.of(), List.of(),
                     new EquipoSaludResumen(0, 0, 0, 0, 0, 0));
         }
     }
@@ -211,6 +225,30 @@ public class EquipoService {
                     .orElse(glpiTipo);
         }
         return glpiTipo;
+    }
+
+    private void applyEnrichments(List<VwInvComputerFull> items) {
+        List<Long> ids = items.stream().map(VwInvComputerFull::getComputerID).toList();
+        Map<Long, EquipoEnrichment> map = enrichmentRepository.findByComputerIdIn(ids).stream()
+                .collect(Collectors.toMap(EquipoEnrichment::getComputerId, e -> e));
+        Map<String, String> tipos = catalogoRepository.findByActivoTrue().stream()
+                .collect(Collectors.toMap(TipoEquipoCatalogo::getGlpiValor, TipoEquipoCatalogo::getTipoNormalizado, (a, b) -> a));
+        items.forEach(item -> {
+            item.setTipoEquipo(tipos.getOrDefault(item.getTipoEquipo(), item.getTipoEquipo()));
+            applyEnrichment(item, map.get(item.getComputerID()));
+        });
+    }
+
+    private void applyEnrichment(VwInvComputerFull item, EquipoEnrichment e) {
+        if (e == null) return;
+        if (!blank(e.getTipoOverride())) item.setTipoEquipo(e.getTipoOverride());
+        if (!blank(e.getNombreAsignadoOverride())) item.setUsuarioTelefono(e.getNombreAsignadoOverride());
+        if (!blank(e.getUsuarioAsignadoOverride())) item.setUsuarioContacto(e.getUsuarioAsignadoOverride());
+        if (!blank(e.getCodigoInternoOverride())) item.setCodigoInterno(e.getCodigoInternoOverride());
+        if (!blank(e.getNumeroSerieOverride())) item.setNumeroserie(e.getNumeroSerieOverride());
+        if (e.getSede() != null) item.setSedeNombre(e.getSede().getNombre());
+        if (e.getDependencia() != null) item.setOficinaId(e.getDependencia().getNombre());
+        if (e.getSubdependencia() != null) item.setUnidadId(e.getSubdependencia().getNombre());
     }
 
     private String blankToNull(String value) {

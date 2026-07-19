@@ -1,10 +1,11 @@
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { GenericTableComponent, TableColumn } from '../../shared/generic-table/generic-table.component';
 import { EquipoKpis, EquipoResumen } from './equipo.model';
 import { EquipoService } from './equipo.service';
+import { EquipoDetailComponent } from './equipo-detail.component';
+import { ModalComponent } from '../../shared/modal/modal.component';
 import * as XLSX from 'xlsx';
 
 interface EquipoTableRow extends EquipoResumen {
@@ -18,13 +19,12 @@ interface EquipoTableRow extends EquipoResumen {
 @Component({
   selector: 'app-equipos-inventario',
   standalone: true,
-  imports: [CommonModule, FormsModule, GenericTableComponent],
+  imports: [CommonModule, FormsModule, GenericTableComponent, ModalComponent, EquipoDetailComponent],
   templateUrl: './equipos-inventario.component.html',
   styleUrl: './equipos.shared.scss',
 })
 export class EquiposInventarioComponent implements OnInit {
   private service = inject(EquipoService);
-  private router = inject(Router);
 
   items = signal<EquipoTableRow[]>([]);
   kpis = signal<EquipoKpis | null>(null);
@@ -41,6 +41,8 @@ export class EquiposInventarioComponent implements OnInit {
   selectedModelo = signal('');
   ipFilter = signal('');
   searchTerm = signal('');
+  viewingId = signal<number | null>(null);
+  viewingName = signal('');
 
   kpiCards = computed(() => {
     const k = this.kpis();
@@ -58,15 +60,9 @@ export class EquiposInventarioComponent implements OnInit {
     { key: 'nombreEquipo', label: 'Equipo' },
     { key: 'usuarioLimpio', label: 'Usuario' },
     { key: 'sedeNombre', label: 'Sede' },
-    { key: 'oficinaId', label: 'Dependencia' },
-    { key: 'unidadId', label: 'Subdependencia' },
     { key: 'tipoEquipo', label: 'Tipo' },
     { key: 'fabricanteModelo', label: 'Fabricante / Modelo' },
     { key: 'numeroserie', label: 'Serie' },
-    { key: 'codigoInterno', label: 'Código' },
-    { key: 'cpuCorto', label: 'CPU' },
-    { key: 'ramLabel', label: 'RAM' },
-    { key: 'diskLabel', label: 'Disco' },
     { key: 'ipEquipo', label: 'IP' },
   ];
 
@@ -194,14 +190,20 @@ export class EquiposInventarioComponent implements OnInit {
   }
 
   onView(item: EquipoTableRow): void {
-    this.router.navigate(['/equipos', item.computerID]);
+    this.viewingName.set(item.nombreEquipo || 'Equipo');
+    this.viewingId.set(item.computerID);
+  }
+
+  closeDetail(): void {
+    this.viewingId.set(null);
+    this.viewingName.set('');
   }
 
   exportExcel(): void {
     const rows = this.filteredItems().map((item) => ({
       Equipo: item.nombreEquipo ?? '',
-      Usuario: item.usuarioLimpio ?? '',
-      'Usuario original': item.usuarioContacto ?? '',
+      'Usuario de red activo': item.usuarioContacto ?? '',
+      'Usuario normalizado': item.usuarioLimpio ?? '',
       Sede: item.sedeNombre ?? '',
       Dependencia: item.oficinaId ?? '',
       Subdependencia: item.unidadId ?? '',
@@ -214,6 +216,10 @@ export class EquiposInventarioComponent implements OnInit {
       'RAM GB': item.ramTotalGb ?? '',
       'Disco GB': item.diskTotalGb ?? '',
       IP: item.ipEquipo ?? '',
+      'Fecha de alta en GLPI': this.formatExportDate(item.fechaCreacion),
+      'Último inventario automático': this.formatExportDate(item.ultimaActualizacion),
+      'Meses sin actualizar': this.monthsSince(item.ultimaActualizacion),
+      'Estado de actualización': this.isOutdated(item.ultimaActualizacion) ? 'Actualizar registro' : 'Al día',
     }));
 
     const worksheet = XLSX.utils.json_to_sheet(rows);
@@ -221,11 +227,39 @@ export class EquiposInventarioComponent implements OnInit {
       { wch: 22 }, { wch: 24 }, { wch: 28 }, { wch: 18 }, { wch: 32 },
       { wch: 32 }, { wch: 16 }, { wch: 18 }, { wch: 26 }, { wch: 22 },
       { wch: 18 }, { wch: 38 }, { wch: 10 }, { wch: 10 }, { wch: 16 },
+      { wch: 22 }, { wch: 28 }, { wch: 22 }, { wch: 24 },
     ];
 
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Equipos');
     XLSX.writeFile(workbook, `equipos-${this.exportDate()}.xlsx`);
+  }
+
+  private isOutdated(value: string | null): boolean {
+    if (!value) return true;
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return true;
+    const limit = new Date();
+    limit.setMonth(limit.getMonth() - 3);
+    return date < limit;
+  }
+
+  private monthsSince(value: string | null): number | string {
+    if (!value) return 'Sin fecha';
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return 'Sin fecha';
+    const now = new Date();
+    return Math.max(0, (now.getFullYear() - date.getFullYear()) * 12 + now.getMonth() - date.getMonth()
+      - (now.getDate() < date.getDate() ? 1 : 0));
+  }
+
+  private formatExportDate(value: string | null): string {
+    if (!value) return '';
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return value;
+    return new Intl.DateTimeFormat('es-PE', {
+      day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit',
+    }).format(date);
   }
 
   private loadKpis(): void {

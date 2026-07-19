@@ -103,7 +103,6 @@ import { Vpn } from './vpn.model';
     <footer class="modal-actions">
       <button type="button" class="btn btn-ghost" *ngIf="canEditSolicitud && vpn.estadoSolicitud !== 'APROBADO'" (click)="editRequested.emit(vpn)">Editar</button>
       <button type="button" class="btn btn-danger" *ngIf="canDeleteSolicitud" (click)="deleteRequested.emit(vpn)">Eliminar</button>
-      <button type="button" class="btn btn-ghost" (click)="closeRequested.emit()">Cerrar</button>
     </footer>
   `,
   styleUrl: './vpn.shared.scss',

@@ -100,7 +100,7 @@
             <span class="date-cell">{{ item.ultimoInicioSesion || 'Sin acceso' }}</span>
           </td>
           <td>
-            <button class="detail-btn" type="button" (click)="openDetail(item)">Ver detalle</button>
+            <button class="detail-btn" type="button" (click)="openDetail(item)">Ver</button>
           </td>
         </tr>
         <tr *ngIf="items.length === 0">
@@ -141,7 +141,7 @@
 
       <footer>
         <span>{{ item.ultimoInicioSesion || 'Sin acceso registrado' }}</span>
-        <button type="button" (click)="openDetail(item)">Ver detalle</button>
+        <button type="button" (click)="openDetail(item)">Ver</button>
       </footer>
     </article>
 

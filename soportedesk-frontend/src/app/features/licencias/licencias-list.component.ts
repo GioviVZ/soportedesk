@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, HostListener, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../core/auth/auth.service';
 import { FieldComponent } from '../../shared/field/field.component';
@@ -9,6 +9,8 @@ import { LicenciaFormComponent } from './licencia-form.component';
 import { Licencia } from './licencia.model';
 import { LicenciaService } from './licencia.service';
 import * as XLSX from 'xlsx';
+import { RealtimeChange } from '../../core/services/realtime.service';
+import { ActivatedRoute } from '@angular/router';
 
 @Component({
   selector: 'app-licencias-list',
@@ -20,13 +22,14 @@ import * as XLSX from 'xlsx';
 export class LicenciasListComponent implements OnInit {
   private service = inject(LicenciaService);
   private authService = inject(AuthService);
+  private route = inject(ActivatedRoute);
 
   licencias: Licencia[] = [];
   columns: TableColumn[] = [
     { key: 'tipoLicencia.nombre', label: 'Tipo' },
     { key: 'descripcion', label: 'Licencia' },
     { key: 'ordenCompra', label: 'Orden de Compra' },
-    { key: 'anio', label: 'Anio' },
+    { key: 'anio', label: 'Año' },
   ];
 
   viewing: Licencia | null = null;
@@ -52,8 +55,17 @@ export class LicenciasListComponent implements OnInit {
     return this.authService.canWrite('licencias');
   }
 
+  get canManage(): boolean {
+    return this.route.snapshot.data['mode'] === 'administracion' && this.canWrite;
+  }
+
   ngOnInit(): void {
     this.load();
+  }
+
+  @HostListener('window:soportedesk:data-change', ['$event'])
+  onRealtimeChange(event: CustomEvent<RealtimeChange>): void {
+    if (event.detail.modulo === 'licencias') this.load();
   }
 
   load(): void {
@@ -184,7 +196,7 @@ export class LicenciasListComponent implements OnInit {
         'Tipo de Bien': licencia.tipoBien?.nombre ?? '',
         Licencia: licencia.descripcion ?? '',
         'Orden de Compra': licencia.ordenCompra ?? '',
-        Anio: licencia.anio ?? '',
+        Año: licencia.anio ?? '',
         Cantidad: licencia.cantidad ?? 0,
         'Cuentas de Activacion': activaciones.map((item) => item.cuentaActivacion).filter(Boolean).join('\n'),
         'Claves de Activacion': activaciones.map((item) => item.claveActivacion).filter(Boolean).join('\n'),

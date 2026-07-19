@@ -32,6 +32,21 @@ describe('DashboardComponent', () => {
     httpMock = TestBed.inject(HttpTestingController);
     fixture.detectChanges();
     httpMock.expectOne('/api/dashboard/counts').flush(counts);
+    httpMock.expectOne('/api/dashboard/ordenes-servicio').flush([
+      {
+        id: 1,
+        numeroOrden: 'OS-2026-001',
+        descripcion: 'Soporte de infraestructura',
+        proveedor: 'Proveedor INIA',
+        fechaInicio: '2026-07-01',
+        plazoDias: 30,
+        fechaVencimiento: '2026-07-31',
+        diasRestantes: 13,
+        finalizada: false,
+        registradoPor: 'admin',
+        fechaRegistro: '2026-07-18T10:00:00',
+      },
+    ]);
     fixture.detectChanges();
     httpMock.expectOne((r) => r.url.endsWith('/usuarios-red-por-ubicacion')).flush([]);
     httpMock.expectOne((r) => r.url.endsWith('/licencias-por-tipo')).flush([]);
@@ -54,5 +69,20 @@ describe('DashboardComponent', () => {
 
   it('computes totalRegistros from the 7 record categories, excluding usuariosRedInactivos', () => {
     expect(fixture.componentInstance.totalRegistros).toBe(5 + 12 + 20 + 3 + 4 + 7 + 15);
+  });
+
+  it('shows active service orders with their remaining days', () => {
+    const card = fixture.debugElement.query(By.css('.service-orders-card'));
+    expect(card.nativeElement.textContent).toContain('OS-2026-001');
+    expect(card.nativeElement.textContent).toContain('Faltan 13 días');
+    expect(card.query(By.css('.service-order-tile'))).toBeTruthy();
+    expect(card.query(By.css('.flip-clock__value')).nativeElement.textContent.trim()).toBe('13');
+  });
+
+  it('places the service-order countdown below the dashboard analysis', () => {
+    const charts = fixture.nativeElement.querySelector('.charts-grid') as HTMLElement;
+    const serviceOrders = fixture.nativeElement.querySelector('.service-orders-card') as HTMLElement;
+
+    expect(charts.compareDocumentPosition(serviceOrders) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 });

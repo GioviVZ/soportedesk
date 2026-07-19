@@ -63,6 +63,7 @@ type CatalogoNavGroup = {
   styleUrl: './catalogos.component.scss',
 })
 export class CatalogosComponent implements OnInit {
+  readonly tiposComputoEstandar = ['Laptop', 'Computadora de Escritorio', 'All in One'];
   private service = inject(CatalogoService);
   private authService = inject(AuthService);
   private vpnService = inject(VpnService);
@@ -182,8 +183,8 @@ export class CatalogosComponent implements OnInit {
       items: [
         {
           tab: 'tiposEquipo',
-          label: 'Tipos de equipo (GLPI)',
-          description: 'Mapea valores GLPI a tipos normalizados del sistema.',
+          label: 'Tipos de equipos de cómputo',
+          description: 'Estandariza los valores de GLPI para actualizar el inventario.',
           affects: ['Equipos'],
         },
       ],

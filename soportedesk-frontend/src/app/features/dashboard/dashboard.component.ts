@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, HostListener, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { ChartConfiguration, ChartData } from 'chart.js';
@@ -9,6 +9,8 @@ import { DashboardService } from './dashboard.service';
 import { DashboardCounts } from './dashboard-counts.model';
 import { UsuariosRedPorUbicacionChartComponent } from './usuarios-red-por-ubicacion-chart.component';
 import { LicenciasPorTipoChartComponent } from './licencias-por-tipo-chart.component';
+import { RealtimeChange } from '../../core/services/realtime.service';
+import { OrdenServicio } from '../herramientas/herramientas.model';
 
 interface DashboardCard {
   label: string;
@@ -79,6 +81,9 @@ export class DashboardComponent implements OnInit {
   usuariosActivos = 0;
   showUsuariosChart = false;
   showLicenciasChart = false;
+  showOrdenesServicio = false;
+  ordenesServicio: OrdenServicio[] = [];
+  ordenesLoading = false;
   priorityItems: PriorityItem[] = [];
   mixItems: MixItem[] = [];
   loading = false;
@@ -116,6 +121,11 @@ export class DashboardComponent implements OnInit {
     this.load();
   }
 
+  @HostListener('window:soportedesk:data-change', ['$event'])
+  onRealtimeChange(_event: CustomEvent<RealtimeChange>): void {
+    this.load();
+  }
+
   load(): void {
     this.loading = true;
     this.error = false;
@@ -128,6 +138,10 @@ export class DashboardComponent implements OnInit {
         this.cards = this.toCards(counts);
         this.showUsuariosChart = this.authService.canRead('usuarios-red');
         this.showLicenciasChart = this.authService.canRead('licencias');
+        this.showOrdenesServicio = this.authService.canRead('herramientas');
+        if (this.showOrdenesServicio) {
+          this.loadOrdenesServicio();
+        }
         this.summaryMetrics = this.toSummaryMetrics(counts);
         this.priorityItems = this.toPriorityItems(counts);
         this.mixItems = this.toMixItems(counts);
@@ -136,6 +150,49 @@ export class DashboardComponent implements OnInit {
       error: () => {
         this.loading = false;
         this.error = true;
+      },
+    });
+  }
+
+  ordenEstado(orden: OrdenServicio): string {
+    if (orden.diasRestantes > 1) return `Faltan ${orden.diasRestantes} días`;
+    if (orden.diasRestantes === 1) return 'Falta 1 día';
+    if (orden.diasRestantes === 0) return 'Vence hoy';
+    if (orden.diasRestantes === -1) return 'Venció ayer';
+    return `Vencida hace ${Math.abs(orden.diasRestantes)} días`;
+  }
+
+  ordenEstadoClass(orden: OrdenServicio): 'ok' | 'warn' | 'bad' {
+    if (orden.diasRestantes < 0) return 'bad';
+    if (orden.diasRestantes <= 5) return 'warn';
+    return 'ok';
+  }
+
+  ordenConteoValor(orden: OrdenServicio): number {
+    return Math.abs(orden.diasRestantes);
+  }
+
+  ordenUnidadDias(orden: OrdenServicio): string {
+    return this.ordenConteoValor(orden) === 1 ? 'día' : 'días';
+  }
+
+  ordenSemaforo(orden: OrdenServicio): string {
+    const estado = this.ordenEstadoClass(orden);
+    if (estado === 'bad') return 'Vencida';
+    if (estado === 'warn') return 'Por vencer';
+    return 'En plazo';
+  }
+
+  private loadOrdenesServicio(): void {
+    this.ordenesLoading = true;
+    this.dashboardService.getOrdenesServicio().subscribe({
+      next: (ordenes) => {
+        this.ordenesServicio = ordenes;
+        this.ordenesLoading = false;
+      },
+      error: () => {
+        this.ordenesServicio = [];
+        this.ordenesLoading = false;
       },
     });
   }
