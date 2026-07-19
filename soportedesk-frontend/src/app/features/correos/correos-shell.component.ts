@@ -1,12 +1,11 @@
-import { CommonModule } from '@angular/common';
-import { Component } from '@angular/core';
+
+import { Component, ChangeDetectionStrategy } from '@angular/core';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 
 @Component({
-  selector: 'app-correos-shell',
-  standalone: true,
-  imports: [CommonModule, RouterOutlet, RouterLink, RouterLinkActive],
-  template: `
+    selector: 'app-correos-shell',
+    imports: [RouterOutlet, RouterLink, RouterLinkActive],
+    template: `
     <div class="module-page correos-page">
       <div class="module-header">
         <div>
@@ -34,6 +33,7 @@ import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
       <router-outlet />
     </div>
   `,
-  styleUrl: './correos.shared.scss',
+    changeDetection: ChangeDetectionStrategy.Eager,
+    styleUrl: './correos.shared.scss'
 })
 export class CorreosShellComponent {}

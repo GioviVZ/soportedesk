@@ -3,7 +3,9 @@
     <label>Sede</label>
     <select [ngModel]="sedeId" (change)="onSedeChange($any($event.target).value)" name="sede">
       <option value="">Seleccione...</option>
-      <option *ngFor="let sede of sedes" [value]="sede.id">{{ sede.nombre }}</option>
+      @for (sede of sedes; track sede) {
+        <option [value]="sede.id">{{ sede.nombre }}</option>
+      }
     </select>
   </div>
 
@@ -14,11 +16,13 @@
       (change)="onDependenciaChange($any($event.target).value)"
       name="dependencia"
       [disabled]="!sedeId"
-    >
+      >
       <option value="">Seleccione...</option>
-      <option *ngFor="let dependencia of dependencias" [value]="dependencia.id">
-        {{ dependencia.nombre }}
-      </option>
+      @for (dependencia of dependencias; track dependencia) {
+        <option [value]="dependencia.id">
+          {{ dependencia.nombre }}
+        </option>
+      }
     </select>
   </div>
 
@@ -29,19 +33,25 @@
       (change)="onSubdependenciaChange($any($event.target).value)"
       name="subdependencia"
       [disabled]="!dependenciaId"
-    >
+      >
       <option value="">Seleccione...</option>
-      <option *ngFor="let subdependencia of subdependencias" [value]="subdependencia.id">
-        {{ subdependencia.nombre }}
-      </option>
+      @for (subdependencia of subdependencias; track subdependencia) {
+        <option [value]="subdependencia.id">
+          {{ subdependencia.nombre }}
+        </option>
+      }
     </select>
   </div>
 
-  <div class="field" *ngIf="showTipoContrato">
-    <label>Tipo de Contrato</label>
-    <select [ngModel]="tipoContratoId" (change)="onTipoContratoChange($any($event.target).value)" name="tipoContrato">
-      <option value="">Seleccione...</option>
-      <option *ngFor="let tipo of tiposContrato" [value]="tipo.id">{{ tipo.nombre }}</option>
-    </select>
-  </div>
+  @if (showTipoContrato) {
+    <div class="field">
+      <label>Tipo de Contrato</label>
+      <select [ngModel]="tipoContratoId" (change)="onTipoContratoChange($any($event.target).value)" name="tipoContrato">
+        <option value="">Seleccione...</option>
+        @for (tipo of tiposContrato; track tipo) {
+          <option [value]="tipo.id">{{ tipo.nombre }}</option>
+        }
+      </select>
+    </div>
+  }
 </div>

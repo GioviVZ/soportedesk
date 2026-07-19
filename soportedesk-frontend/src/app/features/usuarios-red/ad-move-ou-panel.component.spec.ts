@@ -1,12 +1,13 @@
 import { TestBed } from '@angular/core/testing';
-import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { AdMoveOuPanelComponent } from './ad-move-ou-panel.component';
+import { provideHttpClient, withInterceptorsFromDi, withXhr } from '@angular/common/http';
 
 describe('AdMoveOuPanelComponent', () => {
   let httpMock: HttpTestingController;
 
   function createComponent(): AdMoveOuPanelComponent {
-    TestBed.configureTestingModule({ imports: [HttpClientTestingModule] });
+    TestBed.configureTestingModule({ imports: [], providers: [provideHttpClient(withXhr(), withInterceptorsFromDi()), provideHttpClientTesting()] });
     httpMock = TestBed.inject(HttpTestingController);
     const component = TestBed.runInInjectionContext(() => new AdMoveOuPanelComponent());
     component.samAccountName = 'jperez';

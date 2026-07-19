@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import * as XLSX from 'xlsx';
 import { ModalComponent } from '../../shared/modal/modal.component';
@@ -23,11 +23,11 @@ const MODULOS: Record<string, string> = {
 const EXPORT_LIMIT = 5000;
 
 @Component({
-  selector: 'app-auditoria',
-  standalone: true,
-  imports: [CommonModule, FormsModule, ModalComponent],
-  templateUrl: './auditoria.component.html',
-  styleUrl: './auditoria.component.scss',
+    selector: 'app-auditoria',
+    imports: [CommonModule, FormsModule, ModalComponent],
+    templateUrl: './auditoria.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
+    styleUrl: './auditoria.component.scss'
 })
 export class AuditoriaComponent implements OnInit {
   private service = inject(AuditoriaService);

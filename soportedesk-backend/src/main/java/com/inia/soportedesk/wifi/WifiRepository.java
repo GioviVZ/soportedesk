@@ -13,4 +13,8 @@ public interface WifiRepository extends JpaRepository<Wifi, Long> {
            "LOWER(w.ubicacion) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
            "LOWER(w.tipo) LIKE LOWER(CONCAT('%', :search, '%'))")
     List<Wifi> search(@Param("search") String search);
+
+    @Query("SELECT w.estado, COUNT(w) FROM Wifi w WHERE w.estado IS NOT NULL " +
+           "GROUP BY w.estado ORDER BY COUNT(w) DESC")
+    List<Object[]> countGroupedByEstado();
 }

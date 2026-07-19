@@ -40,4 +40,34 @@ public class DashboardController {
     public List<OrdenServicioResponse> ordenesServicio() {
         return service.ordenesServicioProximas();
     }
+
+    @GetMapping("/impresoras-por-estado")
+    @PreAuthorize("hasRole('ADMIN') || hasAuthority('READ_impresoras')")
+    public List<ModuloBreakdownItem> impresorasPorEstado() {
+        return service.impresorasPorEstado();
+    }
+
+    @GetMapping("/vpn-por-estado-solicitud")
+    @PreAuthorize("hasRole('ADMIN') || hasAuthority('READ_vpn') || hasAuthority('WRITE_solicitar-vpn') || hasAuthority('WRITE_aprobar-vpn')")
+    public List<ModuloBreakdownItem> vpnPorEstadoSolicitud() {
+        return service.vpnPorEstadoSolicitud();
+    }
+
+    @GetMapping("/wifi-por-estado")
+    @PreAuthorize("hasRole('ADMIN') || hasAuthority('READ_wifi')")
+    public List<ModuloBreakdownItem> wifiPorEstado() {
+        return service.wifiPorEstado();
+    }
+
+    @GetMapping("/correos-por-estado")
+    @PreAuthorize("hasRole('ADMIN') || hasAuthority('READ_correos')")
+    public List<ModuloBreakdownItem> correosPorEstado() {
+        return service.correosPorEstado();
+    }
+
+    @GetMapping("/equipos-por-tipo")
+    @PreAuthorize("hasRole('ADMIN') || hasAuthority('READ_equipos')")
+    public List<ModuloBreakdownItem> equiposPorTipo() {
+        return service.equiposPorTipo();
+    }
 }

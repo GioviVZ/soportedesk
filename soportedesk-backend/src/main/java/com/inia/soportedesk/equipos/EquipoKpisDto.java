@@ -4,7 +4,7 @@ public record EquipoKpisDto(
         long totalActivos,
         long desktopCount,
         long laptopCount,
-        long otrosCount,
+        long allInOneCount,
         long sedeCentralCount,
         long eeasCount
 ) {

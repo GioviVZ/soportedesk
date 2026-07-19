@@ -1,5 +1,5 @@
-import { Component, Input, Output, EventEmitter, OnInit, OnDestroy, computed, inject, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, Input, Output, EventEmitter, OnInit, OnDestroy, computed, inject, signal, ChangeDetectionStrategy } from '@angular/core';
+
 import { ActivatedRoute, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { EquipoDetalle, EquipoEvidencia, EquipoOficina, EquipoSoftware, EquipoTeclado } from './equipo.model';
@@ -19,11 +19,11 @@ interface EvidenciaView extends EquipoEvidencia {
 }
 
 @Component({
-  selector: 'app-equipo-detail',
-  standalone: true,
-  imports: [CommonModule, FormsModule, ModalComponent],
-  templateUrl: './equipo-detail.component.html',
-  styleUrl: './equipo-detail.component.scss',
+    selector: 'app-equipo-detail',
+    imports: [FormsModule, ModalComponent],
+    templateUrl: './equipo-detail.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
+    styleUrl: './equipo-detail.component.scss'
 })
 export class EquipoDetailComponent implements OnInit, OnDestroy {
   private route = inject(ActivatedRoute);

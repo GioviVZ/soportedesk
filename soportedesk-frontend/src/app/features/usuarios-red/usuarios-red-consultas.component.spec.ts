@@ -1,8 +1,9 @@
 import { TestBed } from '@angular/core/testing';
-import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { Router } from '@angular/router';
 import { UsuariosRedConsultasComponent } from './usuarios-red-consultas.component';
 import { UsuarioRedConsultaResultado } from './usuario-red-contrato.model';
+import { provideHttpClient, withInterceptorsFromDi, withXhr } from '@angular/common/http';
 
 function consulta(overrides: Partial<UsuarioRedConsultaResultado> = {}): UsuarioRedConsultaResultado {
   return {
@@ -26,9 +27,9 @@ describe('UsuariosRedConsultasComponent', () => {
 
   function createComponent(): UsuariosRedConsultasComponent {
     TestBed.configureTestingModule({
-      imports: [HttpClientTestingModule],
-      providers: [{ provide: Router, useValue: { navigate: () => Promise.resolve(true) } }],
-    });
+    imports: [],
+    providers: [{ provide: Router, useValue: { navigate: () => Promise.resolve(true) } }, provideHttpClient(withXhr(), withInterceptorsFromDi()), provideHttpClientTesting()]
+});
     httpMock = TestBed.inject(HttpTestingController);
     return TestBed.runInInjectionContext(() => new UsuariosRedConsultasComponent());
   }

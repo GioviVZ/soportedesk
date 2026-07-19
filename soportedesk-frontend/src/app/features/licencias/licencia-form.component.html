@@ -4,14 +4,18 @@
       <label>Tipo de Licencia</label>
       <select [value]="tipoLicenciaId" (change)="onTipoLicenciaChange($any($event.target).value)">
         <option [ngValue]="null">Seleccione...</option>
-        <option *ngFor="let t of tiposLicencia" [value]="t.id">{{ t.nombre }}</option>
+        @for (t of tiposLicencia; track t) {
+          <option [value]="t.id">{{ t.nombre }}</option>
+        }
       </select>
     </div>
     <div class="field">
       <label>Tipo de Bien</label>
       <select [value]="tipoBienId" (change)="onTipoBienChange($any($event.target).value)">
         <option [ngValue]="null">Seleccione...</option>
-        <option *ngFor="let t of tiposBien" [value]="t.id">{{ t.nombre }}</option>
+        @for (t of tiposBien; track t) {
+          <option [value]="t.id">{{ t.nombre }}</option>
+        }
       </select>
     </div>
     <div class="field wide">
@@ -42,36 +46,38 @@
     </div>
 
     <div class="activation-list" formArrayName="activaciones">
-      <div class="activation-row" *ngFor="let group of activacionesArray.controls; let i = index" [formGroupName]="i">
-        <div class="field">
-          <label>Cuenta {{ i + 1 }}</label>
-          <input
-            type="text"
-            formControlName="cuentaActivacion"
-            placeholder="correo o cuenta de activacion"
-          />
+      @for (group of activacionesArray.controls; track group; let i = $index) {
+        <div class="activation-row" [formGroupName]="i">
+          <div class="field">
+            <label>Cuenta {{ i + 1 }}</label>
+            <input
+              type="text"
+              formControlName="cuentaActivacion"
+              placeholder="correo o cuenta de activacion"
+              />
+            </div>
+            <div class="field">
+              <label>Clave {{ i + 1 }}</label>
+              <input
+                type="text"
+                formControlName="claveActivacion"
+                placeholder="clave asociada"
+                />
+              </div>
+              <button type="button" class="icon-btn" (click)="removeActivacion(i)" title="Quitar cuenta">Quitar</button>
+            </div>
+          }
         </div>
-        <div class="field">
-          <label>Clave {{ i + 1 }}</label>
-          <input
-            type="text"
-            formControlName="claveActivacion"
-            placeholder="clave asociada"
-          />
-        </div>
-        <button type="button" class="icon-btn" (click)="removeActivacion(i)" title="Quitar cuenta">Quitar</button>
+      </section>
+
+      <div class="field">
+        <label>Serial de Activacion</label>
+        <textarea formControlName="serialActivacion" rows="5" placeholder="Una clave por linea"></textarea>
       </div>
+
+    </form>
+
+    <div modal-footer class="actions">
+      <button type="button" class="secondary" (click)="cancelled.emit()">Cancelar</button>
+      <button type="submit" form="licencia-edit-form" [disabled]="form.invalid || !tipoLicenciaId || !tipoBienId">Guardar</button>
     </div>
-  </section>
-
-  <div class="field">
-    <label>Serial de Activacion</label>
-    <textarea formControlName="serialActivacion" rows="5" placeholder="Una clave por linea"></textarea>
-  </div>
-
-</form>
-
-<div modal-footer class="actions">
-  <button type="button" class="secondary" (click)="cancelled.emit()">Cancelar</button>
-  <button type="submit" form="licencia-edit-form" [disabled]="form.invalid || !tipoLicenciaId || !tipoBienId">Guardar</button>
-</div>

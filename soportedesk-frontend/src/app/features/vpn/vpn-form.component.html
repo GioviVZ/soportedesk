@@ -1,4 +1,7 @@
 <form [formGroup]="form" (ngSubmit)="submit()" id="vpn-edit-form">
+  @if (saveError) {
+    <div class="form-error" role="alert">{{ saveError }}</div>
+  }
 
   <!-- Titular: búsqueda AD / manual -->
   <div class="section-header ad-header">
@@ -8,56 +11,75 @@
     Titular del acceso VPN
   </div>
 
-  <ng-container *ngIf="titularModo === 'buscando'">
+  @if (titularModo === 'buscando') {
     <div class="field ad-field">
       <label>Buscar usuario de red (AD) *</label>
       <input type="text" [value]="adSearchTerm" (input)="onAdSearch($any($event.target).value)" placeholder="Usuario, usuario&#64;inia.local, nombre, correo o contrato" />
       <span class="hint">Puede escribir el usuario, correo, oficina o nombre del contrato. Ejemplo: jeremi.</span>
-      <div class="search-status" *ngIf="adSearchTerm.trim().length === 1">Escriba al menos 2 caracteres.</div>
-      <div class="search-status" *ngIf="adSearching">Buscando coincidencias...</div>
-      <div class="search-error" *ngIf="adSearchError">{{ adSearchError }}</div>
-      <ul class="equipo-results" *ngIf="adResults.length">
-        <li *ngFor="let u of adResults" (click)="onAdUserSelected(u)">
-          <strong>{{ u.displayName || u.samAccountName }}</strong>
-          <span>{{ u.samAccountName }}</span>
-          <small *ngIf="u.mail || u.office || u.organizationalUnit">
-            {{ u.mail || 'Sin correo' }} · {{ u.office || u.organizationalUnit || 'Sin oficina' }}
-          </small>
-        </li>
-      </ul>
+      @if (adSearchTerm.trim().length === 1) {
+        <div class="search-status">Escriba al menos 2 caracteres.</div>
+      }
+      @if (adSearching) {
+        <div class="search-status">Buscando coincidencias...</div>
+      }
+      @if (adSearchError) {
+        <div class="search-error">{{ adSearchError }}</div>
+      }
+      @if (adResults.length) {
+        <ul class="equipo-results">
+          @for (u of adResults; track u) {
+            <li (click)="onAdUserSelected(u)">
+              <strong>{{ u.displayName || u.samAccountName }}</strong>
+              <span>{{ u.samAccountName }}</span>
+              @if (u.mail || u.office || u.organizationalUnit) {
+                <small>
+                  {{ u.mail || 'Sin correo' }} · {{ u.office || u.organizationalUnit || 'Sin oficina' }}
+                </small>
+              }
+            </li>
+          }
+        </ul>
+      }
     </div>
-
     <div class="titular-fallback">
-      <p *ngIf="adBusquedaRealizada && adResults.length === 0 && !adSearching">
-        No se encontro un usuario activo en AD ni en contratos de Usuarios de Red.
-      </p>
+      @if (adBusquedaRealizada && adResults.length === 0 && !adSearching) {
+        <p>
+          No se encontro un usuario activo en AD ni en contratos de Usuarios de Red.
+        </p>
+      }
       <div class="actions">
         <button type="button" class="secondary" (click)="onElegirExterno()">Externo</button>
       </div>
     </div>
-  </ng-container>
+  }
 
-  <div class="ad-preview" *ngIf="titularModo === 'ad-seleccionado' && adUserSelected">
-    <div class="ad-preview-row">
-      <span class="ad-label">Usuario</span>
-      <span>{{ adUserSelected.samAccountName }}</span>
+  @if (titularModo === 'ad-seleccionado' && adUserSelected) {
+    <div class="ad-preview">
+      <div class="ad-preview-row">
+        <span class="ad-label">Usuario</span>
+        <span>{{ adUserSelected.samAccountName }}</span>
+      </div>
+      <div class="ad-preview-row">
+        <span class="ad-label">Nombre</span>
+        <span>{{ adUserSelected.displayName || adUserSelected.samAccountName }}</span>
+      </div>
+      @if (adUserSelected.mail) {
+        <div class="ad-preview-row">
+          <span class="ad-label">Correo</span>
+          <span>{{ adUserSelected.mail }}</span>
+        </div>
+      }
+      @if (adUserSelected.office || adUserSelected.organizationalUnit) {
+        <div class="ad-preview-row">
+          <span class="ad-label">Oficina/OU</span>
+          <span>{{ adUserSelected.office || adUserSelected.organizationalUnit }}</span>
+        </div>
+      }
+      <button type="button" class="secondary" (click)="onCambiarUsuario()">Cambiar usuario</button>
     </div>
-    <div class="ad-preview-row">
-      <span class="ad-label">Nombre</span>
-      <span>{{ adUserSelected.displayName || adUserSelected.samAccountName }}</span>
-    </div>
-    <div class="ad-preview-row" *ngIf="adUserSelected.mail">
-      <span class="ad-label">Correo</span>
-      <span>{{ adUserSelected.mail }}</span>
-    </div>
-    <div class="ad-preview-row" *ngIf="adUserSelected.office || adUserSelected.organizationalUnit">
-      <span class="ad-label">Oficina/OU</span>
-      <span>{{ adUserSelected.office || adUserSelected.organizationalUnit }}</span>
-    </div>
-    <button type="button" class="secondary" (click)="onCambiarUsuario()">Cambiar usuario</button>
-  </div>
+  }
 
-  <ng-container *ngIf="titularModo === 'externo'">
+  @if (titularModo === 'externo') {
     <div class="field">
       <label>Nombre *</label>
       <input type="text" formControlName="titularNombre" />
@@ -82,19 +104,25 @@
       <label>Cargo *</label>
       <select formControlName="titularCargo">
         <option value="">Seleccione...</option>
-        <option *ngFor="let cargo of cargosExterno" [value]="cargo">{{ cargo }}</option>
+        @for (cargo of cargosExterno; track cargo) {
+          <option [value]="cargo">{{ cargo }}</option>
+        }
       </select>
     </div>
     <button type="button" class="secondary" (click)="onVolverABuscar()">Volver a buscar en AD</button>
-  </ng-container>
+  }
 
-  <div class="field" *ngIf="titularModo !== 'externo'">
-    <label>Cargo *</label>
-    <select formControlName="titularCargo">
-      <option value="">Seleccione...</option>
-      <option *ngFor="let cargo of cargos" [value]="cargo">{{ cargo }}</option>
-    </select>
-  </div>
+  @if (titularModo !== 'externo') {
+    <div class="field">
+      <label>Cargo *</label>
+      <select formControlName="titularCargo">
+        <option value="">Seleccione...</option>
+        @for (cargo of cargos; track cargo) {
+          <option [value]="cargo">{{ cargo }}</option>
+        }
+      </select>
+    </div>
+  }
 
   <hr class="divider" />
 
@@ -120,104 +148,106 @@
     </div>
   </div>
 
-  <ng-container *ngIf="esInia">
+  @if (esInia) {
     <div class="field checkbox-field">
       <label>
         <input type="checkbox" formControlName="antivirusVerificado" />
         Antivirus institucional verificado
       </label>
     </div>
-
     <div class="field checkbox-field">
       <label>
         <input type="checkbox" formControlName="analisisAntivirusRealizado" [disabled]="!pasoAnalisisHabilitado" />
         Análisis de antivirus al equipo realizado
       </label>
     </div>
-
     <div class="field checkbox-field">
       <label>
         <input type="checkbox" formControlName="sistemaOperativoActualizado" [disabled]="!pasoSoActualizadoHabilitado" />
         Sistema operativo actualizado
       </label>
     </div>
-
     <div class="field checkbox-field">
       <label>
         <input type="checkbox" formControlName="forticlientInstalado" [disabled]="!pasoForticlientHabilitado" />
         Forticlient instalado
       </label>
     </div>
-
     <div class="field checkbox-field">
       <label>
         <input type="checkbox" formControlName="tieneGlpi" (change)="onTieneGlpiChange()" [disabled]="!pasoGlpiHabilitado" />
         GLPI instalado
       </label>
     </div>
-
-    <div class="field" *ngIf="tieneGlpi">
-      <label>Buscar equipo GLPI</label>
-      <input type="text" [value]="equipoSearchTerm" (input)="onEquipoSearch($any($event.target).value)" placeholder="Nombre de equipo o usuario de contacto" />
-      <ul class="equipo-results" *ngIf="equipoResults.length">
-        <li *ngFor="let e of equipoResults" (click)="onEquipoSelected(e)">
-          {{ e.nombreEquipo }} — {{ e.usuarioContacto }}
-        </li>
-      </ul>
-      <div class="equipo-preview" *ngIf="equipoSeleccionado">
-        <span class="ad-label">Host</span> {{ equipoSeleccionado.nombreEquipo }}
-        <ng-container *ngIf="equipoSeleccionado.ipEquipo">
-          | <span class="ad-label">IP</span> {{ equipoSeleccionado.ipEquipo }}
-        </ng-container>
+    @if (tieneGlpi) {
+      <div class="field">
+        <label>Buscar equipo GLPI</label>
+        <input type="text" [value]="equipoSearchTerm" (input)="onEquipoSearch($any($event.target).value)" placeholder="Nombre de equipo o usuario de contacto" />
+        @if (equipoResults.length) {
+          <ul class="equipo-results">
+            @for (e of equipoResults; track e) {
+              <li (click)="onEquipoSelected(e)">
+                {{ e.nombreEquipo }} — {{ e.usuarioContacto }}
+              </li>
+            }
+          </ul>
+        }
+        @if (equipoSeleccionado) {
+          <div class="equipo-preview">
+            <span class="ad-label">Host</span> {{ equipoSeleccionado.nombreEquipo }}
+            @if (equipoSeleccionado.ipEquipo) {
+              | <span class="ad-label">IP</span> {{ equipoSeleccionado.ipEquipo }}
+            }
+          </div>
+        }
       </div>
-    </div>
+    }
+    @if (tieneGlpi) {
+      <div class="field checkbox-field">
+        <label>
+          <input type="checkbox" formControlName="hostActualizado" />
+          Host actualizado
+        </label>
+      </div>
+    }
+  }
 
-    <div class="field checkbox-field" *ngIf="tieneGlpi">
-      <label>
-        <input type="checkbox" formControlName="hostActualizado" />
-        Host actualizado
-      </label>
-    </div>
-  </ng-container>
-
-  <ng-container *ngIf="!esInia">
+  @if (!esInia) {
     <div class="field checkbox-field">
       <label>
         <input type="checkbox" formControlName="antivirusVerificado" />
         Antivirus con protección anti-ransomware verificado
       </label>
     </div>
-
     <div class="field checkbox-field">
       <label>
         <input type="checkbox" formControlName="analisisAntivirusRealizado" [disabled]="!pasoAnalisisHabilitado" />
         Análisis de antivirus al equipo realizado
       </label>
     </div>
-
     <div class="field">
       <label>Fecha de vencimiento de licencia de antivirus *</label>
       <input type="date" formControlName="vencimientoAntivirus" [disabled]="!pasoVencimientoHabilitado" />
     </div>
-
     <div class="field checkbox-field">
       <label>
         <input type="checkbox" formControlName="sistemaOperativoActualizado" [disabled]="!pasoSoActualizadoHabilitado" />
         Sistema operativo actualizado
       </label>
     </div>
-
     <div class="field checkbox-field">
       <label>
         <input type="checkbox" formControlName="forticlientInstalado" [disabled]="!pasoForticlientHabilitado" />
         Forticlient instalado
       </label>
     </div>
-  </ng-container>
+  }
 
 </form>
 
 <div modal-footer class="actions">
   <button type="button" class="secondary" (click)="cancelled.emit()">Cancelar</button>
-  <button type="submit" form="vpn-edit-form" [disabled]="form.invalid">Guardar</button>
+  <button type="submit" form="vpn-edit-form" [disabled]="form.invalid || saving">
+    {{ saving ? 'Guardando...' : 'Guardar' }}
+  </button>
 </div>

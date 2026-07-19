@@ -123,6 +123,77 @@ class ImpresoraServiceTest {
     }
 
     @Test
+    void create_withDuplicatedSerie_rejectsRequestBeforeSaving() {
+        when(repository.existsBySerieIgnoreCase("SN-12345")).thenReturn(true);
+
+        assertThatThrownBy(() -> service.create(sampleRequest()))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("serie SN-12345");
+    }
+
+    @Test
+    void create_withDuplicatedInventoryCode_rejectsRequestBeforeSaving() {
+        when(repository.existsByCodigoInventarioIgnoreCase("INV-001")).thenReturn(true);
+
+        assertThatThrownBy(() -> service.create(sampleRequest()))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("codigo de inventario INV-001");
+    }
+
+    @Test
+    void create_withDuplicatedPatrimonialCode_rejectsRequestBeforeSaving() {
+        when(repository.existsByCodigoPatrimonialIgnoreCase("PAT-001")).thenReturn(true);
+
+        assertThatThrownBy(() -> service.create(sampleRequest()))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("codigo patrimonial PAT-001");
+    }
+
+    @Test
+    void create_withDuplicatedIp_rejectsRequestBeforeSaving() {
+        when(repository.existsByIpIgnoreCase("10.0.0.50")).thenReturn(true);
+
+        assertThatThrownBy(() -> service.create(sampleRequest()))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("10.0.0.50");
+    }
+
+    @Test
+    void create_withIpConnectionAndBlankIp_rejectsRequest() {
+        ImpresoraRequest request = sampleRequest();
+        request.setIp(" ");
+
+        assertThatThrownBy(() -> service.create(request))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Debe ingresar la direccion IP");
+    }
+
+    @Test
+    void create_withMalformedIp_rejectsRequest() {
+        ImpresoraRequest request = sampleRequest();
+        request.setIp("999.1.2.3");
+
+        assertThatThrownBy(() -> service.create(request))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("no es valida");
+    }
+
+    @Test
+    void update_withOwnIdentifiers_doesNotTreatCurrentPrinterAsDuplicate() {
+        when(repository.findById(8L)).thenReturn(Optional.of(sampleImpresora(8L)));
+        when(modeloImpresoraRepository.findById(1L)).thenReturn(Optional.of(modeloImpresora()));
+        when(repository.save(any(Impresora.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        Impresora result = service.update(8L, sampleRequest());
+
+        assertThat(result.getId()).isEqualTo(8L);
+        verify(repository).existsBySerieIgnoreCaseAndIdNot("SN-12345", 8L);
+        verify(repository).existsByCodigoInventarioIgnoreCaseAndIdNot("INV-001", 8L);
+        verify(repository).existsByCodigoPatrimonialIgnoreCaseAndIdNot("PAT-001", 8L);
+        verify(repository).existsByIpIgnoreCaseAndIdNot("10.0.0.50", 8L);
+    }
+
+    @Test
     void create_withUnknownModeloImpresoraId_throwsResourceNotFoundException() {
         when(modeloImpresoraRepository.findById(99L)).thenReturn(Optional.empty());
 
@@ -205,14 +276,25 @@ class ImpresoraServiceTest {
         central.setId(1L);
         central.setNombre("Sede Central");
 
+        com.inia.soportedesk.catalogo.Dependencia oti = new com.inia.soportedesk.catalogo.Dependencia();
+        oti.setId(1L);
+        oti.setNombre("OTI");
+        com.inia.soportedesk.catalogo.Subdependencia soporte = new com.inia.soportedesk.catalogo.Subdependencia();
+        soporte.setId(1L);
+        soporte.setNombre("Soporte");
+
         Impresora activa1 = sampleImpresora(1L);
         activa1.setModeloImpresora(modeloHp);
         activa1.setSede(central);
+        activa1.setDependencia(oti);
+        activa1.setSubdependencia(soporte);
         activa1.setEstado("Activa");
 
         Impresora activa2 = sampleImpresora(2L);
         activa2.setModeloImpresora(modeloCanon);
         activa2.setSede(central);
+        activa2.setDependencia(oti);
+        activa2.setSubdependencia(soporte);
         activa2.setEstado("Activa");
 
         Impresora mantenimiento = sampleImpresora(3L);
@@ -241,6 +323,19 @@ class ImpresoraServiceTest {
                         org.assertj.core.groups.Tuple.tuple("Canon", 1L)
                 );
 
+        assertThat(result.distribucionPorDependencia())
+                .extracting(ImpresoraDependenciaCount::dependencia, ImpresoraDependenciaCount::total)
+                .containsExactly(
+                        org.assertj.core.groups.Tuple.tuple("OTI", 2L),
+                        org.assertj.core.groups.Tuple.tuple("Sin dependencia", 2L)
+                );
+        assertThat(result.distribucionPorSubdependencia())
+                .extracting(ImpresoraSubdependenciaCount::subdependencia, ImpresoraSubdependenciaCount::total)
+                .containsExactly(
+                        org.assertj.core.groups.Tuple.tuple("Sin subdependencia", 2L),
+                        org.assertj.core.groups.Tuple.tuple("Soporte", 2L)
+                );
+
         assertThat(result.distribucionPorSede())
                 .extracting(ImpresoraSedeCount::sede, ImpresoraSedeCount::total)
                 .containsExactlyInAnyOrder(
@@ -262,6 +357,8 @@ class ImpresoraServiceTest {
 
         assertThat(result.total()).isEqualTo(0);
         assertThat(result.distribucionPorMarca()).isEmpty();
+        assertThat(result.distribucionPorDependencia()).isEmpty();
+        assertThat(result.distribucionPorSubdependencia()).isEmpty();
         assertThat(result.topConsumibles()).isEmpty();
     }
 

@@ -1,16 +1,16 @@
-import { Component, OnInit, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, OnInit, inject, ChangeDetectionStrategy } from '@angular/core';
+
 import { FormsModule } from '@angular/forms';
 import { ModalComponent } from '../../shared/modal/modal.component';
 import { MODULOS, ModuloPermiso, NivelPermiso, UsuarioSistema, UsuarioSistemaRequest } from './usuario-sistema.model';
 import { UsuarioSistemaService } from './usuario-sistema.service';
 
 @Component({
-  selector: 'app-usuarios-sistema',
-  standalone: true,
-  imports: [CommonModule, FormsModule, ModalComponent],
-  templateUrl: './usuarios-sistema.component.html',
-  styleUrl: './usuarios-sistema.component.scss',
+    selector: 'app-usuarios-sistema',
+    imports: [FormsModule, ModalComponent],
+    templateUrl: './usuarios-sistema.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
+    styleUrl: './usuarios-sistema.component.scss'
 })
 export class UsuariosSistemaComponent implements OnInit {
   private service = inject(UsuarioSistemaService);

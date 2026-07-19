@@ -1,6 +1,7 @@
 package com.inia.soportedesk.dashboard;
 
 import java.time.LocalDate;
+import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -44,5 +45,43 @@ class DashboardControllerIT {
     void getCounts_withoutAuth_returns401() throws Exception {
         mockMvc.perform(get("/api/dashboard/counts"))
                 .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @WithMockUser(authorities = {"ROLE_SOPORTE", "READ_impresoras"})
+    void impresorasPorEstado_withReadAuthority_returns200() throws Exception {
+        when(service.impresorasPorEstado()).thenReturn(
+                List.of(new ModuloBreakdownItem("Operativa", 12L)));
+
+        mockMvc.perform(get("/api/dashboard/impresoras-por-estado"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].label", is("Operativa")))
+                .andExpect(jsonPath("$[0].count", is(12)));
+    }
+
+    @Test
+    @WithMockUser(roles = "SOPORTE")
+    void impresorasPorEstado_withoutReadAuthority_returns403() throws Exception {
+        mockMvc.perform(get("/api/dashboard/impresoras-por-estado"))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @WithMockUser(authorities = {"ROLE_SOPORTE", "WRITE_solicitar-vpn"})
+    void vpnPorEstadoSolicitud_withSolicitarVpnAuthority_returns200() throws Exception {
+        when(service.vpnPorEstadoSolicitud()).thenReturn(
+                List.of(new ModuloBreakdownItem("PENDIENTE", 2L)));
+
+        mockMvc.perform(get("/api/dashboard/vpn-por-estado-solicitud"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].label", is("PENDIENTE")))
+                .andExpect(jsonPath("$[0].count", is(2)));
+    }
+
+    @Test
+    @WithMockUser(roles = "SOPORTE")
+    void vpnPorEstadoSolicitud_withoutAnyVpnAuthority_returns403() throws Exception {
+        mockMvc.perform(get("/api/dashboard/vpn-por-estado-solicitud"))
+                .andExpect(status().isForbidden());
     }
 }

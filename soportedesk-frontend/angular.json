@@ -30,9 +30,11 @@
               "src/assets"
             ],
             "styles": [
+              "node_modules/@tabler/icons-webfont/dist/tabler-icons.css",
               "src/styles.scss"
             ],
             "allowedCommonJsDependencies": [
+              "apexcharts",
               "qrcode",
               "xlsx"
             ],
@@ -43,13 +45,13 @@
               "budgets": [
                 {
                   "type": "initial",
-                  "maximumWarning": "500kb",
-                  "maximumError": "1mb"
+                  "maximumWarning": "1mb",
+                  "maximumError": "1.2mb"
                 },
                 {
                   "type": "anyComponentStyle",
-                  "maximumWarning": "2kb",
-                  "maximumError": "12kb"
+                  "maximumWarning": "12kb",
+                  "maximumError": "16kb"
                 }
               ],
               "outputHashing": "all"
@@ -97,6 +99,7 @@
               "src/assets"
             ],
             "styles": [
+              "node_modules/@tabler/icons-webfont/dist/tabler-icons.css",
               "src/styles.scss"
             ],
             "scripts": []
@@ -107,5 +110,31 @@
   },
   "cli": {
     "analytics": "740e8935-aacc-4a7f-972d-f4e09e88c21c"
+  },
+  "schematics": {
+    "@schematics/angular:component": {
+      "type": "component"
+    },
+    "@schematics/angular:directive": {
+      "type": "directive"
+    },
+    "@schematics/angular:service": {
+      "type": "service"
+    },
+    "@schematics/angular:guard": {
+      "typeSeparator": "."
+    },
+    "@schematics/angular:interceptor": {
+      "typeSeparator": "."
+    },
+    "@schematics/angular:module": {
+      "typeSeparator": "."
+    },
+    "@schematics/angular:pipe": {
+      "typeSeparator": "."
+    },
+    "@schematics/angular:resolver": {
+      "typeSeparator": "."
+    }
   }
 }

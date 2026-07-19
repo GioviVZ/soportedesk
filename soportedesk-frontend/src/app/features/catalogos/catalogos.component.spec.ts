@@ -1,8 +1,9 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { CatalogosComponent } from './catalogos.component';
 import { AuthService } from '../../core/auth/auth.service';
 import { ThemeService } from '../../core/services/theme.service';
+import { provideHttpClient, withInterceptorsFromDi, withXhr } from '@angular/common/http';
 
 describe('CatalogosComponent', () => {
   let component: CatalogosComponent;
@@ -33,9 +34,9 @@ describe('CatalogosComponent', () => {
     authService.canWrite.and.returnValue(true);
 
     await TestBed.configureTestingModule({
-      imports: [CatalogosComponent, HttpClientTestingModule],
-      providers: [{ provide: AuthService, useValue: authService }],
-    }).compileComponents();
+    imports: [CatalogosComponent],
+    providers: [{ provide: AuthService, useValue: authService }, provideHttpClient(withXhr(), withInterceptorsFromDi()), provideHttpClientTesting()]
+}).compileComponents();
 
     fixture = TestBed.createComponent(CatalogosComponent);
     component = fixture.componentInstance;

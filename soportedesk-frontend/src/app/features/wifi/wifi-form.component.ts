@@ -1,15 +1,15 @@
-import { Component, EventEmitter, Input, OnChanges, Output, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, EventEmitter, Input, OnChanges, Output, inject, ChangeDetectionStrategy } from '@angular/core';
+
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Wifi } from './wifi.model';
 import { WifiService } from './wifi.service';
 
 @Component({
-  selector: 'app-wifi-form',
-  standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
-  templateUrl: './wifi-form.component.html',
-  styleUrl: './wifi-form.component.scss',
+    selector: 'app-wifi-form',
+    imports: [ReactiveFormsModule],
+    templateUrl: './wifi-form.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
+    styleUrl: './wifi-form.component.scss'
 })
 export class WifiFormComponent implements OnChanges {
   private fb = inject(FormBuilder);

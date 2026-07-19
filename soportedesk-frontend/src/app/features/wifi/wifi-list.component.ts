@@ -1,5 +1,5 @@
-import { Component, OnInit, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, OnInit, inject, ChangeDetectionStrategy } from '@angular/core';
+
 import { AuthService } from '../../core/auth/auth.service';
 import { GenericTableComponent, TableColumn } from '../../shared/generic-table/generic-table.component';
 import { ModalComponent } from '../../shared/modal/modal.component';
@@ -11,11 +11,11 @@ import QRCode from 'qrcode';
 import { ActivatedRoute } from '@angular/router';
 
 @Component({
-  selector: 'app-wifi-list',
-  standalone: true,
-  imports: [CommonModule, GenericTableComponent, ModalComponent, FieldComponent, WifiFormComponent],
-  templateUrl: './wifi-list.component.html',
-  styleUrl: './wifi-list.component.scss',
+    selector: 'app-wifi-list',
+    imports: [GenericTableComponent, ModalComponent, FieldComponent, WifiFormComponent],
+    templateUrl: './wifi-list.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
+    styleUrl: './wifi-list.component.scss'
 })
 export class WifiListComponent implements OnInit {
   private service = inject(WifiService);
@@ -151,7 +151,7 @@ export class WifiListComponent implements OnInit {
         margin: 2,
         scale: 8,
         color: {
-          dark: '#0f172a',
+          dark: '#101a12',
           light: '#ffffff',
         },
       });

@@ -1,5 +1,5 @@
-import { Component, OnInit, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, OnInit, inject, ChangeDetectionStrategy } from '@angular/core';
+
 import { ChartConfiguration, ChartData } from 'chart.js';
 import { BaseChartDirective } from 'ng2-charts';
 import { DashboardService } from './dashboard.service';
@@ -8,11 +8,11 @@ import { UbicacionUsuariosCount } from './ubicacion-usuarios-count.model';
 type Nivel = 'sede' | 'dependencia';
 
 @Component({
-  selector: 'app-usuarios-red-por-ubicacion-chart',
-  standalone: true,
-  imports: [CommonModule, BaseChartDirective],
-  templateUrl: './usuarios-red-por-ubicacion-chart.component.html',
-  styleUrl: './usuarios-red-por-ubicacion-chart.component.scss',
+    selector: 'app-usuarios-red-por-ubicacion-chart',
+    imports: [BaseChartDirective],
+    templateUrl: './usuarios-red-por-ubicacion-chart.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
+    styleUrl: './usuarios-red-por-ubicacion-chart.component.scss'
 })
 export class UsuariosRedPorUbicacionChartComponent implements OnInit {
   private dashboardService = inject(DashboardService);
@@ -41,7 +41,7 @@ export class UsuariosRedPorUbicacionChartComponent implements OnInit {
     scales: {
       x: {
         beginAtZero: true,
-        grid: { color: '#e2e8f0' },
+        grid: { color: '#e1e5df' },
         ticks: { precision: 0 },
       },
       y: {

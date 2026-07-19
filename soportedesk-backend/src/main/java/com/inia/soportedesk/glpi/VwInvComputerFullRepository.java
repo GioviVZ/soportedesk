@@ -71,6 +71,13 @@ public interface VwInvComputerFullRepository extends JpaRepository<VwInvComputer
     @Query("SELECT DISTINCT v.fabricanteEquipo FROM VwInvComputerFull v WHERE v.eliminado = 0 AND v.fabricanteEquipo IS NOT NULL ORDER BY v.fabricanteEquipo")
     List<String> findDistinctFabricantes();
 
+    @Query("""
+        SELECT v.tipoEquipo, COUNT(v) FROM VwInvComputerFull v
+        WHERE v.eliminado = 0 AND v.tipoEquipo IS NOT NULL
+        GROUP BY v.tipoEquipo ORDER BY COUNT(v) DESC
+    """)
+    List<Object[]> countGroupedByTipoEquipo();
+
     @Query(value = """
         SELECT s.name AS software, sv.name AS version, iss.date_install AS fechaInstalacion
         FROM glpi_items_softwareversions iss

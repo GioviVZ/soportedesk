@@ -1,22 +1,25 @@
 import { fakeAsync, tick, TestBed } from '@angular/core/testing';
-import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ActivatedRoute, convertToParamMap } from '@angular/router';
 import { of } from 'rxjs';
 import { UsuariosRedAdministracionComponent } from './usuarios-red-administracion.component';
+import { provideHttpClient, withInterceptorsFromDi, withXhr } from '@angular/common/http';
 
 describe('UsuariosRedAdministracionComponent - sincronizacion AD', () => {
   let httpMock: HttpTestingController;
 
   function createComponent(): UsuariosRedAdministracionComponent {
     TestBed.configureTestingModule({
-      imports: [HttpClientTestingModule],
-      providers: [
+    imports: [],
+    providers: [
         {
-          provide: ActivatedRoute,
-          useValue: { queryParamMap: of(convertToParamMap({})) },
+            provide: ActivatedRoute,
+            useValue: { queryParamMap: of(convertToParamMap({})) },
         },
-      ],
-    });
+        provideHttpClient(withXhr(), withInterceptorsFromDi()),
+        provideHttpClientTesting(),
+    ]
+});
     httpMock = TestBed.inject(HttpTestingController);
     return TestBed.runInInjectionContext(() => new UsuariosRedAdministracionComponent());
   }
@@ -145,14 +148,16 @@ describe('UsuariosRedAdministracionComponent - paneles', () => {
 
   function createComponent(): UsuariosRedAdministracionComponent {
     TestBed.configureTestingModule({
-      imports: [HttpClientTestingModule],
-      providers: [
+    imports: [],
+    providers: [
         {
-          provide: ActivatedRoute,
-          useValue: { queryParamMap: of(convertToParamMap({})) },
+            provide: ActivatedRoute,
+            useValue: { queryParamMap: of(convertToParamMap({})) },
         },
-      ],
-    });
+        provideHttpClient(withXhr(), withInterceptorsFromDi()),
+        provideHttpClientTesting(),
+    ]
+});
     httpMock = TestBed.inject(HttpTestingController);
     return TestBed.runInInjectionContext(() => new UsuariosRedAdministracionComponent());
   }

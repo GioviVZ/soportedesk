@@ -1,8 +1,9 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ImpresoraFichaComponent } from './impresora-ficha.component';
 import { AuthService } from '../../core/auth/auth.service';
 import { Impresora, ImpresoraIntervencion } from './impresora.model';
+import { provideHttpClient, withInterceptorsFromDi, withXhr } from '@angular/common/http';
 
 const mockImpresora: Impresora = {
   id: 1,
@@ -35,9 +36,9 @@ describe('ImpresoraFichaComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [ImpresoraFichaComponent, HttpClientTestingModule],
-      providers: [{ provide: AuthService, useValue: { isAdmin: () => false, canWrite: () => false } }],
-    }).compileComponents();
+    imports: [ImpresoraFichaComponent],
+    providers: [{ provide: AuthService, useValue: { isAdmin: () => false, canWrite: () => false } }, provideHttpClient(withXhr(), withInterceptorsFromDi()), provideHttpClientTesting()]
+}).compileComponents();
 
     fixture = TestBed.createComponent(ImpresoraFichaComponent);
     component = fixture.componentInstance;
@@ -114,8 +115,12 @@ describe('ImpresoraFichaComponent', () => {
 
   it('shows the edit button by default when the user can write', async () => {
     await TestBed.resetTestingModule().configureTestingModule({
-      imports: [ImpresoraFichaComponent, HttpClientTestingModule],
-      providers: [{ provide: AuthService, useValue: { isAdmin: () => false, canWrite: () => true } }],
+      imports: [ImpresoraFichaComponent],
+      providers: [
+        { provide: AuthService, useValue: { isAdmin: () => false, canWrite: () => true } },
+        provideHttpClient(withXhr(), withInterceptorsFromDi()),
+        provideHttpClientTesting(),
+      ],
     }).compileComponents();
     const writableFixture = TestBed.createComponent(ImpresoraFichaComponent);
     writableFixture.componentInstance.impresora = mockImpresora;
@@ -126,8 +131,12 @@ describe('ImpresoraFichaComponent', () => {
 
   it('hides the edit button when allowActions is false, even if the user can write', async () => {
     await TestBed.resetTestingModule().configureTestingModule({
-      imports: [ImpresoraFichaComponent, HttpClientTestingModule],
-      providers: [{ provide: AuthService, useValue: { isAdmin: () => false, canWrite: () => true } }],
+      imports: [ImpresoraFichaComponent],
+      providers: [
+        { provide: AuthService, useValue: { isAdmin: () => false, canWrite: () => true } },
+        provideHttpClient(withXhr(), withInterceptorsFromDi()),
+        provideHttpClientTesting(),
+      ],
     }).compileComponents();
     const readOnlyFixture = TestBed.createComponent(ImpresoraFichaComponent);
     readOnlyFixture.componentInstance.impresora = mockImpresora;
@@ -154,9 +163,9 @@ describe('ImpresoraFichaComponent — Intervenciones', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [ImpresoraFichaComponent, HttpClientTestingModule],
-      providers: [{ provide: AuthService, useValue: { isAdmin: () => false, canWrite: () => true } }],
-    }).compileComponents();
+    imports: [ImpresoraFichaComponent],
+    providers: [{ provide: AuthService, useValue: { isAdmin: () => false, canWrite: () => true } }, provideHttpClient(withXhr(), withInterceptorsFromDi()), provideHttpClientTesting()]
+}).compileComponents();
 
     fixture = TestBed.createComponent(ImpresoraFichaComponent);
     component = fixture.componentInstance;

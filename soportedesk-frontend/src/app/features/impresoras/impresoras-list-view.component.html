@@ -17,7 +17,9 @@
       Sede
       <select [(ngModel)]="filters.sede" (ngModelChange)="onSedeFilterChange()">
         <option value="">Todas</option>
-        <option *ngFor="let value of sedes" [value]="value">{{ value }}</option>
+        @for (value of sedes; track value) {
+          <option [value]="value">{{ value }}</option>
+        }
       </select>
     </label>
 
@@ -25,7 +27,9 @@
       Dependencia
       <select [(ngModel)]="filters.dependencia" (ngModelChange)="onDependenciaFilterChange()">
         <option value="">Todas</option>
-        <option *ngFor="let value of dependencias" [value]="value">{{ value }}</option>
+        @for (value of dependencias; track value) {
+          <option [value]="value">{{ value }}</option>
+        }
       </select>
     </label>
 
@@ -33,7 +37,9 @@
       Subdependencia
       <select [(ngModel)]="filters.subdependencia">
         <option value="">Todas</option>
-        <option *ngFor="let value of subdependencias" [value]="value">{{ value }}</option>
+        @for (value of subdependencias; track value) {
+          <option [value]="value">{{ value }}</option>
+        }
       </select>
     </label>
 
@@ -46,7 +52,9 @@
       Marca
       <select [(ngModel)]="filters.marca" (ngModelChange)="onMarcaFilterChange()">
         <option value="">Todas</option>
-        <option *ngFor="let value of marcas" [value]="value">{{ value }}</option>
+        @for (value of marcas; track value) {
+          <option [value]="value">{{ value }}</option>
+        }
       </select>
     </label>
 
@@ -54,7 +62,9 @@
       Modelo
       <select [(ngModel)]="filters.modelo">
         <option value="">Todos</option>
-        <option *ngFor="let value of modelos" [value]="value">{{ value }}</option>
+        @for (value of modelos; track value) {
+          <option [value]="value">{{ value }}</option>
+        }
       </select>
     </label>
   </div>
@@ -66,7 +76,9 @@
   </button>
 </div>
 
-<app-impresora-resumen *ngIf="showConsumibles" [impresoras]="filteredItems" />
+@if (showConsumibles) {
+  <app-impresora-resumen [impresoras]="filteredItems" />
+}
 
 <div class="desktop-table">
   <app-generic-table
@@ -81,7 +93,7 @@
     (view)="view.emit($event)"
     (edit)="edit.emit($event)"
     (delete)="delete.emit($event)"
-  >
+    >
     <ng-template #extraCell let-row>
       <app-status-badge [label]="row.estado" [tone]="impresoraEstadoTone(row.estado)" />
     </ng-template>
@@ -100,57 +112,63 @@
         placeholder="Buscar..."
         [value]="mobileSearchTerm"
         (input)="onMobileSearch($any($event.target).value)"
-      />
+        />
     </div>
-    <button *ngIf="canManage" type="button" class="mobile-add-btn" (click)="add.emit()">
-      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-        <path d="M12 5v14" />
-        <path d="M5 12h14" />
-      </svg>
-      Agregar
-    </button>
+    @if (canManage) {
+      <button type="button" class="mobile-add-btn" (click)="add.emit()">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <path d="M12 5v14" />
+          <path d="M5 12h14" />
+        </svg>
+        Agregar
+      </button>
+    }
   </div>
 
   <div class="mobile-result-count">{{ filteredItems.length }} {{ filteredItems.length === 1 ? 'registro' : 'registros' }}</div>
 
-  <div class="printer-card-list" *ngIf="filteredItems.length; else mobileEmpty">
-    <article class="printer-card" *ngFor="let item of filteredItems">
-      <div class="printer-card-head">
-        <div class="printer-title">
-          <span>{{ item.modeloImpresora.marca.nombre }}</span>
-          <strong>{{ item.modeloImpresora.nombre }}</strong>
-        </div>
-        <app-status-badge [label]="item.estado" [tone]="impresoraEstadoTone(item.estado)" />
-      </div>
-
-      <div class="printer-meta">
-        <span>{{ item.tipoImpresora?.nombre || 'Sin tipo' }}</span>
-        <span>{{ printerConnection(item) }}</span>
-      </div>
-
-      <dl class="printer-facts">
-        <div>
-          <dt>Identificador</dt>
-          <dd>{{ printerIdentifier(item) }}</dd>
-        </div>
-        <div>
-          <dt>Ubicación</dt>
-          <dd>{{ printerLocation(item) }}</dd>
-        </div>
-      </dl>
-
-      <div class="printer-card-actions">
-        <button type="button" class="view" (click)="view.emit(item)">Ver</button>
-        <button *ngIf="canManage" type="button" class="edit" (click)="edit.emit(item)">Editar</button>
-        <button *ngIf="canManage" type="button" class="delete" (click)="delete.emit(item)">Eliminar</button>
-      </div>
-    </article>
-  </div>
-
-  <ng-template #mobileEmpty>
+  @if (filteredItems.length) {
+    <div class="printer-card-list">
+      @for (item of filteredItems; track item) {
+        <article class="printer-card">
+          <div class="printer-card-head">
+            <div class="printer-title">
+              <span>{{ item.modeloImpresora.marca.nombre }}</span>
+              <strong>{{ item.modeloImpresora.nombre }}</strong>
+            </div>
+            <app-status-badge [label]="item.estado" [tone]="impresoraEstadoTone(item.estado)" />
+          </div>
+          <div class="printer-meta">
+            <span>{{ item.tipoImpresora?.nombre || 'Sin tipo' }}</span>
+            <span>{{ printerConnection(item) }}</span>
+          </div>
+          <dl class="printer-facts">
+            <div>
+              <dt>Identificador</dt>
+              <dd>{{ printerIdentifier(item) }}</dd>
+            </div>
+            <div>
+              <dt>Ubicación</dt>
+              <dd>{{ printerLocation(item) }}</dd>
+            </div>
+          </dl>
+          <div class="printer-card-actions">
+            <button type="button" class="view" (click)="view.emit(item)">Ver</button>
+            @if (canManage) {
+              <button type="button" class="edit" (click)="edit.emit(item)">Editar</button>
+            }
+            @if (canManage) {
+              <button type="button" class="delete" (click)="delete.emit(item)">Eliminar</button>
+            }
+          </div>
+        </article>
+      }
+    </div>
+  } @else {
     <div class="mobile-empty">
       <strong>Sin impresoras</strong>
       <span>{{ mobileSearchTerm ? 'No hay coincidencias para la búsqueda.' : 'Todavía no hay registros.' }}</span>
     </div>
-  </ng-template>
+  }
+
 </div>

@@ -1,5 +1,5 @@
-import { Component, OnInit, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, OnInit, inject, ChangeDetectionStrategy } from '@angular/core';
+
 import { FormsModule } from '@angular/forms';
 import { CatalogoService } from '../../core/catalogos/catalogo.service';
 import { AuthService } from '../../core/auth/auth.service';
@@ -56,11 +56,11 @@ type CatalogoNavGroup = {
 };
 
 @Component({
-  selector: 'app-catalogos',
-  standalone: true,
-  imports: [CommonModule, FormsModule, ModeloImpresoraFormComponent, ModalComponent, VpnConfigInstitucionalFormComponent],
-  templateUrl: './catalogos.component.html',
-  styleUrl: './catalogos.component.scss',
+    selector: 'app-catalogos',
+    imports: [FormsModule, ModeloImpresoraFormComponent, ModalComponent, VpnConfigInstitucionalFormComponent],
+    templateUrl: './catalogos.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
+    styleUrl: './catalogos.component.scss'
 })
 export class CatalogosComponent implements OnInit {
   readonly tiposComputoEstandar = ['Laptop', 'Computadora de Escritorio', 'All in One'];

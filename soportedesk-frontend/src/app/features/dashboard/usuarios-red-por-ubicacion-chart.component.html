@@ -10,8 +10,12 @@
     </div>
   </div>
 
-  <div class="chart-body" *ngIf="!error">
-    <canvas baseChart [data]="chartData" [options]="chartOptions" type="bar"></canvas>
-  </div>
-  <p class="chart-error" *ngIf="error">No se pudo cargar el grafico</p>
+  @if (!error) {
+    <div class="chart-body">
+      <canvas baseChart [data]="chartData" [options]="chartOptions" type="bar"></canvas>
+    </div>
+  }
+  @if (error) {
+    <p class="chart-error">No se pudo cargar el grafico</p>
+  }
 </div>

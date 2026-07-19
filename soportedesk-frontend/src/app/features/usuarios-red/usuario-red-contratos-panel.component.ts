@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, Input, OnChanges, SimpleChanges, inject } from '@angular/core';
+import { Component, Input, OnChanges, SimpleChanges, inject, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { SectionCardComponent } from '../../shared/section-card/section-card.component';
 import { ModalComponent } from '../../shared/modal/modal.component';
@@ -10,62 +10,81 @@ import { UsuarioRedContratoService } from './usuario-red-contrato.service';
 import { UsuarioRedContrato, UsuarioRedContratoRequest, esTipoContratoOs } from './usuario-red-contrato.model';
 
 @Component({
-  selector: 'app-usuario-red-contratos-panel',
-  standalone: true,
-  imports: [CommonModule, FormsModule, SectionCardComponent, ModalComponent, VencimientoBadgeComponent],
-  template: `
+    selector: 'app-usuario-red-contratos-panel',
+    imports: [CommonModule, FormsModule, SectionCardComponent, ModalComponent, VencimientoBadgeComponent],
+    template: `
     <app-section-card title="Contratos">
       <svg icon xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" />
         <line x1="16" y1="13" x2="8" y2="13" /><line x1="16" y1="17" x2="8" y2="17" />
       </svg>
-
-      <div class="notice" [class.error]="notice.tone === 'error'" [class.success]="notice.tone === 'success'" *ngIf="notice">
-        {{ notice.text }}
-      </div>
-
-      <div class="contract-expiry-alert" [class.danger]="vencimientoEstado() === 'VENCIDO'" [class.warning]="vencimientoEstado() === 'POR_VENCER'" *ngIf="contratos.length">
-        <div>
-          <strong>Vencimiento de usuario de red</strong>
-          <span>{{ vencimientoUsuarioRed() ? (vencimientoUsuarioRed() | date:'dd/MM/yyyy') : 'Sin fecha fin registrada' }}</span>
+    
+      @if (notice) {
+        <div class="notice" [class.error]="notice.tone === 'error'" [class.success]="notice.tone === 'success'">
+          {{ notice.text }}
         </div>
-        <app-vencimiento-badge [fecha]="vencimientoUsuarioRed()" />
-      </div>
-
-      <button type="button" class="btn btn-primary" *ngIf="editable" (click)="openCreate()">
-        Agregar contrato
-      </button>
-
-      <p class="muted" *ngIf="!loading && !contratos.length">Sin contratos registrados para esta cuenta.</p>
-
-      <div class="assigned-list contrato-list" *ngIf="contratos.length">
-        <div class="contrato-item" *ngFor="let c of contratos">
-          <div class="contrato-main">
-            <span class="contrato-tipo">{{ c.tipoContratoNombre }}</span>
-            <span class="contrato-fechas">
-              {{ c.fechaInicio | date:'dd/MM/yyyy' }} - {{ c.fechaFin ? (c.fechaFin | date:'dd/MM/yyyy') : 'Actual' }}
-              <app-vencimiento-badge [fecha]="c.fechaFin" />
-            </span>
-            <span class="contrato-numero" *ngIf="c.numeroContrato">Nro. {{ c.numeroContrato }}</span>
-            <span class="contrato-personal" *ngIf="esOs(c)">
-              Titular: <strong>{{ c.personalNombre }} {{ c.personalApellidos }}</strong>
-            </span>
+      }
+    
+      @if (contratos.length) {
+        <div class="contract-expiry-alert" [class.danger]="vencimientoEstado() === 'VENCIDO'" [class.warning]="vencimientoEstado() === 'POR_VENCER'">
+          <div>
+            <strong>Vencimiento de usuario de red</strong>
+            <span>{{ vencimientoUsuarioRed() ? (vencimientoUsuarioRed() | date:'dd/MM/yyyy') : 'Sin fecha fin registrada' }}</span>
           </div>
-          <div class="contrato-actions" *ngIf="editable">
-            <button type="button" class="link-danger" (click)="openEdit(c)">Editar</button>
-            <button type="button" class="link-danger" (click)="remove(c)">Eliminar</button>
-          </div>
+          <app-vencimiento-badge [fecha]="vencimientoUsuarioRed()" />
         </div>
-      </div>
+      }
+    
+      @if (editable) {
+        <button type="button" class="btn btn-primary" (click)="openCreate()">
+          Agregar contrato
+        </button>
+      }
+    
+      @if (!loading && !contratos.length) {
+        <p class="muted">Sin contratos registrados para esta cuenta.</p>
+      }
+    
+      @if (contratos.length) {
+        <div class="assigned-list contrato-list">
+          @for (c of contratos; track c) {
+            <div class="contrato-item">
+              <div class="contrato-main">
+                <span class="contrato-tipo">{{ c.tipoContratoNombre }}</span>
+                <span class="contrato-fechas">
+                  {{ c.fechaInicio | date:'dd/MM/yyyy' }} - {{ c.fechaFin ? (c.fechaFin | date:'dd/MM/yyyy') : 'Actual' }}
+                  <app-vencimiento-badge [fecha]="c.fechaFin" />
+                </span>
+                @if (c.numeroContrato) {
+                  <span class="contrato-numero">Nro. {{ c.numeroContrato }}</span>
+                }
+                @if (esOs(c)) {
+                  <span class="contrato-personal">
+                    Titular: <strong>{{ c.personalNombre }} {{ c.personalApellidos }}</strong>
+                  </span>
+                }
+              </div>
+              @if (editable) {
+                <div class="contrato-actions">
+                  <button type="button" class="link-danger" (click)="openEdit(c)">Editar</button>
+                  <button type="button" class="link-danger" (click)="remove(c)">Eliminar</button>
+                </div>
+              }
+            </div>
+          }
+        </div>
+      }
     </app-section-card>
-
+    
     <app-modal [title]="editingId ? 'Editar contrato' : 'Agregar contrato'" [open]="modalOpen" [hideDefaultFooter]="true" (closed)="closeModal()">
       <form class="modal-form form-grid" (ngSubmit)="save()" id="usuario-red-contrato-edit-form">
         <div class="field">
           <label>Tipo de contrato</label>
           <select name="tipoContratoId" [(ngModel)]="form.tipoContratoId" required>
             <option [ngValue]="null" disabled>Selecciona un tipo</option>
-            <option *ngFor="let tipo of tiposContrato" [ngValue]="tipo.id">{{ tipo.nombre }}</option>
+            @for (tipo of tiposContrato; track tipo) {
+              <option [ngValue]="tipo.id">{{ tipo.nombre }}</option>
+            }
           </select>
         </div>
         <div class="field">
@@ -80,7 +99,7 @@ import { UsuarioRedContrato, UsuarioRedContratoRequest, esTipoContratoOs } from 
           <label>Fecha fin</label>
           <input type="date" name="fechaFin" [(ngModel)]="form.fechaFin" />
         </div>
-        <ng-container *ngIf="esTipoSeleccionadoOs()">
+        @if (esTipoSeleccionadoOs()) {
           <div class="field">
             <label>Nombre del personal</label>
             <input name="personalNombre" [(ngModel)]="form.personalNombre" />
@@ -89,17 +108,18 @@ import { UsuarioRedContrato, UsuarioRedContratoRequest, esTipoContratoOs } from 
             <label>Apellidos del personal</label>
             <input name="personalApellidos" [(ngModel)]="form.personalApellidos" />
           </div>
-        </ng-container>
-
+        }
+    
       </form>
-
+    
       <footer modal-footer class="modal-actions full">
         <button type="button" class="btn btn-ghost" (click)="closeModal()">Cancelar</button>
         <button type="submit" form="usuario-red-contrato-edit-form" class="btn btn-primary" [disabled]="saving">Guardar</button>
       </footer>
     </app-modal>
-  `,
-  styleUrls: ['./usuarios-red.shared.scss', './usuario-red-contratos-panel.scss'],
+    `,
+    changeDetection: ChangeDetectionStrategy.Eager,
+    styleUrls: ['./usuarios-red.shared.scss', './usuario-red-contratos-panel.scss']
 })
 export class UsuarioRedContratosPanelComponent implements OnChanges {
   private service = inject(UsuarioRedContratoService);

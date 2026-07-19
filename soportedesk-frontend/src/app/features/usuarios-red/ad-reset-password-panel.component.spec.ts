@@ -1,12 +1,13 @@
 import { TestBed } from '@angular/core/testing';
-import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { AdResetPasswordPanelComponent } from './ad-reset-password-panel.component';
+import { provideHttpClient, withInterceptorsFromDi, withXhr } from '@angular/common/http';
 
 describe('AdResetPasswordPanelComponent', () => {
   let httpMock: HttpTestingController;
 
   function createComponent(): AdResetPasswordPanelComponent {
-    TestBed.configureTestingModule({ imports: [HttpClientTestingModule] });
+    TestBed.configureTestingModule({ imports: [], providers: [provideHttpClient(withXhr(), withInterceptorsFromDi()), provideHttpClientTesting()] });
     httpMock = TestBed.inject(HttpTestingController);
     const component = TestBed.runInInjectionContext(() => new AdResetPasswordPanelComponent());
     component.samAccountName = 'jperez';

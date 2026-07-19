@@ -170,7 +170,7 @@ public class ActiveDirectoryController {
     @PostMapping("/usuarios/{samAccountName}/actualizar-info")
     @PreAuthorize("hasRole('ADMIN') || hasAuthority('WRITE_usuarios-red')")
     public ActiveDirectoryResponse<AdUser> actualizarInformacionUsuario(@PathVariable String samAccountName,
-                                                                        @RequestBody UpdateUserInfoRequest request) {
+                                                                        @Valid @RequestBody UpdateUserInfoRequest request) {
         correoVinculacionService.validarParaActualizacion(
                 samAccountName,
                 request.clearMail() ? null : request.mail());

@@ -1,13 +1,14 @@
 import { TestBed } from '@angular/core/testing';
-import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { LicenciasPorTipoChartComponent } from './licencias-por-tipo-chart.component';
+import { provideHttpClient, withInterceptorsFromDi, withXhr } from '@angular/common/http';
 
 describe('LicenciasPorTipoChartComponent', () => {
   let httpMock: HttpTestingController;
   let component: LicenciasPorTipoChartComponent;
 
   beforeEach(() => {
-    TestBed.configureTestingModule({ imports: [HttpClientTestingModule] });
+    TestBed.configureTestingModule({ imports: [], providers: [provideHttpClient(withXhr(), withInterceptorsFromDi()), provideHttpClientTesting()] });
     httpMock = TestBed.inject(HttpTestingController);
     component = TestBed.runInInjectionContext(() => new LicenciasPorTipoChartComponent());
   });

@@ -1,5 +1,5 @@
-import { CommonModule } from '@angular/common';
-import { Component, EventEmitter, Input, OnChanges, Output, SimpleChanges, inject, signal } from '@angular/core';
+
+import { Component, EventEmitter, Input, OnChanges, Output, SimpleChanges, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { forkJoin } from 'rxjs';
 import { ModalComponent } from '../../shared/modal/modal.component';
 import { UbicacionSelectComponent } from '../../shared/ubicacion-select/ubicacion-select.component';
@@ -8,10 +8,11 @@ import { EquipoEnrichmentDto } from './equipo.model';
 import { CatalogoService } from '../../core/catalogos/catalogo.service';
 
 @Component({
-  selector: 'app-equipo-enrichment-modal', standalone: true,
-  imports: [CommonModule, ModalComponent, UbicacionSelectComponent],
-  templateUrl: './equipo-enrichment-modal.component.html',
-  styleUrl: './equipo-enrichment-modal.component.scss',
+    selector: 'app-equipo-enrichment-modal',
+    imports: [ModalComponent, UbicacionSelectComponent],
+    templateUrl: './equipo-enrichment-modal.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
+    styleUrl: './equipo-enrichment-modal.component.scss'
 })
 export class EquipoEnrichmentModalComponent implements OnChanges {
   private service = inject(EquipoService);

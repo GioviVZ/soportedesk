@@ -24,39 +24,44 @@
 </section>
 
 <section class="catalog-impact-map">
-  <article
-    class="impact-group"
-    *ngFor="let group of navGroups; trackBy: trackGroup"
-    [class.active]="isGroupActive(group)"
-  >
-    <button type="button" class="impact-group__button" (click)="setGroup(group)">
-      <span class="impact-icon">{{ group.icon }}</span>
-      <span class="impact-group__copy">
-        <strong>{{ group.title }}</strong>
-        <small>{{ group.description }}</small>
-      </span>
-      <span class="impact-count">{{ groupCount(group) }}</span>
-    </button>
-
-    <div class="impact-items" *ngIf="isGroupActive(group)">
-      <button
-        type="button"
-        class="impact-item"
-        *ngFor="let item of group.items; trackBy: trackItem"
-        [class.active]="activeTab === item.tab"
-        (click)="setTab(item.tab)"
+  @for (group of navGroups; track trackGroup($index, group)) {
+    <article
+      class="impact-group"
+      [class.active]="isGroupActive(group)"
       >
-        <span class="impact-item__title">
-          {{ item.label }}
-          <small>{{ itemCount(item.tab) }}</small>
+      <button type="button" class="impact-group__button" (click)="setGroup(group)">
+        <span class="impact-icon">{{ group.icon }}</span>
+        <span class="impact-group__copy">
+          <strong>{{ group.title }}</strong>
+          <small>{{ group.description }}</small>
         </span>
-        <span class="impact-item__desc">{{ item.description }}</span>
-        <span class="impact-tags">
-          <small *ngFor="let module of item.affects">{{ module }}</small>
-        </span>
+        <span class="impact-count">{{ groupCount(group) }}</span>
       </button>
-    </div>
-  </article>
+      @if (isGroupActive(group)) {
+        <div class="impact-items">
+          @for (item of group.items; track trackItem($index, item)) {
+            <button
+              type="button"
+              class="impact-item"
+              [class.active]="activeTab === item.tab"
+              (click)="setTab(item.tab)"
+              >
+              <span class="impact-item__title">
+                {{ item.label }}
+                <small>{{ itemCount(item.tab) }}</small>
+              </span>
+              <span class="impact-item__desc">{{ item.description }}</span>
+              <span class="impact-tags">
+                @for (module of item.affects; track module) {
+                  <small>{{ module }}</small>
+                }
+              </span>
+            </button>
+          }
+        </div>
+      }
+    </article>
+  }
 </section>
 
 <div class="tabs legacy-tabs">
@@ -79,241 +84,317 @@
     <strong>{{ activeNavItem.label }}</strong>
     <small>{{ activeGroup.title }} / Afecta a: {{ activeNavItem.affects.join(', ') }}</small>
   </div>
-  <button *ngIf="canWrite" type="button" (click)="startAdd()">
-    {{ activeTab === 'vpnInstitucional' ? 'Actualizar fecha' : 'Agregar' }}
-  </button>
+  @if (canWrite) {
+    <button type="button" (click)="startAdd()">
+      {{ activeTab === 'vpnInstitucional' ? 'Actualizar fecha' : 'Agregar' }}
+    </button>
+  }
 </div>
 
 <!-- Sedes -->
-<ng-container *ngIf="activeTab === 'sedes'">
+@if (activeTab === 'sedes') {
   <table>
     <thead>
       <tr>
         <th>Nombre</th>
-        <th *ngIf="canWrite">Acciones</th>
+        @if (canWrite) {
+          <th>Acciones</th>
+        }
       </tr>
     </thead>
     <tbody>
-      <tr *ngFor="let item of sedes">
-        <td>{{ item.nombre }}</td>
-        <td *ngIf="canWrite">
-          <button type="button" (click)="startEdit(item.id, item.nombre)">Editar</button>
-          <button type="button" class="danger" (click)="requestDelete('sedes', item.id, item.nombre)">Eliminar</button>
-        </td>
-      </tr>
+      @for (item of sedes; track item) {
+        <tr>
+          <td>{{ item.nombre }}</td>
+          @if (canWrite) {
+            <td>
+              <button type="button" (click)="startEdit(item.id, item.nombre)">Editar</button>
+              <button type="button" class="danger" (click)="requestDelete('sedes', item.id, item.nombre)">Eliminar</button>
+            </td>
+          }
+        </tr>
+      }
     </tbody>
   </table>
-
-  <div class="form" *ngIf="canWrite">
-    <input [(ngModel)]="nombreForm" placeholder="Nombre de sede" />
-    <button type="button" (click)="submitSimple()">{{ editingId ? 'Actualizar' : 'Agregar' }}</button>
-    <button type="button" class="secondary" *ngIf="editingId" (click)="resetForm()">Cancelar</button>
-  </div>
-</ng-container>
+  @if (canWrite) {
+    <div class="form">
+      <input [(ngModel)]="nombreForm" placeholder="Nombre de sede" />
+      <button type="button" (click)="submitSimple()">{{ editingId ? 'Actualizar' : 'Agregar' }}</button>
+      @if (editingId) {
+        <button type="button" class="secondary" (click)="resetForm()">Cancelar</button>
+      }
+    </div>
+  }
+}
 
 <!-- Dependencias -->
-<ng-container *ngIf="activeTab === 'dependencias'">
+@if (activeTab === 'dependencias') {
   <table>
     <thead>
       <tr>
         <th>Nombre</th>
         <th>Sede</th>
-        <th *ngIf="canWrite">Acciones</th>
+        @if (canWrite) {
+          <th>Acciones</th>
+        }
       </tr>
     </thead>
     <tbody>
-      <tr *ngFor="let item of dependencias">
-        <td>{{ item.nombre }}</td>
-        <td>{{ item.sede.nombre }}</td>
-        <td>
-          <button type="button" (click)="startEdit(item.id, item.nombre, item.sede.id)">Editar</button>
-          <button type="button" class="danger" (click)="requestDelete('dependencias', item.id, item.nombre, item.sede.nombre)">Eliminar</button>
-        </td>
-      </tr>
+      @for (item of dependencias; track item) {
+        <tr>
+          <td>{{ item.nombre }}</td>
+          <td>{{ item.sede.nombre }}</td>
+          <td>
+            <button type="button" (click)="startEdit(item.id, item.nombre, item.sede.id)">Editar</button>
+            <button type="button" class="danger" (click)="requestDelete('dependencias', item.id, item.nombre, item.sede.nombre)">Eliminar</button>
+          </td>
+        </tr>
+      }
     </tbody>
   </table>
-
-  <div class="form" *ngIf="canWrite">
-    <select [(ngModel)]="parentIdForm">
-      <option [ngValue]="null">Seleccione sede...</option>
-      <option *ngFor="let s of sedes" [ngValue]="s.id">{{ s.nombre }}</option>
-    </select>
-    <input [(ngModel)]="nombreForm" placeholder="Nombre de dependencia" />
-    <button type="button" (click)="submitSimple()">{{ editingId ? 'Actualizar' : 'Agregar' }}</button>
-    <button type="button" class="secondary" *ngIf="editingId" (click)="resetForm()">Cancelar</button>
-  </div>
-</ng-container>
+  @if (canWrite) {
+    <div class="form">
+      <select [(ngModel)]="parentIdForm">
+        <option [ngValue]="null">Seleccione sede...</option>
+        @for (s of sedes; track s) {
+          <option [ngValue]="s.id">{{ s.nombre }}</option>
+        }
+      </select>
+      <input [(ngModel)]="nombreForm" placeholder="Nombre de dependencia" />
+      <button type="button" (click)="submitSimple()">{{ editingId ? 'Actualizar' : 'Agregar' }}</button>
+      @if (editingId) {
+        <button type="button" class="secondary" (click)="resetForm()">Cancelar</button>
+      }
+    </div>
+  }
+}
 
 <!-- Subdependencias -->
-<ng-container *ngIf="activeTab === 'subdependencias'">
+@if (activeTab === 'subdependencias') {
   <table>
     <thead>
       <tr>
         <th>Nombre</th>
         <th>Dependencia</th>
-        <th *ngIf="canWrite">Acciones</th>
+        @if (canWrite) {
+          <th>Acciones</th>
+        }
       </tr>
     </thead>
     <tbody>
-      <tr *ngFor="let item of subdependencias">
-        <td>{{ item.nombre }}</td>
-        <td>{{ item.dependencia.nombre }}</td>
-        <td *ngIf="canWrite">
-          <button type="button" (click)="startEdit(item.id, item.nombre, item.dependencia.id)">Editar</button>
-          <button type="button" class="danger" (click)="requestDelete('subdependencias', item.id, item.nombre, item.dependencia.nombre)">Eliminar</button>
-        </td>
-      </tr>
+      @for (item of subdependencias; track item) {
+        <tr>
+          <td>{{ item.nombre }}</td>
+          <td>{{ item.dependencia.nombre }}</td>
+          @if (canWrite) {
+            <td>
+              <button type="button" (click)="startEdit(item.id, item.nombre, item.dependencia.id)">Editar</button>
+              <button type="button" class="danger" (click)="requestDelete('subdependencias', item.id, item.nombre, item.dependencia.nombre)">Eliminar</button>
+            </td>
+          }
+        </tr>
+      }
     </tbody>
   </table>
-
-  <div class="form" *ngIf="canWrite">
-    <select [(ngModel)]="parentIdForm">
-      <option [ngValue]="null">Seleccione dependencia...</option>
-      <option *ngFor="let d of dependencias" [ngValue]="d.id">{{ d.nombre }}</option>
-    </select>
-    <input [(ngModel)]="nombreForm" placeholder="Nombre de subdependencia" />
-    <button type="button" (click)="submitSimple()">{{ editingId ? 'Actualizar' : 'Agregar' }}</button>
-    <button type="button" class="secondary" *ngIf="editingId" (click)="resetForm()">Cancelar</button>
-  </div>
-</ng-container>
+  @if (canWrite) {
+    <div class="form">
+      <select [(ngModel)]="parentIdForm">
+        <option [ngValue]="null">Seleccione dependencia...</option>
+        @for (d of dependencias; track d) {
+          <option [ngValue]="d.id">{{ d.nombre }}</option>
+        }
+      </select>
+      <input [(ngModel)]="nombreForm" placeholder="Nombre de subdependencia" />
+      <button type="button" (click)="submitSimple()">{{ editingId ? 'Actualizar' : 'Agregar' }}</button>
+      @if (editingId) {
+        <button type="button" class="secondary" (click)="resetForm()">Cancelar</button>
+      }
+    </div>
+  }
+}
 
 <!-- Tipos de Contrato -->
-<ng-container *ngIf="activeTab === 'tiposContrato'">
+@if (activeTab === 'tiposContrato') {
   <table>
     <thead>
       <tr>
         <th>Nombre</th>
-        <th *ngIf="canWrite">Acciones</th>
+        @if (canWrite) {
+          <th>Acciones</th>
+        }
       </tr>
     </thead>
     <tbody>
-      <tr *ngFor="let item of tiposContrato">
-        <td>{{ item.nombre }}</td>
-        <td *ngIf="canWrite">
-          <button type="button" (click)="startEdit(item.id, item.nombre)">Editar</button>
-          <button type="button" class="danger" (click)="requestDelete('tiposContrato', item.id, item.nombre)">Eliminar</button>
-        </td>
-      </tr>
+      @for (item of tiposContrato; track item) {
+        <tr>
+          <td>{{ item.nombre }}</td>
+          @if (canWrite) {
+            <td>
+              <button type="button" (click)="startEdit(item.id, item.nombre)">Editar</button>
+              <button type="button" class="danger" (click)="requestDelete('tiposContrato', item.id, item.nombre)">Eliminar</button>
+            </td>
+          }
+        </tr>
+      }
     </tbody>
   </table>
-
-  <div class="form" *ngIf="canWrite">
-    <input [(ngModel)]="nombreForm" placeholder="Nombre de tipo de contrato" />
-    <button type="button" (click)="submitSimple()">{{ editingId ? 'Actualizar' : 'Agregar' }}</button>
-    <button type="button" class="secondary" *ngIf="editingId" (click)="resetForm()">Cancelar</button>
-  </div>
-</ng-container>
+  @if (canWrite) {
+    <div class="form">
+      <input [(ngModel)]="nombreForm" placeholder="Nombre de tipo de contrato" />
+      <button type="button" (click)="submitSimple()">{{ editingId ? 'Actualizar' : 'Agregar' }}</button>
+      @if (editingId) {
+        <button type="button" class="secondary" (click)="resetForm()">Cancelar</button>
+      }
+    </div>
+  }
+}
 
 <!-- Tipos de Licencia -->
-<ng-container *ngIf="activeTab === 'tiposLicencia'">
+@if (activeTab === 'tiposLicencia') {
   <table>
     <thead>
       <tr>
         <th>Nombre</th>
-        <th *ngIf="canWrite">Acciones</th>
+        @if (canWrite) {
+          <th>Acciones</th>
+        }
       </tr>
     </thead>
     <tbody>
-      <tr *ngFor="let item of tiposLicencia">
-        <td>{{ item.nombre }}</td>
-        <td *ngIf="canWrite">
-          <button type="button" (click)="startEdit(item.id, item.nombre)">Editar</button>
-          <button type="button" class="danger" (click)="requestDelete('tiposLicencia', item.id, item.nombre)">Eliminar</button>
-        </td>
-      </tr>
+      @for (item of tiposLicencia; track item) {
+        <tr>
+          <td>{{ item.nombre }}</td>
+          @if (canWrite) {
+            <td>
+              <button type="button" (click)="startEdit(item.id, item.nombre)">Editar</button>
+              <button type="button" class="danger" (click)="requestDelete('tiposLicencia', item.id, item.nombre)">Eliminar</button>
+            </td>
+          }
+        </tr>
+      }
     </tbody>
   </table>
-
-  <div class="form" *ngIf="canWrite">
-    <input [(ngModel)]="nombreForm" placeholder="Nombre de tipo de licencia" />
-    <button type="button" (click)="submitSimple()">{{ editingId ? 'Actualizar' : 'Agregar' }}</button>
-    <button type="button" class="secondary" *ngIf="editingId" (click)="resetForm()">Cancelar</button>
-  </div>
-</ng-container>
+  @if (canWrite) {
+    <div class="form">
+      <input [(ngModel)]="nombreForm" placeholder="Nombre de tipo de licencia" />
+      <button type="button" (click)="submitSimple()">{{ editingId ? 'Actualizar' : 'Agregar' }}</button>
+      @if (editingId) {
+        <button type="button" class="secondary" (click)="resetForm()">Cancelar</button>
+      }
+    </div>
+  }
+}
 
 <!-- Tipos de Bien -->
-<ng-container *ngIf="activeTab === 'tiposBien'">
+@if (activeTab === 'tiposBien') {
   <table>
     <thead>
       <tr>
         <th>Nombre</th>
-        <th *ngIf="canWrite">Acciones</th>
+        @if (canWrite) {
+          <th>Acciones</th>
+        }
       </tr>
     </thead>
     <tbody>
-      <tr *ngFor="let item of tiposBien">
-        <td>{{ item.nombre }}</td>
-        <td *ngIf="canWrite">
-          <button type="button" (click)="startEdit(item.id, item.nombre)">Editar</button>
-          <button type="button" class="danger" (click)="requestDelete('tiposBien', item.id, item.nombre)">Eliminar</button>
-        </td>
-      </tr>
+      @for (item of tiposBien; track item) {
+        <tr>
+          <td>{{ item.nombre }}</td>
+          @if (canWrite) {
+            <td>
+              <button type="button" (click)="startEdit(item.id, item.nombre)">Editar</button>
+              <button type="button" class="danger" (click)="requestDelete('tiposBien', item.id, item.nombre)">Eliminar</button>
+            </td>
+          }
+        </tr>
+      }
     </tbody>
   </table>
-
-  <div class="form" *ngIf="canWrite">
-    <input [(ngModel)]="nombreForm" placeholder="Nombre de tipo de bien" />
-    <button type="button" (click)="submitSimple()">{{ editingId ? 'Actualizar' : 'Agregar' }}</button>
-    <button type="button" class="secondary" *ngIf="editingId" (click)="resetForm()">Cancelar</button>
-  </div>
-</ng-container>
+  @if (canWrite) {
+    <div class="form">
+      <input [(ngModel)]="nombreForm" placeholder="Nombre de tipo de bien" />
+      <button type="button" (click)="submitSimple()">{{ editingId ? 'Actualizar' : 'Agregar' }}</button>
+      @if (editingId) {
+        <button type="button" class="secondary" (click)="resetForm()">Cancelar</button>
+      }
+    </div>
+  }
+}
 
 <!-- Tipos de Impresora -->
-<ng-container *ngIf="activeTab === 'tiposImpresora'">
+@if (activeTab === 'tiposImpresora') {
   <table>
     <thead>
       <tr>
         <th>Nombre</th>
-        <th *ngIf="canWrite">Acciones</th>
+        @if (canWrite) {
+          <th>Acciones</th>
+        }
       </tr>
     </thead>
     <tbody>
-      <tr *ngFor="let item of tiposImpresora">
-        <td>{{ item.nombre }}</td>
-        <td *ngIf="canWrite">
-          <button type="button" (click)="startEdit(item.id, item.nombre)">Editar</button>
-          <button type="button" class="danger" (click)="requestDelete('tiposImpresora', item.id, item.nombre)">Eliminar</button>
-        </td>
-      </tr>
+      @for (item of tiposImpresora; track item) {
+        <tr>
+          <td>{{ item.nombre }}</td>
+          @if (canWrite) {
+            <td>
+              <button type="button" (click)="startEdit(item.id, item.nombre)">Editar</button>
+              <button type="button" class="danger" (click)="requestDelete('tiposImpresora', item.id, item.nombre)">Eliminar</button>
+            </td>
+          }
+        </tr>
+      }
     </tbody>
   </table>
-
-  <div class="form" *ngIf="canWrite">
-    <input [(ngModel)]="nombreForm" placeholder="Nombre de tipo de impresora" />
-    <button type="button" (click)="submitSimple()">{{ editingId ? 'Actualizar' : 'Agregar' }}</button>
-    <button type="button" class="secondary" *ngIf="editingId" (click)="resetForm()">Cancelar</button>
-  </div>
-</ng-container>
+  @if (canWrite) {
+    <div class="form">
+      <input [(ngModel)]="nombreForm" placeholder="Nombre de tipo de impresora" />
+      <button type="button" (click)="submitSimple()">{{ editingId ? 'Actualizar' : 'Agregar' }}</button>
+      @if (editingId) {
+        <button type="button" class="secondary" (click)="resetForm()">Cancelar</button>
+      }
+    </div>
+  }
+}
 
 <!-- Marcas de Impresora -->
-<ng-container *ngIf="activeTab === 'marcasImpresora'">
+@if (activeTab === 'marcasImpresora') {
   <table>
     <thead>
       <tr>
         <th>Nombre</th>
-        <th *ngIf="canWrite">Acciones</th>
+        @if (canWrite) {
+          <th>Acciones</th>
+        }
       </tr>
     </thead>
     <tbody>
-      <tr *ngFor="let item of marcasImpresora">
-        <td>{{ item.nombre }}</td>
-        <td *ngIf="canWrite">
-          <button type="button" (click)="startEdit(item.id, item.nombre)">Editar</button>
-          <button type="button" class="danger" (click)="requestDelete('marcasImpresora', item.id, item.nombre)">Eliminar</button>
-        </td>
-      </tr>
+      @for (item of marcasImpresora; track item) {
+        <tr>
+          <td>{{ item.nombre }}</td>
+          @if (canWrite) {
+            <td>
+              <button type="button" (click)="startEdit(item.id, item.nombre)">Editar</button>
+              <button type="button" class="danger" (click)="requestDelete('marcasImpresora', item.id, item.nombre)">Eliminar</button>
+            </td>
+          }
+        </tr>
+      }
     </tbody>
   </table>
-
-  <div class="form" *ngIf="canWrite">
-    <input [(ngModel)]="nombreForm" placeholder="Nombre de marca" />
-    <button type="button" (click)="submitSimple()">{{ editingId ? 'Actualizar' : 'Agregar' }}</button>
-    <button type="button" class="secondary" *ngIf="editingId" (click)="resetForm()">Cancelar</button>
-  </div>
-</ng-container>
+  @if (canWrite) {
+    <div class="form">
+      <input [(ngModel)]="nombreForm" placeholder="Nombre de marca" />
+      <button type="button" (click)="submitSimple()">{{ editingId ? 'Actualizar' : 'Agregar' }}</button>
+      @if (editingId) {
+        <button type="button" class="secondary" (click)="resetForm()">Cancelar</button>
+      }
+    </div>
+  }
+}
 
 <!-- Modelos de Impresora -->
-<ng-container *ngIf="activeTab === 'modelosImpresora'">
+@if (activeTab === 'modelosImpresora') {
   <table>
     <thead>
       <tr>
@@ -321,54 +402,69 @@
         <th>Modelo</th>
         <th>Tóner</th>
         <th>Driver</th>
-        <th *ngIf="canWrite">Acciones</th>
+        @if (canWrite) {
+          <th>Acciones</th>
+        }
       </tr>
     </thead>
     <tbody>
-      <tr *ngFor="let item of modelosImpresora">
-        <td>{{ item.marca.nombre }}</td>
-        <td>{{ item.nombre }}</td>
-        <td *ngIf="canWrite">
-          <div *ngFor="let toner of item.toners">{{ toner.color }} · {{ toner.variante }} — {{ toner.codigo }}</div>
-        </td>
-        <td>{{ item.driverNombre || '—' }}</td>
-        <td *ngIf="canWrite">
-          <button type="button" (click)="onEditModeloImpresora(item)">Editar</button>
-          <button type="button" class="danger" (click)="requestDeleteModelo(item)">Eliminar</button>
-        </td>
-      </tr>
+      @for (item of modelosImpresora; track item) {
+        <tr>
+          <td>{{ item.marca.nombre }}</td>
+          <td>{{ item.nombre }}</td>
+          @if (canWrite) {
+            <td>
+              @for (toner of item.toners; track toner) {
+                <div>{{ toner.color }} · {{ toner.variante }} — {{ toner.codigo }}</div>
+              }
+            </td>
+          }
+          <td>{{ item.driverNombre || '—' }}</td>
+          @if (canWrite) {
+            <td>
+              <button type="button" (click)="onEditModeloImpresora(item)">Editar</button>
+              <button type="button" class="danger" (click)="requestDeleteModelo(item)">Eliminar</button>
+            </td>
+          }
+        </tr>
+      }
     </tbody>
   </table>
-
-</ng-container>
+}
 
 <!-- Tipos de Equipo (GLPI) -->
-<ng-container *ngIf="activeTab === 'tiposEquipo'">
+@if (activeTab === 'tiposEquipo') {
   <table>
     <thead>
       <tr>
         <th>Valor GLPI</th>
         <th>Tipo normalizado</th>
         <th>Activo</th>
-        <th *ngIf="canWrite">Acciones</th>
+        @if (canWrite) {
+          <th>Acciones</th>
+        }
       </tr>
     </thead>
     <tbody>
-      <tr *ngFor="let item of tiposEquipo">
-        <td>{{ item.glpiValor }}</td>
-        <td>{{ item.tipoNormalizado }}</td>
-        <td>{{ item.activo ? 'Sí' : 'No' }}</td>
-        <td *ngIf="canWrite">
-          <button type="button" (click)="startEditTipoEquipo(item)">Editar</button>
-          <button type="button" class="danger" (click)="requestDelete('tiposEquipo', item.id, item.glpiValor, item.tipoNormalizado)">Eliminar</button>
-        </td>
-      </tr>
+      @for (item of tiposEquipo; track item) {
+        <tr>
+          <td>{{ item.glpiValor }}</td>
+          <td>{{ item.tipoNormalizado }}</td>
+          <td>{{ item.activo ? 'Sí' : 'No' }}</td>
+          @if (canWrite) {
+            <td>
+              <button type="button" (click)="startEditTipoEquipo(item)">Editar</button>
+              <button type="button" class="danger" (click)="requestDelete('tiposEquipo', item.id, item.glpiValor, item.tipoNormalizado)">Eliminar</button>
+            </td>
+          }
+        </tr>
+      }
     </tbody>
   </table>
-</ng-container>
+}
 
 <!-- Antivirus institucional VPN -->
-<ng-container *ngIf="activeTab === 'vpnInstitucional'">
+@if (activeTab === 'vpnInstitucional') {
   <section class="institutional-config">
     <div class="institutional-config__icon">VPN</div>
     <div class="institutional-config__copy">
@@ -383,97 +479,120 @@
         <b>{{ vpnConfigVencimiento || 'Sin configurar' }}</b>
       </div>
     </div>
-    <button *ngIf="canWrite" type="button" (click)="startAdd()">Actualizar</button>
+    @if (canWrite) {
+      <button type="button" (click)="startAdd()">Actualizar</button>
+    }
   </section>
-</ng-container>
+}
 
-<app-modal *ngIf="canWrite" [title]="simpleFormTitle" [open]="formOpen" (closed)="resetForm()">
-  <div class="catalog-form-modal">
-    <label *ngIf="activeTab === 'dependencias'">
-      Sede
-      <select [(ngModel)]="parentIdForm">
-        <option [ngValue]="null">Seleccione sede...</option>
-        <option *ngFor="let s of sedes" [ngValue]="s.id">{{ s.nombre }}</option>
-      </select>
-    </label>
-
-    <label *ngIf="activeTab === 'subdependencias'">
-      Dependencia
-      <select [(ngModel)]="parentIdForm">
-        <option [ngValue]="null">Seleccione dependencia...</option>
-        <option *ngFor="let d of dependencias" [ngValue]="d.id">{{ d.nombre }}</option>
-      </select>
-    </label>
-
-    <ng-container *ngIf="activeTab !== 'tiposEquipo'">
-      <label>
-        Nombre
-        <input [(ngModel)]="nombreForm" [placeholder]="simpleFormPlaceholder" />
-      </label>
-    </ng-container>
-
-    <ng-container *ngIf="activeTab === 'tiposEquipo'">
-      <label>
-        Valor GLPI (exacto, tal como aparece en GLPI)
-        <input [(ngModel)]="glpiValorForm" placeholder="Ej. Laptop" />
-      </label>
-      <label>
-        Tipo estándar del inventario
-        <select [(ngModel)]="tipoNormalizadoForm">
-          <option value="">Seleccione...</option>
-          <option *ngFor="let tipo of tiposComputoEstandar" [value]="tipo">{{ tipo }}</option>
-        </select>
-      </label>
-    </ng-container>
-
-    <div class="modal-actions">
-      <button type="button" class="secondary" (click)="resetForm()">Cancelar</button>
-      <button *ngIf="activeTab !== 'tiposEquipo'" type="button"
-        (click)="submitSimple()" [disabled]="!nombreForm.trim() || (needsParent && !parentIdForm)">
-        {{ editingId ? 'Actualizar' : 'Agregar' }}
-      </button>
-      <button *ngIf="activeTab === 'tiposEquipo'" type="button"
-        (click)="submitTipoEquipo()" [disabled]="!glpiValorForm.trim() || !tipoNormalizadoForm.trim()">
-        {{ editingId ? 'Actualizar' : 'Agregar' }}
-      </button>
+@if (canWrite) {
+  <app-modal [title]="simpleFormTitle" [open]="formOpen" (closed)="resetForm()">
+    <div class="catalog-form-modal">
+      @if (activeTab === 'dependencias') {
+        <label>
+          Sede
+          <select [(ngModel)]="parentIdForm">
+            <option [ngValue]="null">Seleccione sede...</option>
+            @for (s of sedes; track s) {
+              <option [ngValue]="s.id">{{ s.nombre }}</option>
+            }
+          </select>
+        </label>
+      }
+      @if (activeTab === 'subdependencias') {
+        <label>
+          Dependencia
+          <select [(ngModel)]="parentIdForm">
+            <option [ngValue]="null">Seleccione dependencia...</option>
+            @for (d of dependencias; track d) {
+              <option [ngValue]="d.id">{{ d.nombre }}</option>
+            }
+          </select>
+        </label>
+      }
+      @if (activeTab !== 'tiposEquipo') {
+        <label>
+          Nombre
+          <input [(ngModel)]="nombreForm" [placeholder]="simpleFormPlaceholder" />
+        </label>
+      }
+      @if (activeTab === 'tiposEquipo') {
+        <label>
+          Valor GLPI (exacto, tal como aparece en GLPI)
+          <input [(ngModel)]="glpiValorForm" placeholder="Ej. Laptop" />
+        </label>
+        <label>
+          Tipo estándar del inventario
+          <select [(ngModel)]="tipoNormalizadoForm">
+            <option value="">Seleccione...</option>
+            @for (tipo of tiposComputoEstandar; track tipo) {
+              <option [value]="tipo">{{ tipo }}</option>
+            }
+          </select>
+        </label>
+      }
+      <div class="modal-actions">
+        <button type="button" class="secondary" (click)="resetForm()">Cancelar</button>
+        @if (activeTab !== 'tiposEquipo') {
+          <button type="button"
+            (click)="submitSimple()" [disabled]="!nombreForm.trim() || (needsParent && !parentIdForm)">
+            {{ editingId ? 'Actualizar' : 'Agregar' }}
+          </button>
+        }
+        @if (activeTab === 'tiposEquipo') {
+          <button type="button"
+            (click)="submitTipoEquipo()" [disabled]="!glpiValorForm.trim() || !tipoNormalizadoForm.trim()">
+            {{ editingId ? 'Actualizar' : 'Agregar' }}
+          </button>
+        }
+      </div>
     </div>
-  </div>
-</app-modal>
+  </app-modal>
+}
 
-<app-modal *ngIf="canWrite" title="Antivirus institucional" [open]="vpnConfigOpen" [hideDefaultFooter]="true" (closed)="closeVpnConfig()">
-  <app-vpn-config-institucional-form
-    (saved)="onVpnConfigSaved()"
-    (cancelled)="closeVpnConfig()"
-  />
-</app-modal>
+@if (canWrite) {
+  <app-modal title="Antivirus institucional" [open]="vpnConfigOpen" [hideDefaultFooter]="true" (closed)="closeVpnConfig()">
+    <app-vpn-config-institucional-form
+      (saved)="onVpnConfigSaved()"
+      (cancelled)="closeVpnConfig()"
+      />
+    </app-modal>
+  }
 
-<app-modal
-  *ngIf="canWrite"
-  [title]="editingModeloImpresora ? 'Editar modelo de impresora' : 'Agregar modelo de impresora'"
-  [open]="modeloFormOpen"
-  size="wide"
-  [hideDefaultFooter]="true"
-  (closed)="onModeloImpresoraCancelled()"
->
-  <app-modelo-impresora-form
-    [modelo]="editingModeloImpresora"
-    [marcas]="marcasImpresora"
-    (saved)="onModeloImpresoraSaved()"
-    (cancelled)="onModeloImpresoraCancelled()"
-    (driverUploaded)="onModeloImpresoraDriverUploaded($event)"
-  />
-</app-modal>
+  @if (canWrite) {
+    <app-modal
+      [title]="editingModeloImpresora ? 'Editar modelo de impresora' : 'Agregar modelo de impresora'"
+      [open]="modeloFormOpen"
+      size="wide"
+      [hideDefaultFooter]="true"
+      (closed)="onModeloImpresoraCancelled()"
+      >
+      <app-modelo-impresora-form
+        [modelo]="editingModeloImpresora"
+        [marcas]="marcasImpresora"
+        (saved)="onModeloImpresoraSaved()"
+        (cancelled)="onModeloImpresoraCancelled()"
+        (driverUploaded)="onModeloImpresoraDriverUploaded($event)"
+        />
+      </app-modal>
+    }
 
-<app-modal *ngIf="canWrite" title="Confirmar eliminación" [open]="pendingDelete !== null" (closed)="closeDelete()">
-  <div class="delete-confirm" *ngIf="pendingDelete as item">
-    <div>
-      <strong>{{ item.title }}</strong>
-      <span>{{ tabLabel(item.tab) }}<ng-container *ngIf="item.detail"> - {{ item.detail }}</ng-container></span>
-    </div>
-    <p>Esta acción eliminará el registro del catálogo. Confirma solo si estás seguro.</p>
-    <div class="modal-actions">
-      <button type="button" class="secondary" (click)="closeDelete()">Cancelar</button>
-      <button type="button" class="danger" (click)="confirmDelete()">Sí, eliminar</button>
-    </div>
-  </div>
-</app-modal>
+    @if (canWrite) {
+      <app-modal title="Confirmar eliminación" [open]="pendingDelete !== null" (closed)="closeDelete()">
+        @if (pendingDelete; as item) {
+          <div class="delete-confirm">
+            <div>
+              <strong>{{ item.title }}</strong>
+              <span>{{ tabLabel(item.tab) }}@if (item.detail) {
+                - {{ item.detail }}
+              }</span>
+            </div>
+            <p>Esta acción eliminará el registro del catálogo. Confirma solo si estás seguro.</p>
+            <div class="modal-actions">
+              <button type="button" class="secondary" (click)="closeDelete()">Cancelar</button>
+              <button type="button" class="danger" (click)="confirmDelete()">Sí, eliminar</button>
+            </div>
+          </div>
+        }
+      </app-modal>
+    }

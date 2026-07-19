@@ -1,25 +1,27 @@
 <div class="module-page wifi-page">
-  <div class="module-header" *ngIf="false">
-    <div>
-      <span class="module-eyebrow">Conectividad</span>
-      <h2>Claves WiFi</h2>
-      <p>Redes, claves, ubicación y estado operativo para soporte de acceso inalámbrico.</p>
+  @if (false) {
+    <div class="module-header">
+      <div>
+        <span class="module-eyebrow">Conectividad</span>
+        <h2>Claves WiFi</h2>
+        <p>Redes, claves, ubicación y estado operativo para soporte de acceso inalámbrico.</p>
+      </div>
+      <div class="module-stats">
+        <div class="stat-pill">
+          <strong>{{ items.length }}</strong>
+          <span>Redes</span>
+        </div>
+        <div class="stat-pill">
+          <strong>{{ activas }}</strong>
+          <span>Activas</span>
+        </div>
+        <div class="stat-pill">
+          <strong>{{ inactivas }}</strong>
+          <span>Inactivas</span>
+        </div>
+      </div>
     </div>
-    <div class="module-stats">
-      <div class="stat-pill">
-        <strong>{{ items.length }}</strong>
-        <span>Redes</span>
-      </div>
-      <div class="stat-pill">
-        <strong>{{ activas }}</strong>
-        <span>Activas</span>
-      </div>
-      <div class="stat-pill">
-        <strong>{{ inactivas }}</strong>
-        <span>Inactivas</span>
-      </div>
-    </div>
-  </div>
+  }
 
   <app-generic-table
     [columns]="columns"
@@ -31,50 +33,54 @@
     (view)="onView($event)"
     (edit)="onEdit($event)"
     (delete)="onDelete($event)"
-  />
-</div>
+    />
+  </div>
 
-<app-modal title="Detalle de red WiFi" [open]="viewing !== null" (closed)="closeView()">
-  <ng-container *ngIf="viewing">
-    <div class="wifi-secret">
-      <span>SSID</span>
-      <strong>{{ viewing.ssid }}</strong>
-    </div>
-    <div class="wifi-detail-layout">
-      <div class="detail-grid">
-        <app-field label="SSID">{{ viewing.ssid }}</app-field>
-        <app-field label="Clave">{{ viewing.clave }}</app-field>
-        <app-field label="Ubicación">{{ viewing.ubicacion }}</app-field>
-        <app-field label="Tipo">{{ viewing.tipo }}</app-field>
-        <app-field label="Seguridad QR">{{ qrSecurityType(viewing) }}</app-field>
-        <app-field label="Estado">{{ viewing.estado }}</app-field>
+  <app-modal title="Detalle de red WiFi" [open]="viewing !== null" (closed)="closeView()">
+    @if (viewing) {
+      <div class="wifi-secret">
+        <span>SSID</span>
+        <strong>{{ viewing.ssid }}</strong>
       </div>
-
-      <section class="wifi-qr-panel">
-        <div class="qr-box" [class.loading]="!qrDataUrl && !qrError">
-          <img *ngIf="qrDataUrl" [src]="qrDataUrl" [alt]="'QR para conectar a ' + viewing.ssid" />
-          <span *ngIf="!qrDataUrl && !qrError">Generando QR...</span>
-          <span *ngIf="qrError">{{ qrError }}</span>
+      <div class="wifi-detail-layout">
+        <div class="detail-grid">
+          <app-field label="SSID">{{ viewing.ssid }}</app-field>
+          <app-field label="Clave">{{ viewing.clave }}</app-field>
+          <app-field label="Ubicación">{{ viewing.ubicacion }}</app-field>
+          <app-field label="Tipo">{{ viewing.tipo }}</app-field>
+          <app-field label="Seguridad QR">{{ qrSecurityType(viewing) }}</app-field>
+          <app-field label="Estado">{{ viewing.estado }}</app-field>
         </div>
+        <section class="wifi-qr-panel">
+          <div class="qr-box" [class.loading]="!qrDataUrl && !qrError">
+            @if (qrDataUrl) {
+              <img [src]="qrDataUrl" [alt]="'QR para conectar a ' + viewing.ssid" />
+            }
+            @if (!qrDataUrl && !qrError) {
+              <span>Generando QR...</span>
+            }
+            @if (qrError) {
+              <span>{{ qrError }}</span>
+            }
+          </div>
+          <div class="qr-actions">
+            <button type="button" class="secondary" (click)="copyQrPayload()" [disabled]="!qrDataUrl">
+              {{ qrCopied ? 'Copiado' : 'Copiar texto QR' }}
+            </button>
+            <button type="button" (click)="downloadQr()" [disabled]="!qrDataUrl">
+              Descargar PNG
+            </button>
+          </div>
+        </section>
+      </div>
+    }
+  </app-modal>
 
-        <div class="qr-actions">
-          <button type="button" class="secondary" (click)="copyQrPayload()" [disabled]="!qrDataUrl">
-            {{ qrCopied ? 'Copiado' : 'Copiar texto QR' }}
-          </button>
-          <button type="button" (click)="downloadQr()" [disabled]="!qrDataUrl">
-            Descargar PNG
-          </button>
-        </div>
-      </section>
-    </div>
-  </ng-container>
-</app-modal>
-
-<app-modal
-  [title]="editing ? 'Editar red WiFi' : 'Agregar red WiFi'"
-  [open]="formOpen"
-  [hideDefaultFooter]="true"
-  (closed)="closeForm()"
->
-  <app-wifi-form [wifi]="editing" (saved)="onSaved()" (cancelled)="closeForm()" />
-</app-modal>
+  <app-modal
+    [title]="editing ? 'Editar red WiFi' : 'Agregar red WiFi'"
+    [open]="formOpen"
+    [hideDefaultFooter]="true"
+    (closed)="closeForm()"
+    >
+    <app-wifi-form [wifi]="editing" (saved)="onSaved()" (cancelled)="closeForm()" />
+  </app-modal>

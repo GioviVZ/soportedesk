@@ -1,6 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ImpresoraFormComponent } from './impresora-form.component';
+import { provideHttpClient, withInterceptorsFromDi, withXhr } from '@angular/common/http';
 
 describe('ImpresoraFormComponent', () => {
   let component: ImpresoraFormComponent;
@@ -9,8 +10,9 @@ describe('ImpresoraFormComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [ImpresoraFormComponent, HttpClientTestingModule],
-    }).compileComponents();
+    imports: [ImpresoraFormComponent],
+    providers: [provideHttpClient(withXhr(), withInterceptorsFromDi()), provideHttpClientTesting()]
+}).compileComponents();
 
     fixture = TestBed.createComponent(ImpresoraFormComponent);
     component = fixture.componentInstance;

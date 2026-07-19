@@ -35,50 +35,51 @@
     </button>
   </section>
 
-  <div class="users-grid" *ngIf="usuarios.length > 0; else emptyUsuarios">
-    <article class="user-card" *ngFor="let u of usuarios">
-      <div class="user-card__head">
-        <div class="user-cell">
-          <span class="avatar-mini">{{ u.nombre.charAt(0) }}</span>
-          <div>
-            <strong>{{ u.nombre }}</strong>
-            <small>{{ u.username }}</small>
+  @if (usuarios.length > 0) {
+    <div class="users-grid">
+      @for (u of usuarios; track u) {
+        <article class="user-card">
+          <div class="user-card__head">
+            <div class="user-cell">
+              <span class="avatar-mini">{{ u.nombre.charAt(0) }}</span>
+              <div>
+                <strong>{{ u.nombre }}</strong>
+                <small>{{ u.username }}</small>
+              </div>
+            </div>
+            <span class="badge" [class.activo]="u.activo" [class.inactivo]="!u.activo">
+              {{ u.activo ? 'Activo' : 'Inactivo' }}
+            </span>
           </div>
-        </div>
-        <span class="badge" [class.activo]="u.activo" [class.inactivo]="!u.activo">
-          {{ u.activo ? 'Activo' : 'Inactivo' }}
-        </span>
-      </div>
-
-      <div class="access-summary">
-        <span>{{ accesoResumen(u.permisos) }}</span>
-        <small>{{ countByNivel(u.permisos, 'EDIT') }} modulos con escritura</small>
-      </div>
-
-      <div class="permisos-tags">
-        <ng-container *ngIf="permisosOrdenados(u.permisos).length > 0; else sinPermisos">
-          <span class="tag" *ngFor="let p of permisosOrdenados(u.permisos)" [class.tag--view]="u.permisos[p] === 'VIEW'">
-            {{ moduloLabel(p) }} <small>{{ u.permisos[p] === 'EDIT' ? 'Edicion' : 'Vista' }}</small>
-          </span>
-        </ng-container>
-        <ng-template #sinPermisos>
-          <span class="sin-permisos">Sin modulos asignados</span>
-        </ng-template>
-      </div>
-
-      <div class="actions">
-        <button class="edit-btn" type="button" (click)="openEdit(u)">Editar accesos</button>
-        <button class="del-btn" type="button" (click)="delete(u)">Eliminar</button>
-      </div>
-    </article>
-  </div>
-
-  <ng-template #emptyUsuarios>
+          <div class="access-summary">
+            <span>{{ accesoResumen(u.permisos) }}</span>
+            <small>{{ countByNivel(u.permisos, 'EDIT') }} modulos con escritura</small>
+          </div>
+          <div class="permisos-tags">
+            @if (permisosOrdenados(u.permisos).length > 0) {
+              @for (p of permisosOrdenados(u.permisos); track p) {
+                <span class="tag" [class.tag--view]="u.permisos[p] === 'VIEW'">
+                  {{ moduloLabel(p) }} <small>{{ u.permisos[p] === 'EDIT' ? 'Edicion' : 'Vista' }}</small>
+                </span>
+              }
+            } @else {
+              <span class="sin-permisos">Sin modulos asignados</span>
+            }
+          </div>
+          <div class="actions">
+            <button class="edit-btn" type="button" (click)="openEdit(u)">Editar accesos</button>
+            <button class="del-btn" type="button" (click)="delete(u)">Eliminar</button>
+          </div>
+        </article>
+      }
+    </div>
+  } @else {
     <div class="empty-state">
       <strong>No hay usuarios de soporte registrados</strong>
       <span>Agrega el primer usuario para asignarle accesos por modulo.</span>
     </div>
-  </ng-template>
+  }
+
 </div>
 
 <app-modal
@@ -87,7 +88,7 @@
   size="wide"
   [hideDefaultFooter]="true"
   (closed)="closeForm()"
->
+  >
   <div class="form">
     <section class="form-section">
       <div class="form-section-title">
@@ -124,32 +125,40 @@
       </div>
 
       <div class="permission-groups">
-        <section class="permission-group" *ngFor="let group of moduleGroups; trackBy: trackGroup">
-          <h4>{{ group.name }}</h4>
-          <div class="permission-row" *ngFor="let m of group.modules; trackBy: trackModule">
-            <div class="permission-copy">
-              <strong>{{ m.label }}</strong>
-              <small *ngIf="m.description">{{ m.description }}</small>
-            </div>
-            <div class="segmented-access" [class.segmented-access--view-only]="m.kind === 'view'">
-              <label>
-                <input type="radio" [attr.data-modulo]="m.key" data-nivel="NONE"
-                       [checked]="nivelDe(m.key) === null" (change)="setNivel(m.key, null)" />
-                <span>Sin acceso</span>
-              </label>
-              <label>
-                <input type="radio" [attr.data-modulo]="m.key" data-nivel="VIEW"
-                       [checked]="nivelDe(m.key) === 'VIEW'" (change)="setNivel(m.key, 'VIEW')" />
-                <span>Vista</span>
-              </label>
-              <label *ngIf="m.kind === 'write'">
-                <input type="radio" [attr.data-modulo]="m.key" data-nivel="EDIT"
-                       [checked]="nivelDe(m.key) === 'EDIT'" (change)="setNivel(m.key, 'EDIT')" />
-                <span>Edicion</span>
-              </label>
-            </div>
-          </div>
-        </section>
+        @for (group of moduleGroups; track trackGroup($index, group)) {
+          <section class="permission-group">
+            <h4>{{ group.name }}</h4>
+            @for (m of group.modules; track trackModule($index, m)) {
+              <div class="permission-row">
+                <div class="permission-copy">
+                  <strong>{{ m.label }}</strong>
+                  @if (m.description) {
+                    <small>{{ m.description }}</small>
+                  }
+                </div>
+                <div class="segmented-access" [class.segmented-access--view-only]="m.kind === 'view'">
+                  <label>
+                    <input type="radio" [attr.data-modulo]="m.key" data-nivel="NONE"
+                      [checked]="nivelDe(m.key) === null" (change)="setNivel(m.key, null)" />
+                    <span>Sin acceso</span>
+                  </label>
+                  <label>
+                    <input type="radio" [attr.data-modulo]="m.key" data-nivel="VIEW"
+                      [checked]="nivelDe(m.key) === 'VIEW'" (change)="setNivel(m.key, 'VIEW')" />
+                    <span>Vista</span>
+                  </label>
+                  @if (m.kind === 'write') {
+                    <label>
+                      <input type="radio" [attr.data-modulo]="m.key" data-nivel="EDIT"
+                        [checked]="nivelDe(m.key) === 'EDIT'" (change)="setNivel(m.key, 'EDIT')" />
+                      <span>Edicion</span>
+                    </label>
+                  }
+                </div>
+              </div>
+            }
+          </section>
+        }
       </div>
     </section>
 

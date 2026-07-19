@@ -9,6 +9,8 @@ public record VpnDashboardCompleto(
         long observadas,
         long total,
         List<VpnTipoEquipoCount> distribucionPorTipoEquipo,
+        List<VpnDependenciaCount> distribucionPorDependencia,
+        List<VpnSubdependenciaCount> distribucionPorSubdependencia,
         List<VpnVencimientoAlerta> antivirusVencidos,
         long totalAntivirusVencidos,
         List<VpnVencimientoAlerta> antivirusPorVencer,

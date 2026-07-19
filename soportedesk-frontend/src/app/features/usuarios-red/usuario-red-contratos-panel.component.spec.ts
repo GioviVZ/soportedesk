@@ -1,13 +1,14 @@
 import { TestBed } from '@angular/core/testing';
-import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { UsuarioRedContratosPanelComponent } from './usuario-red-contratos-panel.component';
 import { UsuarioRedContrato } from './usuario-red-contrato.model';
+import { provideHttpClient, withInterceptorsFromDi, withXhr } from '@angular/common/http';
 
 describe('UsuarioRedContratosPanelComponent', () => {
   let httpMock: HttpTestingController;
 
   function createComponent(): UsuarioRedContratosPanelComponent {
-    TestBed.configureTestingModule({ imports: [HttpClientTestingModule] });
+    TestBed.configureTestingModule({ imports: [], providers: [provideHttpClient(withXhr(), withInterceptorsFromDi()), provideHttpClientTesting()] });
     httpMock = TestBed.inject(HttpTestingController);
     return TestBed.runInInjectionContext(() => new UsuarioRedContratosPanelComponent());
   }

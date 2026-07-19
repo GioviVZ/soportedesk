@@ -1,7 +1,8 @@
 package com.inia.soportedesk.dashboard;
 
 import com.inia.soportedesk.activedirectory.AdUsuarioCacheRepository;
-import com.inia.soportedesk.glpi.VwInvComputerFullRepository;
+import com.inia.soportedesk.equipos.EquipoKpisDto;
+import com.inia.soportedesk.equipos.EquipoService;
 import com.inia.soportedesk.impresoras.ImpresoraRepository;
 import com.inia.soportedesk.licencias.LicenciaRepository;
 import com.inia.soportedesk.gestiontiinia.VwGwDashboardRepository;
@@ -30,7 +31,7 @@ public class DashboardService {
     private final VpnRepository vpnRepository;
     private final WifiRepository wifiRepository;
     private final ImpresoraRepository impresoraRepository;
-    private final VwInvComputerFullRepository equipoRepository;
+    private final EquipoService equipoService;
     private final OrdenServicioService ordenServicioService;
     private final UsuarioRedContratoRepository usuarioRedContratoRepository;
 
@@ -43,7 +44,7 @@ public class DashboardService {
                 vpnRepository.countByEstadoSolicitud("PENDIENTE"),
                 wifiRepository.count(),
                 impresoraRepository.count(),
-                equipoRepository.countByEliminado(0),
+                equipoService.getKpis().totalActivos(),
                 adUsuarioCacheRepository.countByEnabledFalse(),
                 usuarioRedContratoRepository.findProximoVencimientoUsuarioRed(LocalDate.now())
         );
@@ -80,6 +81,37 @@ public class DashboardService {
 
     public List<OrdenServicioResponse> ordenesServicioProximas() {
         return ordenServicioService.listarProximas();
+    }
+
+    public List<ModuloBreakdownItem> impresorasPorEstado() {
+        return toBreakdown(impresoraRepository.countGroupedByEstado());
+    }
+
+    public List<ModuloBreakdownItem> vpnPorEstadoSolicitud() {
+        return toBreakdown(vpnRepository.countGroupedByEstadoSolicitud());
+    }
+
+    public List<ModuloBreakdownItem> wifiPorEstado() {
+        return toBreakdown(wifiRepository.countGroupedByEstado());
+    }
+
+    public List<ModuloBreakdownItem> correosPorEstado() {
+        return toBreakdown(correoRepository.countGroupedByEstado());
+    }
+
+    public List<ModuloBreakdownItem> equiposPorTipo() {
+        EquipoKpisDto kpis = equipoService.getKpis();
+        return List.of(
+                new ModuloBreakdownItem("Laptop", kpis.laptopCount()),
+                new ModuloBreakdownItem("Computadora de Escritorio", kpis.desktopCount()),
+                new ModuloBreakdownItem("All in One", kpis.allInOneCount())
+        );
+    }
+
+    private List<ModuloBreakdownItem> toBreakdown(List<Object[]> rows) {
+        return rows.stream()
+                .map(row -> new ModuloBreakdownItem((String) row[0], ((Number) row[1]).longValue()))
+                .toList();
     }
 
     private List<UbicacionUsuariosCount> pivot(List<Object[]> rows) {

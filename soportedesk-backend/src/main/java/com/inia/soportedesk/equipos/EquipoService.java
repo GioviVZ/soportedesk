@@ -24,6 +24,7 @@ public class EquipoService {
 
     private static final String DESKTOP = "Computadora de Escritorio";
     private static final String LAPTOP = "Laptop";
+    private static final String ALL_IN_ONE = "All in One";
     private static final String SEDE_CENTRAL = "SEDE CENTRAL";
 
     private final VwInvComputerFullRepository repository;
@@ -44,13 +45,14 @@ public class EquipoService {
     public EquipoKpisDto getKpis() {
         List<VwInvComputerFull> equipos = repository.findFiltered(null, null, null, null, null, null);
         applyEnrichments(equipos);
-        long totalActivos = equipos.size();
-        long desktopCount = equipos.stream().filter(e -> DESKTOP.equals(e.getTipoEquipo())).count();
-        long laptopCount = equipos.stream().filter(e -> LAPTOP.equals(e.getTipoEquipo())).count();
-        long otrosCount = totalActivos - desktopCount - laptopCount;
-        long sedeCentralCount = equipos.stream().filter(e -> SEDE_CENTRAL.equals(e.getSedeNombre())).count();
+        List<VwInvComputerFull> equiposComputo = equipos.stream().filter(this::esEquipoComputoAcordado).toList();
+        long totalActivos = equiposComputo.size();
+        long desktopCount = equiposComputo.stream().filter(e -> DESKTOP.equals(e.getTipoEquipo())).count();
+        long laptopCount = equiposComputo.stream().filter(e -> LAPTOP.equals(e.getTipoEquipo())).count();
+        long allInOneCount = equiposComputo.stream().filter(e -> ALL_IN_ONE.equals(e.getTipoEquipo())).count();
+        long sedeCentralCount = equiposComputo.stream().filter(e -> SEDE_CENTRAL.equals(e.getSedeNombre())).count();
         long eeasCount = totalActivos - sedeCentralCount;
-        return new EquipoKpisDto(totalActivos, desktopCount, laptopCount, otrosCount, sedeCentralCount, eeasCount);
+        return new EquipoKpisDto(totalActivos, desktopCount, laptopCount, allInOneCount, sedeCentralCount, eeasCount);
     }
 
     public List<String> findSedes() { return repository.findDistinctSedes(); }
@@ -147,11 +149,12 @@ public class EquipoService {
         try {
             List<VwInvComputerFull> equipos = repository.findFiltered(null, null, null, null, null, null);
             applyEnrichments(equipos);
+            equipos = equipos.stream().filter(this::esEquipoComputoAcordado).toList();
 
             long total = equipos.size();
             long desktopCount = equipos.stream().filter(e -> DESKTOP.equals(e.getTipoEquipo())).count();
             long laptopCount = equipos.stream().filter(e -> LAPTOP.equals(e.getTipoEquipo())).count();
-            long otrosCount = total - desktopCount - laptopCount;
+            long allInOneCount = equipos.stream().filter(e -> ALL_IN_ONE.equals(e.getTipoEquipo())).count();
             long sedeCentralCount = equipos.stream().filter(e -> SEDE_CENTRAL.equals(e.getSedeNombre())).count();
             long eeasCount = total - sedeCentralCount;
             long recientes30Dias = equipos.stream().filter(e -> e.getFechaCreacion() != null
@@ -181,8 +184,18 @@ public class EquipoService {
                             Collectors.counting()))
                     .entrySet().stream()
                     .sorted(java.util.Map.Entry.<String, Long>comparingByValue(java.util.Comparator.reverseOrder()))
-                    .limit(10)
                     .map(entry -> new EquipoDependenciaCount(entry.getKey(), entry.getValue()))
+                    .toList();
+
+            List<EquipoSubdependenciaCount> topSubdependencias = equipos.stream()
+                    .collect(Collectors.groupingBy(
+                            e -> e.getUnidadId() == null || e.getUnidadId().isBlank()
+                                    ? "Sin subdependencia" : e.getUnidadId(),
+                            java.util.LinkedHashMap::new,
+                            Collectors.counting()))
+                    .entrySet().stream()
+                    .sorted(java.util.Map.Entry.<String, Long>comparingByValue(java.util.Comparator.reverseOrder()))
+                    .map(entry -> new EquipoSubdependenciaCount(entry.getKey(), entry.getValue()))
                     .toList();
 
             List<Long> ids = equipos.stream().map(VwInvComputerFull::getComputerID).toList();
@@ -206,11 +219,11 @@ public class EquipoService {
             EquipoSaludResumen salud = new EquipoSaludResumen(rojos, amarillos, ok, sinPatrimonial, sinUsuario, sinSede);
 
             return new EquipoDashboardCompleto(
-                    total, desktopCount, laptopCount, otrosCount, sedeCentralCount, eeasCount, recientes30Dias,
+                    total, desktopCount, laptopCount, allInOneCount, sedeCentralCount, eeasCount, recientes30Dias,
                     sinActualizarMasTresMeses,
-                    distribucionPorFabricante, topDependencias, salud);
+                    distribucionPorFabricante, topDependencias, topSubdependencias, salud);
         } catch (Exception ex) {
-            return new EquipoDashboardCompleto(0, 0, 0, 0, 0, 0, 0, 0, List.of(), List.of(),
+            return new EquipoDashboardCompleto(0, 0, 0, 0, 0, 0, 0, 0, List.of(), List.of(), List.of(),
                     new EquipoSaludResumen(0, 0, 0, 0, 0, 0));
         }
     }
@@ -225,6 +238,12 @@ public class EquipoService {
                     .orElse(glpiTipo);
         }
         return glpiTipo;
+    }
+
+    private boolean esEquipoComputoAcordado(VwInvComputerFull equipo) {
+        return DESKTOP.equals(equipo.getTipoEquipo())
+                || LAPTOP.equals(equipo.getTipoEquipo())
+                || ALL_IN_ONE.equals(equipo.getTipoEquipo());
     }
 
     private void applyEnrichments(List<VwInvComputerFull> items) {

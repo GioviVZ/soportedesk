@@ -60,4 +60,14 @@ class TipoImpresoraServiceTest {
 
         assertThat(result.getNombre()).isEqualTo("Láser");
     }
+    @Test
+    void create_withDuplicatedName_rejectsType() {
+        TipoImpresoraRequest request = new TipoImpresoraRequest();
+        request.setNombre(" Laser ");
+        when(repository.existsByNombreIgnoreCase("Laser")).thenReturn(true);
+
+        assertThatThrownBy(() -> service.create(request))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("tipo de impresora Laser");
+    }
 }

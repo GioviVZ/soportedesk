@@ -127,7 +127,7 @@ export interface EquipoKpis {
   totalActivos: number;
   desktopCount: number;
   laptopCount: number;
-  otrosCount: number;
+  allInOneCount: number;
   sedeCentralCount: number;
   eeasCount: number;
 }
@@ -139,6 +139,11 @@ export interface EquipoFabricanteCount {
 
 export interface EquipoDependenciaCount {
   dependencia: string;
+  total: number;
+}
+
+export interface EquipoSubdependenciaCount {
+  subdependencia: string;
   total: number;
 }
 
@@ -155,13 +160,14 @@ export interface EquipoDashboardCompleto {
   total: number;
   desktopCount: number;
   laptopCount: number;
-  otrosCount: number;
+  allInOneCount: number;
   sedeCentralCount: number;
   eeasCount: number;
   recientes30Dias: number;
   sinActualizarMasTresMeses: number;
   distribucionPorFabricante: EquipoFabricanteCount[];
   topDependencias: EquipoDependenciaCount[];
+  topSubdependencias: EquipoSubdependenciaCount[];
   salud: EquipoSaludResumen;
 }
 

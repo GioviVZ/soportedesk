@@ -1,5 +1,5 @@
-import { Component, OnInit, computed, inject, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, OnInit, computed, inject, signal, ChangeDetectionStrategy } from '@angular/core';
+
 import { FormsModule } from '@angular/forms';
 import { GenericTableComponent, TableColumn } from '../../shared/generic-table/generic-table.component';
 import { EquipoKpis, EquipoResumen } from './equipo.model';
@@ -17,11 +17,11 @@ interface EquipoTableRow extends EquipoResumen {
 }
 
 @Component({
-  selector: 'app-equipos-inventario',
-  standalone: true,
-  imports: [CommonModule, FormsModule, GenericTableComponent, ModalComponent, EquipoDetailComponent],
-  templateUrl: './equipos-inventario.component.html',
-  styleUrl: './equipos.shared.scss',
+    selector: 'app-equipos-inventario',
+    imports: [FormsModule, GenericTableComponent, ModalComponent, EquipoDetailComponent],
+    templateUrl: './equipos-inventario.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
+    styleUrl: './equipos.shared.scss'
 })
 export class EquiposInventarioComponent implements OnInit {
   private service = inject(EquipoService);
@@ -50,7 +50,7 @@ export class EquiposInventarioComponent implements OnInit {
       { label: 'Total Activos', value: k?.totalActivos ?? 0, tone: 'blue' },
       { label: 'Desktop', value: k?.desktopCount ?? 0, tone: 'indigo' },
       { label: 'Laptop', value: k?.laptopCount ?? 0, tone: 'violet' },
-      { label: 'Otros', value: k?.otrosCount ?? 0, tone: 'gray' },
+      { label: 'All in One', value: k?.allInOneCount ?? 0, tone: 'gray' },
       { label: 'Sede Central', value: k?.sedeCentralCount ?? 0, tone: 'green' },
       { label: 'EEAs', value: k?.eeasCount ?? 0, tone: 'orange' },
     ];

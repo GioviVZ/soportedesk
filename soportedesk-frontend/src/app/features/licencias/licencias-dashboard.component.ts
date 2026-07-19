@@ -1,32 +1,63 @@
-import { CommonModule } from '@angular/common';
-import { Component, OnInit, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, inject } from '@angular/core';
+import { DashboardBreakdownComponent, DashboardBreakdownItem } from '../../shared/dashboard-breakdown/dashboard-breakdown.component';
 import { Licencia } from './licencia.model';
 import { LicenciaService } from './licencia.service';
 
 @Component({
-  selector: 'app-licencias-dashboard', standalone: true, imports: [CommonModule],
+  selector: 'app-licencias-dashboard',
+  imports: [DashboardBreakdownComponent],
+  changeDetection: ChangeDetectionStrategy.Eager,
   template: `
     <div class="module-dash">
-      <div class="module-dash-toolbar"><div class="module-dash-title"><strong>Panorama de licencias</strong><span>Compras, unidades y activaciones registradas.</span></div><button type="button" class="module-dash-refresh" (click)="load()" [disabled]="loading">{{ loading ? 'Actualizando' : 'Actualizar' }}</button></div>
-      <div class="module-dash-notice" *ngIf="error">No se pudo cargar el dashboard.</div>
+      <div class="module-dash-toolbar">
+        <div class="module-dash-title"><strong>Panorama de licencias</strong><span>Compras, unidades y activaciones registradas.</span></div>
+        <button type="button" class="module-dash-refresh" (click)="load()" [disabled]="loading">{{ loading ? 'Actualizando' : 'Actualizar' }}</button>
+      </div>
+      @if (error) { <div class="module-dash-notice">No se pudo cargar el dashboard.</div> }
+
       <section class="module-dash-stats">
         <div class="module-dash-stat"><span>Registros</span><strong>{{ items.length }}</strong><small>Licencias registradas</small></div>
         <div class="module-dash-stat tone-info"><span>Unidades</span><strong>{{ units }}</strong><small>Unidades adquiridas</small></div>
-        <div class="module-dash-stat"><span>Activaciones</span><strong>{{ activations }}</strong><small>Cuentas configuradas</small></div>
+        <div class="module-dash-stat tone-success"><span>Activaciones</span><strong>{{ activations }}</strong><small>Cuentas configuradas</small></div>
         <div class="module-dash-stat tone-warning"><span>Sin activación</span><strong>{{ withoutActivation }}</strong><small>Registros por completar</small></div>
       </section>
-      <section class="module-dash-grid">
-        <article class="module-dash-card"><header class="module-dash-card__header"><div><strong>Por tipo de licencia</strong><span>Distribución de unidades</span></div></header><div class="module-dash-list"><div class="module-dash-row tone-info" *ngFor="let row of grouped('tipo')"><strong>{{ row.label }}</strong><small>{{ row.total }} unidades</small></div></div></article>
-        <article class="module-dash-card"><header class="module-dash-card__header"><div><strong>Por año</strong><span>Unidades adquiridas por periodo</span></div></header><div class="module-dash-list"><div class="module-dash-row" *ngFor="let row of grouped('anio')"><strong>{{ row.label }}</strong><small>{{ row.total }} unidades</small></div></div></article>
+
+      <section class="module-dash-breakdowns">
+        <app-dashboard-breakdown title="Unidades por tipo de licencia" subtitle="Qué licencias concentran más unidades" unit="unidades" [items]="grouped('tipo')" [expanded]="true" [colors]="licenseColors" />
+        <app-dashboard-breakdown title="Unidades por año" subtitle="Volumen adquirido en cada periodo" unit="unidades" [items]="grouped('anio')" [colors]="yearColors" />
       </section>
-    </div>`,
+    </div>
+  `,
 })
 export class LicenciasDashboardComponent implements OnInit {
-  private service = inject(LicenciaService); items: Licencia[] = []; loading = false; error = false;
-  get units(): number { return this.items.reduce((n,x) => n + (x.cantidad ?? 0), 0); }
-  get activations(): number { return this.items.reduce((n,x) => n + (x.activaciones?.length || (x.cuentaActivacion || x.claveActivacion ? 1 : 0)), 0); }
-  get withoutActivation(): number { return this.items.filter(x => !(x.activaciones?.length || x.cuentaActivacion || x.claveActivacion)).length; }
+  private service = inject(LicenciaService);
+  items: Licencia[] = [];
+  loading = false;
+  error = false;
+  readonly licenseColors = ['#8a641f', '#b48935', '#d0ab5a', '#e0c483', '#6c748c', '#48546f'];
+  readonly yearColors = ['#315d8a', '#5485aa', '#76a8c0', '#2f766d', '#78a27c'];
+
+  get units(): number { return this.items.reduce((total, item) => total + (item.cantidad ?? 0), 0); }
+  get activations(): number { return this.items.reduce((total, item) => total + (item.activaciones?.length || (item.cuentaActivacion || item.claveActivacion ? 1 : 0)), 0); }
+  get withoutActivation(): number { return this.items.filter((item) => !(item.activaciones?.length || item.cuentaActivacion || item.claveActivacion)).length; }
+
   ngOnInit(): void { this.load(); }
-  load(): void { this.loading = true; this.error = false; this.service.getAll().subscribe({ next: x => { this.items = x; this.loading = false; }, error: () => { this.error = true; this.loading = false; } }); }
-  grouped(field: 'tipo' | 'anio'): { label: string; total: number }[] { const map = new Map<string, number>(); this.items.forEach(x => { const key = field === 'tipo' ? (x.tipoLicencia?.nombre || 'Sin tipo') : (x.anio || 'Sin año'); map.set(key, (map.get(key) ?? 0) + (x.cantidad ?? 0)); }); return [...map].map(([label,total]) => ({label,total})).sort((a,b) => b.total-a.total); }
+
+  load(): void {
+    this.loading = true;
+    this.error = false;
+    this.service.getAll().subscribe({
+      next: (items) => { this.items = items; this.loading = false; },
+      error: () => { this.error = true; this.loading = false; },
+    });
+  }
+
+  grouped(field: 'tipo' | 'anio'): DashboardBreakdownItem[] {
+    const grouped = new Map<string, number>();
+    this.items.forEach((item) => {
+      const label = field === 'tipo' ? (item.tipoLicencia?.nombre || 'Sin tipo') : (item.anio || 'Sin año');
+      grouped.set(label, (grouped.get(label) ?? 0) + (item.cantidad ?? 0));
+    });
+    return [...grouped].map(([label, total]) => ({ label, total })).sort((a, b) => b.total - a.total || a.label.localeCompare(b.label));
+  }
 }

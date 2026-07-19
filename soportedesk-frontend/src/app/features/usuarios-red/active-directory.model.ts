@@ -36,6 +36,11 @@ export interface OuUsuariosCount {
   activos: number;
 }
 
+export interface OfficeUsuariosCount {
+  oficina: string;
+  activos: number;
+}
+
 export interface AdUserAlerta {
   samAccountName: string;
   displayName: string | null;
@@ -43,6 +48,7 @@ export interface AdUserAlerta {
 }
 
 export interface ActiveDirectoryDashboardCompleto extends ActiveDirectoryDashboard {
+  distribucionPorOficina: OfficeUsuariosCount[];
   distribucionPorOu: OuUsuariosCount[];
   passwordsVencidas: AdUserAlerta[];
   totalPasswordsVencidas: number;

@@ -89,17 +89,20 @@ class CorreoServiceTest {
     void getDashboardCompleto_aggregatesDistribution2FAAndInactivity() {
         VwGwDashboard activoOti = dashboard("a@inia.gob.pe", "Activo", "Sede Central", 10);
         ReflectionTestUtils.setField(activoOti, "oficinaPadre", "OTI");
+        ReflectionTestUtils.setField(activoOti, "oficina", "Soporte");
         ReflectionTestUtils.setField(activoOti, "verificacion2Pasos", "Enrolado");
         ReflectionTestUtils.setField(activoOti, "ultimoInicioSesion", java.time.LocalDateTime.now());
 
         VwGwDashboard inactivoDga = dashboard("b@inia.gob.pe", "Activo", "EEAs", 20);
         ReflectionTestUtils.setField(inactivoDga, "oficinaPadre", "DGA");
+        ReflectionTestUtils.setField(inactivoDga, "oficina", "Logística");
         ReflectionTestUtils.setField(inactivoDga, "verificacion2Pasos", "No Enrolado");
         ReflectionTestUtils.setField(inactivoDga, "nombreCompleto", "Beto Gomez");
         ReflectionTestUtils.setField(inactivoDga, "ultimoInicioSesion", java.time.LocalDateTime.now().minusDays(90));
 
         VwGwDashboard sinAcceso = dashboard("c@inia.gob.pe", "Activo", "EEAs", 20);
         ReflectionTestUtils.setField(sinAcceso, "oficinaPadre", "DGA");
+        ReflectionTestUtils.setField(sinAcceso, "oficina", "Logística");
         ReflectionTestUtils.setField(sinAcceso, "verificacion2Pasos", "No Enrolado");
         ReflectionTestUtils.setField(sinAcceso, "nombreCompleto", "Cami Ruiz");
         ReflectionTestUtils.setField(sinAcceso, "ultimoInicioSesion", null);
@@ -113,6 +116,12 @@ class CorreoServiceTest {
                 .containsExactlyInAnyOrder(
                         org.assertj.core.groups.Tuple.tuple("OTI", 1L),
                         org.assertj.core.groups.Tuple.tuple("DGA", 2L)
+                );
+        assertThat(result.distribucionPorSubdependencia())
+                .extracting(CorreoSubdependenciaCount::subdependencia, CorreoSubdependenciaCount::total)
+                .containsExactly(
+                        org.assertj.core.groups.Tuple.tuple("Logística", 2L),
+                        org.assertj.core.groups.Tuple.tuple("Soporte", 1L)
                 );
 
         assertThat(result.totalCuentas()).isEqualTo(3);
@@ -131,6 +140,7 @@ class CorreoServiceTest {
 
         assertThat(result.totalCuentas()).isEqualTo(0);
         assertThat(result.distribucionPorDependencia()).isEmpty();
+        assertThat(result.distribucionPorSubdependencia()).isEmpty();
         assertThat(result.sinUso()).isEmpty();
     }
 

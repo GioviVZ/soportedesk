@@ -1,15 +1,15 @@
-import { CommonModule } from '@angular/common';
-import { Component, EventEmitter, OnInit, Output } from '@angular/core';
+
+import { Component, EventEmitter, OnInit, Output, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 type Strength = 'Media' | 'Fuerte' | 'Muy fuerte';
 
 @Component({
-  selector: 'app-vpn-password-generator',
-  standalone: true,
-  imports: [CommonModule, FormsModule],
-  templateUrl: './vpn-password-generator.component.html',
-  styleUrl: './vpn-password-generator.component.scss',
+    selector: 'app-vpn-password-generator',
+    imports: [FormsModule],
+    templateUrl: './vpn-password-generator.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
+    styleUrl: './vpn-password-generator.component.scss'
 })
 export class VpnPasswordGeneratorComponent implements OnInit {
   @Output() passwordSelected = new EventEmitter<string>();

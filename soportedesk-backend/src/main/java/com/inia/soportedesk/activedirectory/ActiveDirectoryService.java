@@ -16,6 +16,7 @@ import com.inia.soportedesk.activedirectory.dto.CreateAdUserRequest;
 import com.inia.soportedesk.activedirectory.dto.GroupRequest;
 import com.inia.soportedesk.activedirectory.dto.MoveUserRequest;
 import com.inia.soportedesk.activedirectory.dto.OuUsuariosCount;
+import com.inia.soportedesk.activedirectory.dto.OfficeUsuariosCount;
 import com.inia.soportedesk.activedirectory.dto.ResetPasswordRequest;
 import com.inia.soportedesk.activedirectory.dto.UpdateUserInfoRequest;
 import com.inia.soportedesk.auditoria.MovimientoAuditoriaService;
@@ -312,8 +313,11 @@ public class ActiveDirectoryService {
                 "Usuario quitado correctamente del grupo.");
     }
 
-    public ActiveDirectoryResponse<AdUser> actualizarInformacionUsuario(String samAccountName, UpdateUserInfoRequest body) {
+    public synchronized ActiveDirectoryResponse<AdUser> actualizarInformacionUsuario(String samAccountName, UpdateUserInfoRequest body) {
         return withUserWrite(samAccountName, "ACTUALIZAR_INFO", "Informacion del usuario actualizada correctamente.", (context, userDn, result) -> {
+            if (!body.clearMail() && body.mail() != null && !body.mail().isBlank()) {
+                ensureMailIsUniqueInDirectory(context, body.mail(), samAccountName);
+            }
             String department = blankToNull(body.department());
             String office = firstNonBlank(body.office(), department);
             List<ModificationItem> mods = new ArrayList<>();
@@ -336,7 +340,7 @@ public class ActiveDirectoryService {
         });
     }
 
-    public ActiveDirectoryResponse<AdUser> crearUsuario(CreateAdUserRequest body) {
+    public synchronized ActiveDirectoryResponse<AdUser> crearUsuario(CreateAdUserRequest body) {
         String sam = body.samAccountName().trim();
         String userDn = null;
         DirContext context = null;
@@ -345,6 +349,9 @@ public class ActiveDirectoryService {
             if (findUser(context, sam, new String[]{"distinguishedName"}) != null) {
                 audit("CREAR_USUARIO", sam, null, 400, "El usuario ya existe.");
                 return ActiveDirectoryResponse.error("El usuario ya existe en Active Directory.");
+            }
+            if (body.mail() != null && !body.mail().isBlank()) {
+                ensureMailIsUniqueInDirectory(context, body.mail(), null);
             }
 
             String targetOu = body.ouDestinoDn().trim();
@@ -405,7 +412,8 @@ public class ActiveDirectoryService {
         } catch (Exception e) {
             log.warn("Error creando usuario en Active Directory para samAccountName={}", sam, e);
             audit("CREAR_USUARIO", sam, userDn, 500, e.getMessage());
-            return ActiveDirectoryResponse.error("Error creando usuario en Active Directory: " + e.getMessage());
+            return ActiveDirectoryResponse.error(
+                    "No se pudo crear el usuario en Active Directory. Verifique la conexion e intente nuevamente.");
         } finally {
             closeQuietly(context);
         }
@@ -485,6 +493,13 @@ public class ActiveDirectoryService {
             int locked = safeInt(cacheRepository.countByLockedTrue());
             int dcs = metadataInt("controladores_dominio");
 
+            List<OfficeUsuariosCount> offices = java.util.Optional.ofNullable(cacheRepository.countGroupedByOfficeAndEnabled())
+                    .orElseGet(List::of).stream()
+                    .filter(row -> "Activo".equals(row[1]))
+                    .map(row -> new OfficeUsuariosCount(blankToDefault((String) row[0], "Sin oficina"), safeInt((Long) row[2])))
+                    .sorted(Comparator.comparing(OfficeUsuariosCount::activos).reversed().thenComparing(OfficeUsuariosCount::oficina))
+                    .toList();
+
             List<OuUsuariosCount> ous = cacheRepository.countEnabledByOu().stream()
                     .map(row -> new OuUsuariosCount(blankToDefault((String) row[0], "Sin OU"), safeInt((Long) row[1])))
                     .sorted(Comparator.comparing(OuUsuariosCount::activos).reversed().thenComparing(OuUsuariosCount::ou))
@@ -501,6 +516,7 @@ public class ActiveDirectoryService {
                     disabled,
                     locked,
                     dcs,
+                    offices,
                     ous,
                     topAlerts(passwords, "dias sin cambiar clave", AdUsuarioCache::getDaysSincePasswordChange),
                     safeInt(totalPasswords),
@@ -589,7 +605,8 @@ public class ActiveDirectoryService {
         } catch (Exception e) {
             log.warn("Error ejecutando accion {} en Active Directory para samAccountName={}", action, samAccountName, e);
             audit(action, samAccountName, userDn, 500, e.getMessage());
-            return ActiveDirectoryResponse.error("Error ejecutando accion en Active Directory: " + e.getMessage());
+            return ActiveDirectoryResponse.error(
+                    "No se pudo completar la accion en Active Directory. Verifique la conexion e intente nuevamente.");
         } finally {
             closeQuietly(context);
         }
@@ -709,6 +726,36 @@ public class ActiveDirectoryService {
             throw new RuntimeException("Error sincronizando cache de Active Directory: " + e.getMessage(), e);
         } finally {
             closeQuietly(context);
+        }
+    }
+
+    private void ensureMailIsUniqueInDirectory(DirContext context, String mail, String currentSamAccountName) throws Exception {
+        String normalizedMail = mail.trim();
+        String filter = "(&(objectCategory=person)(objectClass=user)(mail="
+                + LdapFilterUtils.escape(normalizedMail) + "))";
+        NamingEnumeration<SearchResult> results = null;
+        try {
+            results = context.search(contextFactory.baseDn(), filter,
+                    controls(new String[]{"sAMAccountName", "mail"}, 5));
+            while (results.hasMore()) {
+                SearchResult result = results.next();
+                String ownerSam = attr(result.getAttributes(), "sAMAccountName");
+                if (currentSamAccountName == null || ownerSam == null
+                        || !ownerSam.equalsIgnoreCase(normalizeAccountSearchTerm(currentSamAccountName))) {
+                    throw new IllegalArgumentException(
+                            "El correo " + normalizedMail + " ya esta vinculado a otro usuario de red en Active Directory.");
+                }
+            }
+        } catch (PartialResultException ignored) {
+            // Active Directory puede devolver referencias parciales despues de los resultados utiles.
+        } finally {
+            if (results != null) {
+                try {
+                    results.close();
+                } catch (Exception ignored) {
+                    // El contexto principal se cierra al terminar la operacion.
+                }
+            }
         }
     }
 
@@ -1038,7 +1085,7 @@ public class ActiveDirectoryService {
     }
 
     private ActiveDirectoryDashboardCompleto emptyDashboardCompleto() {
-        return new ActiveDirectoryDashboardCompleto(0, 0, 0, 0, List.of(), List.of(), 0, List.of(), 0, List.of(), 0);
+        return new ActiveDirectoryDashboardCompleto(0, 0, 0, 0, List.of(), List.of(), List.of(), 0, List.of(), 0, List.of(), 0);
     }
 
     private String blankToDefault(String value, String fallback) {

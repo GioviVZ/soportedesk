@@ -9,6 +9,8 @@ public record ImpresoraDashboardCompleto(
         long deBaja,
         List<ImpresoraMarcaCount> distribucionPorMarca,
         List<ImpresoraSedeCount> distribucionPorSede,
+        List<ImpresoraDependenciaCount> distribucionPorDependencia,
+        List<ImpresoraSubdependenciaCount> distribucionPorSubdependencia,
         List<ImpresoraConsumibleCount> topConsumibles,
         long totalConsumiblesDistintos
 ) {

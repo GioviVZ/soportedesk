@@ -1,5 +1,5 @@
-import { CommonModule } from '@angular/common';
-import { Component, EventEmitter, OnInit, Output, inject } from '@angular/core';
+
+import { Component, EventEmitter, OnInit, Output, inject, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { SectionCardComponent } from '../../shared/section-card/section-card.component';
 import { CatalogoService } from '../../core/catalogos/catalogo.service';
@@ -10,13 +10,14 @@ import { UsuarioRedContratoRequest, esTipoContratoOs } from './usuario-red-contr
 import { UsuarioRedContratoService } from './usuario-red-contrato.service';
 
 @Component({
-  selector: 'app-ad-create-user-panel',
-  standalone: true,
-  imports: [CommonModule, FormsModule, SectionCardComponent],
-  template: `
+    selector: 'app-ad-create-user-panel',
+    imports: [FormsModule, SectionCardComponent],
+    template: `
     <form class="modal-form" (ngSubmit)="submit()" id="ad-create-user-edit-form">
-      <div class="notice error" *ngIf="error">{{ error }}</div>
-
+      @if (error) {
+        <div class="notice error">{{ error }}</div>
+      }
+    
       <app-section-card title="Cuenta">
         <svg icon xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" />
@@ -54,19 +55,29 @@ import { UsuarioRedContratoService } from './usuario-red-contrato.service';
               [placeholder]="correosLoading ? 'Cargando correos...' : 'Buscar email o nombre'"
               autocomplete="off"
               aria-label="Buscar correo institucional registrado"
-            />
-            <div class="pick-list correo-pick-list" *ngIf="correoPickerOpen && correosFiltrados.length">
-              <button type="button" *ngFor="let correo of correosFiltrados" (click)="selectCorreo(correo)">
-                <strong>{{ correo.email }}</strong>
-                <span>{{ correo.nombreCompleto || 'Sin nombre registrado' }} · {{ correo.estado || 'Sin estado' }}</span>
-              </button>
-            </div>
-            <div class="selected-dn selected-mail" *ngIf="form.mail">
-              <span>Vinculado con Correos: <strong>{{ form.mail }}</strong></span>
-              <button type="button" class="clear-mail-button" (click)="clearCorreo()">Dejar sin correo</button>
-            </div>
-            <small class="field-hint" *ngIf="!correosLoading && !correosError">Opcional. Solo se muestran correos que todavía no están vinculados a otro usuario de red.</small>
-            <small class="field-hint error-text" *ngIf="correosError">{{ correosError }}</small>
+              />
+            @if (correoPickerOpen && correosFiltrados.length) {
+              <div class="pick-list correo-pick-list">
+                @for (correo of correosFiltrados; track correo) {
+                  <button type="button" (click)="selectCorreo(correo)">
+                    <strong>{{ correo.email }}</strong>
+                    <span>{{ correo.nombreCompleto || 'Sin nombre registrado' }} · {{ correo.estado || 'Sin estado' }}</span>
+                  </button>
+                }
+              </div>
+            }
+            @if (form.mail) {
+              <div class="selected-dn selected-mail">
+                <span>Vinculado con Correos: <strong>{{ form.mail }}</strong></span>
+                <button type="button" class="clear-mail-button" (click)="clearCorreo()">Dejar sin correo</button>
+              </div>
+            }
+            @if (!correosLoading && !correosError) {
+              <small class="field-hint">Opcional. Solo se muestran correos que todavía no están vinculados a otro usuario de red.</small>
+            }
+            @if (correosError) {
+              <small class="field-hint error-text">{{ correosError }}</small>
+            }
           </div>
           <div class="field">
             <label>UPN</label>
@@ -86,7 +97,7 @@ import { UsuarioRedContratoService } from './usuario-red-contrato.service';
           </label>
         </div>
       </app-section-card>
-
+    
       <app-section-card title="Ubicación">
         <svg icon xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M12 21s7-4.35 7-11a7 7 0 1 0-14 0c0 6.65 7 11 7 11z" /><circle cx="12" cy="10" r="2" />
@@ -96,14 +107,18 @@ import { UsuarioRedContratoService } from './usuario-red-contrato.service';
             <label>Dependencia</label>
             <select name="dependenciaId" [(ngModel)]="dependenciaId" (ngModelChange)="onDependenciaChange($event)">
               <option [ngValue]="null">Seleccione...</option>
-              <option *ngFor="let dependencia of dependencias" [ngValue]="dependencia.id">{{ dependencia.nombre }}</option>
+              @for (dependencia of dependencias; track dependencia) {
+                <option [ngValue]="dependencia.id">{{ dependencia.nombre }}</option>
+              }
             </select>
           </div>
           <div class="field">
             <label>Subdependencia</label>
             <select name="subdependenciaId" [(ngModel)]="subdependenciaId" (ngModelChange)="onSubdependenciaChange($event)" [disabled]="!dependenciaId">
               <option [ngValue]="null">Usar dependencia seleccionada</option>
-              <option *ngFor="let subdependencia of subdependencias" [ngValue]="subdependencia.id">{{ subdependencia.nombre }}</option>
+              @for (subdependencia of subdependencias; track subdependencia) {
+                <option [ngValue]="subdependencia.id">{{ subdependencia.nombre }}</option>
+              }
             </select>
           </div>
           <div class="field">
@@ -120,13 +135,19 @@ import { UsuarioRedContratoService } from './usuario-red-contrato.service';
               <input name="ouSearch" [(ngModel)]="ouSearch" placeholder="Buscar OU" (keyup.enter)="searchOus()" />
               <button type="button" class="btn btn-ghost" (click)="searchOus()">Buscar</button>
             </div>
-            <div class="selected-dn" *ngIf="form.ouDestinoDn">{{ form.ouDestinoDn }}</div>
-            <div class="pick-list" *ngIf="ouResults.length">
-              <button type="button" *ngFor="let ou of ouResults" (click)="selectOu(ou)">
-                <strong>{{ ou.name }}</strong>
-                <span>{{ ou.dn }}</span>
-              </button>
-            </div>
+            @if (form.ouDestinoDn) {
+              <div class="selected-dn">{{ form.ouDestinoDn }}</div>
+            }
+            @if (ouResults.length) {
+              <div class="pick-list">
+                @for (ou of ouResults; track ou) {
+                  <button type="button" (click)="selectOu(ou)">
+                    <strong>{{ ou.name }}</strong>
+                    <span>{{ ou.dn }}</span>
+                  </button>
+                }
+              </div>
+            }
           </div>
           <div class="field full">
             <label>Descripcion</label>
@@ -134,7 +155,7 @@ import { UsuarioRedContratoService } from './usuario-red-contrato.service';
           </div>
         </div>
       </app-section-card>
-
+    
       <app-section-card title="Contrato">
         <svg icon xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><path d="M14 2v6h6" />
@@ -144,48 +165,53 @@ import { UsuarioRedContratoService } from './usuario-red-contrato.service';
           <input type="checkbox" name="contratoEnabled" [(ngModel)]="contratoEnabled" (ngModelChange)="onContratoToggle($event)" />
           Registrar contrato al crear el usuario
         </label>
-
-        <div class="contract-inline-grid" *ngIf="contratoEnabled">
-          <div class="field">
-            <label>Tipo de contrato</label>
-            <select name="tipoContratoId" [(ngModel)]="contratoForm.tipoContratoId" required>
-              <option [ngValue]="null" disabled>Selecciona...</option>
-              <option *ngFor="let tipo of tiposContrato" [ngValue]="tipo.id">{{ tipo.nombre }}</option>
-            </select>
-          </div>
-          <div class="field">
-            <label>Nro. de contrato</label>
-            <input name="numeroContrato" [(ngModel)]="contratoForm.numeroContrato" />
-          </div>
-          <div class="field">
-            <label>Fecha inicio</label>
-            <input type="date" name="fechaInicio" [(ngModel)]="contratoForm.fechaInicio" required />
-          </div>
-          <div class="field">
-            <label>Fecha fin</label>
-            <input type="date" name="fechaFin" [(ngModel)]="contratoForm.fechaFin" />
-          </div>
-          <ng-container *ngIf="esContratoOs()">
+    
+        @if (contratoEnabled) {
+          <div class="contract-inline-grid">
             <div class="field">
-              <label>Nombre del personal</label>
-              <input name="personalNombre" [(ngModel)]="contratoForm.personalNombre" />
+              <label>Tipo de contrato</label>
+              <select name="tipoContratoId" [(ngModel)]="contratoForm.tipoContratoId" required>
+                <option [ngValue]="null" disabled>Selecciona...</option>
+                @for (tipo of tiposContrato; track tipo) {
+                  <option [ngValue]="tipo.id">{{ tipo.nombre }}</option>
+                }
+              </select>
             </div>
             <div class="field">
-              <label>Apellidos del personal</label>
-              <input name="personalApellidos" [(ngModel)]="contratoForm.personalApellidos" />
+              <label>Nro. de contrato</label>
+              <input name="numeroContrato" [(ngModel)]="contratoForm.numeroContrato" />
             </div>
-          </ng-container>
-        </div>
+            <div class="field">
+              <label>Fecha inicio</label>
+              <input type="date" name="fechaInicio" [(ngModel)]="contratoForm.fechaInicio" required />
+            </div>
+            <div class="field">
+              <label>Fecha fin</label>
+              <input type="date" name="fechaFin" [(ngModel)]="contratoForm.fechaFin" />
+            </div>
+            @if (esContratoOs()) {
+              <div class="field">
+                <label>Nombre del personal</label>
+                <input name="personalNombre" [(ngModel)]="contratoForm.personalNombre" />
+              </div>
+              <div class="field">
+                <label>Apellidos del personal</label>
+                <input name="personalApellidos" [(ngModel)]="contratoForm.personalApellidos" />
+              </div>
+            }
+          </div>
+        }
       </app-section-card>
-
+    
     </form>
-
+    
     <footer modal-footer class="modal-actions">
       <button type="button" class="btn btn-ghost" (click)="cancelled.emit()">Cancelar</button>
       <button type="submit" form="ad-create-user-edit-form" class="btn btn-primary" [disabled]="working || correosLoading">{{ contratoEnabled ? 'Crear en AD y registrar contrato' : 'Crear en AD' }}</button>
     </footer>
-  `,
-  styleUrl: './usuarios-red.shared.scss',
+    `,
+    changeDetection: ChangeDetectionStrategy.Eager,
+    styleUrl: './usuarios-red.shared.scss'
 })
 export class AdCreateUserPanelComponent implements OnInit {
   private adService = inject(ActiveDirectoryService);

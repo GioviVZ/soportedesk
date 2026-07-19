@@ -173,4 +173,14 @@ class ModeloImpresoraServiceTest {
         assertThat(result.getDriverArchivoPath()).isEqualTo("1/driver-hp.zip");
         verify(repository).save(existing);
     }
+    @Test
+    void create_withDuplicatedModelInSameBrand_rejectsModel() {
+        when(marcaImpresoraRepository.findById(1L)).thenReturn(Optional.of(marca()));
+        when(repository.existsByMarcaIdAndNombreIgnoreCase(1L, "M404dn")).thenReturn(true);
+
+        assertThatThrownBy(() -> service.create(sampleRequest()))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("modelo M404dn")
+                .hasMessageContaining("marca HP");
+    }
 }

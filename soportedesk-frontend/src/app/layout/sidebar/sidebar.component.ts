@@ -1,5 +1,5 @@
-import { Component, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, inject, ChangeDetectionStrategy } from '@angular/core';
+
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { AuthService } from '../../core/auth/auth.service';
@@ -32,11 +32,11 @@ const SVG_ICONS: Record<string, string> = {
 };
 
 @Component({
-  selector: 'app-sidebar',
-  standalone: true,
-  imports: [CommonModule, RouterLink, RouterLinkActive],
-  templateUrl: './sidebar.component.html',
-  styleUrl: './sidebar.component.scss',
+    selector: 'app-sidebar',
+    imports: [RouterLink, RouterLinkActive],
+    templateUrl: './sidebar.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
+    styleUrl: './sidebar.component.scss'
 })
 export class SidebarComponent {
   private sanitizer = inject(DomSanitizer);

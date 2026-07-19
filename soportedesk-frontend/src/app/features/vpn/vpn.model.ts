@@ -122,6 +122,16 @@ export interface VpnTipoEquipoCount {
   total: number;
 }
 
+export interface VpnDependenciaCount {
+  dependencia: string;
+  total: number;
+}
+
+export interface VpnSubdependenciaCount {
+  subdependencia: string;
+  total: number;
+}
+
 export interface VpnVencimientoAlerta {
   vpnId: number;
   titular: string;
@@ -137,6 +147,8 @@ export interface VpnDashboardCompleto {
   observadas: number;
   total: number;
   distribucionPorTipoEquipo: VpnTipoEquipoCount[];
+  distribucionPorDependencia: VpnDependenciaCount[];
+  distribucionPorSubdependencia: VpnSubdependenciaCount[];
   antivirusVencidos: VpnVencimientoAlerta[];
   totalAntivirusVencidos: number;
   antivirusPorVencer: VpnVencimientoAlerta[];

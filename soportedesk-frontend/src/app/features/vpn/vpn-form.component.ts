@@ -1,5 +1,5 @@
-import { Component, EventEmitter, Input, OnChanges, Output, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, EventEmitter, Input, OnChanges, Output, inject, ChangeDetectionStrategy } from '@angular/core';
+
 import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { CARGOS_VPN, CARGOS_VPN_EXTERNO, Vpn, VpnUsuarioRedOption } from './vpn.model';
 import { VpnService } from './vpn.service';
@@ -9,11 +9,11 @@ import { EquipoResumen } from '../equipos/equipo.model';
 type TitularModo = 'buscando' | 'ad-seleccionado' | 'externo';
 
 @Component({
-  selector: 'app-vpn-form',
-  standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, FormsModule],
-  templateUrl: './vpn-form.component.html',
-  styleUrl: './vpn-form.component.scss',
+    selector: 'app-vpn-form',
+    imports: [ReactiveFormsModule, FormsModule],
+    templateUrl: './vpn-form.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
+    styleUrl: './vpn-form.component.scss'
 })
 export class VpnFormComponent implements OnChanges {
   private fb = inject(FormBuilder);
@@ -23,6 +23,8 @@ export class VpnFormComponent implements OnChanges {
   @Input() vpn: Vpn | null = null;
   @Output() saved = new EventEmitter<void>();
   @Output() cancelled = new EventEmitter<void>();
+  saving = false;
+  saveError = '';
 
   readonly cargos = CARGOS_VPN;
   readonly cargosExterno = CARGOS_VPN_EXTERNO;
@@ -93,6 +95,8 @@ export class VpnFormComponent implements OnChanges {
   }
 
   ngOnChanges(): void {
+    this.saveError = '';
+    this.saving = false;
     if (this.vpn) {
       this.form.patchValue({
         tipoEquipo: (this.vpn.tipoEquipo ?? 'PERSONAL') as 'INIA' | 'PERSONAL',
@@ -256,11 +260,13 @@ export class VpnFormComponent implements OnChanges {
   }
 
   submit(): void {
-    if (this.form.invalid) return;
+    if (this.form.invalid || this.saving) return;
     if (this.titularModo === 'buscando') {
       alert('Debe seleccionar un usuario de red o indicar los datos del tercero externo.');
       return;
     }
+    this.saveError = '';
+    this.saving = true;
     const raw = this.form.getRawValue();
     const esExterno = this.titularModo === 'externo';
     const request = {
@@ -284,7 +290,16 @@ export class VpnFormComponent implements OnChanges {
     const obs = this.vpn
       ? this.service.update(this.vpn.id, request)
       : this.service.create(request);
-    obs.subscribe(() => this.saved.emit());
+    obs.subscribe({
+      next: () => {
+        this.saving = false;
+        this.saved.emit();
+      },
+      error: (err) => {
+        this.saving = false;
+        this.saveError = err?.error?.message || 'No se pudo guardar la solicitud VPN.';
+      },
+    });
   }
 
   private applyTitularValidators(): void {

@@ -12,20 +12,23 @@
       <button type="button" class="primary-btn" (click)="exportReport()" [disabled]="!reportEntries.length">
         Descargar reporte
       </button>
-      <span class="copied" *ngIf="reportCopied">Copiado</span>
+      @if (reportCopied) {
+        <span class="copied">Copiado</span>
+      }
     </div>
   </header>
 
   <nav class="tool-tabs" aria-label="Aplicaciones disponibles">
-    <button
-      type="button"
-      *ngFor="let tab of tabs"
-      [class.active]="activeTab === tab.id"
-      (click)="selectTab(tab.id)"
-    >
-      <strong>{{ tab.label }}</strong>
-      <span>{{ tab.detail }}</span>
-    </button>
+    @for (tab of tabs; track tab) {
+      <button
+        type="button"
+        [class.active]="activeTab === tab.id"
+        (click)="selectTab(tab.id)"
+        >
+        <strong>{{ tab.label }}</strong>
+        <span>{{ tab.detail }}</span>
+      </button>
+    }
   </nav>
 
   <section class="tool-panel" [class.active]="activeTab === 'equipo'">
@@ -47,29 +50,33 @@
           [(ngModel)]="equipoReferencia"
           placeholder="Opcional: usa la IP detectada si lo dejas vacio"
           (keyup.enter)="capturarDatosEquipo()"
-        />
+          />
       </label>
       <button type="button" class="primary-btn" (click)="capturarDatosEquipo()" [disabled]="equipoState === 'running'">
         {{ equipoState === 'running' ? 'Capturando...' : 'Capturar datos' }}
       </button>
     </div>
 
-    <p class="error-text" *ngIf="equipoError">{{ equipoError }}</p>
+    @if (equipoError) {
+      <p class="error-text">{{ equipoError }}</p>
+    }
 
-    <div class="equipo-layout" *ngIf="equipoDatos">
-      <div class="equipo-main">
-        <span>Equipo</span>
-        <strong>{{ equipoDatos.host }}</strong>
-        <small>{{ equipoDatos.ip }} - {{ equipoDatos.capturadoEn }}</small>
+    @if (equipoDatos) {
+      <div class="equipo-layout">
+        <div class="equipo-main">
+          <span>Equipo</span>
+          <strong>{{ equipoDatos.host }}</strong>
+          <small>{{ equipoDatos.ip }} - {{ equipoDatos.capturadoEn }}</small>
+        </div>
+        <div class="metric"><span>Modelo</span><strong>{{ equipoDatos.modelo }}</strong></div>
+        <div class="metric"><span>Serie</span><strong>{{ equipoDatos.serie }}</strong></div>
+        <div class="metric"><span>Fabricante</span><strong>{{ equipoDatos.fabricante }}</strong></div>
+        <div class="metric"><span>Tipo</span><strong>{{ equipoDatos.tipo }}</strong></div>
+        <div class="metric"><span>Sede</span><strong>{{ equipoDatos.sede }}</strong></div>
+        <div class="metric"><span>Usuario</span><strong>{{ equipoDatos.usuarioContacto }}</strong></div>
+        <div class="metric"><span>Fuente</span><strong>{{ equipoDatos.fuente }}</strong></div>
       </div>
-      <div class="metric"><span>Modelo</span><strong>{{ equipoDatos.modelo }}</strong></div>
-      <div class="metric"><span>Serie</span><strong>{{ equipoDatos.serie }}</strong></div>
-      <div class="metric"><span>Fabricante</span><strong>{{ equipoDatos.fabricante }}</strong></div>
-      <div class="metric"><span>Tipo</span><strong>{{ equipoDatos.tipo }}</strong></div>
-      <div class="metric"><span>Sede</span><strong>{{ equipoDatos.sede }}</strong></div>
-      <div class="metric"><span>Usuario</span><strong>{{ equipoDatos.usuarioContacto }}</strong></div>
-      <div class="metric"><span>Fuente</span><strong>{{ equipoDatos.fuente }}</strong></div>
-    </div>
+    }
   </section>
 
   <section class="tool-panel" [class.active]="activeTab === 'ping'">
@@ -93,28 +100,34 @@
       </button>
     </div>
 
-    <p class="error-text" *ngIf="pingError">{{ pingError }}</p>
+    @if (pingError) {
+      <p class="error-text">{{ pingError }}</p>
+    }
 
-    <div class="metric-grid" *ngIf="pingResult">
-      <div class="metric">
-        <span>Estado</span>
-        <strong>{{ pingResult.status }}</strong>
+    @if (pingResult) {
+      <div class="metric-grid">
+        <div class="metric">
+          <span>Estado</span>
+          <strong>{{ pingResult.status }}</strong>
+        </div>
+        <div class="metric">
+          <span>Promedio</span>
+          <strong>{{ pingResult.averageLatencyMs || '-' }} ms</strong>
+        </div>
+        <div class="metric">
+          <span>Recibidos</span>
+          <strong>{{ pingResult.packetsReceived ?? '-' }}</strong>
+        </div>
+        <div class="metric">
+          <span>Perdidos</span>
+          <strong>{{ pingResult.packetsLost ?? '-' }}</strong>
+        </div>
       </div>
-      <div class="metric">
-        <span>Promedio</span>
-        <strong>{{ pingResult.averageLatencyMs || '-' }} ms</strong>
-      </div>
-      <div class="metric">
-        <span>Recibidos</span>
-        <strong>{{ pingResult.packetsReceived ?? '-' }}</strong>
-      </div>
-      <div class="metric">
-        <span>Perdidos</span>
-        <strong>{{ pingResult.packetsLost ?? '-' }}</strong>
-      </div>
-    </div>
+    }
 
-    <pre class="terminal" *ngIf="pingResult?.output?.length">{{ pingResult?.output?.join('\n') }}</pre>
+    @if (pingResult?.output?.length) {
+      <pre class="terminal">{{ pingResult?.output?.join('\n') }}</pre>
+    }
   </section>
 
   <section class="tool-panel" [class.active]="activeTab === 'qr'">
@@ -161,12 +174,18 @@
           </button>
         </div>
 
-        <p class="error-text" *ngIf="qrError">{{ qrError }}</p>
+        @if (qrError) {
+          <p class="error-text">{{ qrError }}</p>
+        }
       </div>
 
       <div class="qr-preview" [class.empty]="!qrDataUrl">
-        <img *ngIf="qrDataUrl" [src]="qrDataUrl" alt="QR generado" />
-        <span *ngIf="!qrDataUrl">QR</span>
+        @if (qrDataUrl) {
+          <img [src]="qrDataUrl" alt="QR generado" />
+        }
+        @if (!qrDataUrl) {
+          <span>QR</span>
+        }
       </div>
     </div>
   </section>
@@ -183,110 +202,120 @@
     </div>
 
     <div class="deadline-layout">
-      <div class="deadline-form" *ngIf="canManageOrders; else readOnlyOrders">
-        <label>
-          Número de orden de servicio
-          <input type="text" [(ngModel)]="ordenNumero" maxlength="100" placeholder="OS-001-2026" />
-        </label>
-
-        <label>
-          Servicio o descripción
-          <textarea [(ngModel)]="ordenDescripcion" maxlength="300" rows="3" placeholder="Descripción del servicio contratado"></textarea>
-        </label>
-
-        <label>
-          Proveedor o responsable <small>(opcional)</small>
-          <input type="text" [(ngModel)]="ordenProveedor" maxlength="200" placeholder="Empresa o responsable" />
-        </label>
-
-        <div class="deadline-fields">
+      @if (canManageOrders) {
+        <div class="deadline-form">
           <label>
-            Fecha de inicio
-            <input type="date" [(ngModel)]="ordenFechaInicio" (ngModelChange)="calcularOrdenVencimiento()" />
+            Número de orden de servicio
+            <input type="text" [(ngModel)]="ordenNumero" maxlength="100" placeholder="OS-001-2026" />
           </label>
-
           <label>
-            Plazo en días
-            <input
-              type="number"
-              min="0"
-              max="3650"
-              step="1"
-              [(ngModel)]="ordenPlazoDias"
-              (ngModelChange)="calcularOrdenVencimiento()"
-              (keyup.enter)="guardarOrdenServicio()"
-            />
+            Servicio o descripción
+            <textarea [(ngModel)]="ordenDescripcion" maxlength="300" rows="3" placeholder="Descripción del servicio contratado"></textarea>
           </label>
+          <label>
+            Proveedor o responsable <small>(opcional)</small>
+            <input type="text" [(ngModel)]="ordenProveedor" maxlength="200" placeholder="Empresa o responsable" />
+          </label>
+          <div class="deadline-fields">
+            <label>
+              Fecha de inicio
+              <input type="date" [(ngModel)]="ordenFechaInicio" (ngModelChange)="calcularOrdenVencimiento()" />
+            </label>
+            <label>
+              Plazo en días
+              <input
+                type="number"
+                min="0"
+                max="3650"
+                step="1"
+                [(ngModel)]="ordenPlazoDias"
+                (ngModelChange)="calcularOrdenVencimiento()"
+                (keyup.enter)="guardarOrdenServicio()"
+                />
+            </label>
+          </div>
+          <div class="deadline-result" [class.empty]="!ordenFechaVencimiento">
+            <span>Fecha de vencimiento</span>
+            <strong>{{ ordenFechaVencimiento ? formatDate(ordenFechaVencimiento) : '-' }}</strong>
+            @if (ordenFechaVencimiento) {
+              <small>La cuenta regresiva comenzará al guardar la orden.</small>
+            }
+          </div>
+          <div class="button-row">
+            <button type="button" class="ghost-btn" (click)="limpiarOrdenForm()">Limpiar</button>
+            <button
+              type="button"
+              class="primary-btn"
+              (click)="guardarOrdenServicio()"
+              [disabled]="ordenSaving || !ordenFechaVencimiento || !ordenNumero.trim() || !ordenDescripcion.trim()"
+              >
+              {{ ordenSaving ? 'Guardando...' : 'Guardar orden' }}
+            </button>
+          </div>
         </div>
-
-        <div class="deadline-result" [class.empty]="!ordenFechaVencimiento">
-          <span>Fecha de vencimiento</span>
-          <strong>{{ ordenFechaVencimiento ? formatDate(ordenFechaVencimiento) : '-' }}</strong>
-          <small *ngIf="ordenFechaVencimiento">La cuenta regresiva comenzará al guardar la orden.</small>
-        </div>
-
-        <div class="button-row">
-          <button type="button" class="ghost-btn" (click)="limpiarOrdenForm()">Limpiar</button>
-          <button
-            type="button"
-            class="primary-btn"
-            (click)="guardarOrdenServicio()"
-            [disabled]="ordenSaving || !ordenFechaVencimiento || !ordenNumero.trim() || !ordenDescripcion.trim()"
-          >
-            {{ ordenSaving ? 'Guardando...' : 'Guardar orden' }}
-          </button>
-        </div>
-      </div>
-
-      <ng-template #readOnlyOrders>
+      } @else {
         <div class="deadline-readonly">
           <strong>Vista de consulta</strong>
           <span>Puedes revisar las órdenes y sus días restantes. Se requiere permiso de edición para registrar cambios.</span>
         </div>
-      </ng-template>
+      }
+
 
       <div class="deadline-list">
-        <div class="deadline-empty" *ngIf="ordenesLoading">
-          <strong>Cargando órdenes</strong>
-          <span>Consultando la información guardada.</span>
-        </div>
+        @if (ordenesLoading) {
+          <div class="deadline-empty">
+            <strong>Cargando órdenes</strong>
+            <span>Consultando la información guardada.</span>
+          </div>
+        }
 
-        <div class="deadline-empty" *ngIf="!ordenesLoading && !ordenesLoadFailed && !ordenesServicio.length">
-          <strong>Sin órdenes de servicio</strong>
-          <span>Cuando registres una orden aparecerá aquí y también en el dashboard.</span>
-        </div>
+        @if (!ordenesLoading && !ordenesLoadFailed && !ordenesServicio.length) {
+          <div class="deadline-empty">
+            <strong>Sin órdenes de servicio</strong>
+            <span>Cuando registres una orden aparecerá aquí y también en el dashboard.</span>
+          </div>
+        }
 
-        <article
-          class="deadline-item"
-          *ngFor="let orden of ordenesOrdenadas"
-          [class.warn]="ordenStatusClass(orden) === 'warn'"
-          [class.bad]="ordenStatusClass(orden) === 'bad'"
-          [class.done]="ordenStatusClass(orden) === 'done'"
-        >
-          <div class="deadline-info">
-            <strong>{{ orden.numeroOrden }}</strong>
-            <span>{{ orden.descripcion }}</span>
-            <small>
-              {{ orden.proveedor || 'Sin proveedor' }} · Inicio {{ formatDate(orden.fechaInicio) }} · {{ orden.plazoDias }} días
-            </small>
-          </div>
-          <div class="deadline-count">
-            <b *ngIf="!orden.finalizada">{{ ordenConteoValor(orden) }}</b>
-            <b *ngIf="orden.finalizada">✓</b>
-            <small>{{ ordenStatus(orden) }}</small>
-            <span>Vence {{ formatDate(orden.fechaVencimiento) }}</span>
-          </div>
-          <div class="deadline-actions" *ngIf="canManageOrders">
-            <button type="button" class="ghost-btn compact" (click)="cambiarEstadoOrden(orden)">
-              {{ orden.finalizada ? 'Reactivar' : 'Finalizar' }}
-            </button>
-            <button type="button" class="ghost-btn compact danger-action" (click)="eliminarOrden(orden)">Eliminar</button>
-          </div>
-        </article>
+        @for (orden of ordenesOrdenadas; track orden) {
+          <article
+            class="deadline-item"
+            [class.warn]="ordenStatusClass(orden) === 'warn'"
+            [class.bad]="ordenStatusClass(orden) === 'bad'"
+            [class.done]="ordenStatusClass(orden) === 'done'"
+            >
+            <div class="deadline-info">
+              <strong>{{ orden.numeroOrden }}</strong>
+              <span>{{ orden.descripcion }}</span>
+              <small>
+                {{ orden.proveedor || 'Sin proveedor' }} · Inicio {{ formatDate(orden.fechaInicio) }} · {{ orden.plazoDias }} días
+              </small>
+            </div>
+            <div class="deadline-count">
+              @if (!orden.finalizada) {
+                <b>{{ ordenConteoValor(orden) }}</b>
+              }
+              @if (orden.finalizada) {
+                <b>✓</b>
+              }
+              <small>{{ ordenStatus(orden) }}</small>
+              <span>Vence {{ formatDate(orden.fechaVencimiento) }}</span>
+            </div>
+            @if (canManageOrders) {
+              <div class="deadline-actions">
+                <button type="button" class="ghost-btn compact" (click)="cambiarEstadoOrden(orden)">
+                  {{ orden.finalizada ? 'Reactivar' : 'Finalizar' }}
+                </button>
+                <button type="button" class="ghost-btn compact danger-action" (click)="eliminarOrden(orden)">Eliminar</button>
+              </div>
+            }
+          </article>
+        }
       </div>
     </div>
 
-    <p class="error-text" *ngIf="ordenError">{{ ordenError }}</p>
+    @if (ordenError) {
+      <p class="error-text">{{ ordenError }}</p>
+    }
   </section>
 
   <section class="tool-panel gpu-panel" [class.active]="activeTab === 'gpu'">
@@ -313,7 +342,7 @@
           step="5"
           [(ngModel)]="gpuDurationSeconds"
           [disabled]="gpuStats.status === 'running'"
-        />
+          />
       </label>
       <label>
         Cantidad de esferas: <strong>{{ gpuSphereCount }}</strong>
@@ -324,7 +353,7 @@
           step="50"
           [(ngModel)]="gpuSphereCount"
           [disabled]="gpuStats.status === 'running'"
-        />
+          />
       </label>
     </div>
 
@@ -391,18 +420,21 @@
     </div>
 
     <div class="keyboard">
-      <div class="key-row" *ngFor="let row of keyRows">
-        <button
-          type="button"
-          class="key"
-          *ngFor="let code of row"
-          [class.down]="isKeyDown(code)"
-          [class.tested]="wasKeyTested(code)"
-          [class.space]="code === 'Space'"
-        >
-          {{ keyLabel(code) }}
-        </button>
-      </div>
+      @for (row of keyRows; track row) {
+        <div class="key-row">
+          @for (code of row; track code) {
+            <button
+              type="button"
+              class="key"
+              [class.down]="isKeyDown(code)"
+              [class.tested]="wasKeyTested(code)"
+              [class.space]="code === 'Space'"
+              >
+              {{ keyLabel(code) }}
+            </button>
+          }
+        </div>
+      }
     </div>
   </section>
 
@@ -424,7 +456,7 @@
       (wheel)="onMouseWheel($event)"
       (dblclick)="onDoubleClick()"
       (contextmenu)="$event.preventDefault()"
-    >
+      >
       <div class="cursor-dot" [style.left.px]="mouseStats.x" [style.top.px]="mouseStats.y"></div>
       <strong>{{ mouseStats.dragging ? 'Arrastrando' : 'Zona de prueba' }}</strong>
       <span>X {{ mouseStats.x }} / Y {{ mouseStats.y }} / movimientos {{ mouseStats.moves }}</span>
@@ -451,16 +483,20 @@
       </span>
     </div>
 
-    <div class="ping-box" *ngIf="micDevices.length > 1">
-      <label>
-        Microfono
-        <select [ngModel]="selectedMicId" (ngModelChange)="onMicDeviceChange($event)">
-          <option *ngFor="let device of micDevices; let i = index" [value]="device.deviceId">
-            {{ micDeviceLabel(device, i) }}
-          </option>
-        </select>
-      </label>
-    </div>
+    @if (micDevices.length > 1) {
+      <div class="ping-box">
+        <label>
+          Microfono
+          <select [ngModel]="selectedMicId" (ngModelChange)="onMicDeviceChange($event)">
+            @for (device of micDevices; track device; let i = $index) {
+              <option [value]="device.deviceId">
+                {{ micDeviceLabel(device, i) }}
+              </option>
+            }
+          </select>
+        </label>
+      </div>
+    }
 
     <div class="button-row">
       <button type="button" class="ghost-btn" (click)="stopMicTest()" [disabled]="micStats.status !== 'running'">Detener</button>
@@ -469,14 +505,20 @@
       </button>
     </div>
 
-    <p class="error-text" *ngIf="micStats.status === 'error'">{{ micStats.message }}</p>
+    @if (micStats.status === 'error') {
+      <p class="error-text">{{ micStats.message }}</p>
+    }
 
-    <div class="level-meter" *ngIf="micStats.status !== 'error'">
-      <span>Nivel</span>
-      <i><b [style.width.%]="micStats.level"></b></i>
-      <strong>{{ micStats.level }}%</strong>
-    </div>
-    <p class="note" *ngIf="micStats.status !== 'error'">Pico de esta sesion: {{ micStats.peakLevel }}%</p>
+    @if (micStats.status !== 'error') {
+      <div class="level-meter">
+        <span>Nivel</span>
+        <i><b [style.width.%]="micStats.level"></b></i>
+        <strong>{{ micStats.level }}%</strong>
+      </div>
+    }
+    @if (micStats.status !== 'error') {
+      <p class="note">Pico de esta sesion: {{ micStats.peakLevel }}%</p>
+    }
   </section>
 
   <section class="tool-panel" [class.active]="activeTab === 'camara'">
@@ -490,16 +532,20 @@
       </span>
     </div>
 
-    <div class="ping-box" *ngIf="camDevices.length > 1">
-      <label>
-        Camara
-        <select [ngModel]="selectedCamId" (ngModelChange)="onCameraDeviceChange($event)">
-          <option *ngFor="let device of camDevices; let i = index" [value]="device.deviceId">
-            {{ camDeviceLabel(device, i) }}
-          </option>
-        </select>
-      </label>
-    </div>
+    @if (camDevices.length > 1) {
+      <div class="ping-box">
+        <label>
+          Camara
+          <select [ngModel]="selectedCamId" (ngModelChange)="onCameraDeviceChange($event)">
+            @for (device of camDevices; track device; let i = $index) {
+              <option [value]="device.deviceId">
+                {{ camDeviceLabel(device, i) }}
+              </option>
+            }
+          </select>
+        </label>
+      </div>
+    }
 
     <div class="button-row">
       <button type="button" class="ghost-btn" (click)="stopCameraTest()" [disabled]="camStats.status !== 'running'">Detener</button>
@@ -508,7 +554,9 @@
       </button>
     </div>
 
-    <p class="error-text" *ngIf="camStats.status === 'error'">{{ camStats.message }}</p>
+    @if (camStats.status === 'error') {
+      <p class="error-text">{{ camStats.message }}</p>
+    }
 
     <video #cameraVideo class="camera-preview" autoplay playsinline muted></video>
   </section>

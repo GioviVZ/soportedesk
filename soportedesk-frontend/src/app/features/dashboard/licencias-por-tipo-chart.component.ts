@@ -1,16 +1,16 @@
-import { Component, OnInit, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, OnInit, inject, ChangeDetectionStrategy } from '@angular/core';
+
 import { ChartConfiguration, ChartData } from 'chart.js';
 import { BaseChartDirective } from 'ng2-charts';
 import { DashboardService } from './dashboard.service';
 import { LicenciaTipoCount } from './licencia-tipo-count.model';
 
 @Component({
-  selector: 'app-licencias-por-tipo-chart',
-  standalone: true,
-  imports: [CommonModule, BaseChartDirective],
-  templateUrl: './licencias-por-tipo-chart.component.html',
-  styleUrl: './licencias-por-tipo-chart.component.scss',
+    selector: 'app-licencias-por-tipo-chart',
+    imports: [BaseChartDirective],
+    templateUrl: './licencias-por-tipo-chart.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
+    styleUrl: './licencias-por-tipo-chart.component.scss'
 })
 export class LicenciasPorTipoChartComponent implements OnInit {
   private dashboardService = inject(DashboardService);
@@ -19,7 +19,7 @@ export class LicenciasPorTipoChartComponent implements OnInit {
 
   chartData: ChartData<'bar', number[], string> = {
     labels: [],
-    datasets: [{ data: [], label: 'Claves', backgroundColor: '#3b82f6' }],
+    datasets: [{ data: [], label: 'Claves', backgroundColor: '#456b8a' }],
   };
 
   chartOptions: ChartConfiguration<'bar'>['options'] = {
@@ -32,7 +32,7 @@ export class LicenciasPorTipoChartComponent implements OnInit {
     scales: {
       x: {
         beginAtZero: true,
-        grid: { color: '#e2e8f0' },
+        grid: { color: '#e1e5df' },
         ticks: { precision: 0 },
       },
       y: {
@@ -51,7 +51,7 @@ export class LicenciasPorTipoChartComponent implements OnInit {
   private applyData(rows: LicenciaTipoCount[]): void {
     this.chartData = {
       labels: rows.map((r) => r.nombre),
-      datasets: [{ data: rows.map((r) => r.totalClaves), label: 'Claves', backgroundColor: '#3b82f6' }],
+      datasets: [{ data: rows.map((r) => r.totalClaves), label: 'Claves', backgroundColor: '#456b8a' }],
     };
   }
 }

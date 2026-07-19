@@ -1,25 +1,27 @@
 <div class="module-page licencias-page">
-  <div class="module-header" *ngIf="false">
-    <div>
-      <span class="module-eyebrow">Activos de software</span>
-      <h2>Licencias</h2>
-      <p>Control de compras, cuentas de activacion, seriales y cantidades disponibles.</p>
+  @if (false) {
+    <div class="module-header">
+      <div>
+        <span class="module-eyebrow">Activos de software</span>
+        <h2>Licencias</h2>
+        <p>Control de compras, cuentas de activacion, seriales y cantidades disponibles.</p>
+      </div>
+      <div class="module-stats">
+        <div class="stat-pill">
+          <strong>{{ filteredLicencias.length }}</strong>
+          <span>Registros</span>
+        </div>
+        <div class="stat-pill">
+          <strong>{{ totalUnidades }}</strong>
+          <span>Unidades</span>
+        </div>
+        <div class="stat-pill">
+          <strong>{{ totalActivaciones }}</strong>
+          <span>Activaciones</span>
+        </div>
+      </div>
     </div>
-    <div class="module-stats">
-      <div class="stat-pill">
-        <strong>{{ filteredLicencias.length }}</strong>
-        <span>Registros</span>
-      </div>
-      <div class="stat-pill">
-        <strong>{{ totalUnidades }}</strong>
-        <span>Unidades</span>
-      </div>
-      <div class="stat-pill">
-        <strong>{{ totalActivaciones }}</strong>
-        <span>Activaciones</span>
-      </div>
-    </div>
-  </div>
+  }
 
   <section class="license-filter-panel">
     <div class="filter-header">
@@ -40,7 +42,9 @@
         Tipo licencia
         <select [(ngModel)]="filters.tipoLicencia" (ngModelChange)="onTipoLicenciaFilterChange()">
           <option value="">Todos</option>
-          <option *ngFor="let value of tiposLicencia" [value]="value">{{ value }}</option>
+          @for (value of tiposLicencia; track value) {
+            <option [value]="value">{{ value }}</option>
+          }
         </select>
       </label>
 
@@ -48,7 +52,9 @@
         Tipo bien
         <select [(ngModel)]="filters.tipoBien">
           <option value="">Todos</option>
-          <option *ngFor="let value of tiposBien" [value]="value">{{ value }}</option>
+          @for (value of tiposBien; track value) {
+            <option [value]="value">{{ value }}</option>
+          }
         </select>
       </label>
 
@@ -56,7 +62,9 @@
         Año
         <select [(ngModel)]="filters.anio">
           <option value="">Todos</option>
-          <option *ngFor="let value of anios" [value]="value">{{ value }}</option>
+          @for (value of anios; track value) {
+            <option [value]="value">{{ value }}</option>
+          }
         </select>
       </label>
 
@@ -78,52 +86,52 @@
     (view)="onView($event)"
     (edit)="onEdit($event)"
     (delete)="onDelete($event)"
-  />
-</div>
+    />
+  </div>
 
-<app-modal title="Detalle de licencia" [open]="viewing !== null" (closed)="closeView()">
-  <ng-container *ngIf="viewing">
-    <div class="detail-hero">
-      <div>
-        <span>{{ viewing.tipoLicencia.nombre || 'Licencia' }}</span>
-        <h3>{{ viewing.descripcion }}</h3>
-      </div>
-      <strong>{{ viewing.cantidad }} und.</strong>
-    </div>
-
-    <div class="detail-grid">
-      <app-field label="Tipo de Licencia">{{ viewing.tipoLicencia.nombre || '-' }}</app-field>
-      <app-field label="Tipo de Bien">{{ viewing.tipoBien.nombre || '-' }}</app-field>
-      <app-field label="Descripcion">{{ viewing.descripcion }}</app-field>
-      <app-field label="Orden de Compra">{{ viewing.ordenCompra }}</app-field>
-      <app-field label="Año">{{ viewing.anio }}</app-field>
-      <app-field label="Cantidad">{{ viewing.cantidad }}</app-field>
-    </div>
-
-    <div class="activation-detail">
-      <h3>Cuentas y claves de activacion</h3>
-      <div *ngIf="activacionesOf(viewing).length; else sinActivaciones" class="activation-detail-list">
-        <div class="activation-detail-row" *ngFor="let item of activacionesOf(viewing); let i = index">
-          <strong>Cuenta {{ i + 1 }}</strong>
-          <span>{{ item.cuentaActivacion }}</span>
-          <strong>Clave {{ i + 1 }}</strong>
-          <span>{{ item.claveActivacion }}</span>
+  <app-modal title="Detalle de licencia" [open]="viewing !== null" (closed)="closeView()">
+    @if (viewing) {
+      <div class="detail-hero">
+        <div>
+          <span>{{ viewing.tipoLicencia.nombre || 'Licencia' }}</span>
+          <h3>{{ viewing.descripcion }}</h3>
         </div>
+        <strong>{{ viewing.cantidad }} und.</strong>
       </div>
-      <ng-template #sinActivaciones>
-        <p>No hay cuentas de activacion registradas.</p>
-      </ng-template>
-    </div>
+      <div class="detail-grid">
+        <app-field label="Tipo de Licencia">{{ viewing.tipoLicencia.nombre || '-' }}</app-field>
+        <app-field label="Tipo de Bien">{{ viewing.tipoBien.nombre || '-' }}</app-field>
+        <app-field label="Descripcion">{{ viewing.descripcion }}</app-field>
+        <app-field label="Orden de Compra">{{ viewing.ordenCompra }}</app-field>
+        <app-field label="Año">{{ viewing.anio }}</app-field>
+        <app-field label="Cantidad">{{ viewing.cantidad }}</app-field>
+      </div>
+      <div class="activation-detail">
+        <h3>Cuentas y claves de activacion</h3>
+        @if (activacionesOf(viewing).length) {
+          <div class="activation-detail-list">
+            @for (item of activacionesOf(viewing); track item; let i = $index) {
+              <div class="activation-detail-row">
+                <strong>Cuenta {{ i + 1 }}</strong>
+                <span>{{ item.cuentaActivacion }}</span>
+                <strong>Clave {{ i + 1 }}</strong>
+                <span>{{ item.claveActivacion }}</span>
+              </div>
+            }
+          </div>
+        } @else {
+          <p>No hay cuentas de activacion registradas.</p>
+        }
+      </div>
+      <app-field label="Serial de Activacion"><span style="white-space: pre-wrap">{{ viewing.serialActivacion || '-' }}</span></app-field>
+    }
+  </app-modal>
 
-    <app-field label="Serial de Activacion"><span style="white-space: pre-wrap">{{ viewing.serialActivacion || '-' }}</span></app-field>
-  </ng-container>
-</app-modal>
-
-<app-modal
-  [title]="editing ? 'Editar licencia' : 'Agregar licencia'"
-  [open]="formOpen"
-  [hideDefaultFooter]="true"
-  (closed)="closeForm()"
->
-  <app-licencia-form [licencia]="editing" (saved)="onSaved()" (cancelled)="closeForm()" />
-</app-modal>
+  <app-modal
+    [title]="editing ? 'Editar licencia' : 'Agregar licencia'"
+    [open]="formOpen"
+    [hideDefaultFooter]="true"
+    (closed)="closeForm()"
+    >
+    <app-licencia-form [licencia]="editing" (saved)="onSaved()" (cancelled)="closeForm()" />
+  </app-modal>

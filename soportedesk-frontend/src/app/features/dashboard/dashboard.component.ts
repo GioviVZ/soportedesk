@@ -1,9 +1,10 @@
-import { Component, HostListener, OnInit, inject } from '@angular/core';
+import { Component, HostListener, OnInit, inject, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { ChartConfiguration, ChartData } from 'chart.js';
 import { BaseChartDirective } from 'ng2-charts';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
+import ApexCharts from 'apexcharts';
 import { AuthService } from '../../core/auth/auth.service';
 import { DashboardService } from './dashboard.service';
 import { DashboardCounts } from './dashboard-counts.model';
@@ -11,6 +12,9 @@ import { UsuariosRedPorUbicacionChartComponent } from './usuarios-red-por-ubicac
 import { LicenciasPorTipoChartComponent } from './licencias-por-tipo-chart.component';
 import { RealtimeChange } from '../../core/services/realtime.service';
 import { OrdenServicio } from '../herramientas/herramientas.model';
+import { ModuloBreakdownItem, ModuloKey } from './modulo-breakdown-item.model';
+import { ApexChartComponent } from '../../shared/apex-chart.component';
+import { ClickOutsideDirective } from '../../shared/directives/click-outside.directive';
 
 interface DashboardCard {
   label: string;
@@ -26,15 +30,14 @@ interface DashboardCard {
   healthState: 'neutral' | 'success' | 'warning';
   actionLabel: string;
   queryParams?: Record<string, string>;
+  modulo: ModuloKey;
+  sparklineOptions: ApexCharts.ApexOptions;
 }
 
-interface SummaryMetric {
+interface ModuloPill {
+  key: ModuloKey;
   label: string;
-  value: number;
-  detail: string;
-  path?: string;
-  queryParams?: Record<string, string>;
-  state?: 'neutral' | 'success' | 'warning';
+  color: string;
 }
 
 interface PriorityItem {
@@ -65,11 +68,19 @@ const ICONS: Record<string, string> = {
 };
 
 @Component({
-  selector: 'app-dashboard',
-  standalone: true,
-  imports: [CommonModule, RouterLink, BaseChartDirective, UsuariosRedPorUbicacionChartComponent, LicenciasPorTipoChartComponent],
-  templateUrl: './dashboard.component.html',
-  styleUrl: './dashboard.component.scss',
+    selector: 'app-dashboard',
+    imports: [
+        CommonModule,
+        RouterLink,
+        BaseChartDirective,
+        UsuariosRedPorUbicacionChartComponent,
+        LicenciasPorTipoChartComponent,
+        ApexChartComponent,
+        ClickOutsideDirective,
+    ],
+    templateUrl: './dashboard.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
+    styleUrl: './dashboard.component.scss'
 })
 export class DashboardComponent implements OnInit {
   private dashboardService = inject(DashboardService);
@@ -77,9 +88,10 @@ export class DashboardComponent implements OnInit {
   private sanitizer = inject(DomSanitizer);
 
   cards: DashboardCard[] = [];
-  summaryMetrics: SummaryMetric[] = [];
+  moduloPills: ModuloPill[] = [];
   totalRegistros = 0;
   usuariosActivos = 0;
+  usuariosRedInactivos = 0;
   showUsuariosChart = false;
   showLicenciasChart = false;
   showOrdenesServicio = false;
@@ -91,14 +103,21 @@ export class DashboardComponent implements OnInit {
   error = false;
   updatedAt: Date | null = null;
 
+  selectedModulo: ModuloKey | null = null;
+  breakdownLoading = false;
+  breakdownError = false;
+  breakdownItems: ModuloBreakdownItem[] = [];
+  breakdownChartOptions: ApexCharts.ApexOptions | null = null;
+  openCardMenu: string | null = null;
+
   composicionChartData: ChartData<'doughnut', number[], string> = {
     labels: [],
-    datasets: [{ data: [], backgroundColor: ['#5d87ff', '#13deb9', '#ffae1f'] }],
+    datasets: [{ data: [], backgroundColor: ['#5d982d', '#6aa6ad', '#f2bf45'] }],
   };
 
   volumenChartData: ChartData<'line', number[], string> = {
     labels: [],
-    datasets: [{ data: [], label: 'Registros', borderColor: '#5d87ff', backgroundColor: 'rgba(93,135,255,.16)', tension: .35, fill: true, pointBackgroundColor: '#5d87ff' }],
+    datasets: [{ data: [], label: 'Registros', borderColor: '#63a431', backgroundColor: 'rgba(99,164,49,.16)', tension: .35, fill: true, pointBackgroundColor: '#63a431' }],
   };
 
   doughnutOptions: ChartConfiguration<'doughnut'>['options'] = {
@@ -113,8 +132,8 @@ export class DashboardComponent implements OnInit {
     maintainAspectRatio: false,
     plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, boxHeight: 10, usePointStyle: true } } },
     scales: {
-      x: { grid: { color: '#e5eaf2' } },
-      y: { beginAtZero: true, grid: { color: '#e5eaf2' }, ticks: { precision: 0 } },
+      x: { grid: { color: '#e1e5df' } },
+      y: { beginAtZero: true, grid: { color: '#e1e5df' }, ticks: { precision: 0 } },
     },
   };
 
@@ -123,7 +142,7 @@ export class DashboardComponent implements OnInit {
   }
 
   @HostListener('window:soportedesk:data-change', ['$event'])
-  onRealtimeChange(_event: CustomEvent<RealtimeChange>): void {
+  onRealtimeChange(_event: Event): void {
     this.load();
   }
 
@@ -136,17 +155,23 @@ export class DashboardComponent implements OnInit {
         this.updatedAt = new Date();
         this.totalRegistros = this.totalAllowedRecords(counts);
         this.usuariosActivos = Math.max(counts.usuariosRed - counts.usuariosRedInactivos, 0);
+        this.usuariosRedInactivos = counts.usuariosRedInactivos;
         this.cards = this.toCards(counts);
+        this.moduloPills = this.toModuloPills(this.cards);
         this.showUsuariosChart = this.authService.canRead('usuarios-red');
         this.showLicenciasChart = this.authService.canRead('licencias');
         this.showOrdenesServicio = this.authService.canRead('herramientas');
         if (this.showOrdenesServicio) {
           this.loadOrdenesServicio();
         }
-        this.summaryMetrics = this.toSummaryMetrics(counts);
         this.priorityItems = this.toPriorityItems(counts);
         this.mixItems = this.toMixItems(counts);
         this.applyOverviewCharts(counts);
+        const selectedStillAvailable = this.moduloPills.some((pill) => pill.key === this.selectedModulo);
+        const defaultModulo = this.moduloPills.find((pill) => pill.key === 'equipos')?.key
+          ?? this.moduloPills[0]?.key
+          ?? null;
+        this.selectModulo(selectedStillAvailable ? this.selectedModulo : defaultModulo);
       },
       error: () => {
         this.loading = false;
@@ -202,6 +227,129 @@ export class DashboardComponent implements OnInit {
     return this.sanitizer.bypassSecurityTrustHtml(ICONS[key]);
   }
 
+  private toModuloPills(cards: DashboardCard[]): ModuloPill[] {
+    const seen = new Set<ModuloKey>();
+    const pills: ModuloPill[] = [];
+    for (const card of cards) {
+      if (seen.has(card.modulo)) continue;
+      seen.add(card.modulo);
+      pills.push({ key: card.modulo, label: card.label, color: card.color });
+    }
+    return pills;
+  }
+
+  /** Serie sintética (sin histórico real todavía): variación leve terminando en el valor actual, solo decorativa. */
+  private sparkline(value: number, color: string): ApexCharts.ApexOptions {
+    const base = Math.max(value, 1);
+    const data = [0.72, 0.85, 0.68, 0.94, 0.8, 1].map((factor) => Math.round(base * factor));
+    return {
+      chart: { type: 'area', height: 44, sparkline: { enabled: true }, animations: { enabled: false } },
+      series: [{ data }],
+      stroke: { curve: 'smooth', width: 2 },
+      fill: { type: 'gradient', gradient: { opacityFrom: .35, opacityTo: 0 } },
+      colors: [color],
+      tooltip: { enabled: false },
+    };
+  }
+
+  toggleCardMenu(cardLabel: string, event: Event): void {
+    event.preventDefault();
+    event.stopPropagation();
+    this.openCardMenu = this.openCardMenu === cardLabel ? null : cardLabel;
+  }
+
+  closeCardMenu(): void {
+    this.openCardMenu = null;
+  }
+
+  selectModulo(modulo: ModuloKey | null): void {
+    this.selectedModulo = modulo;
+    this.openCardMenu = null;
+    if (!modulo) {
+      this.breakdownItems = [];
+      this.breakdownChartOptions = null;
+      return;
+    }
+
+    if (modulo === 'usuarios-red') {
+      this.breakdownLoading = false;
+      this.breakdownError = false;
+      this.applyBreakdown([
+        { label: 'Activos', count: this.usuariosActivos },
+        { label: 'Inactivos', count: this.usuariosRedInactivos },
+      ]);
+      return;
+    }
+
+    this.breakdownLoading = true;
+    this.breakdownError = false;
+    this.dashboardService.getModuloBreakdown(modulo).subscribe({
+      next: (items) => {
+        this.breakdownLoading = false;
+        this.applyBreakdown(items);
+      },
+      error: () => {
+        this.breakdownLoading = false;
+        this.breakdownError = true;
+        this.breakdownItems = [];
+        this.breakdownChartOptions = null;
+      },
+    });
+  }
+
+  private applyBreakdown(items: ModuloBreakdownItem[]): void {
+    this.breakdownItems = items;
+    const pill = this.moduloPills.find((p) => p.key === this.selectedModulo);
+    const color = pill?.color ?? '#63a431';
+    const colors = this.selectedModulo === 'equipos'
+      ? ['#527b9b', '#2a5726', '#9bc477']
+      : this.buildTonalPalette(color, items.length);
+    this.breakdownChartOptions = {
+      chart: { type: 'donut', height: 240 },
+      series: items.map((item) => item.count),
+      labels: items.map((item) => item.label),
+      colors,
+      stroke: { width: 2, colors: ['rgba(255,255,255,.58)'] },
+      legend: { position: 'bottom' },
+      dataLabels: { enabled: false },
+      tooltip: { y: { formatter: (val: number) => `${val}` } },
+    };
+  }
+
+  get selectedModuloLabel(): string {
+    return this.moduloPills.find((pill) => pill.key === this.selectedModulo)?.label ?? 'Desglose';
+  }
+
+  get breakdownTotal(): number {
+    return this.breakdownItems.reduce((total, item) => total + item.count, 0);
+  }
+
+  private buildTonalPalette(base: string, count: number): string[] {
+    return Array.from({ length: count }, (_, index) => {
+      if (index === 0) return base;
+      const step = Math.ceil(index / 2);
+      const towardLight = index % 2 === 1;
+      const amount = towardLight
+        ? Math.min(.2 + step * .12, .78)
+        : Math.min(.1 + step * .11, .6);
+      return this.mixHex(base, towardLight ? '#ffffff' : '#17231b', amount);
+    });
+  }
+
+  private mixHex(source: string, target: string, amount: number): string {
+    const parse = (value: string): [number, number, number] => [
+      Number.parseInt(value.slice(1, 3), 16),
+      Number.parseInt(value.slice(3, 5), 16),
+      Number.parseInt(value.slice(5, 7), 16),
+    ];
+    const [sr, sg, sb] = parse(source);
+    const [tr, tg, tb] = parse(target);
+    return `#${[sr, sg, sb].map((channel, index) => {
+      const destination = [tr, tg, tb][index];
+      return Math.round(channel + (destination - channel) * amount).toString(16).padStart(2, '0');
+    }).join('')}`;
+  }
+
   private toCards(counts: DashboardCounts): DashboardCard[] {
     const cards: DashboardCard[] = [
       {
@@ -209,7 +357,7 @@ export class DashboardComponent implements OnInit {
         description: 'Claves y software registrado',
         value: counts.licencias,
         path: '/licencias',
-        color: '#5d87ff',
+        color: '#456b8a',
         icon: this.svg('key'),
         category: 'Software',
         metricLabel: 'Licencias activas',
@@ -217,13 +365,15 @@ export class DashboardComponent implements OnInit {
         healthLabel: 'Inventario visible',
         healthState: 'neutral',
         actionLabel: 'Abrir licencias',
+        modulo: 'licencias',
+        sparklineOptions: this.sparkline(counts.licencias, '#456b8a'),
       },
       {
         label: 'Correos Institucionales',
         description: 'Cuentas y accesos de correo',
         value: counts.correos,
         path: '/correos',
-        color: '#8754ec',
+        color: '#657195',
         icon: this.svg('mail'),
         category: 'Comunicaciones',
         metricLabel: 'Cuentas registradas',
@@ -231,13 +381,15 @@ export class DashboardComponent implements OnInit {
         healthLabel: 'Directorio de correos',
         healthState: 'neutral',
         actionLabel: 'Abrir correos',
+        modulo: 'correos',
+        sparklineOptions: this.sparkline(counts.correos, '#657195'),
       },
       {
         label: 'Usuarios de Red/AD',
         description: 'Cuentas activas e historicas',
         value: counts.usuariosRed,
         path: '/usuarios-red/consultas',
-        color: '#ffae1f',
+        color: '#fab50b',
         icon: this.svg('users'),
         category: 'Active Directory',
         metricLabel: 'Usuarios activos',
@@ -245,6 +397,8 @@ export class DashboardComponent implements OnInit {
         healthLabel: counts.usuariosRedInactivos > 0 ? `${counts.usuariosRedInactivos} inactivos` : 'Sin inactivos',
         healthState: counts.usuariosRedInactivos > 0 ? 'warning' : 'success',
         actionLabel: 'Buscar usuarios',
+        modulo: 'usuarios-red',
+        sparklineOptions: this.sparkline(counts.usuariosRed, '#fab50b'),
       },
       {
         label: 'VPN',
@@ -259,13 +413,15 @@ export class DashboardComponent implements OnInit {
         healthLabel: counts.vpnPendientes > 0 ? 'Requiere atencion' : 'Sin pendientes',
         healthState: counts.vpnPendientes > 0 ? 'warning' : 'success',
         actionLabel: 'Gestionar VPN',
+        modulo: 'vpn',
+        sparklineOptions: this.sparkline(counts.vpn, '#fa896b'),
       },
       {
         label: 'Claves WiFi',
         description: 'Redes y claves administradas',
         value: counts.wifi,
         path: '/wifi',
-        color: '#44b7f7',
+        color: '#357783',
         icon: this.svg('wifi'),
         category: 'Conectividad',
         metricLabel: 'Redes registradas',
@@ -273,13 +429,15 @@ export class DashboardComponent implements OnInit {
         healthLabel: 'Claves administradas',
         healthState: 'neutral',
         actionLabel: 'Abrir WiFi',
+        modulo: 'wifi',
+        sparklineOptions: this.sparkline(counts.wifi, '#357783'),
       },
       {
         label: 'Impresoras',
         description: 'Equipos de impresion registrados',
         value: counts.impresoras,
         path: '/impresoras',
-        color: '#7c8fac',
+        color: '#66746a',
         icon: this.svg('printer'),
         category: 'Perifericos',
         metricLabel: 'Impresoras registradas',
@@ -287,13 +445,15 @@ export class DashboardComponent implements OnInit {
         healthLabel: 'Inventario de impresion',
         healthState: 'neutral',
         actionLabel: 'Abrir impresoras',
+        modulo: 'impresoras',
+        sparklineOptions: this.sparkline(counts.impresoras, '#66746a'),
       },
       {
         label: 'Inventario de Equipos',
         description: 'Inventario operativo asignado',
         value: counts.equipos,
         path: '/equipos',
-        color: '#13deb9',
+        color: '#5d982d',
         icon: this.svg('monitor'),
         category: 'Infraestructura',
         metricLabel: 'Equipos asignados',
@@ -301,6 +461,8 @@ export class DashboardComponent implements OnInit {
         healthLabel: 'Inventario operativo',
         healthState: 'success',
         actionLabel: 'Abrir equipos',
+        modulo: 'equipos',
+        sparklineOptions: this.sparkline(counts.equipos, '#5d982d'),
       },
     ];
 
@@ -310,7 +472,7 @@ export class DashboardComponent implements OnInit {
         description: 'Cuentas marcadas como inactivas',
         value: counts.usuariosRedInactivos,
         path: '/usuarios-red/dashboard',
-        color: '#ffae1f',
+        color: '#fab50b',
         icon: this.svg('userX'),
         category: 'Alertas AD',
         metricLabel: 'Cuentas por revisar',
@@ -318,67 +480,12 @@ export class DashboardComponent implements OnInit {
         healthLabel: counts.usuariosRedInactivos > 0 ? 'Revisar estado' : 'Sin alertas',
         healthState: counts.usuariosRedInactivos > 0 ? 'warning' : 'success',
         actionLabel: 'Ver desactivados',
+        modulo: 'usuarios-red',
+        sparklineOptions: this.sparkline(counts.usuariosRedInactivos, '#fab50b'),
       });
     }
 
     return cards.filter((card) => this.canOpen(card.path));
-  }
-
-  private toSummaryMetrics(counts: DashboardCounts): SummaryMetric[] {
-    const accesos = this.sumAllowed([
-      ['licencias', counts.licencias],
-      ['correos', counts.correos],
-      ['usuarios-red', counts.usuariosRed],
-      ['vpn', counts.vpn],
-      ['wifi', counts.wifi],
-    ]);
-    const infraestructura = this.sumAllowed([
-      ['impresoras', counts.impresoras],
-      ['equipos', counts.equipos],
-    ]);
-
-    const metrics: SummaryMetric[] = [
-      {
-        label: 'Registros totales',
-        value: this.totalRegistros,
-        detail: 'Inventario general del sistema',
-        state: 'neutral',
-      },
-      {
-        label: 'Accesos gestionados',
-        value: accesos,
-        detail: 'Licencias, correos, red, VPN y WiFi',
-        state: 'success',
-      },
-      {
-        label: 'Infraestructura',
-        value: infraestructura,
-        detail: 'Equipos asignados e impresoras',
-        state: 'neutral',
-      },
-    ];
-
-    if (this.authService.canWrite('usuarios-red')) {
-      metrics.push({
-        label: 'Usuarios activos',
-        value: this.usuariosActivos,
-        detail: `${counts.usuariosRedInactivos} usuarios desactivados`,
-        path: '/usuarios-red/dashboard',
-        state: counts.usuariosRedInactivos > 0 ? 'warning' : 'success',
-      });
-    }
-
-    if (this.authService.isAdmin() || this.authService.canWrite('aprobar-vpn')) {
-      metrics.push({
-        label: 'Solicitudes VPN pendientes',
-        value: counts.vpnPendientes,
-        detail: 'Esperando verificacion y aprobacion',
-        path: '/vpn/administracion',
-        state: counts.vpnPendientes > 0 ? 'warning' : 'success',
-      });
-    }
-
-    return metrics;
   }
 
   private toPriorityItems(counts: DashboardCounts): PriorityItem[] {
@@ -444,9 +551,9 @@ export class DashboardComponent implements OnInit {
 
   private toMixItems(counts: DashboardCounts): MixItem[] {
     const raw = [
-      { label: 'Accesos', value: this.sumAllowed([['licencias', counts.licencias], ['correos', counts.correos], ['usuarios-red', counts.usuariosRed], ['vpn', counts.vpn], ['wifi', counts.wifi]]), color: '#5d87ff' },
-      { label: 'Infraestructura', value: this.sumAllowed([['impresoras', counts.impresoras], ['equipos', counts.equipos]]), color: '#13deb9' },
-      { label: 'Alertas', value: this.sumAllowed([['usuarios-red', counts.usuariosRedInactivos]]) + (this.authService.canWrite('aprobar-vpn') ? counts.vpnPendientes : 0), color: '#ffae1f' },
+      { label: 'Accesos', value: this.sumAllowed([['licencias', counts.licencias], ['correos', counts.correos], ['usuarios-red', counts.usuariosRed], ['vpn', counts.vpn], ['wifi', counts.wifi]]), color: '#63a431' },
+      { label: 'Infraestructura', value: this.sumAllowed([['impresoras', counts.impresoras], ['equipos', counts.equipos]]), color: '#357783' },
+      { label: 'Alertas', value: this.sumAllowed([['usuarios-red', counts.usuariosRedInactivos]]) + (this.authService.canWrite('aprobar-vpn') ? counts.vpnPendientes : 0), color: '#fab50b' },
     ].filter((item) => item.value > 0);
 
     const total = raw.reduce((sum, item) => sum + item.value, 0);
@@ -463,7 +570,13 @@ export class DashboardComponent implements OnInit {
 
     this.composicionChartData = {
       labels: ['Accesos', 'Infraestructura', 'Alertas'],
-      datasets: [{ data: [accesos, infraestructura, alertas], backgroundColor: ['#5d87ff', '#13deb9', '#ffae1f'] }],
+      datasets: [{
+        data: [accesos, infraestructura, alertas],
+        backgroundColor: ['#5d982d', '#6aa6ad', '#f2bf45'],
+        borderColor: 'rgba(255,255,255,.58)',
+        borderWidth: 2,
+        hoverOffset: 7,
+      }],
     };
 
     const rows = this.cards.filter((card) => card.value > 0);
@@ -472,11 +585,11 @@ export class DashboardComponent implements OnInit {
       datasets: [{
         data: rows.map((card) => card.value),
         label: 'Registros',
-        borderColor: '#5d87ff',
-        backgroundColor: 'rgba(93,135,255,.16)',
+        borderColor: '#63a431',
+        backgroundColor: 'rgba(99,164,49,.16)',
         tension: .35,
         fill: true,
-        pointBackgroundColor: '#5d87ff',
+        pointBackgroundColor: '#63a431',
       }],
     };
   }

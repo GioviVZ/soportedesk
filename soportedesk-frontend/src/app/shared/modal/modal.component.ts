@@ -1,12 +1,12 @@
-import { Component, EventEmitter, HostListener, Input, Output } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, EventEmitter, HostListener, Input, Output, ChangeDetectionStrategy } from '@angular/core';
+
 
 @Component({
-  selector: 'app-modal',
-  standalone: true,
-  imports: [CommonModule],
-  templateUrl: './modal.component.html',
-  styleUrl: './modal.component.scss',
+    selector: 'app-modal',
+    imports: [],
+    templateUrl: './modal.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
+    styleUrl: './modal.component.scss'
 })
 export class ModalComponent {
   @Input({ required: true }) title!: string;

@@ -8,6 +8,10 @@ import java.util.List;
 
 public interface TipoImpresoraRepository extends JpaRepository<TipoImpresora, Long> {
 
+    boolean existsByNombreIgnoreCase(String nombre);
+
+    boolean existsByNombreIgnoreCaseAndIdNot(String nombre, Long id);
+
     @Query("SELECT t FROM TipoImpresora t WHERE LOWER(t.nombre) LIKE LOWER(CONCAT('%', :search, '%'))")
     List<TipoImpresora> search(@Param("search") String search);
 }

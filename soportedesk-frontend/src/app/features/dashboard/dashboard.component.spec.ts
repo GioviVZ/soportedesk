@@ -1,10 +1,11 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { provideRouter, RouterLink } from '@angular/router';
 import { By } from '@angular/platform-browser';
 import { provideCharts, withDefaultRegisterables } from 'ng2-charts';
 import { DashboardComponent } from './dashboard.component';
 import { DashboardCounts } from './dashboard-counts.model';
+import { provideHttpClient, withInterceptorsFromDi, withXhr } from '@angular/common/http';
 
 describe('DashboardComponent', () => {
   let fixture: ComponentFixture<DashboardComponent>;
@@ -25,9 +26,9 @@ describe('DashboardComponent', () => {
 
   beforeEach(() => {
     TestBed.configureTestingModule({
-      imports: [DashboardComponent, HttpClientTestingModule],
-      providers: [provideRouter([]), provideCharts(withDefaultRegisterables())],
-    });
+    imports: [DashboardComponent],
+    providers: [provideRouter([]), provideCharts(withDefaultRegisterables()), provideHttpClient(withXhr(), withInterceptorsFromDi()), provideHttpClientTesting()]
+});
     localStorage.setItem('rol', 'ADMIN');
     fixture = TestBed.createComponent(DashboardComponent);
     httpMock = TestBed.inject(HttpTestingController);
@@ -47,6 +48,11 @@ describe('DashboardComponent', () => {
         registradoPor: 'admin',
         fechaRegistro: '2026-07-18T10:00:00',
       },
+    ]);
+    httpMock.expectOne((r) => r.url.endsWith('/equipos-por-tipo')).flush([
+      { label: 'Laptop', count: 8 },
+      { label: 'Computadora de Escritorio', count: 5 },
+      { label: 'All in One', count: 2 },
     ]);
     fixture.detectChanges();
     httpMock.expectOne((r) => r.url.endsWith('/usuarios-red-por-ubicacion')).flush([]);
@@ -81,6 +87,14 @@ describe('DashboardComponent', () => {
     expect(fixture.componentInstance.totalRegistros).toBe(5 + 12 + 20 + 3 + 4 + 7 + 15);
   });
 
+  it('places the main-module shortcuts before operational data', () => {
+    const modules = fixture.nativeElement.querySelector('.cards-grid') as HTMLElement;
+    const priorities = fixture.nativeElement.querySelector('.ops-grid') as HTMLElement;
+
+    expect(fixture.nativeElement.querySelector('.summary-grid')).toBeNull();
+    expect(modules.compareDocumentPosition(priorities) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
   it('shows active service orders with their remaining days', () => {
     const card = fixture.debugElement.query(By.css('.service-orders-card'));
     expect(card.nativeElement.textContent).toContain('OS-2026-001');
@@ -94,5 +108,62 @@ describe('DashboardComponent', () => {
     const serviceOrders = fixture.nativeElement.querySelector('.service-orders-card') as HTMLElement;
 
     expect(charts.compareDocumentPosition(serviceOrders) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  it('keeps inventory selected by default and does not render a collapsing "Todos" option', () => {
+    const pills = fixture.debugElement.queryAll(By.css('.modulo-pill'));
+    const labels = pills.map((p) => p.nativeElement.textContent.trim());
+
+    expect(labels).not.toContain('Todos');
+    expect(labels).toContain('Licencias');
+    expect(labels).toContain('VPN');
+    expect(labels).toContain('Inventario de Equipos');
+    expect(fixture.componentInstance.selectedModulo).toBe('equipos');
+    expect(fixture.nativeElement.querySelector('.modulo-breakdown-panel')).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('.modulo-breakdown-total').textContent).toContain('15');
+  });
+
+  it('selecting a module pill fetches its breakdown and renders the panel', () => {
+    const vpnPill = fixture.debugElement.queryAll(By.css('.modulo-pill'))
+      .find((p) => p.nativeElement.textContent.trim() === 'VPN')!;
+    vpnPill.nativeElement.click();
+    fixture.detectChanges();
+
+    httpMock.expectOne((r) => r.url.endsWith('/vpn-por-estado-solicitud')).flush([
+      { label: 'PENDIENTE', count: 1 },
+      { label: 'APROBADA', count: 2 },
+    ]);
+    fixture.detectChanges();
+
+    const rows = fixture.debugElement.queryAll(By.css('.modulo-breakdown-row'));
+    expect(rows.length).toBe(2);
+    expect(rows[0].nativeElement.textContent).toContain('PENDIENTE');
+    expect(rows[0].nativeElement.textContent).toContain('1');
+  });
+
+  it('selecting "usuarios-red" derives the breakdown from counts without an extra request', () => {
+    const pill = fixture.debugElement.queryAll(By.css('.modulo-pill'))
+      .find((p) => p.nativeElement.textContent.trim() === 'Usuarios de Red/AD')!;
+    pill.nativeElement.click();
+    fixture.detectChanges();
+
+    const rows = fixture.debugElement.queryAll(By.css('.modulo-breakdown-row'));
+    expect(rows.length).toBe(2);
+    expect(rows[0].nativeElement.textContent).toContain('Activos');
+    expect(rows[0].nativeElement.textContent).toContain('18');
+    expect(rows[1].nativeElement.textContent).toContain('Inactivos');
+    expect(rows[1].nativeElement.textContent).toContain('2');
+  });
+
+  it('switching modules keeps the breakdown panel mounted', () => {
+    const vpnPill = fixture.debugElement.queryAll(By.css('.modulo-pill'))
+      .find((p) => p.nativeElement.textContent.trim() === 'VPN')!;
+    vpnPill.nativeElement.click();
+    fixture.detectChanges();
+    httpMock.expectOne((r) => r.url.endsWith('/vpn-por-estado-solicitud')).flush([]);
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.selectedModulo).toBe('vpn');
+    expect(fixture.nativeElement.querySelector('.modulo-breakdown-panel')).not.toBeNull();
   });
 });

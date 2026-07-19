@@ -7,8 +7,9 @@ import {
   OnDestroy,
   ViewChild,
   inject,
+  ChangeDetectionStrategy
 } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { FormsModule } from '@angular/forms';
 import * as THREE from 'three';
 import QRCode from 'qrcode';
@@ -120,11 +121,11 @@ const KEY_LABELS: Record<string, string> = {
 };
 
 @Component({
-  selector: 'app-herramientas',
-  standalone: true,
-  imports: [CommonModule, FormsModule],
-  templateUrl: './herramientas.component.html',
-  styleUrls: ['./herramientas.component.scss', './herramientas-tests.scss'],
+    selector: 'app-herramientas',
+    imports: [FormsModule],
+    templateUrl: './herramientas.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
+    styleUrls: ['./herramientas.component.scss', './herramientas-tests.scss']
 })
 export class HerramientasComponent implements OnInit, AfterViewInit, OnDestroy {
   private service = inject(HerramientasService);
@@ -364,7 +365,7 @@ export class HerramientasComponent implements OnInit, AfterViewInit, OnDestroy {
         margin: 2,
         width: this.qrSize,
         color: {
-          dark: '#0f172a',
+          dark: '#101a12',
           light: '#ffffff',
         },
       });
@@ -374,7 +375,7 @@ export class HerramientasComponent implements OnInit, AfterViewInit, OnDestroy {
         margin: 2,
         width: this.qrSize,
         color: {
-          dark: '#0f172a',
+          dark: '#101a12',
           light: '#ffffff',
         },
       });

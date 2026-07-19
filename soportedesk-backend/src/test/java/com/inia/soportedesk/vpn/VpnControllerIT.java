@@ -288,7 +288,7 @@ class VpnControllerIT {
     @WithMockUser(authorities = {"ROLE_SOPORTE", "WRITE_aprobar-vpn"})
     void dashboardCompleto_withAprobarAuthority_returnsOk() throws Exception {
         when(service.obtenerDashboardCompleto()).thenReturn(
-                new VpnDashboardCompleto(1, 2, 0, 0, 3, List.of(), List.of(), 0, List.of(), 0));
+                new VpnDashboardCompleto(1, 2, 0, 0, 3, List.of(), List.of(), List.of(), List.of(), 0, List.of(), 0));
 
         mockMvc.perform(get("/api/vpn/dashboard/completo"))
                 .andExpect(status().isOk())

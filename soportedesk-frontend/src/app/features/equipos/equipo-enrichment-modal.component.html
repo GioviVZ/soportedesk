@@ -1,13 +1,17 @@
 <app-modal [title]="'Editar datos · ' + nombreEquipo" [open]="open" size="wide" [hideDefaultFooter]="true" (closed)="close()">
   <div class="admin-edit-intro"><strong>Datos administrativos</strong><span>Completa únicamente la información necesaria para identificar y asignar el equipo.</span></div>
-  <div class="notice error" *ngIf="error()">{{ error() }}</div>
+  @if (error()) {
+    <div class="notice error">{{ error() }}</div>
+  }
   <div class="info-grid admin-edit-grid">
-    <label><span>Tipo de equipo</span><select [value]="form.tipoOverride || ''" (change)="update('tipoOverride', $any($event.target).value)"><option value="">Seleccione...</option><option *ngFor="let tipo of tiposEquipo()" [value]="tipo">{{ tipo }}</option></select></label>
-    <label><span>Nombre del usuario asignado</span><input type="text" [value]="form.nombreAsignadoOverride || ''" (input)="update('nombreAsignadoOverride', $any($event.target).value)" /></label>
-    <label><span>Usuario asignado</span><input type="text" [value]="form.usuarioAsignadoOverride || ''" (input)="update('usuarioAsignadoOverride', $any($event.target).value)" placeholder="Ej. jperez@INIA-RED" /></label>
-    <label><span>Código interno</span><input type="text" [value]="form.codigoInternoOverride || ''" (input)="update('codigoInternoOverride', $any($event.target).value)" /></label>
-    <label><span>Número de serie</span><input type="text" [value]="form.numeroSerieOverride || ''" (input)="update('numeroSerieOverride', $any($event.target).value)" /></label>
-  </div>
-  <div class="ubicacion-cell"><strong>Ubicación según catálogos</strong><app-ubicacion-select [showTipoContrato]="false" [sedeId]="form.sedeId" [dependenciaId]="form.dependenciaId" [subdependenciaId]="form.subdependenciaId" (sedeIdChange)="onSedeChange($event)" (dependenciaIdChange)="onDependenciaChange($event)" (subdependenciaIdChange)="onSubdependenciaChange($event)" /></div>
-  <footer modal-footer class="enrichment-actions"><button type="button" class="ver-ficha-btn" (click)="close()">Cancelar</button><button type="button" class="save-btn" (click)="save()" [disabled]="saving()">{{ saving() ? 'Guardando...' : 'Guardar cambios' }}</button></footer>
+    <label><span>Tipo de equipo</span><select [value]="form.tipoOverride || ''" (change)="update('tipoOverride', $any($event.target).value)"><option value="">Seleccione...</option>@for (tipo of tiposEquipo(); track tipo) {
+    <option [value]="tipo">{{ tipo }}</option>
+  }</select></label>
+  <label><span>Nombre del usuario asignado</span><input type="text" [value]="form.nombreAsignadoOverride || ''" (input)="update('nombreAsignadoOverride', $any($event.target).value)" /></label>
+  <label><span>Usuario asignado</span><input type="text" [value]="form.usuarioAsignadoOverride || ''" (input)="update('usuarioAsignadoOverride', $any($event.target).value)" placeholder="Ej. jperez@INIA-RED" /></label>
+  <label><span>Código interno</span><input type="text" [value]="form.codigoInternoOverride || ''" (input)="update('codigoInternoOverride', $any($event.target).value)" /></label>
+  <label><span>Número de serie</span><input type="text" [value]="form.numeroSerieOverride || ''" (input)="update('numeroSerieOverride', $any($event.target).value)" /></label>
+</div>
+<div class="ubicacion-cell"><strong>Ubicación según catálogos</strong><app-ubicacion-select [showTipoContrato]="false" [sedeId]="form.sedeId" [dependenciaId]="form.dependenciaId" [subdependenciaId]="form.subdependenciaId" (sedeIdChange)="onSedeChange($event)" (dependenciaIdChange)="onDependenciaChange($event)" (subdependenciaIdChange)="onSubdependenciaChange($event)" /></div>
+<footer modal-footer class="enrichment-actions"><button type="button" class="ver-ficha-btn" (click)="close()">Cancelar</button><button type="button" class="save-btn" (click)="save()" [disabled]="saving()">{{ saving() ? 'Guardando...' : 'Guardar cambios' }}</button></footer>
 </app-modal>

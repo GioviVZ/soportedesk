@@ -12,7 +12,9 @@
       </div>
 
       <div class="dash-actions">
-        <span class="freshness" *ngIf="updatedAt">Actualizado {{ updatedAt | date:'HH:mm' }}</span>
+        @if (updatedAt) {
+          <span class="freshness">Actualizado {{ updatedAt | date:'HH:mm' }}</span>
+        }
         <button type="button" class="refresh-btn" (click)="load()" [disabled]="loading">
           <span class="refresh-icon" aria-hidden="true"></span>
           {{ loading ? 'Actualizando' : 'Actualizar' }}
@@ -21,168 +23,229 @@
     </div>
   </div>
 
-  <div class="dash-notice" *ngIf="error">
-    No se pudo actualizar el panel. Se mantiene la última vista disponible.
-  </div>
-
-  <div class="summary-grid">
-    <ng-container *ngFor="let metric of summaryMetrics">
-      <a
-        *ngIf="metric.path; else metricBox"
-        class="summary-card"
-        [class.summary-card--success]="metric.state === 'success'"
-        [class.summary-card--warning]="metric.state === 'warning'"
-        [routerLink]="metric.path"
-        [queryParams]="metric.queryParams">
-        <span class="summary-label">{{ metric.label }}</span>
-        <strong>{{ metric.value }}</strong>
-        <span class="summary-detail">{{ metric.detail }}</span>
-      </a>
-
-      <ng-template #metricBox>
-        <div
-          class="summary-card"
-          [class.summary-card--success]="metric.state === 'success'"
-          [class.summary-card--warning]="metric.state === 'warning'">
-          <span class="summary-label">{{ metric.label }}</span>
-          <strong>{{ metric.value }}</strong>
-          <span class="summary-detail">{{ metric.detail }}</span>
-        </div>
-      </ng-template>
-    </ng-container>
-  </div>
-
-  <section class="ops-grid" *ngIf="priorityItems.length || mixItems.length">
-    <div class="ops-panel priority-panel" *ngIf="priorityItems.length">
-      <div class="panel-heading">
-        <div>
-          <h3>Atención prioritaria</h3>
-          <p>Situaciones que conviene revisar primero.</p>
-        </div>
-      </div>
-
-      <ng-container *ngFor="let item of priorityItems">
-        <a
-          *ngIf="item.path; else priorityBox"
-          class="priority-row"
-          [class.priority-row--warning]="item.state === 'warning'"
-          [class.priority-row--success]="item.state === 'success'"
-          [routerLink]="item.path">
-          <span class="priority-value" [class.priority-value--date]="item.valueKind === 'date'">{{ item.value }}</span>
-          <span>
-            <strong>{{ item.label }}</strong>
-            <small>{{ item.detail }}</small>
-          </span>
-        </a>
-
-        <ng-template #priorityBox>
-          <div
-            class="priority-row"
-            [class.priority-row--warning]="item.state === 'warning'"
-            [class.priority-row--success]="item.state === 'success'">
-            <span class="priority-value" [class.priority-value--date]="item.valueKind === 'date'">{{ item.value }}</span>
-            <span>
-              <strong>{{ item.label }}</strong>
-              <small>{{ item.detail }}</small>
-            </span>
-          </div>
-        </ng-template>
-      </ng-container>
+  @if (error) {
+    <div class="dash-notice">
+      No se pudo actualizar el panel. Se mantiene la última vista disponible.
     </div>
+  }
 
-    <div class="ops-panel mix-panel" *ngIf="mixItems.length">
-      <div class="panel-heading">
-        <div>
-          <h3>Composición operativa</h3>
-          <p>Peso relativo de los registros visibles.</p>
-        </div>
-      </div>
-
-      <div class="mix-row" *ngFor="let item of mixItems">
-        <div class="mix-meta">
-          <span>{{ item.label }}</span>
-          <strong>{{ item.value }}</strong>
-        </div>
-        <div class="mix-track">
-          <span [style.width.%]="item.percent" [style.background]="item.color"></span>
-        </div>
-        <small>{{ item.percent }}%</small>
-      </div>
-    </div>
-  </section>
-
-  <section class="overview-charts" *ngIf="cards.length">
-    <article class="overview-chart-card">
-      <div class="panel-heading">
-        <div>
-          <h3>Composición general</h3>
-          <p>Accesos, infraestructura y alertas visibles.</p>
-        </div>
-      </div>
-      <canvas baseChart [data]="composicionChartData" [options]="doughnutOptions" [type]="'doughnut'"></canvas>
-    </article>
-
-    <article class="overview-chart-card">
-      <div class="panel-heading">
-        <div>
-          <h3>Volumen por módulo</h3>
-          <p>Comparativo de registros disponibles.</p>
-        </div>
-      </div>
-      <canvas baseChart [data]="volumenChartData" [options]="lineOptions" [type]="'line'"></canvas>
-    </article>
-  </section>
-
-  <div class="section-heading">
+  <div class="section-heading module-cards-heading">
     <div>
       <h3>Módulos principales</h3>
-      <p>Resumen completo de los datos disponibles por módulo.</p>
+      <p>Accesos directos, estado y cifras clave de cada área.</p>
     </div>
   </div>
 
   <div class="cards-grid">
-    <a
-      class="module-card"
-      *ngFor="let card of cards"
-      [routerLink]="card.path"
-      [queryParams]="card.queryParams"
-      [style.--card-color]="card.color">
-
-      <div class="module-card__top">
-        <span class="module-card__icon" [innerHTML]="card.icon"></span>
-        <span
-          class="module-card__health"
-          [class.module-card__health--success]="card.healthState === 'success'"
-          [class.module-card__health--warning]="card.healthState === 'warning'">
-          {{ card.healthLabel }}
-        </span>
-      </div>
-
-      <div class="module-card__title">
-        <span>{{ card.category }}</span>
-        <strong>{{ card.label }}</strong>
-        <small>{{ card.description }}</small>
-      </div>
-
-      <div class="module-card__numbers">
-        <div class="module-card__total">
-          <strong>{{ card.value }}</strong>
-          <span>Total registros</span>
+    @for (card of cards; track card) {
+      <a
+        class="module-card"
+        [routerLink]="card.path"
+        [queryParams]="card.queryParams"
+        [style.--card-color]="card.color">
+        <div class="module-card__top">
+          <span class="module-card__icon" [innerHTML]="card.icon"></span>
+          <div class="module-card__actions" appClickOutside (appClickOutside)="openCardMenu === card.label && closeCardMenu()">
+            <span
+              class="module-card__health"
+              [class.module-card__health--success]="card.healthState === 'success'"
+              [class.module-card__health--warning]="card.healthState === 'warning'">
+              {{ card.healthLabel }}
+            </span>
+            <button type="button" class="module-card__menu-btn" (click)="toggleCardMenu(card.label, $event)" aria-label="Acciones rápidas">
+              <i class="ti ti-dots-vertical"></i>
+            </button>
+            @if (openCardMenu === card.label) {
+              <div class="module-card__menu-list">
+                <button type="button" (click)="selectModulo(card.modulo); $event.preventDefault(); $event.stopPropagation()">
+                  Ver desglose aquí
+                </button>
+              </div>
+            }
+          </div>
         </div>
-        <div class="module-card__metric">
-          <span>{{ card.metricLabel }}</span>
-          <strong>{{ card.metricValue }}</strong>
+        <div class="module-card__title">
+          <span>{{ card.category }}</span>
+          <strong>{{ card.label }}</strong>
+          <small>{{ card.description }}</small>
         </div>
-      </div>
-
-      <div class="module-card__footer">
-        <span>{{ card.actionLabel }}</span>
-        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-          <polyline points="9 18 15 12 9 6"/>
-        </svg>
-      </div>
-    </a>
+        <div class="module-card__numbers">
+          <div class="module-card__total">
+            <strong>{{ card.value }}</strong>
+            <span>Total registros</span>
+          </div>
+          <div class="module-card__metric">
+            <span>{{ card.metricLabel }}</span>
+            <strong>{{ card.metricValue }}</strong>
+          </div>
+        </div>
+        <div class="module-card__spark">
+          <app-apex-chart [options]="card.sparklineOptions" />
+        </div>
+        <div class="module-card__footer">
+          <span>{{ card.actionLabel }}</span>
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="9 18 15 12 9 6"/>
+          </svg>
+        </div>
+      </a>
+    }
   </div>
+
+  @if (priorityItems.length || mixItems.length) {
+    <section class="ops-grid">
+      @if (priorityItems.length) {
+        <div class="ops-panel priority-panel">
+          <div class="priority-panel__header">
+            <div>
+              <span class="priority-kicker"><i aria-hidden="true"></i> Seguimiento</span>
+              <h3>Atención prioritaria</h3>
+              <p>Lo que requiere una revisión más cercana.</p>
+            </div>
+            <span class="priority-count">{{ priorityItems.length }} frentes</span>
+          </div>
+          <div class="priority-list">
+          @for (item of priorityItems; track item) {
+            @if (item.path) {
+              <a
+                class="priority-row"
+                [class.priority-row--warning]="item.state === 'warning'"
+                [class.priority-row--success]="item.state === 'success'"
+                [routerLink]="item.path">
+                <span class="priority-value" [class.priority-value--date]="item.valueKind === 'date'">{{ item.value }}</span>
+                <span class="priority-row__body">
+                  <strong>{{ item.label }}</strong>
+                  <small>{{ item.detail }}</small>
+                </span>
+                <i class="priority-row__arrow ti ti-chevron-right" aria-hidden="true"></i>
+              </a>
+            } @else {
+              <div
+                class="priority-row"
+                [class.priority-row--warning]="item.state === 'warning'"
+                [class.priority-row--success]="item.state === 'success'">
+                <span class="priority-value" [class.priority-value--date]="item.valueKind === 'date'">{{ item.value }}</span>
+                <span class="priority-row__body">
+                  <strong>{{ item.label }}</strong>
+                  <small>{{ item.detail }}</small>
+                </span>
+              </div>
+            }
+          }
+          </div>
+        </div>
+      }
+      @if (mixItems.length) {
+        <div class="ops-panel mix-panel">
+          <div class="panel-heading">
+            <div>
+              <h3>Composición operativa</h3>
+              <p>Peso relativo de los registros visibles.</p>
+            </div>
+          </div>
+          @for (item of mixItems; track item) {
+            <div class="mix-row">
+              <div class="mix-meta">
+                <span>{{ item.label }}</span>
+                <strong>{{ item.value }}</strong>
+              </div>
+              <div class="mix-track">
+                <span [style.width.%]="item.percent" [style.background]="item.color"></span>
+              </div>
+              <small>{{ item.percent }}%</small>
+            </div>
+          }
+        </div>
+      }
+    </section>
+  }
+
+  @if (cards.length) {
+    <section class="overview-charts">
+      <article class="overview-chart-card">
+        <div class="panel-heading">
+          <div>
+            <h3>Composición general</h3>
+            <p>Accesos, infraestructura y alertas visibles.</p>
+          </div>
+        </div>
+        <canvas baseChart [data]="composicionChartData" [options]="doughnutOptions" [type]="'doughnut'"></canvas>
+      </article>
+      <article class="overview-chart-card">
+        <div class="panel-heading">
+          <div>
+            <h3>Volumen por módulo</h3>
+            <p>Comparativo de registros disponibles.</p>
+          </div>
+        </div>
+        <canvas baseChart [data]="volumenChartData" [options]="lineOptions" [type]="'line'"></canvas>
+      </article>
+    </section>
+  }
+
+  <section class="module-explorer">
+    <div class="module-explorer__header">
+      <div>
+        <span class="eyebrow">Lectura rápida</span>
+        <h3>Desglose por módulo</h3>
+        <p>Una vista permanece abierta; elegí otro módulo para comparar.</p>
+      </div>
+      <div class="modulo-selector" role="tablist" aria-label="Módulo del desglose">
+        @for (pill of moduloPills; track pill) {
+          <button
+            type="button"
+            role="tab"
+            class="modulo-pill"
+            [class.active]="selectedModulo === pill.key"
+            [attr.aria-selected]="selectedModulo === pill.key"
+            [style.--pill-color]="pill.color"
+            (click)="selectModulo(pill.key)">
+            {{ pill.label }}
+          </button>
+        }
+      </div>
+    </div>
+
+    @if (selectedModulo) {
+      <section class="modulo-breakdown-panel">
+        <div class="modulo-breakdown-heading">
+          <div>
+            <span>Vista activa</span>
+            <strong>{{ selectedModuloLabel }}</strong>
+          </div>
+          @if (!breakdownLoading && !breakdownError) {
+            <span class="modulo-breakdown-total"><strong>{{ breakdownTotal }}</strong> registros</span>
+          }
+        </div>
+      @if (breakdownLoading) {
+        <p class="modulo-breakdown-state">Cargando desglose...</p>
+      }
+      @if (breakdownError) {
+        <p class="modulo-breakdown-state modulo-breakdown-state--error">
+          No se pudo cargar el desglose de este módulo.
+        </p>
+      }
+      @if (!breakdownLoading && !breakdownError) {
+        @if (breakdownChartOptions) {
+          <div class="modulo-breakdown-chart">
+            <app-apex-chart [options]="breakdownChartOptions" />
+          </div>
+        }
+        <div class="modulo-breakdown-list">
+          @for (item of breakdownItems; track item) {
+            <div class="modulo-breakdown-row">
+              <span>{{ item.label }}</span>
+              <strong>{{ item.count }}</strong>
+            </div>
+          }
+          @if (!breakdownItems.length) {
+            <p class="modulo-breakdown-empty">Sin datos para este módulo.</p>
+          }
+        </div>
+      }
+      </section>
+    }
+  </section>
 
   <div class="section-heading analytics-heading">
     <div>
@@ -192,56 +255,64 @@
   </div>
 
   <div class="charts-grid">
-    <app-usuarios-red-por-ubicacion-chart *ngIf="showUsuariosChart" />
-    <app-licencias-por-tipo-chart *ngIf="showLicenciasChart" />
+    @if (showUsuariosChart) {
+      <app-usuarios-red-por-ubicacion-chart />
+    }
+    @if (showLicenciasChart) {
+      <app-licencias-por-tipo-chart />
+    }
   </div>
 
-  <section class="service-orders-card" *ngIf="showOrdenesServicio">
-    <div class="service-orders-heading">
-      <div>
-        <span class="eyebrow">Conteo de días</span>
-        <h3>Órdenes de servicio</h3>
-        <p>Relojes activos ordenados por el vencimiento más próximo.</p>
+  @if (showOrdenesServicio) {
+    <section class="service-orders-card">
+      <div class="service-orders-heading">
+        <div>
+          <span class="eyebrow">Conteo de días</span>
+          <h3>Órdenes de servicio</h3>
+          <p>Relojes activos ordenados por el vencimiento más próximo.</p>
+        </div>
+        <a routerLink="/herramientas" [queryParams]="{ tab: 'vencimientos' }">Gestionar órdenes</a>
       </div>
-      <a routerLink="/herramientas" [queryParams]="{ tab: 'vencimientos' }">Gestionar órdenes</a>
-    </div>
-
-    <div class="service-orders-state" *ngIf="ordenesLoading">Cargando órdenes de servicio...</div>
-    <div class="service-orders-state" *ngIf="!ordenesLoading && !ordenesServicio.length">
-      No hay órdenes activas registradas.
-    </div>
-
-    <div class="service-orders-list" *ngIf="!ordenesLoading && ordenesServicio.length">
-      <article
-        class="service-order-tile"
-        *ngFor="let orden of ordenesServicio; let index = index"
-        [style.--tile-index]="index"
-        [class.service-order-tile--warning]="ordenEstadoClass(orden) === 'warn'"
-        [class.service-order-tile--danger]="ordenEstadoClass(orden) === 'bad'"
-      >
-        <div class="service-order-state">
-          <span aria-hidden="true"></span>
-          {{ ordenSemaforo(orden) }}
+      @if (ordenesLoading) {
+        <div class="service-orders-state">Cargando órdenes de servicio...</div>
+      }
+      @if (!ordenesLoading && !ordenesServicio.length) {
+        <div class="service-orders-state">
+          No hay órdenes activas registradas.
         </div>
-
-        <div class="flip-clock" [attr.aria-label]="ordenEstado(orden)">
-          <div class="flip-clock__face">
-            <strong class="flip-clock__value">{{ ordenConteoValor(orden) }}</strong>
-            <span>{{ ordenUnidadDias(orden) }}</span>
-          </div>
+      }
+      @if (!ordenesLoading && ordenesServicio.length) {
+        <div class="service-orders-list">
+          @for (orden of ordenesServicio; track orden; let index = $index) {
+            <article
+              class="service-order-tile"
+              [style.--tile-index]="index"
+              [class.service-order-tile--warning]="ordenEstadoClass(orden) === 'warn'"
+              [class.service-order-tile--danger]="ordenEstadoClass(orden) === 'bad'"
+              >
+              <div class="service-order-state">
+                <span aria-hidden="true"></span>
+                {{ ordenSemaforo(orden) }}
+              </div>
+              <div class="flip-clock" [attr.aria-label]="ordenEstado(orden)">
+                <div class="flip-clock__face">
+                  <strong class="flip-clock__value">{{ ordenConteoValor(orden) }}</strong>
+                  <span>{{ ordenUnidadDias(orden) }}</span>
+                </div>
+              </div>
+              <div class="service-order-main">
+                <strong>{{ orden.numeroOrden }}</strong>
+                <span>{{ orden.descripcion }}</span>
+                <small>{{ orden.proveedor || 'Sin proveedor' }}</small>
+              </div>
+              <footer class="service-order-footer">
+                <span>{{ ordenEstado(orden) }}</span>
+                <time [attr.datetime]="orden.fechaVencimiento">{{ orden.fechaVencimiento | date:'dd/MM/yyyy':'UTC' }}</time>
+              </footer>
+            </article>
+          }
         </div>
-
-        <div class="service-order-main">
-          <strong>{{ orden.numeroOrden }}</strong>
-          <span>{{ orden.descripcion }}</span>
-          <small>{{ orden.proveedor || 'Sin proveedor' }}</small>
-        </div>
-
-        <footer class="service-order-footer">
-          <span>{{ ordenEstado(orden) }}</span>
-          <time [attr.datetime]="orden.fechaVencimiento">{{ orden.fechaVencimiento | date:'dd/MM/yyyy':'UTC' }}</time>
-        </footer>
-      </article>
-    </div>
-  </section>
+      }
+    </section>
+  }
 </div>

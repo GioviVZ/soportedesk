@@ -40,6 +40,11 @@ export interface CorreoDependenciaCount {
   total: number;
 }
 
+export interface CorreoSubdependenciaCount {
+  subdependencia: string;
+  total: number;
+}
+
 export interface CorreoInactividadAlerta {
   email: string;
   nombreCompleto: string | null;
@@ -49,6 +54,7 @@ export interface CorreoInactividadAlerta {
 export interface CorreoDashboardCompleto {
   kpis: CorreoKpis;
   distribucionPorDependencia: CorreoDependenciaCount[];
+  distribucionPorSubdependencia: CorreoSubdependenciaCount[];
   cuentasCon2FA: number;
   totalCuentas: number;
   porcentaje2FA: number;

@@ -1,13 +1,12 @@
-import { CommonModule } from '@angular/common';
-import { Component, inject } from '@angular/core';
+
+import { Component, inject, ChangeDetectionStrategy } from '@angular/core';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { AuthService } from '../../core/auth/auth.service';
 
 @Component({
-  selector: 'app-usuarios-red-shell',
-  standalone: true,
-  imports: [CommonModule, RouterOutlet, RouterLink, RouterLinkActive],
-  template: `
+    selector: 'app-usuarios-red-shell',
+    imports: [RouterOutlet, RouterLink, RouterLinkActive],
+    template: `
     <div class="module-page usuarios-red-page">
       <div class="module-header">
         <div>
@@ -16,7 +15,7 @@ import { AuthService } from '../../core/auth/auth.service';
           <p>Consulta, administracion y seguimiento del directorio institucional.</p>
         </div>
       </div>
-
+    
       <nav class="ad-tabs" aria-label="Usuarios de Red">
         <a routerLink="consultas" routerLinkActive="active">
           <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -24,24 +23,29 @@ import { AuthService } from '../../core/auth/auth.service';
           </svg>
           Consultas
         </a>
-        <a *ngIf="canWrite" routerLink="administracion" routerLinkActive="active">
-          <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-          </svg>
-          Administracion
-        </a>
-        <a *ngIf="canWrite" routerLink="dashboard" routerLinkActive="active">
-          <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <line x1="18" y1="20" x2="18" y2="10" /><line x1="12" y1="20" x2="12" y2="4" /><line x1="6" y1="20" x2="6" y2="14" />
-          </svg>
-          Dashboard
-        </a>
+        @if (canWrite) {
+          <a routerLink="administracion" routerLinkActive="active">
+            <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+            </svg>
+            Administracion
+          </a>
+        }
+        @if (canWrite) {
+          <a routerLink="dashboard" routerLinkActive="active">
+            <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="18" y1="20" x2="18" y2="10" /><line x1="12" y1="20" x2="12" y2="4" /><line x1="6" y1="20" x2="6" y2="14" />
+            </svg>
+            Dashboard
+          </a>
+        }
       </nav>
-
+    
       <router-outlet />
     </div>
-  `,
-  styleUrl: './usuarios-red.shared.scss',
+    `,
+    changeDetection: ChangeDetectionStrategy.Eager,
+    styleUrl: './usuarios-red.shared.scss'
 })
 export class UsuariosRedShellComponent {
   private authService = inject(AuthService);

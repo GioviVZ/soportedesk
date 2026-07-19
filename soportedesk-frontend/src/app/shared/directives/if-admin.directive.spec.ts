@@ -1,12 +1,12 @@
-import { Component } from '@angular/core';
+import { Component, ChangeDetectionStrategy } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { AuthService } from '../../core/auth/auth.service';
 import { IfAdminDirective } from './if-admin.directive';
 
 @Component({
-  standalone: true,
-  imports: [IfAdminDirective],
-  template: '<div *ifAdmin class="admin-only">Solo admin</div>',
+    imports: [IfAdminDirective],
+    changeDetection: ChangeDetectionStrategy.Eager,
+    template: '<div *ifAdmin class="admin-only">Solo admin</div>'
 })
 class HostComponent {}
 

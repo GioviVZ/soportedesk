@@ -110,7 +110,7 @@ class ImpresoraControllerIT {
     @WithMockUser(authorities = {"ROLE_SOPORTE", "WRITE_impresoras"})
     void dashboardCompleto_withWriteAuthority_returnsOk() throws Exception {
         when(service.getDashboardCompleto()).thenReturn(new ImpresoraDashboardCompleto(
-                10, 8, 1, 1, List.of(), List.of(), List.of(), 0));
+                10, 8, 1, 1, List.of(), List.of(), List.of(), List.of(), List.of(), 0));
 
         mockMvc.perform(get("/api/impresoras/dashboard/completo"))
                 .andExpect(status().isOk())

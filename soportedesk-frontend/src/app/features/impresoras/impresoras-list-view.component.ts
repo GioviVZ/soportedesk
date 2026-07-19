@@ -1,5 +1,5 @@
-import { Component, EventEmitter, Input, Output } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, EventEmitter, Input, Output, ChangeDetectionStrategy } from '@angular/core';
+
 import { FormsModule } from '@angular/forms';
 import { GenericTableComponent, TableColumn } from '../../shared/generic-table/generic-table.component';
 import { StatusBadgeComponent } from '../../shared/status-badge/status-badge.component';
@@ -8,11 +8,11 @@ import { Impresora, impresoraEstadoTone } from './impresora.model';
 import * as XLSX from 'xlsx';
 
 @Component({
-  selector: 'app-impresoras-list-view',
-  standalone: true,
-  imports: [CommonModule, FormsModule, GenericTableComponent, StatusBadgeComponent, ImpresoraResumenComponent],
-  templateUrl: './impresoras-list-view.component.html',
-  styleUrl: './impresoras.shared.scss',
+    selector: 'app-impresoras-list-view',
+    imports: [FormsModule, GenericTableComponent, StatusBadgeComponent, ImpresoraResumenComponent],
+    templateUrl: './impresoras-list-view.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
+    styleUrl: './impresoras.shared.scss'
 })
 export class ImpresorasListViewComponent {
   @Input({ required: true }) items: Impresora[] = [];

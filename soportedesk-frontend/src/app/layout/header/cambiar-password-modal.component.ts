@@ -1,5 +1,5 @@
-import { Component, EventEmitter, Output, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, EventEmitter, Output, inject, ChangeDetectionStrategy } from '@angular/core';
+
 import { AbstractControl, FormBuilder, ReactiveFormsModule, ValidationErrors, Validators } from '@angular/forms';
 import { AuthService } from '../../core/auth/auth.service';
 
@@ -10,11 +10,11 @@ function passwordsMatch(group: AbstractControl): ValidationErrors | null {
 }
 
 @Component({
-  selector: 'app-cambiar-password-modal',
-  standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
-  templateUrl: './cambiar-password-modal.component.html',
-  styleUrl: './cambiar-password-modal.component.scss',
+    selector: 'app-cambiar-password-modal',
+    imports: [ReactiveFormsModule],
+    templateUrl: './cambiar-password-modal.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
+    styleUrl: './cambiar-password-modal.component.scss'
 })
 export class CambiarPasswordModalComponent {
   private fb = inject(FormBuilder);

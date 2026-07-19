@@ -1,14 +1,14 @@
-import { Component, EventEmitter, Input, OnChanges, Output, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, EventEmitter, Input, OnChanges, Output, inject, ChangeDetectionStrategy } from '@angular/core';
+
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Vpn } from './vpn.model';
 import { VpnService } from './vpn.service';
 
 @Component({
-  selector: 'app-vpn-resolucion-form',
-  standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
-  templateUrl: './vpn-resolucion-form.component.html',
+    selector: 'app-vpn-resolucion-form',
+    imports: [ReactiveFormsModule],
+    changeDetection: ChangeDetectionStrategy.Eager,
+    templateUrl: './vpn-resolucion-form.component.html'
 })
 export class VpnResolucionFormComponent implements OnChanges {
   private fb = inject(FormBuilder);

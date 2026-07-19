@@ -107,7 +107,19 @@ public class CorreoService {
                             java.util.stream.Collectors.counting()))
                     .entrySet().stream()
                     .map(e -> new CorreoDependenciaCount(e.getKey(), e.getValue()))
-                    .sorted(java.util.Comparator.comparing(CorreoDependenciaCount::dependencia))
+                    .sorted(java.util.Comparator.comparing(CorreoDependenciaCount::total).reversed()
+                            .thenComparing(CorreoDependenciaCount::dependencia))
+                    .toList();
+
+            List<CorreoSubdependenciaCount> distribucionSubdependencia = all.stream()
+                    .collect(java.util.stream.Collectors.groupingBy(
+                            v -> v.getOficina() == null || v.getOficina().isBlank() ? "Sin subdependencia" : v.getOficina(),
+                            java.util.LinkedHashMap::new,
+                            java.util.stream.Collectors.counting()))
+                    .entrySet().stream()
+                    .map(e -> new CorreoSubdependenciaCount(e.getKey(), e.getValue()))
+                    .sorted(java.util.Comparator.comparing(CorreoSubdependenciaCount::total).reversed()
+                            .thenComparing(CorreoSubdependenciaCount::subdependencia))
                     .toList();
 
             long con2FA = all.stream().filter(v -> "Enrolado".equals(v.getVerificacion2Pasos())).count();
@@ -124,13 +136,14 @@ public class CorreoService {
             return new CorreoDashboardCompleto(
                     kpis,
                     distribucion,
+                    distribucionSubdependencia,
                     con2FA, all.size(), porcentaje,
                     sinUso.stream().limit(10).map(this::toAlerta).toList(),
                     sinUso.size()
             );
         } catch (Exception e) {
             return new CorreoDashboardCompleto(
-                    new CorreoKpisDto(0, 0, 0, 0, 0, 0, 0), List.of(), 0, 0, 0.0, List.of(), 0);
+                    new CorreoKpisDto(0, 0, 0, 0, 0, 0, 0), List.of(), List.of(), 0, 0, 0.0, List.of(), 0);
         }
     }
 

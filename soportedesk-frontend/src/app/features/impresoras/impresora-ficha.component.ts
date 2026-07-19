@@ -1,5 +1,5 @@
-import { Component, EventEmitter, Input, OnDestroy, OnInit, Output, inject, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, EventEmitter, Input, OnDestroy, OnInit, Output, inject, signal, ChangeDetectionStrategy } from '@angular/core';
+
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../core/auth/auth.service';
 import { CatalogoService } from '../../core/catalogos/catalogo.service';
@@ -21,11 +21,11 @@ interface IntervencionView extends Omit<ImpresoraIntervencion, 'adjuntos'> {
 }
 
 @Component({
-  selector: 'app-impresora-ficha',
-  standalone: true,
-  imports: [CommonModule, FormsModule, ModalComponent, SectionCardComponent, StatusBadgeComponent],
-  templateUrl: './impresora-ficha.component.html',
-  styleUrl: './impresora-ficha.component.scss',
+    selector: 'app-impresora-ficha',
+    imports: [FormsModule, ModalComponent, SectionCardComponent, StatusBadgeComponent],
+    templateUrl: './impresora-ficha.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
+    styleUrl: './impresora-ficha.component.scss'
 })
 export class ImpresoraFichaComponent implements OnInit, OnDestroy {
   private authService = inject(AuthService);

@@ -1,5 +1,5 @@
-import { CommonModule } from '@angular/common';
-import { Component, EventEmitter, Input, OnInit, Output, inject } from '@angular/core';
+
+import { Component, EventEmitter, Input, OnInit, Output, inject, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { SectionCardComponent } from '../../shared/section-card/section-card.component';
 import { CatalogoService } from '../../core/catalogos/catalogo.service';
@@ -8,33 +8,38 @@ import { ActiveDirectoryService } from './active-directory.service';
 import { AdPanelResult, AdUser, CorreoDisponible, UpdateUserInfoRequest } from './active-directory.model';
 
 @Component({
-  selector: 'app-ad-edit-info-panel',
-  standalone: true,
-  imports: [CommonModule, FormsModule, SectionCardComponent],
-  template: `
+    selector: 'app-ad-edit-info-panel',
+    imports: [FormsModule, SectionCardComponent],
+    template: `
     <form class="modal-form form-grid" (ngSubmit)="submit()" id="ad-edit-info-edit-form">
       <app-section-card title="Datos de AD" class="full">
         <svg icon xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
           <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4Z" />
         </svg>
-
-        <div class="notice error full" *ngIf="error">{{ error }}</div>
-
+    
+        @if (error) {
+          <div class="notice error full">{{ error }}</div>
+        }
+    
         <div class="field"><label>Nombre mostrado</label><input name="displayName" [(ngModel)]="form.displayName" /></div>
         <div class="field"><label>Cargo</label><input name="title" [(ngModel)]="form.title" /></div>
         <div class="field">
           <label>Dependencia</label>
           <select name="dependenciaId" [(ngModel)]="dependenciaId" (ngModelChange)="onDependenciaChange($event)">
             <option [ngValue]="null">Seleccione...</option>
-            <option *ngFor="let dependencia of dependencias" [ngValue]="dependencia.id">{{ dependencia.nombre }}</option>
+            @for (dependencia of dependencias; track dependencia) {
+              <option [ngValue]="dependencia.id">{{ dependencia.nombre }}</option>
+            }
           </select>
         </div>
         <div class="field">
           <label>Subdependencia</label>
           <select name="subdependenciaId" [(ngModel)]="subdependenciaId" (ngModelChange)="onSubdependenciaChange($event)" [disabled]="!dependenciaId">
             <option [ngValue]="null">Usar dependencia seleccionada</option>
-            <option *ngFor="let subdependencia of subdependencias" [ngValue]="subdependencia.id">{{ subdependencia.nombre }}</option>
+            @for (subdependencia of subdependencias; track subdependencia) {
+              <option [ngValue]="subdependencia.id">{{ subdependencia.nombre }}</option>
+            }
           </select>
         </div>
         <div class="field"><label>Telefono</label><input name="telephoneNumber" [(ngModel)]="form.telephoneNumber" /></div>
@@ -51,31 +56,42 @@ import { AdPanelResult, AdUser, CorreoDisponible, UpdateUserInfoRequest } from '
             [placeholder]="correosLoading ? 'Cargando correos...' : 'Buscar email o nombre'"
             autocomplete="off"
             aria-label="Buscar correo institucional registrado"
-          />
-          <div class="pick-list correo-pick-list" *ngIf="correoPickerOpen && correosFiltrados.length">
-            <button type="button" *ngFor="let correo of correosFiltrados" (click)="selectCorreo(correo)">
-              <strong>{{ correo.email }}</strong>
-              <span>{{ correo.nombreCompleto || 'Sin nombre registrado' }} · {{ correo.estado || 'Sin estado' }}</span>
-            </button>
-          </div>
-          <div class="selected-dn selected-mail" *ngIf="form.mail">
-            <span>Vinculado con Correos: <strong>{{ form.mail }}</strong></span>
-            <button type="button" class="clear-mail-button" (click)="clearCorreo()">Dejar sin correo</button>
-          </div>
-          <small class="field-hint" *ngIf="!correosLoading && !correosError">Opcional. Puedes conservarlo, elegir uno disponible o dejar al usuario sin correo.</small>
-          <small class="field-hint error-text" *ngIf="correosError">{{ correosError }}</small>
+            />
+          @if (correoPickerOpen && correosFiltrados.length) {
+            <div class="pick-list correo-pick-list">
+              @for (correo of correosFiltrados; track correo) {
+                <button type="button" (click)="selectCorreo(correo)">
+                  <strong>{{ correo.email }}</strong>
+                  <span>{{ correo.nombreCompleto || 'Sin nombre registrado' }} · {{ correo.estado || 'Sin estado' }}</span>
+                </button>
+              }
+            </div>
+          }
+          @if (form.mail) {
+            <div class="selected-dn selected-mail">
+              <span>Vinculado con Correos: <strong>{{ form.mail }}</strong></span>
+              <button type="button" class="clear-mail-button" (click)="clearCorreo()">Dejar sin correo</button>
+            </div>
+          }
+          @if (!correosLoading && !correosError) {
+            <small class="field-hint">Opcional. Puedes conservarlo, elegir uno disponible o dejar al usuario sin correo.</small>
+          }
+          @if (correosError) {
+            <small class="field-hint error-text">{{ correosError }}</small>
+          }
         </div>
         <div class="field full"><label>Descripcion</label><textarea name="description" rows="3" [(ngModel)]="form.description"></textarea></div>
       </app-section-card>
-
+    
     </form>
-
+    
     <footer modal-footer class="modal-actions full">
       <button type="button" class="btn btn-ghost" (click)="cancelled.emit()">Cancelar</button>
       <button type="submit" form="ad-edit-info-edit-form" class="btn btn-primary" [disabled]="working || correosLoading">Guardar</button>
     </footer>
-  `,
-  styleUrl: './usuarios-red.shared.scss',
+    `,
+    changeDetection: ChangeDetectionStrategy.Eager,
+    styleUrl: './usuarios-red.shared.scss'
 })
 export class AdEditInfoPanelComponent implements OnInit {
   private adService = inject(ActiveDirectoryService);

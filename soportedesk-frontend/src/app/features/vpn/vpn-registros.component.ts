@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../core/auth/auth.service';
 import { ModalComponent } from '../../shared/modal/modal.component';
@@ -22,10 +22,9 @@ import {
 const EDITABLE_STATES = new Set(['PENDIENTE', 'OBSERVADO']);
 
 @Component({
-  selector: 'app-vpn-registros',
-  standalone: true,
-  imports: [CommonModule, FormsModule, ModalComponent, StatusBadgeComponent, VencimientoBadgeComponent, VpnFormComponent, VpnDetailComponent],
-  template: `
+    selector: 'app-vpn-registros',
+    imports: [CommonModule, FormsModule, ModalComponent, StatusBadgeComponent, VencimientoBadgeComponent, VpnFormComponent, VpnDetailComponent],
+    template: `
     <section class="vpn-filter-panel">
       <label class="vpn-search-field">
         <span>Buscar solicitud</span>
@@ -34,153 +33,180 @@ const EDITABLE_STATES = new Set(['PENDIENTE', 'OBSERVADO']);
           [(ngModel)]="filters.query"
           placeholder="Nombre, usuario, equipo, correo, dependencia..."
           autocomplete="off"
-        />
-      </label>
-
-      <div class="vpn-filter-grid">
-        <label class="field">
-          <span>Dependencia</span>
-          <select [(ngModel)]="filters.dependencia">
-            <option value="">Todas</option>
-            <option *ngFor="let option of dependencias" [value]="option">{{ option }}</option>
-          </select>
+          />
         </label>
-
-        <label class="field">
-          <span>Subdependencia / oficina</span>
-          <select [(ngModel)]="filters.subdependencia">
-            <option value="">Todas</option>
-            <option *ngFor="let option of subdependencias" [value]="option">{{ option }}</option>
-          </select>
-        </label>
-
-        <label class="field">
-          <span>Cargo</span>
-          <select [(ngModel)]="filters.cargo">
-            <option value="">Todos</option>
-            <option *ngFor="let option of cargos" [value]="option">{{ option }}</option>
-          </select>
-        </label>
-
-        <label class="field">
-          <span>Orden</span>
-          <select [(ngModel)]="filters.orden">
-            <option value="nuevas">Nuevas pendientes arriba</option>
-            <option value="recientes">Más recientes</option>
-            <option value="rechazados">Rechazadas arriba</option>
-            <option value="observados">Observadas arriba</option>
-          </select>
-        </label>
-      </div>
-
-      <div class="vpn-filter-actions">
-        <div class="segmented-control" role="group" aria-label="Estado de solicitud VPN">
-          <button type="button" [class.active]="filters.estado === 'TODOS'" (click)="filters.estado = 'TODOS'">Todas</button>
-          <button type="button" [class.active]="filters.estado === 'PENDIENTE'" (click)="filters.estado = 'PENDIENTE'">Pendientes</button>
-          <button type="button" [class.active]="filters.estado === 'OBSERVADO'" (click)="filters.estado = 'OBSERVADO'">Observadas</button>
-          <button type="button" [class.active]="filters.estado === 'RECHAZADO'" (click)="filters.estado = 'RECHAZADO'">Rechazadas</button>
-          <button type="button" [class.active]="filters.estado === 'APROBADO'" (click)="filters.estado = 'APROBADO'">Aprobadas</button>
+    
+        <div class="vpn-filter-grid">
+          <label class="field">
+            <span>Dependencia</span>
+            <select [(ngModel)]="filters.dependencia">
+              <option value="">Todas</option>
+              @for (option of dependencias; track option) {
+                <option [value]="option">{{ option }}</option>
+              }
+            </select>
+          </label>
+    
+          <label class="field">
+            <span>Subdependencia / oficina</span>
+            <select [(ngModel)]="filters.subdependencia">
+              <option value="">Todas</option>
+              @for (option of subdependencias; track option) {
+                <option [value]="option">{{ option }}</option>
+              }
+            </select>
+          </label>
+    
+          <label class="field">
+            <span>Cargo</span>
+            <select [(ngModel)]="filters.cargo">
+              <option value="">Todos</option>
+              @for (option of cargos; track option) {
+                <option [value]="option">{{ option }}</option>
+              }
+            </select>
+          </label>
+    
+          <label class="field">
+            <span>Orden</span>
+            <select [(ngModel)]="filters.orden">
+              <option value="nuevas">Nuevas pendientes arriba</option>
+              <option value="recientes">Más recientes</option>
+              <option value="rechazados">Rechazadas arriba</option>
+              <option value="observados">Observadas arriba</option>
+            </select>
+          </label>
         </div>
-
-        <button type="button" class="btn btn-ghost" *ngIf="hasFilters" (click)="clearFilters()">Limpiar filtros</button>
-      </div>
-    </section>
-
-    <div class="desktop-vpn-table">
-      <div class="vpn-list-heading">
-        <div><strong>Solicitudes VPN</strong><span>{{ filteredItems.length }} de {{ items.length }} registros</span></div>
-        <button type="button" class="btn btn-primary" *ngIf="canWriteSolicitar" (click)="onAdd()">Nueva solicitud</button>
-      </div>
-      <div class="vpn-table-scroll" *ngIf="filteredItems.length; else emptyDesktop">
-        <table class="vpn-essential-table">
-          <thead><tr><th>Solicitante</th><th>Ubicación</th><th>Equipo</th><th>Solicitud</th><th>Estado</th><th></th></tr></thead>
-          <tbody>
-            <tr *ngFor="let item of filteredItems">
-              <td>
-                <button type="button" class="vpn-person-link" (click)="onView(item)">
-                  <strong>{{ item.titularNombreCompleto || 'Sin nombre registrado' }}</strong>
-                  <span>{{ item.adSamAccountName || item.titularCorreo || item.adMail || 'Sin usuario de red' }}</span>
-                </button>
-              </td>
-              <td><strong>{{ item.adOffice || item.adOrganizationalUnit || 'Sin ubicación' }}</strong><span *ngIf="item.adOffice && item.adOrganizationalUnit">{{ item.adOrganizationalUnit }}</span></td>
-              <td><strong>{{ item.glpiNombreEquipo || item.equipo?.host || item.tipoEquipo || 'Sin equipo' }}</strong><span>{{ item.tipoEquipo }}</span></td>
-              <td><strong>{{ item.fechaSolicitud | date:'dd/MM/yyyy' }}</strong><app-vencimiento-badge [fecha]="item.vence" /></td>
-              <td><app-status-badge [label]="item.estadoSolicitud" [tone]="estadoTone(item.estadoSolicitud)" /></td>
-              <td class="vpn-row-actions"><button type="button" (click)="onView(item)">Ver</button><button type="button" *ngIf="canEditSolicitud(item)" (click)="onEdit(item)">Editar</button></td>
-            </tr>
+    
+        <div class="vpn-filter-actions">
+          <div class="segmented-control" role="group" aria-label="Estado de solicitud VPN">
+            <button type="button" [class.active]="filters.estado === 'TODOS'" (click)="filters.estado = 'TODOS'">Todas</button>
+            <button type="button" [class.active]="filters.estado === 'PENDIENTE'" (click)="filters.estado = 'PENDIENTE'">Pendientes</button>
+            <button type="button" [class.active]="filters.estado === 'OBSERVADO'" (click)="filters.estado = 'OBSERVADO'">Observadas</button>
+            <button type="button" [class.active]="filters.estado === 'RECHAZADO'" (click)="filters.estado = 'RECHAZADO'">Rechazadas</button>
+            <button type="button" [class.active]="filters.estado === 'APROBADO'" (click)="filters.estado = 'APROBADO'">Aprobadas</button>
+          </div>
+    
+          @if (hasFilters) {
+            <button type="button" class="btn btn-ghost" (click)="clearFilters()">Limpiar filtros</button>
+          }
+        </div>
+      </section>
+    
+      <div class="desktop-vpn-table">
+        <div class="vpn-list-heading">
+          <div><strong>Solicitudes VPN</strong><span>{{ filteredItems.length }} de {{ items.length }} registros</span></div>
+          @if (canWriteSolicitar) {
+            <button type="button" class="btn btn-primary" (click)="onAdd()">Nueva solicitud</button>
+          }
+        </div>
+        @if (filteredItems.length) {
+          <div class="vpn-table-scroll">
+            <table class="vpn-essential-table">
+              <thead><tr><th>Solicitante</th><th>Ubicación</th><th>Equipo</th><th>Solicitud</th><th>Estado</th><th></th></tr></thead>
+              <tbody>
+                @for (item of filteredItems; track item) {
+                  <tr>
+                    <td>
+                      <button type="button" class="vpn-person-link" (click)="onView(item)">
+                        <strong>{{ item.titularNombreCompleto || 'Sin nombre registrado' }}</strong>
+                        <span>{{ item.adSamAccountName || item.titularCorreo || item.adMail || 'Sin usuario de red' }}</span>
+                      </button>
+                    </td>
+                    <td><strong>{{ item.adOffice || item.adOrganizationalUnit || 'Sin ubicación' }}</strong>@if (item.adOffice && item.adOrganizationalUnit) {
+                    <span>{{ item.adOrganizationalUnit }}</span>
+                  }</td>
+                  <td><strong>{{ item.glpiNombreEquipo || item.equipo?.host || item.tipoEquipo || 'Sin equipo' }}</strong><span>{{ item.tipoEquipo }}</span></td>
+                  <td><strong>{{ item.fechaSolicitud | date:'dd/MM/yyyy' }}</strong><app-vencimiento-badge [fecha]="item.vence" /></td>
+                  <td><app-status-badge [label]="item.estadoSolicitud" [tone]="estadoTone(item.estadoSolicitud)" /></td>
+                  <td class="vpn-row-actions"><button type="button" (click)="onView(item)">Ver</button>@if (canEditSolicitud(item)) {
+                  <button type="button" (click)="onEdit(item)">Editar</button>
+                }</td>
+              </tr>
+            }
           </tbody>
         </table>
       </div>
-      <ng-template #emptyDesktop><p class="vpn-list-empty">Sin solicitudes con los filtros aplicados.</p></ng-template>
+    } @else {
+      <p class="vpn-list-empty">Sin solicitudes con los filtros aplicados.</p>
+    }
     </div>
-
+    
     <section class="mobile-vpn-workspace" aria-label="Solicitudes VPN">
       <div class="mobile-vpn-toolbar">
         <div>
           <span>{{ filteredItems.length }} de {{ items.length }}</span>
           <strong>{{ hasFilters ? 'Solicitudes filtradas' : 'Solicitudes VPN' }}</strong>
         </div>
-        <button type="button" *ngIf="canWriteSolicitar" (click)="onAdd()">Nueva</button>
+        @if (canWriteSolicitar) {
+          <button type="button" (click)="onAdd()">Nueva</button>
+        }
       </div>
-
-      <article class="vpn-mobile-card" *ngFor="let item of filteredItems">
-        <header>
-          <div>
-            <span>{{ item.titularOrigenLabel || item.titularTipo }}</span>
-            <strong>{{ item.titularNombreCompleto }}</strong>
-            <small>{{ item.adSamAccountName || item.titularCorreo || item.adMail || 'Sin usuario' }}</small>
-          </div>
-          <app-status-badge [label]="item.estadoSolicitud" [tone]="estadoTone(item.estadoSolicitud)" />
-        </header>
-
-        <dl>
-          <div>
-            <dt>Ubicación</dt>
-            <dd>{{ item.adOffice || item.adOrganizationalUnit || 'Sin ubicación' }}</dd>
-          </div>
-          <div>
-            <dt>Equipo</dt>
-            <dd>{{ item.glpiNombreEquipo || item.equipo?.host || item.tipoEquipo || 'Sin equipo' }}</dd>
-          </div>
-          <div>
-            <dt>Solicitud</dt>
-            <dd>{{ item.fechaSolicitud | date:'dd/MM/yyyy' }}</dd>
-          </div>
-        </dl>
-
-        <footer>
-          <app-vencimiento-badge [fecha]="item.vence" />
-          <button type="button" class="view" (click)="onView(item)">Ver</button>
-          <button type="button" class="edit" *ngIf="canEditSolicitud(item)" (click)="onEdit(item)">Editar</button>
-        </footer>
-      </article>
-
-      <p class="mobile-empty" *ngIf="filteredItems.length === 0">Sin solicitudes con los filtros aplicados.</p>
+    
+      @for (item of filteredItems; track item) {
+        <article class="vpn-mobile-card">
+          <header>
+            <div>
+              <span>{{ item.titularOrigenLabel || item.titularTipo }}</span>
+              <strong>{{ item.titularNombreCompleto }}</strong>
+              <small>{{ item.adSamAccountName || item.titularCorreo || item.adMail || 'Sin usuario' }}</small>
+            </div>
+            <app-status-badge [label]="item.estadoSolicitud" [tone]="estadoTone(item.estadoSolicitud)" />
+          </header>
+          <dl>
+            <div>
+              <dt>Ubicación</dt>
+              <dd>{{ item.adOffice || item.adOrganizationalUnit || 'Sin ubicación' }}</dd>
+            </div>
+            <div>
+              <dt>Equipo</dt>
+              <dd>{{ item.glpiNombreEquipo || item.equipo?.host || item.tipoEquipo || 'Sin equipo' }}</dd>
+            </div>
+            <div>
+              <dt>Solicitud</dt>
+              <dd>{{ item.fechaSolicitud | date:'dd/MM/yyyy' }}</dd>
+            </div>
+          </dl>
+          <footer>
+            <app-vencimiento-badge [fecha]="item.vence" />
+            <button type="button" class="view" (click)="onView(item)">Ver</button>
+            @if (canEditSolicitud(item)) {
+              <button type="button" class="edit" (click)="onEdit(item)">Editar</button>
+            }
+          </footer>
+        </article>
+      }
+    
+      @if (filteredItems.length === 0) {
+        <p class="mobile-empty">Sin solicitudes con los filtros aplicados.</p>
+      }
     </section>
-
+    
     <app-modal title="Detalle VPN" size="wide" [open]="viewing !== null" (closed)="closeView()">
-      <app-vpn-detail
-        *ngIf="viewing as v"
-        [vpn]="v"
-        [canEditSolicitud]="canWriteSolicitar"
-        [canDeleteSolicitud]="false"
-        [canViewCredenciales]="true"
-        [showDecisionPanel]="false"
-        (editRequested)="editFromDetail($event)"
-        (closeRequested)="closeView()"
-      />
+      @if (viewing; as v) {
+        <app-vpn-detail
+          [vpn]="v"
+          [canEditSolicitud]="canWriteSolicitar"
+          [canDeleteSolicitud]="false"
+          [canViewCredenciales]="true"
+          [showDecisionPanel]="false"
+          (editRequested)="editFromDetail($event)"
+          (closeRequested)="closeView()"
+          />
+      }
     </app-modal>
-
+    
     <app-modal
       [title]="editing ? 'Editar solicitud VPN' : 'Nueva solicitud VPN'"
       [open]="formOpen"
       [hideDefaultFooter]="true"
       (closed)="closeForm()"
-    >
+      >
       <app-vpn-form [vpn]="editing" (saved)="onSaved()" (cancelled)="closeForm()" />
     </app-modal>
-  `,
-  styleUrl: './vpn.shared.scss',
+    `,
+    changeDetection: ChangeDetectionStrategy.Eager,
+    styleUrl: './vpn.shared.scss'
 })
 export class VpnRegistrosComponent implements OnInit {
   private service = inject(VpnService);

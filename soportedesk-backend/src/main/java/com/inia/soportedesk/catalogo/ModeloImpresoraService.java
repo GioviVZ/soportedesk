@@ -3,6 +3,7 @@ package com.inia.soportedesk.catalogo;
 import com.inia.soportedesk.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
@@ -38,14 +39,14 @@ public class ModeloImpresoraService {
                 .orElseThrow(() -> new ResourceNotFoundException("Modelo de impresora no encontrado: " + id));
     }
 
-    @Transactional
+    @Transactional(isolation = Isolation.SERIALIZABLE)
     public ModeloImpresora create(ModeloImpresoraRequest request) {
         ModeloImpresora modelo = new ModeloImpresora();
         copyFields(modelo, request);
         return repository.save(modelo);
     }
 
-    @Transactional
+    @Transactional(isolation = Isolation.SERIALIZABLE)
     public ModeloImpresora update(Long id, ModeloImpresoraRequest request) {
         ModeloImpresora modelo = findById(id);
         copyFields(modelo, request);
@@ -70,8 +71,17 @@ public class ModeloImpresoraService {
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "Marca de impresora no encontrada: " + request.getMarcaId()));
 
+        String nombre = request.getNombre().trim();
+        boolean duplicated = modelo.getId() == null
+                ? repository.existsByMarcaIdAndNombreIgnoreCase(marca.getId(), nombre)
+                : repository.existsByMarcaIdAndNombreIgnoreCaseAndIdNot(marca.getId(), nombre, modelo.getId());
+        if (duplicated) {
+            throw new IllegalArgumentException(
+                    "Ya existe el modelo " + nombre + " para la marca " + marca.getNombre() + ".");
+        }
+
         modelo.setMarca(marca);
-        modelo.setNombre(request.getNombre());
+        modelo.setNombre(nombre);
 
         syncToners(modelo, normalizedToners(request));
     }

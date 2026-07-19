@@ -1,14 +1,14 @@
 import { CommonModule } from '@angular/common';
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { Component, EventEmitter, Input, Output, ChangeDetectionStrategy } from '@angular/core';
 
 export type BadgeTone = 'success' | 'warning' | 'danger' | 'neutral';
 
 @Component({
-  selector: 'app-status-badge',
-  standalone: true,
-  imports: [CommonModule],
-  templateUrl: './status-badge.component.html',
-  styleUrl: './status-badge.component.scss',
+    selector: 'app-status-badge',
+    imports: [CommonModule],
+    templateUrl: './status-badge.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
+    styleUrl: './status-badge.component.scss'
 })
 export class StatusBadgeComponent {
   @Input({ required: true }) label!: string;

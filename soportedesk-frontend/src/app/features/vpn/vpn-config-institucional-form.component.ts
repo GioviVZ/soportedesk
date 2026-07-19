@@ -1,13 +1,13 @@
-import { Component, EventEmitter, OnInit, Output, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, EventEmitter, OnInit, Output, inject, ChangeDetectionStrategy } from '@angular/core';
+
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { VpnService } from './vpn.service';
 
 @Component({
-  selector: 'app-vpn-config-institucional-form',
-  standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
-  templateUrl: './vpn-config-institucional-form.component.html',
+    selector: 'app-vpn-config-institucional-form',
+    imports: [ReactiveFormsModule],
+    changeDetection: ChangeDetectionStrategy.Eager,
+    templateUrl: './vpn-config-institucional-form.component.html'
 })
 export class VpnConfigInstitucionalFormComponent implements OnInit {
   private fb = inject(FormBuilder);

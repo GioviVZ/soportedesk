@@ -1,5 +1,5 @@
-import { CommonModule } from '@angular/common';
-import { Component, EventEmitter, Input, OnChanges, Output, inject } from '@angular/core';
+
+import { Component, EventEmitter, Input, OnChanges, Output, inject, ChangeDetectionStrategy } from '@angular/core';
 import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { CatalogoService } from '../../core/catalogos/catalogo.service';
 import {
@@ -12,11 +12,11 @@ import {
 export const TONER_COLORES = ['Negro', 'Cyan', 'Magenta', 'Amarillo'];
 
 @Component({
-  selector: 'app-modelo-impresora-form',
-  standalone: true,
-  imports: [CommonModule, FormsModule, ReactiveFormsModule],
-  templateUrl: './modelo-impresora-form.component.html',
-  styleUrl: './modelo-impresora-form.component.scss',
+    selector: 'app-modelo-impresora-form',
+    imports: [FormsModule, ReactiveFormsModule],
+    templateUrl: './modelo-impresora-form.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
+    styleUrl: './modelo-impresora-form.component.scss'
 })
 export class ModeloImpresoraFormComponent implements OnChanges {
   private fb = inject(FormBuilder);

@@ -1,5 +1,5 @@
-import { Component, Input, OnChanges } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, Input, OnChanges, ChangeDetectionStrategy } from '@angular/core';
+
 import { FormsModule } from '@angular/forms';
 import { Impresora } from './impresora.model';
 import * as XLSX from 'xlsx';
@@ -11,11 +11,11 @@ interface ResumenRow {
 }
 
 @Component({
-  selector: 'app-impresora-resumen',
-  standalone: true,
-  imports: [CommonModule, FormsModule],
-  templateUrl: './impresora-resumen.component.html',
-  styleUrl: './impresora-resumen.component.scss',
+    selector: 'app-impresora-resumen',
+    imports: [FormsModule],
+    templateUrl: './impresora-resumen.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
+    styleUrl: './impresora-resumen.component.scss'
 })
 export class ImpresoraResumenComponent implements OnChanges {
   @Input() impresoras: Impresora[] = [];

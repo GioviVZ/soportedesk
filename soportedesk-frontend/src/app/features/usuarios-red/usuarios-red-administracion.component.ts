@@ -1,5 +1,5 @@
-import { CommonModule } from '@angular/common';
-import { Component, OnDestroy, OnInit, inject } from '@angular/core';
+
+import { Component, OnDestroy, OnInit, inject, ChangeDetectionStrategy } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { Subscription, interval } from 'rxjs';
 import { switchMap, takeWhile } from 'rxjs/operators';
@@ -18,10 +18,8 @@ import { AdEditInfoPanelComponent } from './ad-edit-info-panel.component';
 type Panel = 'create' | 'password' | 'groups' | 'ou' | 'info' | null;
 
 @Component({
-  selector: 'app-usuarios-red-administracion',
-  standalone: true,
-  imports: [
-    CommonModule,
+    selector: 'app-usuarios-red-administracion',
+    imports: [
     ModalComponent,
     AdAdminSummaryComponent,
     AdUserSearchComponent,
@@ -30,9 +28,9 @@ type Panel = 'create' | 'password' | 'groups' | 'ou' | 'info' | null;
     AdResetPasswordPanelComponent,
     AdGroupsPanelComponent,
     AdMoveOuPanelComponent,
-    AdEditInfoPanelComponent,
-  ],
-  template: `
+    AdEditInfoPanelComponent
+],
+    template: `
     <div class="usuarios-red-page">
       <div class="module-dash-toolbar">
         <div class="module-dash-title">
@@ -40,25 +38,27 @@ type Panel = 'create' | 'password' | 'groups' | 'ou' | 'info' | null;
           <span>{{ lastSyncLabel() }}</span>
         </div>
         <div class="module-dash-actions">
-          <button type="button" class="module-dash-refresh" (click)="startSync()" [disabled]="syncStatus?.running">
+          <button type="button" class="module-dash-refresh" (click)="startSync()" [disabled]="$safeNavigationMigration(syncStatus?.running)">
             <span class="module-dash-refresh-icon" aria-hidden="true"></span>
             {{ syncStatus?.running ? 'Sincronizando' : 'Sincronizar AD' }}
           </button>
         </div>
       </div>
-
-      <div class="module-dash-progress" *ngIf="syncStatus?.running">
-        <div class="module-dash-progress-row">
-          <span>{{ syncProgressLabel() }}</span>
-          <strong>{{ syncPercent() }}%</strong>
-          <div class="module-dash-track" [class.indeterminate]="!syncStatus!.total">
-            <i [style.width.%]="syncPercent()"></i>
+    
+      @if (syncStatus?.running) {
+        <div class="module-dash-progress">
+          <div class="module-dash-progress-row">
+            <span>{{ syncProgressLabel() }}</span>
+            <strong>{{ syncPercent() }}%</strong>
+            <div class="module-dash-track" [class.indeterminate]="!syncStatus!.total">
+              <i [style.width.%]="syncPercent()"></i>
+            </div>
           </div>
         </div>
-      </div>
-
+      }
+    
       <app-ad-admin-summary [dashboard]="dashboard" />
-
+    
       <section class="actions-grid admin-primary-actions">
         <button type="button" class="action-card create" (click)="openPanel('create')">
           <span class="action-icon">
@@ -127,54 +127,71 @@ type Panel = 'create' | 'password' | 'groups' | 'ou' | 'info' | null;
           <small>Contacto, cargo y descripcion</small>
         </button>
       </section>
-
+    
       <div class="admin-workspace">
         <div class="admin-workspace-list">
           <app-ad-user-search (selected)="selectUser($event)" />
         </div>
-
+    
         <div class="admin-workspace-detail">
-          <div class="notice" [class.error]="notice.tone === 'error'" [class.success]="notice.tone === 'success'" *ngIf="notice">
-            <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" />
-            </svg>
-            {{ notice.text }}
-          </div>
-
-          <section class="empty-state" *ngIf="!user">
-            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" />
-            </svg>
-            <strong>Selecciona una cuenta de red</strong>
-            <span>También puedes llegar aquí desde Consultas o Dashboard con un usuario precargado.</span>
-          </section>
-
-          <app-ad-user-detail *ngIf="user" [user]="user" [puedeEditarContratos]="true" />
+          @if (notice) {
+            <div class="notice" [class.error]="notice.tone === 'error'" [class.success]="notice.tone === 'success'">
+              <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" />
+              </svg>
+              {{ notice.text }}
+            </div>
+          }
+    
+          @if (!user) {
+            <section class="empty-state">
+              <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" />
+              </svg>
+              <strong>Selecciona una cuenta de red</strong>
+              <span>También puedes llegar aquí desde Consultas o Dashboard con un usuario precargado.</span>
+            </section>
+          }
+    
+          @if (user) {
+            <app-ad-user-detail [user]="user" [puedeEditarContratos]="true" />
+          }
         </div>
       </div>
     </div>
-
+    
     <app-modal title="Crear usuario de red" size="wide" [open]="activePanel === 'create'" [hideDefaultFooter]="true" (closed)="closePanel()">
-      <app-ad-create-user-panel *ngIf="activePanel === 'create'" (saved)="onPanelSaved($event)" (cancelled)="closePanel()" />
+      @if (activePanel === 'create') {
+        <app-ad-create-user-panel (saved)="onPanelSaved($event)" (cancelled)="closePanel()" />
+      }
     </app-modal>
-
+    
     <app-modal title="Restablecer contraseña" [open]="activePanel === 'password'" [hideDefaultFooter]="true" (closed)="closePanel()">
-      <app-ad-reset-password-panel *ngIf="activePanel === 'password' && user" [samAccountName]="user.samAccountName" (saved)="onPanelSaved($event)" (cancelled)="closePanel()" />
+      @if (activePanel === 'password' && user) {
+        <app-ad-reset-password-panel [samAccountName]="user.samAccountName" (saved)="onPanelSaved($event)" (cancelled)="closePanel()" />
+      }
     </app-modal>
-
+    
     <app-modal title="Membresias de grupos" [open]="activePanel === 'groups'" (closed)="closePanel()">
-      <app-ad-groups-panel *ngIf="activePanel === 'groups' && user" [samAccountName]="user.samAccountName" (changed)="onPanelChanged($event)" />
+      @if (activePanel === 'groups' && user) {
+        <app-ad-groups-panel [samAccountName]="user.samAccountName" (changed)="onPanelChanged($event)" />
+      }
     </app-modal>
-
+    
     <app-modal title="Mover a unidad organizativa" [open]="activePanel === 'ou'" (closed)="closePanel()">
-      <app-ad-move-ou-panel *ngIf="activePanel === 'ou' && user" [samAccountName]="user.samAccountName" (saved)="onPanelSaved($event)" />
+      @if (activePanel === 'ou' && user) {
+        <app-ad-move-ou-panel [samAccountName]="user.samAccountName" (saved)="onPanelSaved($event)" />
+      }
     </app-modal>
-
+    
     <app-modal title="Editar informacion AD" size="wide" [open]="activePanel === 'info'" [hideDefaultFooter]="true" (closed)="closePanel()">
-      <app-ad-edit-info-panel *ngIf="activePanel === 'info' && user" [user]="user" (saved)="onPanelSaved($event)" (cancelled)="closePanel()" />
+      @if (activePanel === 'info' && user) {
+        <app-ad-edit-info-panel [user]="user" (saved)="onPanelSaved($event)" (cancelled)="closePanel()" />
+      }
     </app-modal>
-  `,
-  styleUrl: './usuarios-red.shared.scss',
+    `,
+    changeDetection: ChangeDetectionStrategy.Eager,
+    styleUrl: './usuarios-red.shared.scss'
 })
 export class UsuariosRedAdministracionComponent implements OnInit, OnDestroy {
   private adService = inject(ActiveDirectoryService);

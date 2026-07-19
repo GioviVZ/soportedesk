@@ -1,5 +1,5 @@
-import { CommonModule } from '@angular/common';
-import { Component, HostListener, OnInit, inject } from '@angular/core';
+
+import { Component, HostListener, OnInit, inject, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../core/auth/auth.service';
 import { FieldComponent } from '../../shared/field/field.component';
@@ -13,11 +13,11 @@ import { RealtimeChange } from '../../core/services/realtime.service';
 import { ActivatedRoute } from '@angular/router';
 
 @Component({
-  selector: 'app-licencias-list',
-  standalone: true,
-  imports: [CommonModule, FormsModule, GenericTableComponent, ModalComponent, FieldComponent, LicenciaFormComponent],
-  templateUrl: './licencias-list.component.html',
-  styleUrl: './licencias-list.component.scss',
+    selector: 'app-licencias-list',
+    imports: [FormsModule, GenericTableComponent, ModalComponent, FieldComponent, LicenciaFormComponent],
+    templateUrl: './licencias-list.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
+    styleUrl: './licencias-list.component.scss'
 })
 export class LicenciasListComponent implements OnInit {
   private service = inject(LicenciaService);
@@ -64,8 +64,9 @@ export class LicenciasListComponent implements OnInit {
   }
 
   @HostListener('window:soportedesk:data-change', ['$event'])
-  onRealtimeChange(event: CustomEvent<RealtimeChange>): void {
-    if (event.detail.modulo === 'licencias') this.load();
+  onRealtimeChange(event: Event): void {
+    const change = (event as CustomEvent<RealtimeChange>).detail;
+    if (change?.modulo === 'licencias') this.load();
   }
 
   load(): void {

@@ -1,5 +1,5 @@
-import { Component, Input } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, Input, ChangeDetectionStrategy } from '@angular/core';
+
 import { BadgeComponent } from '../badge/badge.component';
 
 export type VencimientoStatus = 'vencido' | 'por-vencer' | null;
@@ -7,11 +7,11 @@ export type VencimientoStatus = 'vencido' | 'por-vencer' | null;
 const DIAS_POR_VENCER = 30;
 
 @Component({
-  selector: 'app-vencimiento-badge',
-  standalone: true,
-  imports: [CommonModule, BadgeComponent],
-  templateUrl: './vencimiento-badge.component.html',
-  styleUrl: './vencimiento-badge.component.scss',
+    selector: 'app-vencimiento-badge',
+    imports: [BadgeComponent],
+    templateUrl: './vencimiento-badge.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
+    styleUrl: './vencimiento-badge.component.scss'
 })
 export class VencimientoBadgeComponent {
   @Input() fecha: string | null = null;

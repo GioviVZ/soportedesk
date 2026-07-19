@@ -13,6 +13,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
@@ -27,6 +28,7 @@ import java.util.Objects;
 public class VpnService {
 
     private static final List<String> EDITABLES = List.of("PENDIENTE", "OBSERVADO");
+    private static final List<String> ESTADOS_QUE_BLOQUEAN_DUPLICADO = List.of("PENDIENTE", "OBSERVADO", "APROBADO");
 
     private final VpnRepository repository;
     private final AdUsuarioCacheRepository adUsuarioCacheRepository;
@@ -107,6 +109,30 @@ public class VpnService {
                     .sorted(java.util.Comparator.comparing(VpnTipoEquipoCount::tipoEquipo))
                     .toList();
 
+            List<VpnDependenciaCount> distribucionDependencia = all.stream()
+                    .collect(java.util.stream.Collectors.groupingBy(
+                            v -> v.getAdOffice() == null || v.getAdOffice().isBlank()
+                                    ? "Externos / sin dependencia" : v.getAdOffice(),
+                            java.util.LinkedHashMap::new,
+                            java.util.stream.Collectors.counting()))
+                    .entrySet().stream()
+                    .map(e -> new VpnDependenciaCount(e.getKey(), e.getValue()))
+                    .sorted(java.util.Comparator.comparing(VpnDependenciaCount::total).reversed()
+                            .thenComparing(VpnDependenciaCount::dependencia))
+                    .toList();
+
+            List<VpnSubdependenciaCount> distribucionSubdependencia = all.stream()
+                    .collect(java.util.stream.Collectors.groupingBy(
+                            v -> v.getAdOrganizationalUnit() == null || v.getAdOrganizationalUnit().isBlank()
+                                    ? "Externos / sin subdependencia" : v.getAdOrganizationalUnit(),
+                            java.util.LinkedHashMap::new,
+                            java.util.stream.Collectors.counting()))
+                    .entrySet().stream()
+                    .map(e -> new VpnSubdependenciaCount(e.getKey(), e.getValue()))
+                    .sorted(java.util.Comparator.comparing(VpnSubdependenciaCount::total).reversed()
+                            .thenComparing(VpnSubdependenciaCount::subdependencia))
+                    .toList();
+
             LocalDate hoy = LocalDate.now();
             List<Vpn> vencidos = all.stream()
                     .filter(v -> v.getVence() != null && v.getVence().isBefore(hoy))
@@ -120,14 +146,14 @@ public class VpnService {
 
             return new VpnDashboardCompleto(
                     pendientes, aprobadas, rechazadas, observadas, all.size(),
-                    distribucion,
+                    distribucion, distribucionDependencia, distribucionSubdependencia,
                     vencidos.stream().limit(10).map(this::toAlerta).toList(),
                     vencidos.size(),
                     porVencer.stream().limit(10).map(this::toAlerta).toList(),
                     porVencer.size()
             );
         } catch (Exception e) {
-            return new VpnDashboardCompleto(0, 0, 0, 0, 0, List.of(), List.of(), 0, List.of(), 0);
+            return new VpnDashboardCompleto(0, 0, 0, 0, 0, List.of(), List.of(), List.of(), List.of(), 0, List.of(), 0);
         }
     }
 
@@ -139,7 +165,7 @@ public class VpnService {
         return new VpnVencimientoAlerta(vpn.getId(), vpn.getTitularNombreCompleto(), vpn.getTipoEquipo(), vpn.getVence(), detalle);
     }
 
-    @Transactional
+    @Transactional(isolation = Isolation.SERIALIZABLE)
     public Vpn crearSolicitud(VpnRequest request, Authentication auth) {
         Vpn vpn = new Vpn();
         vpn.setEstadoSolicitud("PENDIENTE");
@@ -150,29 +176,36 @@ public class VpnService {
         vpn.setSolicitadoPorNombre(nombreDe(auth.getName()));
         vpn.setFechaSolicitud(LocalDateTime.now());
         copySolicitudFields(vpn, request);
+        validateNoDuplicateSolicitud(vpn);
         return saveAndApplyVence(vpn);
     }
 
-    @Transactional
+    @Transactional(isolation = Isolation.SERIALIZABLE)
     public Vpn actualizarSolicitud(Long id, VpnRequest request, Authentication auth) {
         Vpn vpn = findById(id);
         if (!EDITABLES.contains(vpn.getEstadoSolicitud())) {
             throw new IllegalArgumentException("Solo se puede editar una solicitud pendiente u observada");
         }
         copySolicitudFields(vpn, request);
+        validateNoDuplicateSolicitud(vpn);
         if ("OBSERVADO".equals(vpn.getEstadoSolicitud())) {
             vpn.setEstadoSolicitud("PENDIENTE");
         }
         return saveAndApplyVence(vpn);
     }
 
-    @Transactional
+    @Transactional(isolation = Isolation.SERIALIZABLE)
     public Vpn aprobar(Long id, VpnAprobarRequest request, Authentication auth) {
         Vpn vpn = findById(id);
         if (!"PENDIENTE".equals(vpn.getEstadoSolicitud())) {
             throw new IllegalArgumentException("Solo se puede aprobar una solicitud pendiente");
         }
-        vpn.setUsuarioVpn(request.getUsuarioVpn());
+        String usuarioVpn = request.getUsuarioVpn().trim();
+        if (repository.countApprovedByUsuarioVpn(usuarioVpn, vpn.getId()) > 0) {
+            throw new IllegalArgumentException("El usuario VPN " + usuarioVpn + " ya esta asignado a otro acceso aprobado.");
+        }
+        validateNoDuplicateSolicitud(vpn);
+        vpn.setUsuarioVpn(usuarioVpn);
         vpn.setCredencialVpn(request.getCredencialVpn());
         vpn.setEstado(request.getEstado());
         vpn.setEstadoSolicitud("APROBADO");
@@ -279,11 +312,11 @@ public class VpnService {
             vpn.setAdMail(null);
             vpn.setAdOffice(null);
             vpn.setAdOrganizationalUnit(null);
-            vpn.setTitularNombre(request.getTitularNombre());
-            vpn.setTitularApellidos(request.getTitularApellidos());
-            vpn.setTitularCorreo(request.getTitularCorreo());
-            vpn.setTitularEmpresa(request.getTitularEmpresa());
-            vpn.setTitularMotivo(request.getTitularMotivo());
+            vpn.setTitularNombre(request.getTitularNombre().trim());
+            vpn.setTitularApellidos(request.getTitularApellidos().trim());
+            vpn.setTitularCorreo(request.getTitularCorreo().trim());
+            vpn.setTitularEmpresa(request.getTitularEmpresa().trim());
+            vpn.setTitularMotivo(request.getTitularMotivo().trim());
         }
 
         if (request.getGlpiComputerId() != null) {
@@ -303,6 +336,25 @@ public class VpnService {
 
     private static boolean isBlank(String s) {
         return s == null || s.isBlank();
+    }
+
+    private void validateNoDuplicateSolicitud(Vpn vpn) {
+        Long currentId = vpn.getId();
+        if (!isBlank(vpn.getAdSamAccountName())
+                && repository.countBlockingByAdUser(vpn.getAdSamAccountName(), ESTADOS_QUE_BLOQUEAN_DUPLICADO, currentId) > 0) {
+            throw new IllegalArgumentException(
+                    "El usuario de red " + vpn.getAdSamAccountName() + " ya tiene una solicitud o acceso VPN vigente.");
+        }
+        if (!isBlank(vpn.getTitularCorreo())
+                && repository.countBlockingByExternalEmail(vpn.getTitularCorreo(), ESTADOS_QUE_BLOQUEAN_DUPLICADO, currentId) > 0) {
+            throw new IllegalArgumentException(
+                    "El correo " + vpn.getTitularCorreo() + " ya tiene una solicitud o acceso VPN vigente.");
+        }
+        if (vpn.getGlpiComputerId() != null
+                && repository.countBlockingByGlpiComputer(vpn.getGlpiComputerId(), ESTADOS_QUE_BLOQUEAN_DUPLICADO, currentId) > 0) {
+            throw new IllegalArgumentException(
+                    "El equipo seleccionado ya tiene una solicitud o acceso VPN vigente.");
+        }
     }
 
     private String normalizeAccountSearchTerm(String value) {

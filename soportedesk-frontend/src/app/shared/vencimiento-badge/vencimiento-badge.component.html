@@ -1,2 +1,6 @@
-<app-badge *ngIf="status === 'vencido'" text="Vencido" color="red" />
-<app-badge *ngIf="status === 'por-vencer'" text="Por vencer" color="yellow" />
+@if (status === 'vencido') {
+  <app-badge text="Vencido" color="red" />
+}
+@if (status === 'por-vencer') {
+  <app-badge text="Por vencer" color="yellow" />
+}

@@ -3,6 +3,8 @@ package com.inia.soportedesk.catalogo;
 import com.inia.soportedesk.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Isolation;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -24,15 +26,25 @@ public class MarcaImpresoraService {
                 .orElseThrow(() -> new ResourceNotFoundException("Marca de impresora no encontrada: " + id));
     }
 
+    @Transactional(isolation = Isolation.SERIALIZABLE)
     public MarcaImpresora create(MarcaImpresoraRequest request) {
+        String nombre = request.getNombre().trim();
+        if (repository.existsByNombreIgnoreCase(nombre)) {
+            throw new IllegalArgumentException("Ya existe la marca de impresora " + nombre + ".");
+        }
         MarcaImpresora marca = new MarcaImpresora();
-        marca.setNombre(request.getNombre());
+        marca.setNombre(nombre);
         return repository.save(marca);
     }
 
+    @Transactional(isolation = Isolation.SERIALIZABLE)
     public MarcaImpresora update(Long id, MarcaImpresoraRequest request) {
         MarcaImpresora marca = findById(id);
-        marca.setNombre(request.getNombre());
+        String nombre = request.getNombre().trim();
+        if (repository.existsByNombreIgnoreCaseAndIdNot(nombre, id)) {
+            throw new IllegalArgumentException("Ya existe la marca de impresora " + nombre + ".");
+        }
+        marca.setNombre(nombre);
         return repository.save(marca);
     }
 

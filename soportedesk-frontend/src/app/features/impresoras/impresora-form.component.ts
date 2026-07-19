@@ -1,5 +1,5 @@
-import { Component, EventEmitter, Input, OnChanges, OnInit, Output, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, EventEmitter, Input, OnChanges, OnInit, Output, inject, ChangeDetectionStrategy } from '@angular/core';
+
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { IMPRESORA_ESTADOS, Impresora, ImpresoraRequest } from './impresora.model';
 import { ImpresoraService } from './impresora.service';
@@ -10,17 +10,16 @@ import { SectionCardComponent } from '../../shared/section-card/section-card.com
 import { StatusBadgeComponent } from '../../shared/status-badge/status-badge.component';
 
 @Component({
-  selector: 'app-impresora-form',
-  standalone: true,
-  imports: [
-    CommonModule,
+    selector: 'app-impresora-form',
+    imports: [
     ReactiveFormsModule,
     UbicacionSelectComponent,
     SectionCardComponent,
-    StatusBadgeComponent,
-  ],
-  templateUrl: './impresora-form.component.html',
-  styleUrl: './impresora-form.component.scss',
+    StatusBadgeComponent
+],
+    templateUrl: './impresora-form.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
+    styleUrl: './impresora-form.component.scss'
 })
 export class ImpresoraFormComponent implements OnInit, OnChanges {
   private fb = inject(FormBuilder);
@@ -39,6 +38,8 @@ export class ImpresoraFormComponent implements OnInit, OnChanges {
   modelos: ModeloImpresora[] = [];
   marcaId: number | null = null;
   readonly estadoOptions = IMPRESORA_ESTADOS;
+  saving = false;
+  errorMessage = '';
 
   form = this.fb.nonNullable.group({
     modeloImpresoraId: [null as number | null, Validators.required],
@@ -71,6 +72,8 @@ export class ImpresoraFormComponent implements OnInit, OnChanges {
   }
 
   ngOnChanges(): void {
+    this.errorMessage = '';
+    this.saving = false;
     if (this.impresora) {
       this.sedeId           = this.impresora.sede?.id ?? null;
       this.dependenciaId    = this.impresora.dependencia?.id ?? null;
@@ -117,7 +120,9 @@ export class ImpresoraFormComponent implements OnInit, OnChanges {
   }
 
   submit(): void {
-    if (this.form.invalid) return;
+    if (this.form.invalid || this.saving) return;
+    this.errorMessage = '';
+    this.saving = true;
     const request: ImpresoraRequest = {
       ...this.form.getRawValue(),
       sedeId: this.sedeId,
@@ -127,6 +132,15 @@ export class ImpresoraFormComponent implements OnInit, OnChanges {
     const obs = this.impresora
       ? this.service.update(this.impresora.id, request)
       : this.service.create(request);
-    obs.subscribe(() => this.saved.emit());
+    obs.subscribe({
+      next: () => {
+        this.saving = false;
+        this.saved.emit();
+      },
+      error: (err) => {
+        this.saving = false;
+        this.errorMessage = err?.error?.message || 'No se pudo guardar la impresora.';
+      },
+    });
   }
 }

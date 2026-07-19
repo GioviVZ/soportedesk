@@ -1,12 +1,16 @@
 <form [formGroup]="form" (ngSubmit)="submit()" class="modelo-impresora-form" id="modelo-impresora-edit-form">
-  <div class="form-error" *ngIf="errorMessage">{{ errorMessage }}</div>
+  @if (errorMessage) {
+    <div class="form-error">{{ errorMessage }}</div>
+  }
 
   <div class="form-grid">
     <div class="field">
       <label>Marca</label>
       <select [value]="marcaId" (change)="onMarcaChange($any($event.target).value)">
         <option [ngValue]="null">Seleccione...</option>
-        <option *ngFor="let m of marcas" [value]="m.id">{{ m.nombre }}</option>
+        @for (m of marcas; track m) {
+          <option [value]="m.id">{{ m.nombre }}</option>
+        }
       </select>
     </div>
     <div class="field">
@@ -25,58 +29,61 @@
     </div>
 
     <div class="toner-list" formArrayName="toners">
-      <div class="toner-row" *ngFor="let group of tonersArray.controls; let i = index" [formGroupName]="i">
-        <div class="field">
-          <label>Color</label>
-          <select formControlName="color">
-            <option value="">Seleccione...</option>
-            <option *ngFor="let c of tonerColores" [value]="c">{{ c }}</option>
-          </select>
+      @for (group of tonersArray.controls; track group; let i = $index) {
+        <div class="toner-row" [formGroupName]="i">
+          <div class="field">
+            <label>Color</label>
+            <select formControlName="color">
+              <option value="">Seleccione...</option>
+              @for (c of tonerColores; track c) {
+                <option [value]="c">{{ c }}</option>
+              }
+            </select>
+          </div>
+          <div class="field">
+            <label>Variante</label>
+            <input type="text" formControlName="variante" placeholder="ej: Estándar" />
+          </div>
+          <div class="field">
+            <label>Código</label>
+            <input type="text" formControlName="codigo" placeholder="ej: CF259A" />
+          </div>
+          <button type="button" class="icon-btn" (click)="removeToner(i)" title="Quitar tóner">Quitar</button>
         </div>
-        <div class="field">
-          <label>Variante</label>
-          <input type="text" formControlName="variante" placeholder="ej: Estándar" />
-        </div>
-        <div class="field">
-          <label>Código</label>
-          <input type="text" formControlName="codigo" placeholder="ej: CF259A" />
-        </div>
-        <button type="button" class="icon-btn" (click)="removeToner(i)" title="Quitar tóner">Quitar</button>
-      </div>
+      }
     </div>
   </section>
 
-  <section class="toner-section" *ngIf="modelo">
-    <div class="section-heading">
-      <div>
-        <h3>Driver</h3>
-        <p>Un solo archivo por modelo, compartido por todas las impresoras de ese modelo.</p>
+  @if (modelo) {
+    <section class="toner-section">
+      <div class="section-heading">
+        <div>
+          <h3>Driver</h3>
+          <p>Un solo archivo por modelo, compartido por todas las impresoras de ese modelo.</p>
+        </div>
       </div>
-    </div>
-
-    <ng-container *ngIf="modelo.driverNombre; else noDriver">
-      <div class="field">
-        <label>Archivo cargado</label>
-        <span>{{ modelo.driverNombre }} — {{ modelo.driverVersion || 'sin versión' }} ({{ modelo.driverSo || 'S.O. no especificado' }})</span>
+      @if (modelo.driverNombre) {
+        <div class="field">
+          <label>Archivo cargado</label>
+          <span>{{ modelo.driverNombre }} — {{ modelo.driverVersion || 'sin versión' }} ({{ modelo.driverSo || 'S.O. no especificado' }})</span>
+        </div>
+        <button type="button" class="secondary compact" (click)="downloadDriver()">Descargar driver</button>
+      } @else {
+        <p>No hay driver cargado para este modelo.</p>
+      }
+      <div class="form-grid">
+        <div class="field">
+          <label>Versión</label>
+          <input type="text" [(ngModel)]="driverVersionInput" [ngModelOptions]="{standalone: true}" placeholder="ej: 1.2.3" />
+        </div>
+        <div class="field">
+          <label>Sistema operativo</label>
+          <input type="text" [(ngModel)]="driverSoInput" [ngModelOptions]="{standalone: true}" placeholder="ej: Windows 10 / 11" />
+        </div>
       </div>
-      <button type="button" class="secondary compact" (click)="downloadDriver()">Descargar driver</button>
-    </ng-container>
-    <ng-template #noDriver>
-      <p>No hay driver cargado para este modelo.</p>
-    </ng-template>
-
-    <div class="form-grid">
-      <div class="field">
-        <label>Versión</label>
-        <input type="text" [(ngModel)]="driverVersionInput" [ngModelOptions]="{standalone: true}" placeholder="ej: 1.2.3" />
-      </div>
-      <div class="field">
-        <label>Sistema operativo</label>
-        <input type="text" [(ngModel)]="driverSoInput" [ngModelOptions]="{standalone: true}" placeholder="ej: Windows 10 / 11" />
-      </div>
-    </div>
-    <input type="file" (change)="onFileSelected($event)" />
-  </section>
+      <input type="file" (change)="onFileSelected($event)" />
+    </section>
+  }
 
 </form>
 

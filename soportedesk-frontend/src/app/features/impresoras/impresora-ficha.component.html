@@ -1,74 +1,74 @@
 <div class="ficha">
   <div class="ficha-toolbar">
-  <div class="tabs">
-    <button type="button" [class.active]="activeTab === 'instalacion'" (click)="setTab('instalacion')">Instalación</button>
-    <button type="button" [class.active]="activeTab === 'consumibles'" (click)="setTab('consumibles')">Consumibles</button>
-    <button type="button" [class.active]="activeTab === 'driver'" (click)="setTab('driver')">Driver</button>
-    <button type="button" [class.active]="activeTab === 'intervenciones'" (click)="setTab('intervenciones')">Intervenciones</button>
+    <div class="tabs">
+      <button type="button" [class.active]="activeTab === 'instalacion'" (click)="setTab('instalacion')">Instalación</button>
+      <button type="button" [class.active]="activeTab === 'consumibles'" (click)="setTab('consumibles')">Consumibles</button>
+      <button type="button" [class.active]="activeTab === 'driver'" (click)="setTab('driver')">Driver</button>
+      <button type="button" [class.active]="activeTab === 'intervenciones'" (click)="setTab('intervenciones')">Intervenciones</button>
+    </div>
+    @if (isAdmin && allowActions) {
+      <button type="button" class="edit-btn" (click)="editRequested.emit(impresora)">Editar</button>
+    }
   </div>
-  <button *ngIf="isAdmin && allowActions" type="button" class="edit-btn" (click)="editRequested.emit(impresora)">Editar</button>
-  </div>
 
-  <div class="content" *ngIf="activeTab === 'instalacion'">
-    <app-section-card title="Identificación">
-      <svg icon xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <path d="M4 7h16" />
-        <path d="M7 3h10v4H7z" />
-        <path d="M6 14h12v7H6z" />
-      </svg>
-
-      <div class="detail-grid">
-        <div class="detail-field">
-          <span class="detail-label">Marca / Modelo</span>
-          <span class="detail-value">{{ impresora.modeloImpresora.marca.nombre }} {{ impresora.modeloImpresora.nombre }}</span>
+  @if (activeTab === 'instalacion') {
+    <div class="content">
+      <app-section-card title="Identificación">
+        <svg icon xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M4 7h16" />
+          <path d="M7 3h10v4H7z" />
+          <path d="M6 14h12v7H6z" />
+        </svg>
+        <div class="detail-grid">
+          <div class="detail-field">
+            <span class="detail-label">Marca / Modelo</span>
+            <span class="detail-value">{{ impresora.modeloImpresora.marca.nombre }} {{ impresora.modeloImpresora.nombre }}</span>
+          </div>
+          <div class="detail-field">
+            <span class="detail-label">Tipo de impresora</span>
+            <span class="detail-value">{{ impresora.tipoImpresora?.nombre || '—' }}</span>
+          </div>
+          <div class="detail-field">
+            <span class="detail-label">Serie</span>
+            <span class="detail-value">{{ impresora.serie || '—' }}</span>
+          </div>
+          <div class="detail-field">
+            <span class="detail-label">Código de Inventario</span>
+            <span class="detail-value">{{ impresora.codigoInventario || '—' }}</span>
+          </div>
+          <div class="detail-field">
+            <span class="detail-label">Código Patrimonial</span>
+            <span class="detail-value">{{ impresora.codigoPatrimonial || '—' }}</span>
+          </div>
+          <div class="detail-field">
+            <span class="detail-label">Estado</span>
+            <span class="detail-value">
+              <app-status-badge [label]="impresora.estado" [tone]="impresoraEstadoTone(impresora.estado)" />
+            </span>
+          </div>
         </div>
-        <div class="detail-field">
-          <span class="detail-label">Tipo de impresora</span>
-          <span class="detail-value">{{ impresora.tipoImpresora?.nombre || '—' }}</span>
-        </div>
-        <div class="detail-field">
-          <span class="detail-label">Serie</span>
-          <span class="detail-value">{{ impresora.serie || '—' }}</span>
-        </div>
-        <div class="detail-field">
-          <span class="detail-label">Código de Inventario</span>
-          <span class="detail-value">{{ impresora.codigoInventario || '—' }}</span>
-        </div>
-        <div class="detail-field">
-          <span class="detail-label">Código Patrimonial</span>
-          <span class="detail-value">{{ impresora.codigoPatrimonial || '—' }}</span>
-        </div>
-        <div class="detail-field">
-          <span class="detail-label">Estado</span>
-          <span class="detail-value">
-            <app-status-badge [label]="impresora.estado" [tone]="impresoraEstadoTone(impresora.estado)" />
-          </span>
-        </div>
-      </div>
-    </app-section-card>
-
-    <app-section-card title="Referencia">
-      <svg icon xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <path d="M4 4h16v16H4z" />
-        <path d="M8 8h8" />
-        <path d="M8 12h8" />
-        <path d="M8 16h5" />
-      </svg>
-
-      <p class="reference-note">{{ impresora.referencia || 'Sin referencia registrada.' }}</p>
-    </app-section-card>
-
-    <app-section-card title="Conexión y ubicación">
-      <svg icon xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <path d="M12 21s7-4.35 7-11a7 7 0 1 0-14 0c0 6.65 7 11 7 11z" />
-        <circle cx="12" cy="10" r="2" />
-      </svg>
-
-      <div class="detail-grid">
-        <div class="detail-field">
-          <span class="detail-label">Conexión</span>
-          <span class="detail-value">
-            {{ impresora.tipoConexion }}<ng-container *ngIf="impresora.tipoConexion === 'IP'"> — <code>{{ impresora.ip }}</code></ng-container>
+      </app-section-card>
+      <app-section-card title="Referencia">
+        <svg icon xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M4 4h16v16H4z" />
+          <path d="M8 8h8" />
+          <path d="M8 12h8" />
+          <path d="M8 16h5" />
+        </svg>
+        <p class="reference-note">{{ impresora.referencia || 'Sin referencia registrada.' }}</p>
+      </app-section-card>
+      <app-section-card title="Conexión y ubicación">
+        <svg icon xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M12 21s7-4.35 7-11a7 7 0 1 0-14 0c0 6.65 7 11 7 11z" />
+          <circle cx="12" cy="10" r="2" />
+        </svg>
+        <div class="detail-grid">
+          <div class="detail-field">
+            <span class="detail-label">Conexión</span>
+            <span class="detail-value">
+              {{ impresora.tipoConexion }}@if (impresora.tipoConexion === 'IP') {
+              — <code>{{ impresora.ip }}</code>
+            }
           </span>
         </div>
         <div class="detail-field">
@@ -86,39 +86,44 @@
       </div>
     </app-section-card>
   </div>
+}
 
-  <div class="content" *ngIf="activeTab === 'consumibles'">
+@if (activeTab === 'consumibles') {
+  <div class="content">
     <app-section-card title="Consumibles">
       <svg icon xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <path d="M4 7h16v11a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z" />
         <path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
       </svg>
-
-      <ng-container *ngIf="tonersPorColor.length; else noConsumibles">
+      @if (tonersPorColor.length) {
         <div class="consumibles-grid">
-          <div class="consumible-card" *ngFor="let grupo of tonersPorColor">
-            <span>{{ grupo.color }}</span>
-            <div class="toner-variante" *ngFor="let variante of grupo.variantes">
-              <strong>{{ variante.variante }}</strong> — {{ variante.codigo }}
+          @for (grupo of tonersPorColor; track grupo) {
+            <div class="consumible-card">
+              <span>{{ grupo.color }}</span>
+              @for (variante of grupo.variantes; track variante) {
+                <div class="toner-variante">
+                  <strong>{{ variante.variante }}</strong> — {{ variante.codigo }}
+                </div>
+              }
             </div>
-          </div>
+          }
         </div>
-      </ng-container>
-      <ng-template #noConsumibles>
+      } @else {
         <p class="empty-message">Sin modelos de consumibles registrados.</p>
-      </ng-template>
+      }
     </app-section-card>
   </div>
+}
 
-  <div class="content" *ngIf="activeTab === 'driver'">
+@if (activeTab === 'driver') {
+  <div class="content">
     <app-section-card title="Driver del modelo">
       <svg icon xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
         <path d="M7 10l5 5 5-5" />
         <path d="M12 15V3" />
       </svg>
-
-      <ng-container *ngIf="impresora.modeloImpresora.driverNombre; else noDriver">
+      @if (impresora.modeloImpresora.driverNombre) {
         <div class="detail-grid">
           <div class="detail-field">
             <span class="detail-label">Nombre</span>
@@ -134,77 +139,101 @@
           </div>
         </div>
         <button type="button" class="download-btn" (click)="downloadDriver()">Descargar driver</button>
-      </ng-container>
-      <ng-template #noDriver>
+      } @else {
         <p class="empty-message">El modelo {{ impresora.modeloImpresora.marca.nombre }} {{ impresora.modeloImpresora.nombre }} no tiene driver cargado.</p>
-      </ng-template>
+      }
     </app-section-card>
   </div>
+}
 
-  <div class="content" *ngIf="activeTab === 'intervenciones'">
+@if (activeTab === 'intervenciones') {
+  <div class="content">
     <app-section-card title="Intervenciones">
       <svg icon xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" />
       </svg>
-
-      <div class="intervencion-nueva" *ngIf="canWriteIntervenciones">
-        <input type="date" [(ngModel)]="nuevaFecha" [ngModelOptions]="{standalone: true}" />
-        <input type="text" placeholder="Observación" [(ngModel)]="nuevaObservacion" [ngModelOptions]="{standalone: true}" />
-        <button type="button" class="btn btn-primary" [disabled]="guardandoIntervencion()" (click)="crearIntervencion()">
-          {{ guardandoIntervencion() ? 'Guardando...' : 'Nueva intervención' }}
-        </button>
-      </div>
-      <p class="intervencion-error" *ngIf="errorIntervencion()">{{ errorIntervencion() }}</p>
-
-      <div class="intervencion-list" *ngIf="intervenciones().length; else sinIntervenciones">
-        <div class="intervencion-card" *ngFor="let it of intervenciones()">
-          <ng-container *ngIf="editando?.id === it.id; else vistaIntervencion">
-            <div class="intervencion-edit">
-              <input type="date" [(ngModel)]="editFecha" [ngModelOptions]="{standalone: true}" />
-              <input type="text" [(ngModel)]="editObservacion" [ngModelOptions]="{standalone: true}" />
-              <button type="button" class="btn btn-primary" (click)="guardarEdicion()">Guardar</button>
-              <button type="button" class="btn btn-ghost" (click)="cancelarEdicion()">Cancelar</button>
-            </div>
-          </ng-container>
-          <ng-template #vistaIntervencion>
-            <div class="intervencion-header">
-              <div>
-                <strong>{{ it.observacion }}</strong>
-                <span>{{ it.fecha }} · {{ it.registradoPor }}</span>
-              </div>
-              <div class="intervencion-actions" *ngIf="canWriteIntervenciones">
-                <button type="button" class="btn btn-icon" (click)="iniciarEdicion(it)" aria-label="Editar intervención">✎</button>
-                <button type="button" class="btn btn-icon" (click)="eliminarIntervencion(it)" aria-label="Eliminar intervención">✕</button>
-              </div>
-            </div>
-          </ng-template>
-
-          <div class="intervencion-adjuntos" *ngIf="it.adjuntos.length">
-            <div class="adjunto-card" *ngFor="let adj of it.adjuntos">
-              <button type="button" class="adjunto-thumb" (click)="abrirAdjunto(it.id, adj)">
-                <img *ngIf="adj.mimeType.startsWith('image/') && adj.previewUrl" [src]="adj.previewUrl" [alt]="adj.nombreOriginal" />
-                <span *ngIf="adj.mimeType.startsWith('image/') && !adj.previewUrl" class="adjunto-thumb-loading">Cargando…</span>
-                <span *ngIf="!adj.mimeType.startsWith('image/')" class="adjunto-file-icon">{{ adj.mimeType === 'application/pdf' ? 'PDF' : 'DOC' }}</span>
-              </button>
-              <div class="adjunto-meta">
-                <strong>{{ adj.nombreOriginal }}</strong>
-                <span>{{ adj.subidoPor }}</span>
-              </div>
-              <button type="button" class="btn btn-icon adjunto-delete" *ngIf="canWriteIntervenciones" (click)="eliminarAdjunto(it.id, adj)" aria-label="Eliminar adjunto">✕</button>
-            </div>
-          </div>
-
-          <label class="btn btn-secondary adjunto-upload-btn" *ngIf="canWriteIntervenciones">
-            Agregar adjuntos
-            <input type="file" multiple accept="image/jpeg,image/png,image/webp,application/pdf,.docx,.xlsx" (change)="onAdjuntosSelected($event, it.id)" hidden />
-          </label>
+      @if (canWriteIntervenciones) {
+        <div class="intervencion-nueva">
+          <input type="date" [(ngModel)]="nuevaFecha" [ngModelOptions]="{standalone: true}" />
+          <input type="text" placeholder="Observación" [(ngModel)]="nuevaObservacion" [ngModelOptions]="{standalone: true}" />
+          <button type="button" class="btn btn-primary" [disabled]="guardandoIntervencion()" (click)="crearIntervencion()">
+            {{ guardandoIntervencion() ? 'Guardando...' : 'Nueva intervención' }}
+          </button>
         </div>
-      </div>
-      <ng-template #sinIntervenciones><p class="empty-message">Sin intervenciones registradas para esta impresora.</p></ng-template>
+      }
+      @if (errorIntervencion()) {
+        <p class="intervencion-error">{{ errorIntervencion() }}</p>
+      }
+      @if (intervenciones().length) {
+        <div class="intervencion-list">
+          @for (it of intervenciones(); track it) {
+            <div class="intervencion-card">
+              @if (editando?.id === it.id) {
+                <div class="intervencion-edit">
+                  <input type="date" [(ngModel)]="editFecha" [ngModelOptions]="{standalone: true}" />
+                  <input type="text" [(ngModel)]="editObservacion" [ngModelOptions]="{standalone: true}" />
+                  <button type="button" class="btn btn-primary" (click)="guardarEdicion()">Guardar</button>
+                  <button type="button" class="btn btn-ghost" (click)="cancelarEdicion()">Cancelar</button>
+                </div>
+              } @else {
+                <div class="intervencion-header">
+                  <div>
+                    <strong>{{ it.observacion }}</strong>
+                    <span>{{ it.fecha }} · {{ it.registradoPor }}</span>
+                  </div>
+                  @if (canWriteIntervenciones) {
+                    <div class="intervencion-actions">
+                      <button type="button" class="btn btn-icon" (click)="iniciarEdicion(it)" aria-label="Editar intervención">✎</button>
+                      <button type="button" class="btn btn-icon" (click)="eliminarIntervencion(it)" aria-label="Eliminar intervención">✕</button>
+                    </div>
+                  }
+                </div>
+              }
+              @if (it.adjuntos.length) {
+                <div class="intervencion-adjuntos">
+                  @for (adj of it.adjuntos; track adj) {
+                    <div class="adjunto-card">
+                      <button type="button" class="adjunto-thumb" (click)="abrirAdjunto(it.id, adj)">
+                        @if (adj.mimeType.startsWith('image/') && adj.previewUrl) {
+                          <img [src]="adj.previewUrl" [alt]="adj.nombreOriginal" />
+                        }
+                        @if (adj.mimeType.startsWith('image/') && !adj.previewUrl) {
+                          <span class="adjunto-thumb-loading">Cargando…</span>
+                        }
+                        @if (!adj.mimeType.startsWith('image/')) {
+                          <span class="adjunto-file-icon">{{ adj.mimeType === 'application/pdf' ? 'PDF' : 'DOC' }}</span>
+                        }
+                      </button>
+                      <div class="adjunto-meta">
+                        <strong>{{ adj.nombreOriginal }}</strong>
+                        <span>{{ adj.subidoPor }}</span>
+                      </div>
+                      @if (canWriteIntervenciones) {
+                        <button type="button" class="btn btn-icon adjunto-delete" (click)="eliminarAdjunto(it.id, adj)" aria-label="Eliminar adjunto">✕</button>
+                      }
+                    </div>
+                  }
+                </div>
+              }
+              @if (canWriteIntervenciones) {
+                <label class="btn btn-secondary adjunto-upload-btn">
+                  Agregar adjuntos
+                  <input type="file" multiple accept="image/jpeg,image/png,image/webp,application/pdf,.docx,.xlsx" (change)="onAdjuntosSelected($event, it.id)" hidden />
+                </label>
+              }
+            </div>
+          }
+        </div>
+      } @else {
+        <p class="empty-message">Sin intervenciones registradas para esta impresora.</p>
+      }
     </app-section-card>
   </div>
+}
 </div>
 
 <app-modal title="Adjunto" [open]="visorUrl() !== null" (closed)="cerrarVisor()">
-  <img *ngIf="visorUrl()" [src]="visorUrl()" class="intervencion-visor-img" alt="Adjunto ampliado" />
+  @if (visorUrl()) {
+    <img [src]="visorUrl()" class="intervencion-visor-img" alt="Adjunto ampliado" />
+  }
 </app-modal>

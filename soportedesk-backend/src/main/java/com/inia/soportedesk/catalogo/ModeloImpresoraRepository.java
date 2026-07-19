@@ -8,6 +8,10 @@ import java.util.List;
 
 public interface ModeloImpresoraRepository extends JpaRepository<ModeloImpresora, Long> {
 
+    boolean existsByMarcaIdAndNombreIgnoreCase(Long marcaId, String nombre);
+
+    boolean existsByMarcaIdAndNombreIgnoreCaseAndIdNot(Long marcaId, String nombre, Long id);
+
     List<ModeloImpresora> findByMarcaId(Long marcaId);
 
     @Query("SELECT m FROM ModeloImpresora m WHERE " +

@@ -1,16 +1,16 @@
-import { Component } from '@angular/core';
+import { Component, ChangeDetectionStrategy } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { SectionCardComponent } from './section-card.component';
 
 @Component({
-  standalone: true,
-  imports: [SectionCardComponent],
-  template: `
+    imports: [SectionCardComponent],
+    changeDetection: ChangeDetectionStrategy.Eager,
+    template: `
     <app-section-card title="Identificacion">
       <span icon data-testid="icon">I</span>
       <p data-testid="content">Contenido</p>
     </app-section-card>
-  `,
+  `
 })
 class HostComponent {}
 

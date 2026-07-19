@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ModalComponent } from '../../shared/modal/modal.component';
@@ -7,11 +7,11 @@ import { CorreoService } from './correo.service';
 import * as XLSX from 'xlsx';
 
 @Component({
-  selector: 'app-correos-consultas',
-  standalone: true,
-  imports: [CommonModule, FormsModule, ModalComponent],
-  templateUrl: './correos-consultas.component.html',
-  styleUrls: ['./correos.shared.scss', './correos-consultas-empty.scss'],
+    selector: 'app-correos-consultas',
+    imports: [CommonModule, FormsModule, ModalComponent],
+    templateUrl: './correos-consultas.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
+    styleUrls: ['./correos.shared.scss', './correos-consultas-empty.scss']
 })
 export class CorreosConsultasComponent implements OnInit {
   private service = inject(CorreoService);

@@ -51,15 +51,21 @@ class EquipoServiceTest {
     void getKpis_calculatesCountsByTypeAndSede() {
         VwInvComputerFull desktopCentral = equipo("Computadora de Escritorio", "SEDE CENTRAL");
         VwInvComputerFull laptopEea = equipo("Laptop", "EEA ANDENES");
-        VwInvComputerFull otroEea = equipo("Servidor", "EEA DONOSO");
-        when(repository.findFiltered(null, null, null, null, null, null)).thenReturn(List.of(desktopCentral, laptopEea, otroEea));
+        VwInvComputerFull allInOneEea = equipo("Space-Saving", "EEA DONOSO");
+        VwInvComputerFull servidorFueraDelConteo = equipo("Servidor", "SEDE CENTRAL");
+        TipoEquipoCatalogo allInOneCatalogo = new TipoEquipoCatalogo();
+        allInOneCatalogo.setGlpiValor("Space-Saving");
+        allInOneCatalogo.setTipoNormalizado("All in One");
+        when(repository.findFiltered(null, null, null, null, null, null))
+                .thenReturn(List.of(desktopCentral, laptopEea, allInOneEea, servidorFueraDelConteo));
+        when(catalogoRepository.findByActivoTrue()).thenReturn(List.of(allInOneCatalogo));
 
         EquipoKpisDto result = service.getKpis();
 
         assertThat(result.totalActivos()).isEqualTo(3);
         assertThat(result.desktopCount()).isEqualTo(1);
         assertThat(result.laptopCount()).isEqualTo(1);
-        assertThat(result.otrosCount()).isEqualTo(1);
+        assertThat(result.allInOneCount()).isEqualTo(1);
         assertThat(result.sedeCentralCount()).isEqualTo(1);
         assertThat(result.eeasCount()).isEqualTo(2);
     }
@@ -316,6 +322,7 @@ class EquipoServiceTest {
         e1.setComputerID(1L);
         e1.setFabricanteEquipo("Dell");
         e1.setOficinaId("UTI");
+        e1.setUnidadId("Soporte");
         e1.setUsuarioContacto("ana");
         e1.setUltimoEncendido(LocalDateTime.now());
         e1.setUltimaActualizacion(LocalDateTime.now());
@@ -324,23 +331,32 @@ class EquipoServiceTest {
         e2.setComputerID(2L);
         e2.setFabricanteEquipo("HP");
         e2.setOficinaId("UTI");
+        e2.setUnidadId("Infraestructura");
         e2.setUsuarioContacto(null);
         e2.setUltimoEncendido(LocalDateTime.now().minusMonths(14));
         e2.setUltimaActualizacion(LocalDateTime.now());
 
-        VwInvComputerFull e3 = equipo("Servidor", null);
+        VwInvComputerFull e3 = equipo("All in One", null);
         e3.setComputerID(3L);
         e3.setFabricanteEquipo("Dell");
         e3.setOficinaId("OGRH");
+        e3.setUnidadId("Bienestar");
         e3.setUsuarioContacto("beto");
         e3.setUltimoEncendido(LocalDateTime.now().minusMonths(7));
         e3.setUltimaActualizacion(LocalDateTime.now());
+
+        VwInvComputerFull servidorFueraDelConteo = equipo("Servidor", "SEDE CENTRAL");
+        servidorFueraDelConteo.setComputerID(4L);
+        servidorFueraDelConteo.setFabricanteEquipo("Lenovo");
+        servidorFueraDelConteo.setOficinaId("UTI");
 
         EquipoEnrichment enrichE1 = new EquipoEnrichment();
         enrichE1.setComputerId(1L);
         enrichE1.setCodigoPatrimonial("PAT-1");
 
-        when(repository.findFiltered(null, null, null, null, null, null)).thenReturn(List.of(e1, e2, e3));
+        when(repository.findFiltered(null, null, null, null, null, null))
+                .thenReturn(List.of(e1, e2, e3, servidorFueraDelConteo));
+        when(enrichmentRepository.findByComputerIdIn(List.of(1L, 2L, 3L, 4L))).thenReturn(List.of(enrichE1));
         when(enrichmentRepository.findByComputerIdIn(List.of(1L, 2L, 3L))).thenReturn(List.of(enrichE1));
 
         EquipoDashboardCompleto result = service.getDashboardCompleto();
@@ -348,7 +364,7 @@ class EquipoServiceTest {
         assertThat(result.total()).isEqualTo(3);
         assertThat(result.desktopCount()).isEqualTo(1);
         assertThat(result.laptopCount()).isEqualTo(1);
-        assertThat(result.otrosCount()).isEqualTo(1);
+        assertThat(result.allInOneCount()).isEqualTo(1);
         assertThat(result.sedeCentralCount()).isEqualTo(1);
         assertThat(result.eeasCount()).isEqualTo(2);
 
@@ -357,6 +373,14 @@ class EquipoServiceTest {
                 .containsExactly(
                         org.assertj.core.groups.Tuple.tuple("Dell", 2L),
                         org.assertj.core.groups.Tuple.tuple("HP", 1L)
+                );
+
+        assertThat(result.topSubdependencias())
+                .extracting(EquipoSubdependenciaCount::subdependencia, EquipoSubdependenciaCount::total)
+                .containsExactlyInAnyOrder(
+                        org.assertj.core.groups.Tuple.tuple("Soporte", 1L),
+                        org.assertj.core.groups.Tuple.tuple("Infraestructura", 1L),
+                        org.assertj.core.groups.Tuple.tuple("Bienestar", 1L)
                 );
 
         assertThat(result.topDependencias())
@@ -383,6 +407,7 @@ class EquipoServiceTest {
         assertThat(result.total()).isEqualTo(0);
         assertThat(result.distribucionPorFabricante()).isEmpty();
         assertThat(result.topDependencias()).isEmpty();
+        assertThat(result.topSubdependencias()).isEmpty();
         assertThat(result.salud().rojos()).isEqualTo(0);
     }
 

@@ -236,3 +236,11 @@
     color: var(--color-warning);
   }
 }
+.form-error {
+  margin-bottom: 1rem;
+  padding: 0.75rem 0.9rem;
+  border-radius: 0.65rem;
+  color: var(--danger-text, #991b1b);
+  background: color-mix(in srgb, var(--danger, #dc2626) 10%, transparent);
+  font-size: 0.875rem;
+}

@@ -1,4 +1,7 @@
 <form [formGroup]="form" (ngSubmit)="submit()" class="impresora-form" id="impresora-edit-form">
+  @if (errorMessage) {
+    <div class="form-error" role="alert">{{ errorMessage }}</div>
+  }
   <app-section-card title="Identificación">
     <svg icon xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
       <path d="M4 7h16" />
@@ -12,21 +15,27 @@
         <label>Marca</label>
         <select [value]="marcaId" (change)="onMarcaChange($any($event.target).value)">
           <option value="">Seleccione...</option>
-          <option *ngFor="let m of marcas" [value]="m.id">{{ m.nombre }}</option>
+          @for (m of marcas; track m) {
+            <option [value]="m.id">{{ m.nombre }}</option>
+          }
         </select>
       </div>
       <div class="field">
         <label>Modelo</label>
         <select formControlName="modeloImpresoraId">
           <option [ngValue]="null">Seleccione...</option>
-          <option *ngFor="let modelo of modelos" [ngValue]="modelo.id">{{ modelo.nombre }}</option>
+          @for (modelo of modelos; track modelo) {
+            <option [ngValue]="modelo.id">{{ modelo.nombre }}</option>
+          }
         </select>
       </div>
       <div class="field">
         <label>Tipo de impresora</label>
         <select formControlName="tipoImpresoraId">
           <option [ngValue]="null">— Sin tipo —</option>
-          <option *ngFor="let t of tiposImpresora" [ngValue]="t.id">{{ t.nombre }}</option>
+          @for (t of tiposImpresora; track t) {
+            <option [ngValue]="t.id">{{ t.nombre }}</option>
+          }
         </select>
       </div>
       <div class="field">
@@ -44,14 +53,15 @@
       <div class="field">
         <label>Estado</label>
         <div class="estado-selector">
-          <app-status-badge
-            *ngFor="let opt of estadoOptions"
-            [label]="opt.value"
-            [tone]="opt.tone"
-            [selectable]="true"
-            [active]="form.value.estado === opt.value"
-            (select)="form.patchValue({ estado: opt.value })"
-          />
+          @for (opt of estadoOptions; track opt) {
+            <app-status-badge
+              [label]="opt.value"
+              [tone]="opt.tone"
+              [selectable]="true"
+              [active]="form.value.estado === opt.value"
+              (select)="form.patchValue({ estado: opt.value })"
+              />
+          }
         </div>
       </div>
       <div class="field field--full">
@@ -80,10 +90,12 @@
           <option value="IP">IP</option>
         </select>
       </div>
-      <div class="field" *ngIf="form.value.tipoConexion === 'IP'">
-        <label>IP</label>
-        <input type="text" formControlName="ip" />
-      </div>
+      @if (form.value.tipoConexion === 'IP') {
+        <div class="field">
+          <label>IP</label>
+          <input type="text" formControlName="ip" />
+        </div>
+      }
     </div>
   </app-section-card>
 
@@ -98,32 +110,36 @@
       [(sedeId)]="sedeId"
       [(dependenciaId)]="dependenciaId"
       [(subdependenciaId)]="subdependenciaId"
-    />
-  </app-section-card>
+      />
+    </app-section-card>
 
-  <app-section-card title="Consumibles" *ngIf="modeloSeleccionado">
-    <svg icon xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-      <path d="M4 7h16v11a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z" />
-      <path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-      <path d="M8 12h8" />
-    </svg>
+    @if (modeloSeleccionado) {
+      <app-section-card title="Consumibles">
+        <svg icon xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M4 7h16v11a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z" />
+          <path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+          <path d="M8 12h8" />
+        </svg>
+        @if (modeloSeleccionado!.toners.length) {
+          <div class="toner-preview">
+            @for (toner of modeloSeleccionado!.toners; track toner) {
+              <div class="toner-chip">
+                <span>{{ toner.color }} · {{ toner.variante }}</span>
+                <strong>{{ toner.codigo }}</strong>
+              </div>
+            }
+          </div>
+        } @else {
+          <p class="empty-message">Este modelo no tiene tóner registrado en el catálogo.</p>
+        }
+      </app-section-card>
+    }
 
-    <ng-container *ngIf="modeloSeleccionado!.toners.length; else sinToner">
-      <div class="toner-preview">
-        <div class="toner-chip" *ngFor="let toner of modeloSeleccionado!.toners">
-          <span>{{ toner.color }} · {{ toner.variante }}</span>
-          <strong>{{ toner.codigo }}</strong>
-        </div>
-      </div>
-    </ng-container>
-    <ng-template #sinToner>
-      <p class="empty-message">Este modelo no tiene tóner registrado en el catálogo.</p>
-    </ng-template>
-  </app-section-card>
+  </form>
 
-</form>
-
-<div modal-footer class="actions">
-  <button type="button" class="secondary" (click)="cancelled.emit()">Cancelar</button>
-  <button type="submit" form="impresora-edit-form" [disabled]="form.invalid">Guardar</button>
-</div>
+  <div modal-footer class="actions">
+    <button type="button" class="secondary" (click)="cancelled.emit()">Cancelar</button>
+    <button type="submit" form="impresora-edit-form" [disabled]="form.invalid || saving">
+      {{ saving ? 'Guardando...' : 'Guardar' }}
+    </button>
+  </div>

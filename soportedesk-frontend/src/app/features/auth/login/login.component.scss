@@ -7,7 +7,7 @@
 .login-brand {
   flex: 1;
   background:
-    linear-gradient(180deg, rgba(22,163,74,.08), transparent 40%),
+    linear-gradient(180deg, rgba(56,189,248,.12), transparent 40%),
     var(--color-primary);
   display: flex;
   align-items: center;
@@ -157,7 +157,7 @@
 
     &:focus {
       border-color: var(--color-accent);
-      box-shadow: 0 0 0 3px rgba(22,163,74,.12);
+      box-shadow: 0 0 0 3px rgba(14,165,233,.16);
     }
 
     &::placeholder { color: var(--color-text-muted); }

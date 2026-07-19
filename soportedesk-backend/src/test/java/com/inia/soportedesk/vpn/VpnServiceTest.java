@@ -78,6 +78,19 @@ class VpnServiceTest {
         return usuario;
     }
 
+    private VpnRequest externalRequest(String email) {
+        VpnRequest request = new VpnRequest();
+        request.setTitularTipo("EXTERNO");
+        request.setTitularNombre("Ana");
+        request.setTitularApellidos("Torres");
+        request.setTitularCorreo(email);
+        request.setTitularEmpresa("Proveedor SAC");
+        request.setTitularMotivo("Soporte temporal");
+        request.setTitularCargo("Especialista");
+        request.setTipoEquipo("PERSONAL");
+        return request;
+    }
+
     private Authentication authAs(String username, String... authorities) {
         Authentication auth = mock(Authentication.class);
         List<GrantedAuthority> granted = List.of(authorities).stream()
@@ -178,6 +191,47 @@ class VpnServiceTest {
         assertThat(result.getTipoEquipo()).isEqualTo("PERSONAL");
         assertThat(result.getGlpiComputerId()).isNull();
         assertThat(result.getFechaSolicitud()).isNotNull();
+    }
+
+    @Test
+    void crearSolicitud_whenAdUserAlreadyHasVpn_rejectsDuplicate() {
+        when(activeDirectoryService.buscarUsuarioCacheadoORefrescar("jruiz")).thenReturn(Optional.of(cacheUser()));
+        when(usuarioRepository.findByUsername("jasistente")).thenReturn(Optional.empty());
+        when(repository.countBlockingByAdUser(eq("jruiz"), any(), eq(null))).thenReturn(1L);
+
+        assertThatThrownBy(() -> service.crearSolicitud(sampleRequest(), authAs("jasistente")))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("jruiz")
+                .hasMessageContaining("VPN vigente");
+    }
+
+    @Test
+    void crearSolicitud_whenExternalEmailAlreadyHasVpn_rejectsDuplicate() {
+        when(usuarioRepository.findByUsername("jasistente")).thenReturn(Optional.empty());
+        when(repository.countBlockingByExternalEmail(eq("persona@externo.pe"), any(), eq(null))).thenReturn(1L);
+
+        VpnRequest request = externalRequest(" persona@externo.pe ");
+
+        assertThatThrownBy(() -> service.crearSolicitud(request, authAs("jasistente")))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("persona@externo.pe");
+    }
+
+    @Test
+    void crearSolicitud_whenGlpiComputerAlreadyHasVpn_rejectsDuplicate() {
+        when(activeDirectoryService.buscarUsuarioCacheadoORefrescar("jruiz")).thenReturn(Optional.of(cacheUser()));
+        when(usuarioRepository.findByUsername("jasistente")).thenReturn(Optional.empty());
+        VwInvComputerFull equipo = new VwInvComputerFull();
+        equipo.setComputerID(42L);
+        when(glpiRepository.findById(42L)).thenReturn(Optional.of(equipo));
+        when(repository.countBlockingByGlpiComputer(eq(42L), any(), eq(null))).thenReturn(1L);
+
+        VpnRequest request = sampleRequest();
+        request.setGlpiComputerId(42L);
+
+        assertThatThrownBy(() -> service.crearSolicitud(request, authAs("jasistente")))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("equipo seleccionado");
     }
 
     @Test
@@ -401,6 +455,23 @@ class VpnServiceTest {
     }
 
     @Test
+    void aprobar_whenUsuarioVpnIsAlreadyApproved_rejectsDuplicate() {
+        Vpn existing = new Vpn();
+        existing.setId(7L);
+        existing.setEstadoSolicitud("PENDIENTE");
+        when(repository.findById(7L)).thenReturn(Optional.of(existing));
+        when(repository.countApprovedByUsuarioVpn("vpnuser1", 7L)).thenReturn(1L);
+
+        VpnAprobarRequest request = new VpnAprobarRequest();
+        request.setUsuarioVpn(" vpnuser1 ");
+
+        assertThatThrownBy(() -> service.aprobar(7L, request, authAs("mresponsable")))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("vpnuser1")
+                .hasMessageContaining("otro acceso aprobado");
+    }
+
+    @Test
     void aprobar_whenNotPendiente_throwsIllegalArgumentException() {
         Vpn existing = new Vpn();
         existing.setId(7L);
@@ -527,6 +598,8 @@ class VpnServiceTest {
         iniaAprobado.setEstadoSolicitud("APROBADO");
         iniaAprobado.setTipoEquipo("INIA");
         iniaAprobado.setTitularTipo("AD");
+        iniaAprobado.setAdOffice("OTI");
+        iniaAprobado.setAdOrganizationalUnit("Soporte");
 
         Vpn personalVencido = new Vpn();
         personalVencido.setId(2L);
@@ -570,6 +643,19 @@ class VpnServiceTest {
                         org.assertj.core.groups.Tuple.tuple("PERSONAL", 3L)
                 );
 
+        assertThat(result.distribucionPorDependencia())
+                .extracting(VpnDependenciaCount::dependencia, VpnDependenciaCount::total)
+                .containsExactly(
+                        org.assertj.core.groups.Tuple.tuple("Externos / sin dependencia", 3L),
+                        org.assertj.core.groups.Tuple.tuple("OTI", 1L)
+                );
+        assertThat(result.distribucionPorSubdependencia())
+                .extracting(VpnSubdependenciaCount::subdependencia, VpnSubdependenciaCount::total)
+                .containsExactly(
+                        org.assertj.core.groups.Tuple.tuple("Externos / sin subdependencia", 3L),
+                        org.assertj.core.groups.Tuple.tuple("Soporte", 1L)
+                );
+
         assertThat(result.totalAntivirusVencidos()).isEqualTo(1);
         assertThat(result.antivirusVencidos()).extracting(VpnVencimientoAlerta::vpnId).containsExactly(2L);
 
@@ -585,6 +671,8 @@ class VpnServiceTest {
 
         assertThat(result.total()).isEqualTo(0);
         assertThat(result.distribucionPorTipoEquipo()).isEmpty();
+        assertThat(result.distribucionPorDependencia()).isEmpty();
+        assertThat(result.distribucionPorSubdependencia()).isEmpty();
         assertThat(result.antivirusVencidos()).isEmpty();
     }
 }

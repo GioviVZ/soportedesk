@@ -1,245 +1,94 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, inject } from '@angular/core';
-import { ChartConfiguration, ChartData } from 'chart.js';
-import { BaseChartDirective } from 'ng2-charts';
-import { EquipoService } from './equipo.service';
+import { ChangeDetectionStrategy, Component, OnInit, inject } from '@angular/core';
+import { DashboardBreakdownComponent, DashboardBreakdownItem } from '../../shared/dashboard-breakdown/dashboard-breakdown.component';
 import { EquipoDashboardCompleto } from './equipo.model';
+import { EquipoService } from './equipo.service';
 
 @Component({
   selector: 'app-equipos-dashboard',
-  standalone: true,
-  imports: [CommonModule, BaseChartDirective],
+  imports: [CommonModule, DashboardBreakdownComponent],
   template: `
     <div class="module-dash">
       <div class="module-dash-toolbar">
-        <div class="module-dash-title">
-          <strong>Panorama del inventario de equipos</strong>
-          <span>Distribucion por fabricante, dependencias con mas equipos y salud general del parque.</span>
-        </div>
+        <div class="module-dash-title"><strong>Panorama del inventario de equipos</strong><span>Distribución organizacional, composición y salud del parque informático.</span></div>
         <div class="module-dash-actions">
-          <span class="module-dash-updated" *ngIf="updatedAt">Actualizado {{ updatedAt | date:'HH:mm' }}</span>
-          <button type="button" class="module-dash-refresh" (click)="load()" [disabled]="loading">
-            <span class="module-dash-refresh-icon" aria-hidden="true"></span>
-            {{ loading ? 'Actualizando' : 'Actualizar' }}
-          </button>
+          @if (updatedAt) { <span class="module-dash-updated">Actualizado {{ updatedAt | date:'HH:mm' }}</span> }
+          <button type="button" class="module-dash-refresh" (click)="load()" [disabled]="loading"><span class="module-dash-refresh-icon" aria-hidden="true"></span>{{ loading ? 'Actualizando' : 'Actualizar' }}</button>
         </div>
       </div>
 
-      <div class="module-dash-notice" *ngIf="error">No se pudo cargar. Se mantiene la ultima vista disponible.</div>
+      @if (error) { <div class="module-dash-notice">No se pudo cargar. Se mantiene la última vista disponible.</div> }
+      @if (dashboard; as d) {
+        <section class="module-dash-stats">
+          <div class="module-dash-stat"><span>Total</span><strong>{{ d.total }}</strong><small>Equipos acordados</small></div>
+          <div class="module-dash-stat tone-deep"><span>Desktop</span><strong>{{ d.desktopCount }}</strong><small>Computadoras de escritorio</small></div>
+          <div class="module-dash-stat tone-info"><span>Laptop</span><strong>{{ d.laptopCount }}</strong><small>Equipos portátiles</small></div>
+          <div class="module-dash-stat tone-success"><span>All in One</span><strong>{{ d.allInOneCount }}</strong><small>Equipos integrados</small></div>
+          <div class="module-dash-stat tone-warning"><span>Recientes</span><strong>{{ d.recientes30Dias }}</strong><small>Agregados en 30 días</small></div>
+          <div class="module-dash-stat tone-warning"><span>Desactualizados</span><strong>{{ d.sinActualizarMasTresMeses }}</strong><small>Más de 3 meses</small></div>
+        </section>
 
-      <section class="module-dash-stats" *ngIf="dashboard as d">
-        <div class="module-dash-stat"><span>Total</span><strong>{{ d.total }}</strong><small>Equipos registrados</small></div>
-        <div class="module-dash-stat"><span>Desktop</span><strong>{{ d.desktopCount }}</strong><small>Equipos de escritorio</small></div>
-        <div class="module-dash-stat"><span>Laptop</span><strong>{{ d.laptopCount }}</strong><small>Equipos portatiles</small></div>
-        <div class="module-dash-stat"><span>Otros</span><strong>{{ d.otrosCount }}</strong><small>Servidores y demas</small></div>
-        <div class="module-dash-stat tone-info"><span>Sede Central</span><strong>{{ d.sedeCentralCount }}</strong><small>En sede central</small></div>
-        <div class="module-dash-stat tone-info"><span>EEAs</span><strong>{{ d.eeasCount }}</strong><small>En estaciones experimentales</small></div>
-        <div class="module-dash-stat tone-warning"><span>Agregados recientemente</span><strong>{{ d.recientes30Dias }}</strong><small>Últimos 30 días</small></div>
-        <div class="module-dash-stat tone-warning"><span>Sin actualizar +3 meses</span><strong>{{ d.sinActualizarMasTresMeses }}</strong><small>Inventario GLPI atrasado o sin fecha</small></div>
-      </section>
+        <section class="module-dash-breakdowns">
+          <app-dashboard-breakdown title="Equipos por dependencia" subtitle="Cantidad exacta por dependencia" unit="equipos" [items]="dependencias(d)" [expanded]="true" [colors]="organizationColors" />
+          <app-dashboard-breakdown title="Equipos por subdependencia" subtitle="Detalle por oficina o unidad" unit="equipos" [items]="subdependencias(d)" [colors]="suborganizationColors" />
+          <app-dashboard-breakdown title="Tipo de equipo" subtitle="Solo laptop, escritorio y All in One" unit="equipos" [items]="tipos(d)" [colors]="typeColors" />
+          <app-dashboard-breakdown title="Distribución por fabricante" subtitle="Marcas presentes en el inventario" unit="equipos" [items]="fabricantes(d)" [colors]="brandColors" />
+          <app-dashboard-breakdown title="Salud del inventario" subtitle="Al día, advertencia y críticos" unit="equipos" [items]="salud(d)" [colors]="healthColors" />
+        </section>
 
-      <section class="module-dash-visual-grid" *ngIf="dashboard as d">
-        <article class="module-dash-card module-dash-mini-chart">
-          <header class="module-dash-card__header">
-            <div>
-              <strong>Tipo de equipo</strong>
-              <span>Desktop, laptop y otros activos</span>
-            </div>
-          </header>
-          <canvas baseChart [data]="tipoChartData" [options]="doughnutOptions" [type]="'doughnut'"></canvas>
-        </article>
-
-        <article class="module-dash-card module-dash-radar-chart">
-          <header class="module-dash-card__header">
-            <div>
-              <strong>Salud del inventario</strong>
-              <span>Alertas y cumplimiento documental</span>
-            </div>
-          </header>
-          <canvas baseChart [data]="saludRadarData" [options]="radarOptions" [type]="'radar'"></canvas>
-        </article>
-      </section>
-
-      <section class="module-dash-grid" *ngIf="dashboard as d">
-        <article class="module-dash-card module-dash-chart">
-          <header class="module-dash-card__header">
-            <div>
-              <strong>Distribucion por fabricante</strong>
-              <span>{{ d.distribucionPorFabricante.length }} fabricantes registrados</span>
-            </div>
-          </header>
-          <canvas baseChart [data]="chartData" [options]="chartOptions" [type]="'bar'"></canvas>
-        </article>
-
-        <div class="module-dash-side">
+        <section class="module-dash-operations">
+          <article class="module-dash-highlight"><strong>{{ percent(d.salud.ok, d.total) }}%</strong><span>Del inventario se encuentra al día.</span></article>
           <article class="module-dash-card">
-            <header class="module-dash-card__header">
-              <div>
-                <strong>Resumen de salud</strong>
-                <span>Participacion por nivel de alerta</span>
-              </div>
-            </header>
+            <header class="module-dash-card__header"><div><strong>Resumen de salud</strong><span>Participación por nivel de alerta</span></div></header>
             <div class="module-dash-progress">
-              <div class="module-dash-progress-row">
-                <span>Criticos (Rojo)</span><strong>{{ percent(d.salud.rojos, d.total) }}%</strong>
-                <div class="module-dash-track"><i [style.width.%]="percent(d.salud.rojos, d.total)"></i></div>
-              </div>
-              <div class="module-dash-progress-row">
-                <span>Advertencia (Amarillo)</span><strong>{{ percent(d.salud.amarillos, d.total) }}%</strong>
-                <div class="module-dash-track"><i [style.width.%]="percent(d.salud.amarillos, d.total)"></i></div>
-              </div>
-              <div class="module-dash-progress-row">
-                <span>Al dia (OK)</span><strong>{{ percent(d.salud.ok, d.total) }}%</strong>
-                <div class="module-dash-track"><i [style.width.%]="percent(d.salud.ok, d.total)"></i></div>
-              </div>
+              <div class="module-dash-progress-row"><span>Críticos</span><strong>{{ percent(d.salud.rojos, d.total) }}%</strong><div class="module-dash-track"><i [style.width.%]="percent(d.salud.rojos, d.total)"></i></div></div>
+              <div class="module-dash-progress-row"><span>Advertencia</span><strong>{{ percent(d.salud.amarillos, d.total) }}%</strong><div class="module-dash-track"><i [style.width.%]="percent(d.salud.amarillos, d.total)"></i></div></div>
+              <div class="module-dash-progress-row"><span>Al día</span><strong>{{ percent(d.salud.ok, d.total) }}%</strong><div class="module-dash-track"><i [style.width.%]="percent(d.salud.ok, d.total)"></i></div></div>
             </div>
+          </article>
+          <article class="module-dash-card">
+            <header class="module-dash-card__header"><div><strong>Calidad de inventario</strong><span>Datos pendientes de completar</span></div></header>
             <div class="module-dash-list">
-              <div class="module-dash-row tone-warning"><strong>Sin codigo patrimonial</strong><small>{{ d.salud.sinPatrimonial }} equipos</small></div>
+              <div class="module-dash-row tone-warning"><strong>Sin código patrimonial</strong><small>{{ d.salud.sinPatrimonial }} equipos</small></div>
               <div class="module-dash-row tone-warning"><strong>Sin usuario</strong><small>{{ d.salud.sinUsuario }} equipos</small></div>
               <div class="module-dash-row tone-warning"><strong>Sin sede</strong><small>{{ d.salud.sinSede }} equipos</small></div>
             </div>
           </article>
+        </section>
+      }
 
-          <article class="module-dash-card">
-            <header class="module-dash-card__header">
-              <div>
-                <strong>Top dependencias</strong>
-                <span>Dependencias con mas equipos registrados</span>
-              </div>
-              <span class="badge">{{ d.topDependencias.length }}</span>
-            </header>
-            <div class="module-dash-list">
-              <div class="module-dash-row tone-info" *ngFor="let row of d.topDependencias">
-                <strong>{{ row.dependencia }}</strong>
-                <small>{{ row.total }} equipos</small>
-              </div>
-            </div>
-            <p *ngIf="!d.topDependencias.length">Sin dependencias registradas.</p>
-          </article>
-        </div>
-      </section>
-
-      <section class="empty-state" *ngIf="!dashboard && !loading">
-        <strong>Sin datos de dashboard</strong>
-        <span>El servicio devolvio un resumen vacio o no disponible.</span>
-      </section>
+      @if (!dashboard && !loading) { <section class="empty-state"><strong>Sin datos de dashboard</strong><span>El servicio devolvió un resumen vacío o no disponible.</span></section> }
     </div>
   `,
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './equipos.shared.scss',
 })
 export class EquiposDashboardComponent implements OnInit {
   private service = inject(EquipoService);
-
   dashboard: EquipoDashboardCompleto | null = null;
   loading = false;
   error = false;
   updatedAt: Date | null = null;
+  readonly organizationColors = ['#2f682e', '#4f8747', '#73a766', '#9bc486', '#3d6c8c', '#648fa7', '#9a824a'];
+  readonly suborganizationColors = ['#315d8a', '#5a8fb8', '#77afc7', '#2f766d', '#6b9b71', '#90b681', '#c3a44f'];
+  readonly typeColors = ['#315d8a', '#2f682e', '#90b681'];
+  readonly brandColors = ['#2f682e', '#568b4d', '#7cad6d', '#a5c891', '#416f8e', '#7299ae', '#a58e55'];
+  readonly healthColors = ['#4e8b55', '#c1a04b', '#bd665b'];
 
-  chartData: ChartData<'bar', number[], string> = {
-    labels: [],
-    datasets: [{ data: [], label: 'Equipos', backgroundColor: '#16a34a' }],
-  };
-
-  tipoChartData: ChartData<'doughnut', number[], string> = {
-    labels: [],
-    datasets: [{ data: [], backgroundColor: ['#5d87ff', '#13deb9', '#7c8fac'] }],
-  };
-
-  saludRadarData: ChartData<'radar', number[], string> = {
-    labels: [],
-    datasets: [{ data: [], label: 'Equipos', borderColor: '#13deb9', backgroundColor: 'rgba(19,222,185,.18)', pointBackgroundColor: '#13deb9' }],
-  };
-
-  chartOptions: ChartConfiguration<'bar'>['options'] = {
-    indexAxis: 'y',
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, boxHeight: 10, usePointStyle: true } } },
-    scales: {
-      x: { beginAtZero: true, grid: { color: '#e2e8f0' }, ticks: { precision: 0 } },
-      y: { grid: { display: false } },
-    },
-  };
-
-  doughnutOptions: ChartConfiguration<'doughnut'>['options'] = {
-    responsive: true,
-    maintainAspectRatio: false,
-    cutout: '62%',
-    plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, boxHeight: 10, usePointStyle: true } } },
-  };
-
-  radarOptions: ChartConfiguration<'radar'>['options'] = {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, boxHeight: 10, usePointStyle: true } } },
-    scales: {
-      r: {
-        beginAtZero: true,
-        ticks: { precision: 0, backdropColor: 'transparent' },
-        grid: { color: '#e5eaf2' },
-        angleLines: { color: '#e5eaf2' },
-      },
-    },
-  };
-
-  ngOnInit(): void {
-    this.load();
-  }
-
+  ngOnInit(): void { this.load(); }
   load(): void {
     this.loading = true;
     this.error = false;
     this.service.getDashboardCompleto().subscribe({
-      next: (dashboard) => {
-        this.loading = false;
-        this.dashboard = dashboard;
-        this.updatedAt = new Date();
-        this.applyChart(dashboard);
-      },
-      error: () => {
-        this.loading = false;
-        this.error = true;
-        this.dashboard = null;
-        this.applyChart(null);
-      },
+      next: (dashboard) => { this.dashboard = dashboard; this.updatedAt = new Date(); this.loading = false; },
+      error: () => { this.dashboard = null; this.error = true; this.loading = false; },
     });
   }
 
-  private applyChart(dashboard: EquipoDashboardCompleto | null): void {
-    const rows = dashboard?.distribucionPorFabricante ?? [];
-    this.chartData = {
-      labels: rows.map((row) => row.fabricante),
-      datasets: [{ data: rows.map((row) => row.total), label: 'Equipos', backgroundColor: '#16a34a' }],
-    };
-
-    this.tipoChartData = {
-      labels: ['Desktop', 'Laptop', 'Otros'],
-      datasets: [{
-        data: dashboard ? [dashboard.desktopCount, dashboard.laptopCount, dashboard.otrosCount] : [],
-        backgroundColor: ['#5d87ff', '#13deb9', '#7c8fac'],
-      }],
-    };
-
-    this.saludRadarData = {
-      labels: ['OK', 'Amarillos', 'Rojos', 'Sin patrimonio', 'Sin usuario', 'Sin sede'],
-      datasets: [{
-        data: dashboard ? [
-          dashboard.salud.ok,
-          dashboard.salud.amarillos,
-          dashboard.salud.rojos,
-          dashboard.salud.sinPatrimonial,
-          dashboard.salud.sinUsuario,
-          dashboard.salud.sinSede,
-        ] : [],
-        label: 'Equipos',
-        borderColor: '#13deb9',
-        backgroundColor: 'rgba(19,222,185,.18)',
-        pointBackgroundColor: '#13deb9',
-      }],
-    };
-  }
-
-  percent(value: number, total: number): number {
-    return total > 0 ? Math.round((value / total) * 100) : 0;
-  }
+  dependencias(d: EquipoDashboardCompleto): DashboardBreakdownItem[] { return d.topDependencias.map((row) => ({ label: row.dependencia, total: row.total })); }
+  subdependencias(d: EquipoDashboardCompleto): DashboardBreakdownItem[] { return d.topSubdependencias.map((row) => ({ label: row.subdependencia, total: row.total })); }
+  tipos(d: EquipoDashboardCompleto): DashboardBreakdownItem[] { return [{ label: 'Laptop', total: d.laptopCount }, { label: 'Computadora de escritorio', total: d.desktopCount }, { label: 'All in One', total: d.allInOneCount }]; }
+  fabricantes(d: EquipoDashboardCompleto): DashboardBreakdownItem[] { return d.distribucionPorFabricante.map((row) => ({ label: row.fabricante, total: row.total })); }
+  salud(d: EquipoDashboardCompleto): DashboardBreakdownItem[] { return [{ label: 'Al día', total: d.salud.ok }, { label: 'Advertencia', total: d.salud.amarillos }, { label: 'Críticos', total: d.salud.rojos }]; }
+  percent(value: number, total: number): number { return total > 0 ? Math.round((value / total) * 100) : 0; }
 }

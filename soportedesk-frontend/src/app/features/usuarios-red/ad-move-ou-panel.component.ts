@@ -1,35 +1,41 @@
-import { CommonModule } from '@angular/common';
-import { Component, EventEmitter, Input, Output, inject } from '@angular/core';
+
+import { Component, EventEmitter, Input, Output, inject, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { SectionCardComponent } from '../../shared/section-card/section-card.component';
 import { ActiveDirectoryService } from './active-directory.service';
 import { ActiveDirectoryOu, AdPanelResult } from './active-directory.model';
 
 @Component({
-  selector: 'app-ad-move-ou-panel',
-  standalone: true,
-  imports: [CommonModule, FormsModule, SectionCardComponent],
-  template: `
+    selector: 'app-ad-move-ou-panel',
+    imports: [FormsModule, SectionCardComponent],
+    template: `
     <app-section-card title="Nueva unidad organizativa">
       <svg icon xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
       </svg>
-
-      <div class="notice error" *ngIf="error">{{ error }}</div>
-
+    
+      @if (error) {
+        <div class="notice error">{{ error }}</div>
+      }
+    
       <div class="inline-search">
         <input name="ouSearch" [(ngModel)]="ouSearch" placeholder="Buscar OU" (keyup.enter)="search()" />
         <button type="button" class="btn btn-ghost" (click)="search()">Buscar</button>
       </div>
-      <div class="pick-list" *ngIf="results.length">
-        <button type="button" *ngFor="let ou of results" [disabled]="working" (click)="move(ou.dn)">
-          <strong>{{ ou.name }}</strong>
-          <span>{{ ou.dn }}</span>
-        </button>
-      </div>
+      @if (results.length) {
+        <div class="pick-list">
+          @for (ou of results; track ou) {
+            <button type="button" [disabled]="working" (click)="move(ou.dn)">
+              <strong>{{ ou.name }}</strong>
+              <span>{{ ou.dn }}</span>
+            </button>
+          }
+        </div>
+      }
     </app-section-card>
-  `,
-  styleUrl: './usuarios-red.shared.scss',
+    `,
+    changeDetection: ChangeDetectionStrategy.Eager,
+    styleUrl: './usuarios-red.shared.scss'
 })
 export class AdMoveOuPanelComponent {
   private adService = inject(ActiveDirectoryService);

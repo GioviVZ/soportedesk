@@ -1,16 +1,16 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { Component, OnInit, computed, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { EquipoSaludItem } from './equipo.model';
 import { EquipoService } from './equipo.service';
 import { EquipoEnrichmentModalComponent } from './equipo-enrichment-modal.component';
 
 @Component({
-  selector: 'app-equipos-mantenimiento',
-  standalone: true,
-  imports: [CommonModule, FormsModule, EquipoEnrichmentModalComponent],
-  templateUrl: './equipos-mantenimiento.component.html',
-  styleUrl: './equipos.shared.scss',
+    selector: 'app-equipos-mantenimiento',
+    imports: [CommonModule, FormsModule, EquipoEnrichmentModalComponent],
+    templateUrl: './equipos-mantenimiento.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
+    styleUrl: './equipos.shared.scss'
 })
 export class EquiposMantenimientoComponent implements OnInit {
   private service = inject(EquipoService);

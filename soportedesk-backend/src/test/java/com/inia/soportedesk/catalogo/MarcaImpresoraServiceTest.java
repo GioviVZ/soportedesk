@@ -60,4 +60,14 @@ class MarcaImpresoraServiceTest {
 
         assertThat(result.getNombre()).isEqualTo("HP");
     }
+    @Test
+    void create_withDuplicatedName_rejectsBrand() {
+        MarcaImpresoraRequest request = new MarcaImpresoraRequest();
+        request.setNombre(" hp ");
+        when(repository.existsByNombreIgnoreCase("hp")).thenReturn(true);
+
+        assertThatThrownBy(() -> service.create(request))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("marca de impresora hp");
+    }
 }

@@ -1,5 +1,5 @@
-import { CommonModule } from '@angular/common';
-import { Component, EventEmitter, Input, OnChanges, OnInit, Output, inject } from '@angular/core';
+
+import { Component, EventEmitter, Input, OnChanges, OnInit, Output, inject, ChangeDetectionStrategy } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { TipoBien, TipoLicencia } from '../../core/models/catalogo.model';
 import { CatalogoService } from '../../core/catalogos/catalogo.service';
@@ -7,11 +7,11 @@ import { Licencia, LicenciaActivacion, LicenciaRequest } from './licencia.model'
 import { LicenciaService } from './licencia.service';
 
 @Component({
-  selector: 'app-licencia-form',
-  standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
-  templateUrl: './licencia-form.component.html',
-  styleUrl: './licencia-form.component.scss',
+    selector: 'app-licencia-form',
+    imports: [ReactiveFormsModule],
+    templateUrl: './licencia-form.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
+    styleUrl: './licencia-form.component.scss'
 })
 export class LicenciaFormComponent implements OnInit, OnChanges {
   private fb = inject(FormBuilder);

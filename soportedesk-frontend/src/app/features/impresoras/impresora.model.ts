@@ -52,6 +52,16 @@ export interface ImpresoraSedeCount {
   total: number;
 }
 
+export interface ImpresoraDependenciaCount {
+  dependencia: string;
+  total: number;
+}
+
+export interface ImpresoraSubdependenciaCount {
+  subdependencia: string;
+  total: number;
+}
+
 export interface ImpresoraConsumibleCount {
   color: string;
   variante: string;
@@ -66,6 +76,8 @@ export interface ImpresoraDashboardCompleto {
   deBaja: number;
   distribucionPorMarca: ImpresoraMarcaCount[];
   distribucionPorSede: ImpresoraSedeCount[];
+  distribucionPorDependencia: ImpresoraDependenciaCount[];
+  distribucionPorSubdependencia: ImpresoraSubdependenciaCount[];
   topConsumibles: ImpresoraConsumibleCount[];
   totalConsumiblesDistintos: number;
 }

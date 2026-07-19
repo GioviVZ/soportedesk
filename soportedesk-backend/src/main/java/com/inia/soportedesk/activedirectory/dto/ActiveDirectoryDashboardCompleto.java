@@ -7,6 +7,7 @@ public record ActiveDirectoryDashboardCompleto(
         int usuariosDeshabilitados,
         int usuariosBloqueados,
         int controladoresDominio,
+        List<OfficeUsuariosCount> distribucionPorOficina,
         List<OuUsuariosCount> distribucionPorOu,
         List<AdUserAlerta> passwordsVencidas,
         int totalPasswordsVencidas,

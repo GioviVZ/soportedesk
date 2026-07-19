@@ -8,16 +8,37 @@
   <button type="button" [class.active]="onlyRecent()" (click)="onlyRecent.set(!onlyRecent())">Recientes <strong>{{ recientes().length }}</strong></button>
 </section>
 
-<div class="equipment-admin-table" *ngIf="filtered().length; else emptyAdmin">
-  <table><thead><tr><th>Equipo</th><th>Usuario asignado</th><th>Sede</th><th>Tipo</th><th>Datos pendientes</th><th></th></tr></thead>
-    <tbody><tr *ngFor="let item of filtered()">
-      <td><strong>{{ item.nombreEquipo }}</strong><small *ngIf="item.fechaCreacion">Agregado {{ item.fechaCreacion | date:'dd/MM/yyyy' }}</small></td>
+@if (filtered().length) {
+  <div class="equipment-admin-table">
+    <table><thead><tr><th>Equipo</th><th>Usuario asignado</th><th>Sede</th><th>Tipo</th><th>Datos pendientes</th><th></th></tr></thead>
+    <tbody>@for (item of filtered(); track item) {
+      <tr>
+        <td><strong>{{ item.nombreEquipo }}</strong>@if (item.fechaCreacion) {
+        <small>Agregado {{ item.fechaCreacion | date:'dd/MM/yyyy' }}</small>
+      }</td>
       <td>{{ item.usuarioContacto || 'Sin usuario' }}</td><td>{{ item.sedeNombre || 'Sin sede' }}</td><td>{{ item.tipoEquipo || 'Sin tipo' }}</td>
-      <td><span class="tag-warn" *ngIf="item.sinUsuario">Usuario</span><span class="tag-warn" *ngIf="item.sinSede">Sede</span><span class="tag-warn" *ngIf="item.sinDependencia">Dependencia</span><span class="tag-warn" *ngIf="item.sinSubdependencia">Subdependencia</span><span class="tag-warn" *ngIf="item.sinNumeroSerie">Serie</span><span class="tag-warn" *ngIf="item.sinCodigoPatrimonial">Código</span></td>
+      <td>@if (item.sinUsuario) {
+        <span class="tag-warn">Usuario</span>
+        }@if (item.sinSede) {
+        <span class="tag-warn">Sede</span>
+        }@if (item.sinDependencia) {
+        <span class="tag-warn">Dependencia</span>
+        }@if (item.sinSubdependencia) {
+        <span class="tag-warn">Subdependencia</span>
+        }@if (item.sinNumeroSerie) {
+        <span class="tag-warn">Serie</span>
+        }@if (item.sinCodigoPatrimonial) {
+        <span class="tag-warn">Código</span>
+      }</td>
       <td><button type="button" class="view-link" (click)="edit(item)">Editar datos</button></td>
-    </tr></tbody>
-  </table>
+    </tr>
+  }</tbody>
+</table>
 </div>
-<ng-template #emptyAdmin><p class="salud-ok">No hay equipos para los filtros seleccionados.</p></ng-template>
+} @else {
+  <p class="salud-ok">No hay equipos para los filtros seleccionados.</p>
+}
 
-<app-equipo-enrichment-modal *ngIf="selected() as item" [open]="true" [computerId]="item.computerID" [nombreEquipo]="item.nombreEquipo" (closed)="close()" (saved)="saved()" />
+@if (selected(); as item) {
+  <app-equipo-enrichment-modal [open]="true" [computerId]="item.computerID" [nombreEquipo]="item.nombreEquipo" (closed)="close()" (saved)="saved()" />
+}

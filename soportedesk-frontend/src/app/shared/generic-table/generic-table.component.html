@@ -1,44 +1,74 @@
 <div class="table-toolbar">
-  <div class="search-wrap" *ngIf="showSearch">
-    <span class="search-icon">
-      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-    </span>
-    <input type="text" placeholder="Buscar..." aria-label="Buscar registros" [value]="searchTerm" (input)="onSearch($any($event.target).value)" />
-  </div>
+  @if (showSearch) {
+    <div class="search-wrap">
+      <span class="search-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      </span>
+      <input type="text" placeholder="Buscar..." aria-label="Buscar registros" [value]="searchTerm" (input)="onSearch($any($event.target).value)" />
+    </div>
+  }
   <span class="result-count">{{ data.length }} {{ data.length === 1 ? 'registro' : 'registros' }}</span>
-  <button type="button" *ngIf="showAddButton" class="add-btn" (click)="add.emit()" aria-label="Agregar registro" title="Agregar registro">
-    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-    Agregar
-  </button>
+  @if (showAddButton) {
+    <button type="button" class="add-btn" (click)="add.emit()" aria-label="Agregar registro" title="Agregar registro">
+      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      Agregar
+    </button>
+  }
 </div>
 
 <div class="table-wrap">
   <table>
     <thead>
       <tr>
-        <th *ngFor="let col of columns">{{ col.label }}</th>
-        <th *ngIf="extraColumnLabel">{{ extraColumnLabel }}</th>
-        <th *ngIf="canView || canEdit">Acciones</th>
+        @for (col of columns; track col) {
+          <th>{{ col.label }}</th>
+        }
+        @if (extraColumnLabel) {
+          <th>{{ extraColumnLabel }}</th>
+        }
+        @if (canView || canEdit) {
+          <th>Acciones</th>
+        }
       </tr>
     </thead>
     <tbody>
-      <tr *ngFor="let row of data">
-        <td *ngFor="let col of columns">{{ getValue(row, col.key) }}</td>
-        <td *ngIf="extraColumnLabel">
-          <ng-container *ngTemplateOutlet="extraCellTemplate ?? null; context: { $implicit: row }" />
-        </td>
-        <td *ngIf="canView || canEdit" class="actions">
-          <button type="button" *ngIf="canView" class="view-btn" (click)="view.emit(row)" aria-label="Ver registro" title="Ver registro">Ver</button>
-          <button type="button" *ngIf="canEdit" class="edit-btn" (click)="edit.emit(row)" aria-label="Editar registro" title="Editar registro">Editar</button>
-          <button type="button" *ngIf="canEdit" class="del-btn" (click)="delete.emit(row)" aria-label="Eliminar registro" title="Eliminar registro">Eliminar</button>
-        </td>
-      </tr>
-      <tr *ngIf="data.length === 0">
-        <td [attr.colspan]="columns.length + (extraColumnLabel ? 1 : 0) + ((canView || canEdit) ? 1 : 0)" class="empty">
-          <ng-container *ngIf="searchTerm.trim()">No se encontraron resultados para "{{ searchTerm }}"</ng-container>
-          <ng-container *ngIf="!searchTerm.trim()">{{ emptyMessage }}</ng-container>
-        </td>
-      </tr>
+      @for (row of data; track row) {
+        <tr>
+          @for (col of columns; track col) {
+            <td>{{ getValue(row, col.key) }}</td>
+          }
+          @if (extraColumnLabel) {
+            <td>
+              <ng-container *ngTemplateOutlet="extraCellTemplate ?? null; context: { $implicit: row }" />
+            </td>
+          }
+          @if (canView || canEdit) {
+            <td class="actions">
+              @if (canView) {
+                <button type="button" class="view-btn" (click)="view.emit(row)" aria-label="Ver registro" title="Ver registro">Ver</button>
+              }
+              @if (canEdit) {
+                <button type="button" class="edit-btn" (click)="edit.emit(row)" aria-label="Editar registro" title="Editar registro">Editar</button>
+              }
+              @if (canEdit) {
+                <button type="button" class="del-btn" (click)="delete.emit(row)" aria-label="Eliminar registro" title="Eliminar registro">Eliminar</button>
+              }
+            </td>
+          }
+        </tr>
+      }
+      @if (data.length === 0) {
+        <tr>
+          <td [attr.colspan]="columns.length + (extraColumnLabel ? 1 : 0) + ((canView || canEdit) ? 1 : 0)" class="empty">
+            @if (searchTerm.trim()) {
+              No se encontraron resultados para "{{ searchTerm }}"
+            }
+            @if (!searchTerm.trim()) {
+              {{ emptyMessage }}
+            }
+          </td>
+        </tr>
+      }
     </tbody>
   </table>
 </div>

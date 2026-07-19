@@ -1,8 +1,10 @@
 <section class="kpi-grid">
-  <article *ngFor="let card of kpiCards()" class="kpi-card" [class]="'tone-' + card.tone">
-    <span>{{ card.label }}</span>
-    <strong>{{ card.value }}</strong>
-  </article>
+  @for (card of kpiCards(); track card) {
+    <article class="kpi-card" [class]="'tone-' + card.tone">
+      <span>{{ card.label }}</span>
+      <strong>{{ card.value }}</strong>
+    </article>
+  }
 </section>
 
 <app-modal
@@ -10,13 +12,14 @@
   size="wide"
   [open]="viewingId() !== null"
   (closed)="closeDetail()"
->
-  <app-equipo-detail
-    *ngIf="viewingId() as id"
-    [id]="id"
-    [embedded]="true"
-    (closeRequested)="closeDetail()"
-  />
+  >
+  @if (viewingId(); as id) {
+    <app-equipo-detail
+      [id]="id"
+      [embedded]="true"
+      (closeRequested)="closeDetail()"
+      />
+  }
 </app-modal>
 
 <section class="equipment-filter-panel">
@@ -41,106 +44,120 @@
       (ngModelChange)="onSearch($event)"
       placeholder="Equipo, usuario, serie, código, IP, modelo..."
       autocomplete="off"
-    />
-  </label>
-
-  <div class="filter-grid">
-    <label>
-      Sede
-      <select [ngModel]="selectedSede()" (ngModelChange)="onSedeChange($event)">
-        <option value="">Todas</option>
-        <option *ngFor="let sede of sedes()" [value]="sede">{{ sede }}</option>
-      </select>
-    </label>
-
-    <label>
-      Dependencia
-      <select [ngModel]="selectedDependencia()" (ngModelChange)="onDependenciaChange($event)">
-        <option value="">Todas</option>
-        <option *ngFor="let dep of dependencias()" [value]="dep">{{ dep }}</option>
-      </select>
-    </label>
-
-    <label>
-      Subdependencia
-      <select [ngModel]="selectedSubdependencia()" (ngModelChange)="onSubdependenciaChange($event)"
-              [disabled]="!selectedDependencia()">
-        <option value="">Todas</option>
-        <option *ngFor="let sub of subdependencias()" [value]="sub">{{ sub }}</option>
-      </select>
-    </label>
-
-    <label>
-      Tipo
-      <select [ngModel]="selectedTipo()" (ngModelChange)="onTipoChange($event)">
-        <option value="">Todos</option>
-        <option *ngFor="let tipo of tipos()" [value]="tipo">{{ tipo }}</option>
-      </select>
-    </label>
-
-    <label>
-      Fabricante
-      <select [ngModel]="selectedFabricante()" (ngModelChange)="onFabricanteChange($event)">
-        <option value="">Todos</option>
-        <option *ngFor="let fab of fabricantes()" [value]="fab">{{ fab }}</option>
-      </select>
-    </label>
-
-    <label>
-      Modelo
-      <select [ngModel]="selectedModelo()" (ngModelChange)="onModeloChange($event)">
-        <option value="">Todos</option>
-        <option *ngFor="let modelo of modelos()" [value]="modelo">{{ modelo }}</option>
-      </select>
-    </label>
-
-    <label>
-      IP
-      <input
-        type="text"
-        [ngModel]="ipFilter()"
-        (ngModelChange)="onIpChange($event)"
-        placeholder="Ej. 172.16"
       />
     </label>
-  </div>
-</section>
 
-<div class="desktop-table-shell">
-  <app-generic-table
-    [columns]="columns"
-    [data]="filteredItems()"
-    [canEdit]="false"
-    [canView]="true"
-    [initialSearch]="searchTerm()"
-    [showSearch]="false"
-    emptyMessage="Sin equipos activos registrados"
-    (view)="onView($event)"
-  />
-</div>
+    <div class="filter-grid">
+      <label>
+        Sede
+        <select [ngModel]="selectedSede()" (ngModelChange)="onSedeChange($event)">
+          <option value="">Todas</option>
+          @for (sede of sedes(); track sede) {
+            <option [value]="sede">{{ sede }}</option>
+          }
+        </select>
+      </label>
 
-<section class="mobile-equipment-list" aria-label="Equipos">
-  <article *ngFor="let item of filteredItems()" class="equipment-card">
-    <div class="card-head">
-      <div>
-        <strong>{{ item.nombreEquipo }}</strong>
-        <span>{{ item.usuarioLimpio || 'Sin usuario' }}</span>
+      <label>
+        Dependencia
+        <select [ngModel]="selectedDependencia()" (ngModelChange)="onDependenciaChange($event)">
+          <option value="">Todas</option>
+          @for (dep of dependencias(); track dep) {
+            <option [value]="dep">{{ dep }}</option>
+          }
+        </select>
+      </label>
+
+      <label>
+        Subdependencia
+        <select [ngModel]="selectedSubdependencia()" (ngModelChange)="onSubdependenciaChange($event)"
+          [disabled]="!selectedDependencia()">
+          <option value="">Todas</option>
+          @for (sub of subdependencias(); track sub) {
+            <option [value]="sub">{{ sub }}</option>
+          }
+        </select>
+      </label>
+
+      <label>
+        Tipo
+        <select [ngModel]="selectedTipo()" (ngModelChange)="onTipoChange($event)">
+          <option value="">Todos</option>
+          @for (tipo of tipos(); track tipo) {
+            <option [value]="tipo">{{ tipo }}</option>
+          }
+        </select>
+      </label>
+
+      <label>
+        Fabricante
+        <select [ngModel]="selectedFabricante()" (ngModelChange)="onFabricanteChange($event)">
+          <option value="">Todos</option>
+          @for (fab of fabricantes(); track fab) {
+            <option [value]="fab">{{ fab }}</option>
+          }
+        </select>
+      </label>
+
+      <label>
+        Modelo
+        <select [ngModel]="selectedModelo()" (ngModelChange)="onModeloChange($event)">
+          <option value="">Todos</option>
+          @for (modelo of modelos(); track modelo) {
+            <option [value]="modelo">{{ modelo }}</option>
+          }
+        </select>
+      </label>
+
+      <label>
+        IP
+        <input
+          type="text"
+          [ngModel]="ipFilter()"
+          (ngModelChange)="onIpChange($event)"
+          placeholder="Ej. 172.16"
+          />
+        </label>
       </div>
-      <em>{{ item.tipoEquipo || 'Equipo' }}</em>
-    </div>
+    </section>
 
-    <dl>
-      <div><dt>Ubicación</dt><dd>{{ item.sedeNombre || item.oficinaId || '-' }}</dd></div>
-      <div><dt>Marca / Modelo</dt><dd>{{ item.fabricanteModelo || '-' }}</dd></div>
-      <div><dt>Serie</dt><dd>{{ item.numeroserie || '-' }}</dd></div>
-      <div><dt>IP</dt><dd>{{ item.ipEquipo || '-' }}</dd></div>
-    </dl>
+    <div class="desktop-table-shell">
+      <app-generic-table
+        [columns]="columns"
+        [data]="filteredItems()"
+        [canEdit]="false"
+        [canView]="true"
+        [initialSearch]="searchTerm()"
+        [showSearch]="false"
+        emptyMessage="Sin equipos activos registrados"
+        (view)="onView($event)"
+        />
+      </div>
 
-    <footer>
-      <span>{{ item.fabricanteModelo || item.sedeNombre || 'Equipo registrado' }}</span>
-      <button type="button" (click)="onView(item)">Ver</button>
-    </footer>
-  </article>
+      <section class="mobile-equipment-list" aria-label="Equipos">
+        @for (item of filteredItems(); track item) {
+          <article class="equipment-card">
+            <div class="card-head">
+              <div>
+                <strong>{{ item.nombreEquipo }}</strong>
+                <span>{{ item.usuarioLimpio || 'Sin usuario' }}</span>
+              </div>
+              <em>{{ item.tipoEquipo || 'Equipo' }}</em>
+            </div>
+            <dl>
+              <div><dt>Ubicación</dt><dd>{{ item.sedeNombre || item.oficinaId || '-' }}</dd></div>
+              <div><dt>Marca / Modelo</dt><dd>{{ item.fabricanteModelo || '-' }}</dd></div>
+              <div><dt>Serie</dt><dd>{{ item.numeroserie || '-' }}</dd></div>
+              <div><dt>IP</dt><dd>{{ item.ipEquipo || '-' }}</dd></div>
+            </dl>
+            <footer>
+              <span>{{ item.fabricanteModelo || item.sedeNombre || 'Equipo registrado' }}</span>
+              <button type="button" (click)="onView(item)">Ver</button>
+            </footer>
+          </article>
+        }
 
-  <p class="mobile-empty" *ngIf="filteredItems().length === 0">Sin equipos activos registrados</p>
-</section>
+        @if (filteredItems().length === 0) {
+          <p class="mobile-empty">Sin equipos activos registrados</p>
+        }
+      </section>

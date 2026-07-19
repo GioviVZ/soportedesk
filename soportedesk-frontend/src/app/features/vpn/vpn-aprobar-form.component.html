@@ -1,56 +1,67 @@
-<form [formGroup]="form" (ngSubmit)="submit()" *ngIf="vpn" id="vpn-aprobar-edit-form">
-  <section class="approval-summary">
-    <div>
-      <span>Solicitud</span>
-      <strong>{{ vpn.titularNombreCompleto }}</strong>
-      <small>{{ vpn.tipoEquipo === 'INIA' ? 'Equipo de INIA' : 'Equipo personal' }}</small>
-    </div>
-    <div class="approval-state">{{ form.controls.estado.value }}</div>
-  </section>
+@if (vpn) {
+  <form [formGroup]="form" (ngSubmit)="submit()" id="vpn-aprobar-edit-form">
+    @if (errorMessage) {
+      <div class="form-error" role="alert">{{ errorMessage }}</div>
+    }
+    <section class="approval-summary">
+      <div>
+        <span>Solicitud</span>
+        <strong>{{ vpn.titularNombreCompleto }}</strong>
+        <small>{{ vpn.tipoEquipo === 'INIA' ? 'Equipo de INIA' : 'Equipo personal' }}</small>
+      </div>
+      <div class="approval-state">{{ form.controls.estado.value }}</div>
+    </section>
+    <section class="review-grid">
+      @if (vpn.glpiNombreEquipo) {
+        <div class="review-item">
+          <span>Equipo GLPI</span>
+          <strong>{{ vpn.glpiNombreEquipo }}</strong>
+          @if (vpn.glpiIpEquipo) {
+            <small>IP: {{ vpn.glpiIpEquipo }}</small>
+          }
+        </div>
+      }
+      <div class="review-item">
+        <span>Antivirus</span>
+        <strong>{{ vpn.antivirusVerificado ? 'Verificado' : 'No verificado' }}</strong>
+      </div>
+      <div class="review-item">
+        <span>Analisis</span>
+        <strong>{{ vpn.analisisAntivirusRealizado ? 'Realizado' : 'Pendiente' }}</strong>
+      </div>
+      @if (vpn.glpiComputerId) {
+        <div class="review-item">
+          <span>Host</span>
+          <strong>{{ vpn.hostActualizado ? 'Actualizado' : 'Pendiente' }}</strong>
+        </div>
+      }
+    </section>
+    <section class="credential-panel">
+      <div class="panel-title">
+        <span>Credenciales a entregar</span>
+        <small>Estos datos quedan visibles para el solicitante y responsables autorizados.</small>
+      </div>
+      <label class="field">
+        Usuario VPN *
+        <input type="text" formControlName="usuarioVpn" placeholder="Nombre de usuario VPN" />
+      </label>
+      <label class="field">
+        Credencial / Contraseña VPN *
+        <input type="text" formControlName="credencialVpn" placeholder="Genera una credencial segura" readonly />
+        @if (form.controls.credencialVpn.hasError('minlength')) {
+          <small>La credencial debe tener al menos 17 caracteres.</small>
+        }
+      </label>
+      <app-vpn-password-generator (passwordSelected)="useGeneratedPassword($event)" />
+    </section>
+  </form>
+}
 
-  <section class="review-grid">
-    <div class="review-item" *ngIf="vpn.glpiNombreEquipo">
-      <span>Equipo GLPI</span>
-      <strong>{{ vpn.glpiNombreEquipo }}</strong>
-      <small *ngIf="vpn.glpiIpEquipo">IP: {{ vpn.glpiIpEquipo }}</small>
-    </div>
-    <div class="review-item">
-      <span>Antivirus</span>
-      <strong>{{ vpn.antivirusVerificado ? 'Verificado' : 'No verificado' }}</strong>
-    </div>
-    <div class="review-item">
-      <span>Analisis</span>
-      <strong>{{ vpn.analisisAntivirusRealizado ? 'Realizado' : 'Pendiente' }}</strong>
-    </div>
-    <div class="review-item" *ngIf="vpn.glpiComputerId">
-      <span>Host</span>
-      <strong>{{ vpn.hostActualizado ? 'Actualizado' : 'Pendiente' }}</strong>
-    </div>
-  </section>
-
-  <section class="credential-panel">
-    <div class="panel-title">
-      <span>Credenciales a entregar</span>
-      <small>Estos datos quedan visibles para el solicitante y responsables autorizados.</small>
-    </div>
-
-    <label class="field">
-      Usuario VPN *
-      <input type="text" formControlName="usuarioVpn" placeholder="Nombre de usuario VPN" />
-    </label>
-
-    <label class="field">
-      Credencial / Contraseña VPN *
-      <input type="text" formControlName="credencialVpn" placeholder="Genera una credencial segura" readonly />
-      <small *ngIf="form.controls.credencialVpn.hasError('minlength')">La credencial debe tener al menos 17 caracteres.</small>
-    </label>
-
-    <app-vpn-password-generator (passwordSelected)="useGeneratedPassword($event)" />
-  </section>
-
-</form>
-
-<div modal-footer class="actions" *ngIf="vpn">
-  <button type="button" class="secondary" (click)="cancelled.emit()">Cancelar</button>
-  <button type="submit" form="vpn-aprobar-edit-form" [disabled]="form.invalid">Aprobar</button>
-</div>
+@if (vpn) {
+  <div modal-footer class="actions">
+    <button type="button" class="secondary" (click)="cancelled.emit()">Cancelar</button>
+    <button type="submit" form="vpn-aprobar-edit-form" [disabled]="form.invalid || saving">
+      {{ saving ? 'Aprobando...' : 'Aprobar' }}
+    </button>
+  </div>
+}

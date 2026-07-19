@@ -1,6 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { CambiarPasswordModalComponent } from './cambiar-password-modal.component';
+import { provideHttpClient, withInterceptorsFromDi, withXhr } from '@angular/common/http';
 
 describe('CambiarPasswordModalComponent', () => {
   let component: CambiarPasswordModalComponent;
@@ -9,8 +10,9 @@ describe('CambiarPasswordModalComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [CambiarPasswordModalComponent, HttpClientTestingModule],
-    }).compileComponents();
+    imports: [CambiarPasswordModalComponent],
+    providers: [provideHttpClient(withXhr(), withInterceptorsFromDi()), provideHttpClientTesting()]
+}).compileComponents();
 
     fixture = TestBed.createComponent(CambiarPasswordModalComponent);
     component = fixture.componentInstance;

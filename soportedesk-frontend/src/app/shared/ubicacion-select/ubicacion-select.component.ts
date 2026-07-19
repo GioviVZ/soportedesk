@@ -1,15 +1,15 @@
-import { Component, EventEmitter, Input, OnChanges, OnInit, Output, SimpleChanges, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, EventEmitter, Input, OnChanges, OnInit, Output, SimpleChanges, inject, ChangeDetectionStrategy } from '@angular/core';
+
 import { FormsModule } from '@angular/forms';
 import { CatalogoService } from '../../core/catalogos/catalogo.service';
 import { Dependencia, Sede, Subdependencia, TipoContrato } from '../../core/models/catalogo.model';
 
 @Component({
-  selector: 'app-ubicacion-select',
-  standalone: true,
-  imports: [CommonModule, FormsModule],
-  templateUrl: './ubicacion-select.component.html',
-  styleUrl: './ubicacion-select.component.scss',
+    selector: 'app-ubicacion-select',
+    imports: [FormsModule],
+    templateUrl: './ubicacion-select.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
+    styleUrl: './ubicacion-select.component.scss'
 })
 export class UbicacionSelectComponent implements OnInit, OnChanges {
   private catalogoService = inject(CatalogoService);

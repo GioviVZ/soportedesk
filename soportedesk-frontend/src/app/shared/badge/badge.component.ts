@@ -1,14 +1,14 @@
-import { Component, Input } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, Input, ChangeDetectionStrategy } from '@angular/core';
+
 
 export type BadgeColor = 'green' | 'yellow' | 'red' | 'gray';
 
 @Component({
-  selector: 'app-badge',
-  standalone: true,
-  imports: [CommonModule],
-  templateUrl: './badge.component.html',
-  styleUrl: './badge.component.scss',
+    selector: 'app-badge',
+    imports: [],
+    templateUrl: './badge.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
+    styleUrl: './badge.component.scss'
 })
 export class BadgeComponent {
   @Input({ required: true }) text!: string;

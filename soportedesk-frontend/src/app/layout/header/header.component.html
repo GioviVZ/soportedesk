@@ -19,9 +19,11 @@
         <span class="rol-badge" [class.admin]="rol === 'ADMIN'">{{ rol }}</span>
       </div>
 
-      <div class="user-menu" *ngIf="menuOpen" (click)="$event.stopPropagation()">
-        <button type="button" (click)="openCambiarPassword()">Cambiar contraseña</button>
-      </div>
+      @if (menuOpen) {
+        <div class="user-menu" (click)="$event.stopPropagation()">
+          <button type="button" (click)="openCambiarPassword()">Cambiar contraseña</button>
+        </div>
+      }
     </div>
 
     <button type="button" class="logout-btn" (click)="logout()" title="Cerrar sesión">

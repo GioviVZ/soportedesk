@@ -56,4 +56,8 @@ public interface VwGwDashboardRepository extends JpaRepository<VwGwDashboard, St
         ORDER BY v.nombreCompleto ASC
     """)
     List<VwGwDashboard> findByCategoria(@Param("categoria") String categoria);
+
+    @Query("SELECT v.estado, COUNT(v) FROM VwGwDashboard v WHERE v.estado IS NOT NULL " +
+           "GROUP BY v.estado ORDER BY COUNT(v) DESC")
+    List<Object[]> countGroupedByEstado();
 }

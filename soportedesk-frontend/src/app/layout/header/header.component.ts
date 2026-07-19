@@ -1,5 +1,5 @@
-import { Component, ElementRef, HostListener, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, ElementRef, HostListener, inject, ChangeDetectionStrategy } from '@angular/core';
+
 import { Router } from '@angular/router';
 import { AuthService } from '../../core/auth/auth.service';
 import { LayoutService } from '../../core/services/layout.service';
@@ -7,11 +7,11 @@ import { ModalComponent } from '../../shared/modal/modal.component';
 import { CambiarPasswordModalComponent } from './cambiar-password-modal.component';
 
 @Component({
-  selector: 'app-header',
-  standalone: true,
-  imports: [CommonModule, ModalComponent, CambiarPasswordModalComponent],
-  templateUrl: './header.component.html',
-  styleUrl: './header.component.scss',
+    selector: 'app-header',
+    imports: [ModalComponent, CambiarPasswordModalComponent],
+    templateUrl: './header.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
+    styleUrl: './header.component.scss'
 })
 export class HeaderComponent {
   private authService = inject(AuthService);

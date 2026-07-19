@@ -1,4 +1,4 @@
-import { Component, ContentChild, EventEmitter, Input, OnChanges, OnInit, Output, SimpleChanges, TemplateRef } from '@angular/core';
+import { Component, ContentChild, EventEmitter, Input, OnChanges, OnInit, Output, SimpleChanges, TemplateRef, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
 export interface TableColumn {
@@ -7,11 +7,11 @@ export interface TableColumn {
 }
 
 @Component({
-  selector: 'app-generic-table',
-  standalone: true,
-  imports: [CommonModule],
-  templateUrl: './generic-table.component.html',
-  styleUrl: './generic-table.component.scss',
+    selector: 'app-generic-table',
+    imports: [CommonModule],
+    templateUrl: './generic-table.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
+    styleUrl: './generic-table.component.scss'
 })
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export class GenericTableComponent<T = any> implements OnInit, OnChanges {
