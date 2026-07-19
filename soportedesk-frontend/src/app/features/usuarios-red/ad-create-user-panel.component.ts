@@ -5,7 +5,7 @@ import { SectionCardComponent } from '../../shared/section-card/section-card.com
 import { CatalogoService } from '../../core/catalogos/catalogo.service';
 import { Dependencia, Subdependencia, TipoContrato } from '../../core/models/catalogo.model';
 import { ActiveDirectoryService } from './active-directory.service';
-import { ActiveDirectoryOu, AdPanelResult, CreateAdUserRequest } from './active-directory.model';
+import { ActiveDirectoryOu, AdPanelResult, CorreoDisponible, CreateAdUserRequest } from './active-directory.model';
 import { UsuarioRedContratoRequest, esTipoContratoOs } from './usuario-red-contrato.model';
 import { UsuarioRedContratoService } from './usuario-red-contrato.service';
 
@@ -43,8 +43,30 @@ import { UsuarioRedContratoService } from './usuario-red-contrato.service';
             <input name="displayName" [(ngModel)]="form.displayName" />
           </div>
           <div class="field">
-            <label>Correo</label>
-            <input type="email" name="mail" [(ngModel)]="form.mail" />
+            <label>Correo institucional</label>
+            <input
+              type="search"
+              name="correoSearch"
+              [(ngModel)]="correoSearch"
+              (ngModelChange)="onCorreoSearch($event)"
+              (focus)="correoPickerOpen = true"
+              [disabled]="correosLoading"
+              [placeholder]="correosLoading ? 'Cargando correos...' : 'Buscar email o nombre'"
+              autocomplete="off"
+              aria-label="Buscar correo institucional registrado"
+            />
+            <div class="pick-list correo-pick-list" *ngIf="correoPickerOpen && correosFiltrados.length">
+              <button type="button" *ngFor="let correo of correosFiltrados" (click)="selectCorreo(correo)">
+                <strong>{{ correo.email }}</strong>
+                <span>{{ correo.nombreCompleto || 'Sin nombre registrado' }} · {{ correo.estado || 'Sin estado' }}</span>
+              </button>
+            </div>
+            <div class="selected-dn selected-mail" *ngIf="form.mail">
+              <span>Vinculado con Correos: <strong>{{ form.mail }}</strong></span>
+              <button type="button" class="clear-mail-button" (click)="clearCorreo()">Dejar sin correo</button>
+            </div>
+            <small class="field-hint" *ngIf="!correosLoading && !correosError">Opcional. Solo se muestran correos que todavía no están vinculados a otro usuario de red.</small>
+            <small class="field-hint error-text" *ngIf="correosError">{{ correosError }}</small>
           </div>
           <div class="field">
             <label>UPN</label>
@@ -160,7 +182,7 @@ import { UsuarioRedContratoService } from './usuario-red-contrato.service';
 
     <footer modal-footer class="modal-actions">
       <button type="button" class="btn btn-ghost" (click)="cancelled.emit()">Cancelar</button>
-      <button type="submit" form="ad-create-user-edit-form" class="btn btn-primary" [disabled]="working">{{ contratoEnabled ? 'Crear en AD y registrar contrato' : 'Crear en AD' }}</button>
+      <button type="submit" form="ad-create-user-edit-form" class="btn btn-primary" [disabled]="working || correosLoading">{{ contratoEnabled ? 'Crear en AD y registrar contrato' : 'Crear en AD' }}</button>
     </footer>
   `,
   styleUrl: './usuarios-red.shared.scss',
@@ -186,6 +208,11 @@ export class AdCreateUserPanelComponent implements OnInit {
   ouResults: ActiveDirectoryOu[] = [];
   working = false;
   error = '';
+  correosDisponibles: CorreoDisponible[] = [];
+  correoSearch = '';
+  correoPickerOpen = false;
+  correosLoading = false;
+  correosError = '';
   private upnEdited = false;
 
   ngOnInit(): void {
@@ -193,6 +220,35 @@ export class AdCreateUserPanelComponent implements OnInit {
       next: (items) => (this.dependencias = this.sortByName(items)),
       error: () => (this.dependencias = []),
     });
+    this.loadCorreosDisponibles();
+  }
+
+  get correosFiltrados(): CorreoDisponible[] {
+    const term = this.correoSearch.trim().toLocaleLowerCase('es-PE');
+    const items = term
+      ? this.correosDisponibles.filter((correo) =>
+          correo.email.toLocaleLowerCase('es-PE').includes(term)
+          || (correo.nombreCompleto ?? '').toLocaleLowerCase('es-PE').includes(term))
+      : this.correosDisponibles;
+    return items.slice(0, 12);
+  }
+
+  onCorreoSearch(value: string): void {
+    this.correoSearch = value;
+    this.form.mail = '';
+    this.correoPickerOpen = true;
+  }
+
+  selectCorreo(correo: CorreoDisponible): void {
+    this.form.mail = correo.email;
+    this.correoSearch = correo.email;
+    this.correoPickerOpen = false;
+  }
+
+  clearCorreo(): void {
+    this.form.mail = '';
+    this.correoSearch = '';
+    this.correoPickerOpen = false;
   }
 
   esContratoOs(): boolean {
@@ -258,6 +314,10 @@ export class AdCreateUserPanelComponent implements OnInit {
       this.error = 'Completa usuario, nombres, apellidos, contraseña temporal y OU destino.';
       return;
     }
+    if (request.mail && !this.correosDisponibles.some((correo) => correo.email.toLocaleLowerCase('es-PE') === request.mail?.toLocaleLowerCase('es-PE'))) {
+      this.error = 'Selecciona un correo de la lista sincronizada con el módulo Correos.';
+      return;
+    }
     if (request.temporaryPassword.length < 8) {
       this.error = 'La contraseña temporal debe tener al menos 8 caracteres.';
       return;
@@ -309,6 +369,22 @@ export class AdCreateUserPanelComponent implements OnInit {
     this.catalogoService.getTiposContrato().subscribe({
       next: (tipos) => (this.tiposContrato = this.sortByName(tipos)),
       error: () => (this.tiposContrato = []),
+    });
+  }
+
+  private loadCorreosDisponibles(): void {
+    this.correosLoading = true;
+    this.correosError = '';
+    this.adService.getCorreosDisponibles().subscribe({
+      next: (correos) => {
+        this.correosDisponibles = [...correos].sort((a, b) => a.email.localeCompare(b.email, 'es'));
+        this.correosLoading = false;
+      },
+      error: () => {
+        this.correosDisponibles = [];
+        this.correosLoading = false;
+        this.correosError = 'No se pudieron cargar los correos institucionales.';
+      },
     });
   }
 

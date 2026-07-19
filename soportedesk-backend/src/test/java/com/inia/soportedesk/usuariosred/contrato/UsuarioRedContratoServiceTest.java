@@ -231,4 +231,28 @@ class UsuarioRedContratoServiceTest {
         assertThat(result).hasSize(1);
         assertThat(result.get(0).getOffice()).isNull();
     }
+
+    @Test
+    void searchConsultas_encuentraUsuarioPorNombreCompletoDelContrato() {
+        UsuarioRedContrato contrato = sampleEntity();
+        contrato.setUsuario("jperez");
+        contrato.setPersonalNombre("Juan Carlos");
+        contrato.setPersonalApellidos("Perez Gomez");
+        AdUsuarioCache usuario = sampleAdUsuario("jperez", "Cuenta JPerez", "Informatica");
+
+        when(repository.searchAllFields(org.mockito.ArgumentMatchers.eq("Juan Carlos Perez Gomez"), any()))
+                .thenReturn(List.of(contrato));
+        when(activeDirectoryService.buscarUsuarioCacheadoORefrescar("jperez"))
+                .thenReturn(Optional.of(usuario));
+        when(repository.findByUsuarioIgnoreCaseOrderByFechaInicioDesc("jperez"))
+                .thenReturn(List.of(contrato));
+        when(equipoRepository.findFiltered(null, null, null, null, null, null)).thenReturn(List.of());
+
+        List<UsuarioRedConsultaDto> result = service.searchConsultas("Juan Carlos Perez Gomez");
+
+        assertThat(result).singleElement().satisfies(item -> {
+            assertThat(item.getUsuario()).isEqualTo("jperez");
+            assertThat(item.getContratos()).hasSize(1);
+        });
+    }
 }

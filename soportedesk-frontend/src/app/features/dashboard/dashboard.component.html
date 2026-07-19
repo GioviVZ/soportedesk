@@ -68,7 +68,7 @@
           [class.priority-row--warning]="item.state === 'warning'"
           [class.priority-row--success]="item.state === 'success'"
           [routerLink]="item.path">
-          <span class="priority-value">{{ item.value }}</span>
+          <span class="priority-value" [class.priority-value--date]="item.valueKind === 'date'">{{ item.value }}</span>
           <span>
             <strong>{{ item.label }}</strong>
             <small>{{ item.detail }}</small>
@@ -80,7 +80,7 @@
             class="priority-row"
             [class.priority-row--warning]="item.state === 'warning'"
             [class.priority-row--success]="item.state === 'success'">
-            <span class="priority-value">{{ item.value }}</span>
+            <span class="priority-value" [class.priority-value--date]="item.valueKind === 'date'">{{ item.value }}</span>
             <span>
               <strong>{{ item.label }}</strong>
               <small>{{ item.detail }}</small>

@@ -13,6 +13,13 @@ import java.util.Optional;
 public interface AdUsuarioCacheRepository extends JpaRepository<AdUsuarioCache, String> {
     Optional<AdUsuarioCache> findFirstBySamAccountNameIgnoreCase(String samAccountName);
 
+    Optional<AdUsuarioCache> findFirstByMailIgnoreCase(String mail);
+
+    boolean existsByMailIgnoreCase(String mail);
+
+    @Query("SELECT LOWER(u.mail) FROM AdUsuarioCache u WHERE u.mail IS NOT NULL AND TRIM(u.mail) <> ''")
+    List<String> findAllMailAddresses();
+
     @Query("""
             SELECT u FROM AdUsuarioCache u
             WHERE u.displayName IS NULL OR TRIM(u.displayName) = ''

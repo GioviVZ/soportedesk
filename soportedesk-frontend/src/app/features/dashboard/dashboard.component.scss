@@ -331,6 +331,11 @@ a.priority-row {
   line-height: 1;
 }
 
+.priority-value--date {
+  font-size: 14px;
+  letter-spacing: -.02em;
+}
+
 .priority-row--warning .priority-value {
   background: var(--color-warning-light);
   color: var(--color-warning);

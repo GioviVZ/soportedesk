@@ -19,6 +19,7 @@ import com.inia.soportedesk.activedirectory.dto.OuUsuariosCount;
 import com.inia.soportedesk.activedirectory.dto.ResetPasswordRequest;
 import com.inia.soportedesk.activedirectory.dto.UpdateUserInfoRequest;
 import com.inia.soportedesk.auditoria.MovimientoAuditoriaService;
+import com.inia.soportedesk.usuariosred.contrato.UsuarioRedContratoRepository;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
@@ -58,9 +59,11 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -90,6 +93,7 @@ public class ActiveDirectoryService {
     private final AdCacheMetadataRepository metadataRepository;
     private final AdSyncJobStatus jobStatus;
     private final ApplicationEventPublisher eventPublisher;
+    private final UsuarioRedContratoRepository contratoRepository;
 
     public AdUserSearchResult buscarUsuarios(String q, String usuario, String nombre, String oficina, String ou, String estado) {
         SearchStateFilter state = SearchStateFilter.from(estado);
@@ -98,18 +102,39 @@ public class ActiveDirectoryService {
         }
         String normalizedQuery = normalizeSearchTerm(q);
         String normalizedUsuario = normalizeAccountSearchTerm(usuario);
-        List<AdUserSummary> users = cacheRepository.search(
+        String normalizedNombre = normalizeSearchTerm(nombre);
+        String normalizedOficina = normalizeSearchTerm(oficina);
+        String normalizedOu = normalizeSearchTerm(ou);
+        List<AdUserSummary> directUsers = cacheRepository.search(
                         normalizedQuery,
                         normalizedUsuario,
-                        normalizeSearchTerm(nombre),
-                        normalizeSearchTerm(oficina),
-                        normalizeSearchTerm(ou),
+                        normalizedNombre,
+                        normalizedOficina,
+                        normalizedOu,
                         state.enabled(),
                         state.locked(),
                         PageRequest.of(0, 75)
                 ).stream()
                 .map(this::toUserSummary)
                 .toList();
+        Map<String, AdUserSummary> usersBySam = new LinkedHashMap<>();
+        directUsers.forEach(user -> usersBySam.put(user.samAccountName().toLowerCase(java.util.Locale.ROOT), user));
+
+        List<String> contractUsers = List.of();
+        if (normalizedQuery != null || normalizedNombre != null) {
+            contractUsers = findContractUsers(normalizedQuery, normalizedNombre);
+            for (String contractUser : contractUsers) {
+                if (usersBySam.size() >= 75) {
+                    break;
+                }
+                cacheRepository.findFirstBySamAccountNameIgnoreCase(contractUser)
+                        .filter(user -> matchesDirectoryFilters(
+                                user, normalizedUsuario, normalizedOficina, normalizedOu, state))
+                        .map(this::toUserSummary)
+                        .ifPresent(user -> usersBySam.putIfAbsent(user.samAccountName().toLowerCase(java.util.Locale.ROOT), user));
+            }
+        }
+        List<AdUserSummary> users = new ArrayList<>(usersBySam.values());
         String directLookup = directLookupTerm(q, usuario, nombre, oficina, ou, state);
         if (users.isEmpty() && directLookup != null) {
             AdUser refreshed = refreshCachedUserFromAd(directLookup);
@@ -117,7 +142,86 @@ public class ActiveDirectoryService {
                 users = List.of(toUserSummary(refreshed));
             }
         }
-        return new AdUserSearchResult(users, users.size() >= 75);
+        return new AdUserSearchResult(users, users.size() >= 75 || contractUsers.size() >= 75);
+    }
+
+    private boolean matchesDirectoryFilters(AdUsuarioCache user,
+                                            String usuario,
+                                            String oficina,
+                                            String ou,
+                                            SearchStateFilter state) {
+        if (usuario != null && !containsAnyIgnoreCase(usuario,
+                user.getSamAccountName(), user.getUserPrincipalName(), user.getMail())) {
+            return false;
+        }
+        String effectiveOffice = hasSearchTerm(user.getOffice()) ? user.getOffice() : "Sin oficina";
+        if (oficina != null && !containsIgnoreCase(effectiveOffice, oficina)) {
+            return false;
+        }
+        String effectiveOu = hasSearchTerm(user.getOrganizationalUnit()) ? user.getOrganizationalUnit() : "Sin OU";
+        if (ou != null && !containsIgnoreCase(effectiveOu, ou)) {
+            return false;
+        }
+        if (state.enabled() != null && user.isEnabled() != state.enabled()) {
+            return false;
+        }
+        return state.locked() == null || user.isLocked() == state.locked();
+    }
+
+    private List<String> findContractUsers(String query, String nombre) {
+        LinkedHashSet<String> users = new LinkedHashSet<>(contratoRepository.findUsuariosForDirectorySearch(
+                query, nombre, PageRequest.of(0, 75)));
+        String flexibleTerm = query != null && nombre == null
+                ? query
+                : (query == null ? nombre : null);
+        if (flexibleTerm == null) {
+            return new ArrayList<>(users);
+        }
+
+        List<String> tokens = java.util.Arrays.stream(flexibleTerm.split("[^\\p{L}\\p{N}]+"))
+                .map(String::trim)
+                .filter(token -> token.length() >= 2)
+                .distinct()
+                .limit(6)
+                .toList();
+        if (tokens.size() < 2) {
+            return new ArrayList<>(users);
+        }
+        Set<String> intersection = null;
+        for (String token : tokens) {
+            List<String> tokenUsers = query != null
+                    ? contratoRepository.findUsuariosForDirectorySearch(token, null, PageRequest.of(0, 500))
+                    : contratoRepository.findUsuariosForDirectorySearch(null, token, PageRequest.of(0, 500));
+            Set<String> normalizedUsers = tokenUsers.stream()
+                    .map(user -> user.toLowerCase(java.util.Locale.ROOT))
+                    .collect(Collectors.toCollection(LinkedHashSet::new));
+            if (intersection == null) {
+                intersection = normalizedUsers;
+            } else {
+                intersection.retainAll(normalizedUsers);
+            }
+            if (intersection.isEmpty()) {
+                break;
+            }
+        }
+        if (intersection != null) {
+            intersection.stream().limit(75).forEach(users::add);
+        }
+        return new ArrayList<>(users);
+    }
+
+    private boolean containsAnyIgnoreCase(String term, String... values) {
+        for (String value : values) {
+            if (containsIgnoreCase(value, term)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean containsIgnoreCase(String value, String term) {
+        return value != null && term != null
+                && value.toLowerCase(java.util.Locale.ROOT).contains(term.toLowerCase(java.util.Locale.ROOT));
     }
 
     public ActiveDirectoryResponse<AdUser> buscarUsuarioPorSam(String samAccountName) {
@@ -219,7 +323,11 @@ public class ActiveDirectoryService {
             addReplace(mods, "physicalDeliveryOfficeName", office);
             addReplace(mods, "telephoneNumber", body.telephoneNumber());
             addReplace(mods, "mobile", body.mobile());
-            addReplace(mods, "mail", body.mail());
+            if (body.clearMail()) {
+                addReplaceOrRemove(mods, "mail", null);
+            } else {
+                addReplace(mods, "mail", body.mail());
+            }
             addReplace(mods, "description", body.description());
             if (mods.isEmpty()) {
                 throw new IllegalArgumentException("No hay informacion para actualizar.");
@@ -961,6 +1069,13 @@ public class ActiveDirectoryService {
         if (value != null && !value.trim().isEmpty()) {
             mods.add(new ModificationItem(DirContext.REPLACE_ATTRIBUTE, new BasicAttribute(attribute, value.trim())));
         }
+    }
+
+    private void addReplaceOrRemove(List<ModificationItem> mods, String attribute, String value) {
+        BasicAttribute replacement = value == null || value.isBlank()
+                ? new BasicAttribute(attribute)
+                : new BasicAttribute(attribute, value.trim());
+        mods.add(new ModificationItem(DirContext.REPLACE_ATTRIBUTE, replacement));
     }
 
     private void putIfPresent(BasicAttributes attrs, String attribute, String value) {

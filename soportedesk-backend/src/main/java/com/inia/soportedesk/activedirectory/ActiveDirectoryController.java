@@ -10,6 +10,7 @@ import com.inia.soportedesk.activedirectory.dto.AdSyncStatus;
 import com.inia.soportedesk.activedirectory.dto.AdUserSearchResult;
 import com.inia.soportedesk.activedirectory.dto.AdUser;
 import com.inia.soportedesk.activedirectory.dto.CreateAdUserRequest;
+import com.inia.soportedesk.activedirectory.dto.CorreoDisponible;
 import com.inia.soportedesk.activedirectory.dto.GroupRequest;
 import com.inia.soportedesk.activedirectory.dto.MoveUserRequest;
 import com.inia.soportedesk.activedirectory.dto.ResetPasswordRequest;
@@ -33,6 +34,7 @@ import java.util.List;
 public class ActiveDirectoryController {
     private final ActiveDirectoryService service;
     private final AdSyncCoordinator syncCoordinator;
+    private final CorreoVinculacionService correoVinculacionService;
 
     @GetMapping("/usuarios/{samAccountName}")
     @PreAuthorize("hasRole('ADMIN') || hasAuthority('READ_usuarios-red')")
@@ -105,9 +107,17 @@ public class ActiveDirectoryController {
         return syncCoordinator.estado();
     }
 
+    @GetMapping("/correos-disponibles")
+    @PreAuthorize("hasRole('ADMIN') || hasAuthority('WRITE_usuarios-red')")
+    public List<CorreoDisponible> listarCorreosDisponibles(
+            @RequestParam(required = false) String samAccountName) {
+        return correoVinculacionService.listarDisponibles(samAccountName);
+    }
+
     @PostMapping("/usuarios")
     @PreAuthorize("hasRole('ADMIN') || hasAuthority('WRITE_usuarios-red')")
     public ActiveDirectoryResponse<AdUser> crearUsuario(@Valid @RequestBody CreateAdUserRequest request) {
+        correoVinculacionService.validarParaNuevoUsuario(request.mail());
         return service.crearUsuario(request);
     }
 
@@ -161,6 +171,9 @@ public class ActiveDirectoryController {
     @PreAuthorize("hasRole('ADMIN') || hasAuthority('WRITE_usuarios-red')")
     public ActiveDirectoryResponse<AdUser> actualizarInformacionUsuario(@PathVariable String samAccountName,
                                                                         @RequestBody UpdateUserInfoRequest request) {
+        correoVinculacionService.validarParaActualizacion(
+                samAccountName,
+                request.clearMail() ? null : request.mail());
         return service.actualizarInformacionUsuario(samAccountName, request);
     }
 }

@@ -13,6 +13,7 @@ import {
   AdUserSearchResult,
   AdUser,
   CreateAdUserRequest,
+  CorreoDisponible,
   UpdateUserInfoRequest,
 } from './active-directory.model';
 
@@ -62,6 +63,13 @@ export class ActiveDirectoryService {
 
   createUser(request: CreateAdUserRequest): Observable<ActiveDirectoryResponse<AdUser>> {
     return this.http.post<ActiveDirectoryResponse<AdUser>>(`${this.apiUrl}/usuarios`, request);
+  }
+
+  getCorreosDisponibles(samAccountName?: string): Observable<CorreoDisponible[]> {
+    const params = samAccountName?.trim()
+      ? new HttpParams().set('samAccountName', samAccountName.trim())
+      : undefined;
+    return this.http.get<CorreoDisponible[]>(`${this.apiUrl}/correos-disponibles`, { params });
   }
 
   unlockUser(samAccountName: string): Observable<ActiveDirectoryResponse<AdUser>> {

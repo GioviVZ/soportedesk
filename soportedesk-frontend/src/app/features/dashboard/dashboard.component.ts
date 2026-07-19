@@ -39,10 +39,11 @@ interface SummaryMetric {
 
 interface PriorityItem {
   label: string;
-  value: number;
+  value: number | string;
   detail: string;
   path?: string;
   state: 'success' | 'warning' | 'neutral';
+  valueKind?: 'date';
 }
 
 interface MixItem {
@@ -393,13 +394,16 @@ export class DashboardComponent implements OnInit {
       });
     }
 
-    if (this.authService.canWrite('usuarios-red')) {
+    if (this.authService.canRead('usuarios-red')) {
+      const vencimiento = counts.proximoVencimientoUsuarioRed;
+      const diasRestantes = this.daysUntil(vencimiento);
       items.push({
-        label: 'Usuarios desactivados',
-        value: counts.usuariosRedInactivos,
-        detail: counts.usuariosRedInactivos > 0 ? 'Revisar cuentas inactivas en AD' : 'Directorio sin alertas activas',
-        path: '/usuarios-red/dashboard',
-        state: counts.usuariosRedInactivos > 0 ? 'warning' : 'success',
+        label: 'Vencimiento de usuarios de red',
+        value: vencimiento ? this.formatCompactDate(vencimiento) : '—',
+        detail: vencimiento ? this.vencimientoDetail(vencimiento, diasRestantes) : 'Sin fechas futuras registradas',
+        path: '/usuarios-red/consultas',
+        state: diasRestantes !== null && diasRestantes <= 30 ? 'warning' : 'neutral',
+        valueKind: 'date',
       });
     }
 
@@ -414,6 +418,28 @@ export class DashboardComponent implements OnInit {
     }
 
     return items.slice(0, 3);
+  }
+
+  private daysUntil(value: string | null): number | null {
+    if (!value) return null;
+    const target = new Date(`${value}T00:00:00`);
+    if (Number.isNaN(target.getTime())) return null;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return Math.round((target.getTime() - today.getTime()) / 86400000);
+  }
+
+  private formatCompactDate(value: string): string {
+    const [year, month, day] = value.split('-');
+    return year && month && day ? `${day}/${month}` : value;
+  }
+
+  private vencimientoDetail(value: string, diasRestantes: number | null): string {
+    const [year, month, day] = value.split('-');
+    const fecha = year && month && day ? `${day}/${month}/${year}` : value;
+    if (diasRestantes === 0) return `Vence hoy · ${fecha}`;
+    if (diasRestantes === 1) return `Vence mañana · ${fecha}`;
+    return diasRestantes !== null ? `Faltan ${diasRestantes} días · ${fecha}` : `Vence ${fecha}`;
   }
 
   private toMixItems(counts: DashboardCounts): MixItem[] {

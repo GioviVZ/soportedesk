@@ -24,7 +24,7 @@ type EstadoFiltro = 'all' | 'enabled' | 'locked' | 'disabled';
             name="q"
             [(ngModel)]="q"
             (ngModelChange)="queueSearch()"
-            placeholder="Usuario, usuario@inia.local, nombre, oficina u OU"
+            placeholder="Usuario, nombre en AD o contrato, oficina u OU"
             autocomplete="off"
             autofocus
           />
@@ -93,7 +93,7 @@ type EstadoFiltro = 'all' | 'enabled' | 'locked' | 'disabled';
       </div>
 
       <div class="query-summary">
-        <span *ngIf="!searched && !loading">Escribe 2 caracteres, pega usuario&#64;inia.local o elige un filtro para consultar la cache de Active Directory.</span>
+        <span *ngIf="!searched && !loading">Escribe 2 caracteres para buscar en Active Directory y en los contratos asociados.</span>
         <span *ngIf="loading">Consultando usuarios...</span>
         <strong *ngIf="searched && !loading">{{ results.length }} {{ results.length === 1 ? 'resultado' : 'resultados' }}</strong>
         <span *ngIf="searched && !loading && activeDescription">{{ activeDescription }}</span>
@@ -145,7 +145,7 @@ type EstadoFiltro = 'all' | 'enabled' | 'locked' | 'disabled';
         <circle cx="11" cy="11" r="8" /><path d="m21 21-4.3-4.3" />
       </svg>
       <strong>Sin resultados</strong>
-      <span>Ajusta los filtros para consultar Active Directory.</span>
+      <span>Ajusta el nombre o los filtros para consultar Active Directory y Contratos.</span>
     </section>
   `,
   styleUrls: ['./usuarios-red.shared.scss', './ad-user-search.component.scss'],

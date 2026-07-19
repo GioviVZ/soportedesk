@@ -126,6 +126,12 @@ export interface CreateAdUserRequest {
   forceChange: boolean;
 }
 
+export interface CorreoDisponible {
+  email: string;
+  nombreCompleto: string | null;
+  estado: string | null;
+}
+
 export interface UpdateUserInfoRequest {
   displayName?: string | null;
   title?: string | null;
@@ -134,6 +140,7 @@ export interface UpdateUserInfoRequest {
   telephoneNumber?: string | null;
   mobile?: string | null;
   mail?: string | null;
+  clearMail?: boolean;
   description?: string | null;
 }
 

@@ -20,6 +20,7 @@ describe('DashboardComponent', () => {
     impresoras: 7,
     equipos: 15,
     usuariosRedInactivos: 2,
+    proximoVencimientoUsuarioRed: '2026-07-31',
   };
 
   beforeEach(() => {
@@ -65,6 +66,15 @@ describe('DashboardComponent', () => {
 
     const routerLink = card!.injector.get(RouterLink);
     expect(routerLink.href).toBe('/usuarios-red/dashboard');
+  });
+
+  it('shows the next network-user expiration in priority attention', () => {
+    const priorityRows = fixture.debugElement.queryAll(By.css('.priority-row'));
+    const expiration = priorityRows.find((row) => row.nativeElement.textContent.includes('Vencimiento de usuarios de red'));
+
+    expect(expiration).toBeTruthy();
+    expect(expiration!.nativeElement.textContent).toContain('31/07');
+    expect(expiration!.injector.get(RouterLink).href).toBe('/usuarios-red/consultas');
   });
 
   it('computes totalRegistros from the 7 record categories, excluding usuariosRedInactivos', () => {

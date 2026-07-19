@@ -1,5 +1,7 @@
 package com.inia.soportedesk.dashboard;
 
+import java.time.LocalDate;
+
 public record DashboardCounts(
         long licencias,
         long correos,
@@ -9,6 +11,7 @@ public record DashboardCounts(
         long wifi,
         long impresoras,
         long equipos,
-        long usuariosRedInactivos
+        long usuariosRedInactivos,
+        LocalDate proximoVencimientoUsuarioRed
 ) {
 }

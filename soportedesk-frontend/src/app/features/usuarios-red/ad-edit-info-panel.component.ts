@@ -5,7 +5,7 @@ import { SectionCardComponent } from '../../shared/section-card/section-card.com
 import { CatalogoService } from '../../core/catalogos/catalogo.service';
 import { Dependencia, Subdependencia } from '../../core/models/catalogo.model';
 import { ActiveDirectoryService } from './active-directory.service';
-import { AdPanelResult, AdUser, UpdateUserInfoRequest } from './active-directory.model';
+import { AdPanelResult, AdUser, CorreoDisponible, UpdateUserInfoRequest } from './active-directory.model';
 
 @Component({
   selector: 'app-ad-edit-info-panel',
@@ -39,7 +39,32 @@ import { AdPanelResult, AdUser, UpdateUserInfoRequest } from './active-directory
         </div>
         <div class="field"><label>Telefono</label><input name="telephoneNumber" [(ngModel)]="form.telephoneNumber" /></div>
         <div class="field"><label>Celular</label><input name="mobile" [(ngModel)]="form.mobile" /></div>
-        <div class="field"><label>Correo</label><input name="mail" [(ngModel)]="form.mail" /></div>
+        <div class="field">
+          <label>Correo institucional</label>
+          <input
+            type="search"
+            name="correoSearch"
+            [(ngModel)]="correoSearch"
+            (ngModelChange)="onCorreoSearch($event)"
+            (focus)="correoPickerOpen = true"
+            [disabled]="correosLoading"
+            [placeholder]="correosLoading ? 'Cargando correos...' : 'Buscar email o nombre'"
+            autocomplete="off"
+            aria-label="Buscar correo institucional registrado"
+          />
+          <div class="pick-list correo-pick-list" *ngIf="correoPickerOpen && correosFiltrados.length">
+            <button type="button" *ngFor="let correo of correosFiltrados" (click)="selectCorreo(correo)">
+              <strong>{{ correo.email }}</strong>
+              <span>{{ correo.nombreCompleto || 'Sin nombre registrado' }} · {{ correo.estado || 'Sin estado' }}</span>
+            </button>
+          </div>
+          <div class="selected-dn selected-mail" *ngIf="form.mail">
+            <span>Vinculado con Correos: <strong>{{ form.mail }}</strong></span>
+            <button type="button" class="clear-mail-button" (click)="clearCorreo()">Dejar sin correo</button>
+          </div>
+          <small class="field-hint" *ngIf="!correosLoading && !correosError">Opcional. Puedes conservarlo, elegir uno disponible o dejar al usuario sin correo.</small>
+          <small class="field-hint error-text" *ngIf="correosError">{{ correosError }}</small>
+        </div>
         <div class="field full"><label>Descripcion</label><textarea name="description" rows="3" [(ngModel)]="form.description"></textarea></div>
       </app-section-card>
 
@@ -47,7 +72,7 @@ import { AdPanelResult, AdUser, UpdateUserInfoRequest } from './active-directory
 
     <footer modal-footer class="modal-actions full">
       <button type="button" class="btn btn-ghost" (click)="cancelled.emit()">Cancelar</button>
-      <button type="submit" form="ad-edit-info-edit-form" class="btn btn-primary" [disabled]="working">Guardar</button>
+      <button type="submit" form="ad-edit-info-edit-form" class="btn btn-primary" [disabled]="working || correosLoading">Guardar</button>
     </footer>
   `,
   styleUrl: './usuarios-red.shared.scss',
@@ -67,6 +92,12 @@ export class AdEditInfoPanelComponent implements OnInit {
   subdependenciaId: number | null = null;
   working = false;
   error = '';
+  correosDisponibles: CorreoDisponible[] = [];
+  correoSearch = '';
+  correoPickerOpen = false;
+  correosLoading = false;
+  correosError = '';
+  private originalMail: string | null = null;
 
   ngOnInit(): void {
     this.form = {
@@ -79,6 +110,9 @@ export class AdEditInfoPanelComponent implements OnInit {
       mail: this.user.mail,
       description: this.user.description,
     };
+    this.originalMail = this.blankToNull(this.user.mail);
+    this.correoSearch = this.originalMail ?? '';
+    this.loadCorreosDisponibles();
     this.catalogoService.getDependencias().subscribe({
       next: (items) => {
         this.dependencias = this.sortByName(items);
@@ -86,6 +120,34 @@ export class AdEditInfoPanelComponent implements OnInit {
       },
       error: () => (this.dependencias = []),
     });
+  }
+
+  get correosFiltrados(): CorreoDisponible[] {
+    const term = this.correoSearch.trim().toLocaleLowerCase('es-PE');
+    const items = term
+      ? this.correosDisponibles.filter((correo) =>
+          correo.email.toLocaleLowerCase('es-PE').includes(term)
+          || (correo.nombreCompleto ?? '').toLocaleLowerCase('es-PE').includes(term))
+      : this.correosDisponibles;
+    return items.slice(0, 12);
+  }
+
+  onCorreoSearch(value: string): void {
+    this.correoSearch = value;
+    this.form = { ...this.form, mail: null };
+    this.correoPickerOpen = true;
+  }
+
+  selectCorreo(correo: CorreoDisponible): void {
+    this.form = { ...this.form, mail: correo.email };
+    this.correoSearch = correo.email;
+    this.correoPickerOpen = false;
+  }
+
+  clearCorreo(): void {
+    this.form = { ...this.form, mail: null };
+    this.correoSearch = '';
+    this.correoPickerOpen = false;
   }
 
   onDependenciaChange(value: number | null): void {
@@ -107,7 +169,6 @@ export class AdEditInfoPanelComponent implements OnInit {
 
   submit(): void {
     this.error = '';
-    this.working = true;
     const department = this.blankToNull(this.form.department);
     const office = this.blankToNull(this.form.office) ?? department;
     const request: UpdateUserInfoRequest = {
@@ -118,8 +179,15 @@ export class AdEditInfoPanelComponent implements OnInit {
       telephoneNumber: this.blankToNull(this.form.telephoneNumber),
       mobile: this.blankToNull(this.form.mobile),
       mail: this.blankToNull(this.form.mail),
+      clearMail: !this.blankToNull(this.form.mail),
       description: this.blankToNull(this.form.description),
     };
+    if (request.mail && !this.isOriginalMail(request.mail)
+        && !this.correosDisponibles.some((correo) => correo.email.toLocaleLowerCase('es-PE') === request.mail?.toLocaleLowerCase('es-PE'))) {
+      this.error = 'Selecciona un correo de la lista sincronizada con el módulo Correos.';
+      return;
+    }
+    this.working = true;
     this.adService.updateInfo(this.user.samAccountName, request).subscribe({
       next: (response) => {
         this.working = false;
@@ -129,11 +197,31 @@ export class AdEditInfoPanelComponent implements OnInit {
         }
         this.saved.emit({ user: response.data!, notice: { tone: 'success', text: response.message } });
       },
-      error: () => {
+      error: (err) => {
         this.working = false;
-        this.error = 'No se pudo completar la acción.';
+        this.error = err?.error?.message || 'No se pudo completar la acción.';
       },
     });
+  }
+
+  private loadCorreosDisponibles(): void {
+    this.correosLoading = true;
+    this.correosError = '';
+    this.adService.getCorreosDisponibles(this.user.samAccountName).subscribe({
+      next: (correos) => {
+        this.correosDisponibles = [...correos].sort((a, b) => a.email.localeCompare(b.email, 'es'));
+        this.correosLoading = false;
+      },
+      error: () => {
+        this.correosDisponibles = [];
+        this.correosLoading = false;
+        this.correosError = 'No se pudieron cargar los correos institucionales.';
+      },
+    });
+  }
+
+  private isOriginalMail(mail: string): boolean {
+    return !!this.originalMail && this.originalMail.toLocaleLowerCase('es-PE') === mail.toLocaleLowerCase('es-PE');
   }
 
   private syncCatalogSelectionFromInfo(): void {

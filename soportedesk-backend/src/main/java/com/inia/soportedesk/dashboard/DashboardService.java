@@ -7,6 +7,7 @@ import com.inia.soportedesk.licencias.LicenciaRepository;
 import com.inia.soportedesk.gestiontiinia.VwGwDashboardRepository;
 import com.inia.soportedesk.herramientas.ordenes.OrdenServicioResponse;
 import com.inia.soportedesk.herramientas.ordenes.OrdenServicioService;
+import com.inia.soportedesk.usuariosred.contrato.UsuarioRedContratoRepository;
 import com.inia.soportedesk.vpn.VpnRepository;
 import com.inia.soportedesk.wifi.WifiRepository;
 import lombok.RequiredArgsConstructor;
@@ -17,6 +18,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.time.LocalDate;
 
 @Service
 @RequiredArgsConstructor
@@ -30,6 +32,7 @@ public class DashboardService {
     private final ImpresoraRepository impresoraRepository;
     private final VwInvComputerFullRepository equipoRepository;
     private final OrdenServicioService ordenServicioService;
+    private final UsuarioRedContratoRepository usuarioRedContratoRepository;
 
     public DashboardCounts getCounts() {
         return new DashboardCounts(
@@ -41,7 +44,8 @@ public class DashboardService {
                 wifiRepository.count(),
                 impresoraRepository.count(),
                 equipoRepository.countByEliminado(0),
-                adUsuarioCacheRepository.countByEnabledFalse()
+                adUsuarioCacheRepository.countByEnabledFalse(),
+                usuarioRedContratoRepository.findProximoVencimientoUsuarioRed(LocalDate.now())
         );
     }
 
@@ -56,7 +60,8 @@ public class DashboardService {
                 canRead(auth, "wifi") ? counts.wifi() : 0,
                 canRead(auth, "impresoras") ? counts.impresoras() : 0,
                 canRead(auth, "equipos") ? counts.equipos() : 0,
-                canWrite(auth, "usuarios-red") ? counts.usuariosRedInactivos() : 0
+                canWrite(auth, "usuarios-red") ? counts.usuariosRedInactivos() : 0,
+                canRead(auth, "usuarios-red") ? counts.proximoVencimientoUsuarioRed() : null
         );
     }
 

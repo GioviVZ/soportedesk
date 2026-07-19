@@ -36,6 +36,18 @@ function buildUser(overrides: Partial<AdUser> = {}): AdUser {
 
 describe('AdEditInfoPanelComponent', () => {
   let httpMock: HttpTestingController;
+  const correoDisponible = {
+    email: 'nuevo@inia.gob.pe',
+    nombreCompleto: 'Juan Perez',
+    estado: 'Activo',
+  };
+
+  function flushCorreos(correos = [correoDisponible]): void {
+    httpMock
+      .expectOne((req) => req.url === '/api/active-directory/correos-disponibles'
+        && req.params.get('samAccountName') === 'jperez')
+      .flush(correos);
+  }
 
   function createComponent(user: AdUser): AdEditInfoPanelComponent {
     TestBed.configureTestingModule({ imports: [HttpClientTestingModule] });
@@ -50,6 +62,7 @@ describe('AdEditInfoPanelComponent', () => {
   it('precarga el formulario y selecciona la dependencia que coincide con el area de AD', () => {
     const component = createComponent(buildUser());
     component.ngOnInit();
+    flushCorreos();
 
     httpMock.expectOne('/api/catalogos/dependencias').flush([
       { id: 1, nombre: 'Soporte' },
@@ -66,6 +79,7 @@ describe('AdEditInfoPanelComponent', () => {
   it('emite saved con el usuario actualizado cuando el guardado es exitoso', () => {
     const component = createComponent(buildUser());
     component.ngOnInit();
+    flushCorreos();
     httpMock.expectOne('/api/catalogos/dependencias').flush([]);
 
     let result: any = null;
@@ -84,6 +98,7 @@ describe('AdEditInfoPanelComponent', () => {
   it('muestra error y no emite saved si el backend responde success:false', () => {
     const component = createComponent(buildUser());
     component.ngOnInit();
+    flushCorreos();
     httpMock.expectOne('/api/catalogos/dependencias').flush([]);
 
     let emitted = false;
@@ -98,5 +113,46 @@ describe('AdEditInfoPanelComponent', () => {
 
     expect(emitted).toBe(false);
     expect(component.error).toBe('No se pudo actualizar.');
+  });
+
+  it('busca y selecciona un correo disponible del modulo Correos', () => {
+    const component = createComponent(buildUser());
+    component.ngOnInit();
+    flushCorreos();
+    httpMock.expectOne('/api/catalogos/dependencias').flush([]);
+
+    component.onCorreoSearch('Juan');
+    expect(component.correosFiltrados).toEqual([correoDisponible]);
+
+    component.selectCorreo(correoDisponible);
+    expect(component.form.mail).toBe('nuevo@inia.gob.pe');
+  });
+
+  it('permite quitar el correo y envia null al actualizar', () => {
+    const component = createComponent(buildUser());
+    component.ngOnInit();
+    flushCorreos();
+    httpMock.expectOne('/api/catalogos/dependencias').flush([]);
+
+    component.clearCorreo();
+    component.submit();
+
+    const request = httpMock.expectOne('/api/active-directory/usuarios/jperez/actualizar-info');
+    expect(request.request.body.mail).toBeNull();
+    expect(request.request.body.clearMail).toBeTrue();
+    request.flush({ success: true, message: 'Datos actualizados.', data: buildUser({ mail: null }) });
+  });
+
+  it('rechaza un correo manual que no pertenece a la lista sincronizada', () => {
+    const component = createComponent(buildUser());
+    component.ngOnInit();
+    flushCorreos();
+    httpMock.expectOne('/api/catalogos/dependencias').flush([]);
+    component.form.mail = 'externo@example.com';
+
+    component.submit();
+
+    expect(component.error).toBe('Selecciona un correo de la lista sincronizada con el módulo Correos.');
+    httpMock.expectNone('/api/active-directory/usuarios/jperez/actualizar-info');
   });
 });

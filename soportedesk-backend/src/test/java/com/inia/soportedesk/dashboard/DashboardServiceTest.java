@@ -9,6 +9,7 @@ import com.inia.soportedesk.impresoras.ImpresoraRepository;
 import com.inia.soportedesk.licencias.LicenciaRepository;
 import com.inia.soportedesk.vpn.VpnRepository;
 import com.inia.soportedesk.wifi.WifiRepository;
+import com.inia.soportedesk.usuariosred.contrato.UsuarioRedContratoRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -17,6 +18,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.Arrays;
 import java.util.List;
+import java.time.LocalDate;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.verify;
@@ -49,6 +51,9 @@ class DashboardServiceTest {
     @Mock
     private OrdenServicioService ordenServicioService;
 
+    @Mock
+    private UsuarioRedContratoRepository usuarioRedContratoRepository;
+
     @InjectMocks
     private DashboardService service;
 
@@ -63,6 +68,8 @@ class DashboardServiceTest {
         when(impresoraRepository.count()).thenReturn(7L);
         when(equipoRepository.countByEliminado(0)).thenReturn(15L);
         when(adUsuarioCacheRepository.countByEnabledFalse()).thenReturn(1L);
+        when(usuarioRedContratoRepository.findProximoVencimientoUsuarioRed(LocalDate.now()))
+                .thenReturn(LocalDate.of(2026, 8, 15));
 
         DashboardCounts counts = service.getCounts();
 
@@ -75,6 +82,7 @@ class DashboardServiceTest {
         assertThat(counts.impresoras()).isEqualTo(7L);
         assertThat(counts.equipos()).isEqualTo(15L);
         assertThat(counts.usuariosRedInactivos()).isEqualTo(1L);
+        assertThat(counts.proximoVencimientoUsuarioRed()).isEqualTo(LocalDate.of(2026, 8, 15));
     }
 
     @Test

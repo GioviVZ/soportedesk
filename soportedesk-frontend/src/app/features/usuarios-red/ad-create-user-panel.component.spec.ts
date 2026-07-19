@@ -4,6 +4,11 @@ import { AdCreateUserPanelComponent } from './ad-create-user-panel.component';
 
 describe('AdCreateUserPanelComponent', () => {
   let httpMock: HttpTestingController;
+  const correoDisponible = {
+    email: 'jperez@inia.gob.pe',
+    nombreCompleto: 'Juan Perez',
+    estado: 'Activo',
+  };
 
   function createComponent(): AdCreateUserPanelComponent {
     TestBed.configureTestingModule({ imports: [HttpClientTestingModule] });
@@ -11,6 +16,7 @@ describe('AdCreateUserPanelComponent', () => {
     const component = TestBed.runInInjectionContext(() => new AdCreateUserPanelComponent());
     component.ngOnInit();
     httpMock.expectOne('/api/catalogos/dependencias').flush([]);
+    httpMock.expectOne('/api/active-directory/correos-disponibles').flush([correoDisponible]);
     return component;
   }
 
@@ -33,6 +39,47 @@ describe('AdCreateUserPanelComponent', () => {
     httpMock.expectNone('/api/active-directory/usuarios');
   });
 
+  it('vincula el correo al seleccionarlo desde el inventario de Correos', () => {
+    const component = createComponent();
+
+    component.onCorreoSearch('Juan');
+    expect(component.correosFiltrados).toEqual([correoDisponible]);
+
+    component.selectCorreo(correoDisponible);
+    expect(component.form.mail).toBe('jperez@inia.gob.pe');
+    expect(component.correoPickerOpen).toBeFalse();
+  });
+
+  it('rechaza un correo escrito manualmente aunque tenga formato valido', () => {
+    const component = createComponent();
+    component.form.samAccountName = 'jperez';
+    component.form.givenName = 'Juan';
+    component.form.surname = 'Perez';
+    component.form.mail = 'externo@example.com';
+    component.form.temporaryPassword = 'Temporal123';
+    component.form.ouDestinoDn = 'OU=Soporte,DC=inia,DC=local';
+
+    component.submit();
+
+    expect(component.error).toBe('Selecciona un correo de la lista sincronizada con el módulo Correos.');
+    httpMock.expectNone('/api/active-directory/usuarios');
+  });
+
+  it('permite crear el usuario sin correo institucional', () => {
+    const component = createComponent();
+    component.form.samAccountName = 'scorreo';
+    component.form.givenName = 'Sin';
+    component.form.surname = 'Correo';
+    component.form.temporaryPassword = 'Temporal123';
+    component.form.ouDestinoDn = 'OU=Soporte,DC=inia,DC=local';
+
+    component.submit();
+
+    const request = httpMock.expectOne('/api/active-directory/usuarios');
+    expect(request.request.body.mail).toBeNull();
+    request.flush({ success: true, message: 'Usuario creado.', data: { samAccountName: 'scorreo' } });
+  });
+
   it('crea el usuario sin contrato y emite saved', () => {
     const component = createComponent();
     component.form.samAccountName = 'jperez';
@@ -40,6 +87,7 @@ describe('AdCreateUserPanelComponent', () => {
     component.form.surname = 'Perez';
     component.form.temporaryPassword = 'Temporal123';
     component.form.ouDestinoDn = 'OU=Soporte,DC=inia,DC=local';
+    component.selectCorreo(correoDisponible);
 
     let result: any = null;
     component.saved.subscribe((r) => (result = r));
@@ -62,6 +110,7 @@ describe('AdCreateUserPanelComponent', () => {
     component.form.surname = 'Perez';
     component.form.temporaryPassword = 'Temporal123';
     component.form.ouDestinoDn = 'OU=Soporte,DC=inia,DC=local';
+    component.selectCorreo(correoDisponible);
     component.contratoEnabled = true;
     component.contratoForm.tipoContratoId = 5;
     component.contratoForm.fechaInicio = '2026-07-13';
@@ -91,6 +140,7 @@ describe('AdCreateUserPanelComponent', () => {
     component.form.surname = 'Perez';
     component.form.temporaryPassword = 'Temporal123';
     component.form.ouDestinoDn = 'OU=Soporte,DC=inia,DC=local';
+    component.selectCorreo(correoDisponible);
     component.contratoEnabled = true;
     component.contratoForm.tipoContratoId = 5;
     component.contratoForm.fechaInicio = '2026-07-13';

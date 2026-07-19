@@ -11,6 +11,8 @@ import java.util.List;
 @Repository
 public interface VwGwDashboardRepository extends JpaRepository<VwGwDashboard, String> {
 
+    boolean existsByEmailIgnoreCase(String email);
+
     @Query("""
         SELECT v FROM VwGwDashboard v
         WHERE (:search IS NULL OR :search = ''

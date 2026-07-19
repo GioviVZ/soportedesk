@@ -8,6 +8,7 @@ public record UpdateUserInfoRequest(
         String telephoneNumber,
         String mobile,
         String mail,
+        boolean clearMail,
         String description
 ) {
 }
