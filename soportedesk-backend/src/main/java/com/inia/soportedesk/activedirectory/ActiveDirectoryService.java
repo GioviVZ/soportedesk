@@ -295,6 +295,8 @@ public class ActiveDirectoryService {
     }
 
     public synchronized ActiveDirectoryResponse<Void> eliminarUsuario(String samAccountName) {
+        Instant inicio = Instant.now();
+        UUID idTransaccion = UUID.randomUUID();
         String userDn = null;
         DirContext context = null;
         try {
@@ -302,6 +304,8 @@ public class ActiveDirectoryService {
             SearchResult result = findUser(context, samAccountName, new String[]{"distinguishedName"});
             if (result == null) {
                 audit("ELIMINAR_USUARIO", samAccountName, null, 404, "Usuario no encontrado.");
+                auditAd("ELIMINAR_USUARIO", samAccountName, null, "FALLIDO", "Usuario no encontrado.",
+                        null, null, null, idTransaccion, inicio);
                 return ActiveDirectoryResponse.error("Usuario no encontrado.");
             }
 
@@ -310,11 +314,15 @@ public class ActiveDirectoryService {
             cacheRepository.findFirstBySamAccountNameIgnoreCase(samAccountName)
                     .ifPresent(cacheRepository::delete);
             audit("ELIMINAR_USUARIO", samAccountName, userDn, 200, "Usuario eliminado correctamente.");
+            auditAd("ELIMINAR_USUARIO", samAccountName, userDn, "EXITOSO", "Usuario eliminado correctamente.",
+                    "Usuario existia", "Usuario eliminado", "DN eliminado: " + userDn, idTransaccion, inicio);
             eventPublisher.publishEvent(new AdCambioEvent(samAccountName, "ELIMINAR_USUARIO"));
             return ActiveDirectoryResponse.ok("Usuario eliminado correctamente.", null);
         } catch (Exception e) {
             log.warn("Error eliminando usuario de Active Directory para samAccountName={}", samAccountName, e);
             audit("ELIMINAR_USUARIO", samAccountName, userDn, 500, e.getMessage());
+            auditAd("ELIMINAR_USUARIO", samAccountName, userDn, "FALLIDO", e.getMessage(), null, null,
+                    e.getMessage(), idTransaccion, inicio);
             return ActiveDirectoryResponse.error(
                     "No se pudo eliminar el usuario de Active Directory. Verifique sus dependencias e intente nuevamente.");
         } finally {
@@ -384,6 +392,8 @@ public class ActiveDirectoryService {
     }
 
     public synchronized ActiveDirectoryResponse<AdUser> crearUsuario(CreateAdUserRequest body) {
+        Instant inicio = Instant.now();
+        UUID idTransaccion = UUID.randomUUID();
         String sam = body.samAccountName().trim();
         String userDn = null;
         DirContext context = null;
@@ -391,6 +401,9 @@ public class ActiveDirectoryService {
             context = contextFactory.openDirContext();
             if (findUser(context, sam, new String[]{"distinguishedName"}) != null) {
                 audit("CREAR_USUARIO", sam, null, 400, "El usuario ya existe.");
+                auditAd("CREAR_USUARIO", sam, null, "FALLIDO", "El usuario ya existe.",
+                        "No existia", "Error de creacion", "El usuario ya existe en Active Directory.",
+                        idTransaccion, inicio);
                 return ActiveDirectoryResponse.error("El usuario ya existe en Active Directory.");
             }
             if (body.mail() != null && !body.mail().isBlank()) {
@@ -446,15 +459,23 @@ public class ActiveDirectoryService {
             }
 
             audit("CREAR_USUARIO", sam, userDn, 201, "Usuario creado correctamente.");
+            String detalleCreacion = "SAM: " + sam + " | Nombre: " + displayName + " | OU: " + extractOus(targetOu)
+                    + " | Cambio obligatorio: " + (body.forceChange() ? "Si" : "No");
+            auditAd("CREAR_USUARIO", sam, userDn, "EXITOSO", "Usuario creado correctamente.",
+                    "No existia", "Usuario creado y habilitado", detalleCreacion, idTransaccion, inicio);
             eventPublisher.publishEvent(new AdCambioEvent(sam, "CREAR_USUARIO"));
             AdUser refreshed = refreshCachedUserFromAd(sam, userDn);
             return ActiveDirectoryResponse.ok("Usuario creado correctamente.", refreshed);
         } catch (IllegalArgumentException e) {
             audit("CREAR_USUARIO", sam, userDn, 400, e.getMessage());
+            auditAd("CREAR_USUARIO", sam, userDn, "FALLIDO", e.getMessage(), "No existia", "Error de creacion",
+                    e.getMessage(), idTransaccion, inicio);
             return ActiveDirectoryResponse.error(e.getMessage());
         } catch (Exception e) {
             log.warn("Error creando usuario en Active Directory para samAccountName={}", sam, e);
             audit("CREAR_USUARIO", sam, userDn, 500, e.getMessage());
+            auditAd("CREAR_USUARIO", sam, userDn, "FALLIDO", e.getMessage(), "No existia", "Error de creacion",
+                    e.getMessage(), idTransaccion, inicio);
             return ActiveDirectoryResponse.error(
                     "No se pudo crear el usuario en Active Directory. Verifique la conexion e intente nuevamente.");
         } finally {
