@@ -1,10 +1,13 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, inject, ChangeDetectionStrategy } from '@angular/core';
+import { Component, OnDestroy, OnInit, inject, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import * as XLSX from 'xlsx';
 import { ModalComponent } from '../../shared/modal/modal.component';
 import { AuditoriaService } from './auditoria.service';
 import { MovimientoAuditoria, MovimientoAuditoriaFilters } from './movimiento-auditoria.model';
+import { AdAuditoria, AdAuditoriaFilters } from './ad-auditoria.model';
+import { AdAuditoriaService } from './ad-auditoria.service';
+import { Subject, debounceTime, distinctUntilChanged, takeUntil } from 'rxjs';
 
 const MODULOS: Record<string, string> = {
   auth: 'Autenticación',
@@ -29,8 +32,11 @@ const EXPORT_LIMIT = 5000;
     changeDetection: ChangeDetectionStrategy.Eager,
     styleUrl: './auditoria.component.scss'
 })
-export class AuditoriaComponent implements OnInit {
+export class AuditoriaComponent implements OnInit, OnDestroy {
   private service = inject(AuditoriaService);
+  private adService = inject(AdAuditoriaService);
+  private readonly searchQueue = new Subject<string>();
+  private readonly destroy$ = new Subject<void>();
 
   readonly acciones = [
     'LOGIN',
@@ -59,6 +65,36 @@ export class AuditoriaComponent implements OnInit {
     'ACTUALIZAR_INFO',
   ];
   readonly modulos = Object.entries(MODULOS).map(([key, label]) => ({ key, label }));
+
+  activeTab: 'general' | 'ad' = 'general';
+
+  readonly adAcciones = [
+    'CREAR_USUARIO',
+    'DESBLOQUEAR_CUENTA',
+    'RESET_PASSWORD',
+    'HABILITAR_CUENTA',
+    'DESHABILITAR_CUENTA',
+    'MOVER_OU',
+    'AGREGAR_GRUPO',
+    'QUITAR_GRUPO',
+    'ACTUALIZAR_INFO',
+    'ELIMINAR_USUARIO',
+  ];
+
+  adMovimientos: AdAuditoria[] = [];
+  adLoading = false;
+  adLoaded = false;
+  adError = '';
+  adSeleccionado: AdAuditoria | null = null;
+
+  adFilters: AdAuditoriaFilters = {
+    usuarioAfectado: '',
+    accion: '',
+    resultado: '',
+    desde: '',
+    hasta: '',
+    limit: 100,
+  };
 
   movimientos: MovimientoAuditoria[] = [];
   loading = false;
@@ -89,7 +125,22 @@ export class AuditoriaComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    this.searchQueue.pipe(
+      debounceTime(350),
+      distinctUntilChanged(),
+      takeUntil(this.destroy$),
+    ).subscribe(() => this.load());
     this.load();
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+
+  onSearchChange(value: string): void {
+    this.filters.search = value;
+    this.searchQueue.next(value.trim());
   }
 
   load(): void {
@@ -111,6 +162,49 @@ export class AuditoriaComponent implements OnInit {
   clearFilters(): void {
     this.filters = { search: '', modulo: '', accion: '', desde: '', hasta: '', limit: 100 };
     this.load();
+  }
+
+  setTab(tab: 'general' | 'ad'): void {
+    this.activeTab = tab;
+    if (tab === 'ad' && !this.adLoaded) {
+      this.loadAd();
+    }
+  }
+
+  loadAd(): void {
+    this.adLoading = true;
+    this.adError = '';
+    this.adService.getMovimientos(this.adFilters).subscribe({
+      next: (rows) => {
+        this.adMovimientos = rows;
+        this.adLoading = false;
+        this.adLoaded = true;
+      },
+      error: (err) => {
+        this.adError = err?.error?.message ?? 'No se pudieron cargar los movimientos de Active Directory';
+        this.adLoading = false;
+      },
+    });
+  }
+
+  clearAdFilters(): void {
+    this.adFilters = { usuarioAfectado: '', accion: '', resultado: '', desde: '', hasta: '', limit: 100 };
+    this.loadAd();
+  }
+
+  verDetalleAd(movimiento: AdAuditoria): void {
+    this.adSeleccionado = movimiento;
+  }
+
+  cerrarDetalleAd(): void {
+    this.adSeleccionado = null;
+  }
+
+  formatDuracion(ms: number | null): string {
+    if (ms == null) {
+      return '-';
+    }
+    return ms >= 1000 ? `${(ms / 1000).toFixed(1)} s` : `${ms} ms`;
   }
 
   verDetalle(movimiento: MovimientoAuditoria): void {

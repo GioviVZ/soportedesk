@@ -3,6 +3,62 @@
   --color-accent-hover: var(--color-auditoria-hover);
 }
 
+.tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 16px;
+  border-bottom: 1px solid var(--color-border);
+
+  button {
+    flex: 0 0 auto;
+    padding: 9px 14px;
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+    border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+    font-weight: 700;
+    color: var(--color-text-secondary);
+    cursor: pointer;
+
+    &.active {
+      border-bottom-color: var(--color-accent);
+      color: var(--color-accent);
+    }
+  }
+}
+
+.state-diff {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 10px;
+  padding: 12px;
+  margin: 12px 0;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-subtle, var(--color-surface));
+
+  span {
+    font-size: 11px;
+    font-weight: 800;
+    color: var(--color-text-secondary);
+    text-transform: uppercase;
+  }
+
+  strong {
+    display: block;
+    font-size: 14px;
+  }
+
+  .state-diff-arrow {
+    grid-row: 1 / span 2;
+    justify-self: center;
+    font-size: 18px;
+    color: var(--color-accent);
+  }
+}
+
 .filters {
   display: grid;
   grid-template-columns: minmax(220px, 1.4fr) repeat(5, minmax(125px, 1fr));
@@ -222,32 +278,6 @@ table {
 .actions-heading,
 .actions-cell {
   text-align: right;
-}
-
-.btn-detail {
-  min-height: 34px;
-  padding: 7px 12px;
-  border: 1px solid color-mix(in srgb, var(--color-accent) 24%, var(--color-border));
-  border-radius: var(--radius-sm);
-  background: transparent;
-  color: var(--color-accent);
-  font: inherit;
-  font-size: 12px;
-  font-weight: 800;
-  white-space: nowrap;
-  cursor: pointer;
-  transition: var(--transition);
-
-  &:hover {
-    border-color: var(--color-accent);
-    background: color-mix(in srgb, var(--color-accent) 9%, transparent);
-    transform: translateY(-1px);
-  }
-
-  &:focus-visible {
-    outline: 3px solid color-mix(in srgb, var(--color-accent) 24%, transparent);
-    outline-offset: 2px;
-  }
 }
 
 .movement-detail {
@@ -486,10 +516,6 @@ table {
 
   .actions-cell {
     text-align: left;
-  }
-
-  .btn-detail {
-    width: max-content;
   }
 
   .empty {

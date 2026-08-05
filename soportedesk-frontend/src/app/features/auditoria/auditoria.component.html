@@ -21,10 +21,17 @@
     </div>
   </div>
 
+  <div class="tabs">
+    <button type="button" [class.active]="activeTab === 'general'" (click)="setTab('general')">General</button>
+    <button type="button" [class.active]="activeTab === 'ad'" (click)="setTab('ad')">Detalle AD</button>
+  </div>
+
+  @if (activeTab === 'general') {
   <section class="filters">
     <div class="field field-search">
       <label>Buscar</label>
-      <input type="text" [(ngModel)]="filters.search" placeholder="Usuario, ruta o detalle" (keyup.enter)="load()" />
+      <input type="search" [ngModel]="filters.search" (ngModelChange)="onSearchChange($event)"
+             placeholder="Usuario, ruta o detalle" autocomplete="off" />
     </div>
     <div class="field">
       <label>Módulo</label>
@@ -64,8 +71,12 @@
       <button type="button" class="btn btn-primary" (click)="load()">Filtrar</button>
       <button type="button" class="btn btn-ghost" (click)="clearFilters()">Limpiar</button>
       <button type="button" class="btn btn-ghost" (click)="load()" [disabled]="loading">Actualizar</button>
-      <button type="button" class="btn btn-export" (click)="exportarExcel()" [disabled]="loading || exporting">
-        {{ exporting ? 'Generando Excel...' : 'Exportar Excel' }}
+      <button type="button" class="btn btn-export excel-export-btn" (click)="exportarExcel()" [disabled]="loading || exporting">
+        <svg class="excel-export-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" />
+          <path d="M14 2v6h6M8 13h2M8 17h2M14 13h2M14 17h2" />
+        </svg>
+        <span>{{ exporting ? 'Generando Excel...' : 'Exportar Excel' }}</span>
       </button>
     </div>
   </section>
@@ -132,11 +143,11 @@
                 <td data-label="Detalle" class="actions-cell">
                   <button
                     type="button"
-                    class="btn-detail"
+                    class="btn-view-record"
                     (click)="verDetalle(movimiento)"
                     [attr.aria-label]="'Ver detalle del movimiento de ' + movimiento.usuario"
                     >
-                    Ver detalle
+                    <i class="ti ti-eye" aria-hidden="true"></i><span>Ver detalle</span>
                   </button>
                 </td>
               </tr>
@@ -215,5 +226,181 @@
         </div>
       </div>
     </app-modal>
+  }
+  }
+
+  @if (activeTab === 'ad') {
+    <section class="filters">
+      <div class="field field-search">
+        <label>Usuario afectado</label>
+        <input type="search" [(ngModel)]="adFilters.usuarioAfectado" placeholder="sAMAccountName" autocomplete="off" />
+      </div>
+      <div class="field">
+        <label>Acción</label>
+        <select [(ngModel)]="adFilters.accion">
+          <option value="">Todas</option>
+          @for (accion of adAcciones; track accion) {
+            <option [value]="accion">{{ accion }}</option>
+          }
+        </select>
+      </div>
+      <div class="field">
+        <label>Resultado</label>
+        <select [(ngModel)]="adFilters.resultado">
+          <option value="">Todos</option>
+          <option value="EXITOSO">Exitoso</option>
+          <option value="FALLIDO">Fallido</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Desde</label>
+        <input type="date" [(ngModel)]="adFilters.desde" />
+      </div>
+      <div class="field">
+        <label>Hasta</label>
+        <input type="date" [(ngModel)]="adFilters.hasta" />
+      </div>
+      <div class="filter-actions">
+        <button type="button" class="btn btn-primary" (click)="loadAd()">Filtrar</button>
+        <button type="button" class="btn btn-ghost" (click)="clearAdFilters()">Limpiar</button>
+      </div>
+    </section>
+
+    <section class="audit-table">
+      @if (adLoading) {
+        <div class="table-state">Cargando movimientos de Active Directory...</div>
+      }
+      @if (!adLoading && adError) {
+        <div class="table-state error">{{ adError }}</div>
+      }
+      @if (!adLoading && !adError) {
+        <div class="table-scroll">
+          <table>
+            <thead>
+              <tr>
+                <th>Fecha y hora</th>
+                <th>Realizado por</th>
+                <th>Usuario afectado</th>
+                <th>Acción</th>
+                <th>Resultado</th>
+                <th>Duración</th>
+                <th class="actions-heading">Detalle</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (movimiento of adMovimientos; track movimiento.id) {
+                <tr>
+                  <td class="fecha" data-label="Fecha y hora">
+                    <div class="fecha-value">
+                      <strong>{{ formatFechaDia(movimiento.fechaRegistro) }}</strong>
+                      <span>{{ formatHora(movimiento.fechaRegistro) }}</span>
+                    </div>
+                  </td>
+                  <td data-label="Realizado por">
+                    <div class="usuario">
+                      <span class="user-avatar">{{ movimiento.operadorUsuario.charAt(0).toUpperCase() }}</span>
+                      <strong>{{ movimiento.operadorUsuario }}</strong>
+                    </div>
+                  </td>
+                  <td data-label="Usuario afectado">{{ movimiento.usuarioAfectado }}</td>
+                  <td data-label="Acción">
+                    <span class="accion-badge" [ngClass]="accionClass(movimiento.accion)">{{ movimiento.accion }}</span>
+                  </td>
+                  <td data-label="Resultado">
+                    <span class="http-badge" [class.http-badge--error]="movimiento.resultado === 'FALLIDO'">
+                      {{ movimiento.resultado }}
+                    </span>
+                  </td>
+                  <td data-label="Duración">{{ formatDuracion(movimiento.duracionMs) }}</td>
+                  <td data-label="Detalle" class="actions-cell">
+                    <button
+                      type="button"
+                      class="btn-view-record"
+                      (click)="verDetalleAd(movimiento)"
+                      [attr.aria-label]="'Ver detalle del cambio de ' + movimiento.usuarioAfectado"
+                      >
+                      <i class="ti ti-eye" aria-hidden="true"></i><span>Ver detalle</span>
+                    </button>
+                  </td>
+                </tr>
+              }
+              @if (adMovimientos.length === 0) {
+                <tr>
+                  <td colspan="7" class="empty">No hay movimientos de Active Directory para los filtros seleccionados</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </section>
+
+    @if (adSeleccionado; as movimiento) {
+      <app-modal title="Detalle del cambio en Active Directory" [open]="true" (closed)="cerrarDetalleAd()">
+        <div class="movement-detail">
+          <div class="detail-summary">
+            <div class="detail-user">
+              <span class="user-avatar user-avatar--large">{{ movimiento.operadorUsuario.charAt(0).toUpperCase() }}</span>
+              <div>
+                <small>Realizado por</small>
+                <strong>{{ movimiento.operadorUsuario }}</strong>
+              </div>
+            </div>
+            <span class="http-badge" [class.http-badge--error]="movimiento.resultado === 'FALLIDO'">
+              {{ movimiento.resultado }}
+            </span>
+          </div>
+          <section class="change-detail">
+            <span>CAMBIO REALIZADO</span>
+            <p>{{ movimiento.mensaje }}</p>
+          </section>
+          @if (movimiento.estadoAnterior || movimiento.estadoNuevo) {
+            <section class="state-diff">
+              <span>ESTADO ANTERIOR</span>
+              <strong>{{ movimiento.estadoAnterior || 'No disponible' }}</strong>
+              <span class="state-diff-arrow">&rarr;</span>
+              <span>ESTADO NUEVO</span>
+              <strong>{{ movimiento.estadoNuevo || 'No disponible' }}</strong>
+            </section>
+          }
+          @if (movimiento.detalleError) {
+            <section class="change-detail">
+              <span>CONTEXTO ADICIONAL</span>
+              <p>{{ movimiento.detalleError }}</p>
+            </section>
+          }
+          <dl class="detail-grid">
+            <div>
+              <dt>Fecha</dt>
+              <dd>{{ formatFechaDia(movimiento.fechaRegistro) }}</dd>
+            </div>
+            <div>
+              <dt>Hora exacta</dt>
+              <dd>{{ formatHora(movimiento.fechaRegistro) }}</dd>
+            </div>
+            <div>
+              <dt>Usuario afectado</dt>
+              <dd>{{ movimiento.usuarioAfectado }}</dd>
+            </div>
+            <div>
+              <dt>Duración</dt>
+              <dd>{{ formatDuracion(movimiento.duracionMs) }}</dd>
+            </div>
+            <div>
+              <dt>Dirección IP</dt>
+              <dd class="monospace">{{ movimiento.ipOrigen || 'No disponible' }}</dd>
+            </div>
+            <div>
+              <dt>ID de transacción</dt>
+              <dd class="monospace">{{ movimiento.idTransaccion || 'No disponible' }}</dd>
+            </div>
+          </dl>
+          <div class="route-detail">
+            <span>RUTA DEL RECURSO</span>
+            <code>{{ movimiento.metodoHttp }} {{ movimiento.endPoint }}</code>
+          </div>
+        </div>
+      </app-modal>
+    }
   }
 </div>
