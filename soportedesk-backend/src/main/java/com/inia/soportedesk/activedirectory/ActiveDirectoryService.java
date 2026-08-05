@@ -264,11 +264,12 @@ public class ActiveDirectoryService {
     }
 
     public ActiveDirectoryResponse<AdUser> desbloquearUsuario(String samAccountName) {
-        return withUserWrite(samAccountName, "DESBLOQUEAR_CUENTA", "Cuenta desbloqueada correctamente.", (context, userDn, result) ->
-                context.modifyAttributes(userDn, new ModificationItem[]{
-                        new ModificationItem(DirContext.REPLACE_ATTRIBUTE, new BasicAttribute("lockoutTime", "0"))
-                })
-        );
+        return withUserWrite(samAccountName, "DESBLOQUEAR_CUENTA", "Cuenta desbloqueada correctamente.", (context, userDn, result) -> {
+            context.modifyAttributes(userDn, new ModificationItem[]{
+                    new ModificationItem(DirContext.REPLACE_ATTRIBUTE, new BasicAttribute("lockoutTime", "0"))
+            });
+            return new AdAuditoriaDetalle("Bloqueada", "Desbloqueada", null);
+        });
     }
 
     public ActiveDirectoryResponse<AdUser> resetPassword(String samAccountName, ResetPasswordRequest body) {
@@ -280,6 +281,8 @@ public class ActiveDirectoryService {
                     new ModificationItem(DirContext.REPLACE_ATTRIBUTE,
                             new BasicAttribute("pwdLastSet", body.forceChange() ? "0" : "-1"))
             });
+            return new AdAuditoriaDetalle("Contrasena anterior no registrada por seguridad", "Contrasena restablecida",
+                    "Cambio obligatorio al iniciar sesion: " + (body.forceChange() ? "Si" : "No"));
         });
     }
 
@@ -331,7 +334,13 @@ public class ActiveDirectoryService {
             } else {
                 cn = "CN=" + cn;
             }
-            context.rename(new LdapName(userDn), new LdapName(cn + "," + targetOu));
+            String dnNuevo = cn + "," + targetOu;
+            String ouOrigen = extractOus(userDn);
+            String ouDestino = extractOus(targetOu);
+            context.rename(new LdapName(userDn), new LdapName(dnNuevo));
+            String detalle = "OU origen: " + ouOrigen + " | OU destino: " + ouDestino
+                    + " | DN anterior: " + userDn + " | DN nuevo: " + dnNuevo;
+            return new AdAuditoriaDetalle(ouOrigen, ouDestino, detalle);
         });
     }
 
@@ -368,7 +377,9 @@ public class ActiveDirectoryService {
             if (mods.isEmpty()) {
                 throw new IllegalArgumentException("No hay informacion para actualizar.");
             }
+            String detalle = describirCambiosInfo(result.getAttributes(), body);
             context.modifyAttributes(userDn, mods.toArray(ModificationItem[]::new));
+            return new AdAuditoriaDetalle("Informacion anterior", "Informacion actualizada", detalle);
         });
     }
 
@@ -596,11 +607,15 @@ public class ActiveDirectoryService {
                             new ModificationItem(DirContext.REPLACE_ATTRIBUTE,
                                     new BasicAttribute("userAccountControl", String.valueOf(next)))
                     });
+                    return enabled
+                            ? new AdAuditoriaDetalle("Deshabilitada", "Habilitada", null)
+                            : new AdAuditoriaDetalle("Habilitada", "Deshabilitada", null);
                 });
     }
 
     private ActiveDirectoryResponse<AdUser> modifyGroup(String samAccountName, String groupDn, int operation,
                                                         String action, String message) {
+        boolean agregando = operation == DirContext.ADD_ATTRIBUTE;
         return withUserWrite(samAccountName, action, message, (context, userDn, result) -> {
             try {
                 context.modifyAttributes(groupDn.trim(), new ModificationItem[]{
@@ -611,11 +626,17 @@ public class ActiveDirectoryService {
             } catch (NoSuchAttributeException e) {
                 throw new IllegalStateException("El usuario no pertenece a este grupo.");
             }
+            String detalle = "Grupo: " + extractCn(groupDn.trim()) + " | DN grupo: " + groupDn.trim();
+            return agregando
+                    ? new AdAuditoriaDetalle("No pertenece", "Pertenece", detalle)
+                    : new AdAuditoriaDetalle("Pertenece", "No pertenece", detalle);
         });
     }
 
     private ActiveDirectoryResponse<AdUser> withUserWrite(String samAccountName, String action, String successMessage,
                                                          UserWriteOperation operation) {
+        Instant inicio = Instant.now();
+        UUID idTransaccion = UUID.randomUUID();
         String userDn = null;
         DirContext context = null;
         try {
@@ -623,20 +644,28 @@ public class ActiveDirectoryService {
             SearchResult result = findUser(context, samAccountName, USER_ATTRIBUTES);
             if (result == null) {
                 audit(action, samAccountName, null, 404, "Usuario no encontrado.");
+                auditAd(action, samAccountName, null, "FALLIDO", "Usuario no encontrado.", null, null, null,
+                        idTransaccion, inicio);
                 return ActiveDirectoryResponse.error("Usuario no encontrado.");
             }
             userDn = result.getNameInNamespace();
-            operation.apply(context, userDn, result);
+            AdAuditoriaDetalle detalle = operation.apply(context, userDn, result);
             audit(action, samAccountName, userDn, 200, successMessage);
+            auditAd(action, samAccountName, userDn, "EXITOSO", successMessage,
+                    detalle.estadoAnterior(), detalle.estadoNuevo(), detalle.detalleExito(), idTransaccion, inicio);
             eventPublisher.publishEvent(new AdCambioEvent(samAccountName, action));
             AdUser refreshed = refreshCachedUserFromAd(samAccountName);
             return ActiveDirectoryResponse.ok(successMessage, refreshed);
         } catch (IllegalArgumentException | IllegalStateException e) {
             audit(action, samAccountName, userDn, 400, e.getMessage());
+            auditAd(action, samAccountName, userDn, "FALLIDO", e.getMessage(), null, null, e.getMessage(),
+                    idTransaccion, inicio);
             return ActiveDirectoryResponse.error(e.getMessage());
         } catch (Exception e) {
             log.warn("Error ejecutando accion {} en Active Directory para samAccountName={}", action, samAccountName, e);
             audit(action, samAccountName, userDn, 500, e.getMessage());
+            auditAd(action, samAccountName, userDn, "FALLIDO", e.getMessage(), null, null, e.getMessage(),
+                    idTransaccion, inicio);
             return ActiveDirectoryResponse.error(
                     "No se pudo completar la accion en Active Directory. Verifique la conexion e intente nuevamente.");
         } finally {
@@ -1403,7 +1432,7 @@ public class ActiveDirectoryService {
 
     @FunctionalInterface
     private interface UserWriteOperation {
-        void apply(DirContext context, String userDn, SearchResult result) throws Exception;
+        AdAuditoriaDetalle apply(DirContext context, String userDn, SearchResult result) throws Exception;
     }
 
     @FunctionalInterface
