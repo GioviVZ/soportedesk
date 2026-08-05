@@ -19,6 +19,8 @@ import com.inia.soportedesk.activedirectory.dto.OuUsuariosCount;
 import com.inia.soportedesk.activedirectory.dto.OfficeUsuariosCount;
 import com.inia.soportedesk.activedirectory.dto.ResetPasswordRequest;
 import com.inia.soportedesk.activedirectory.dto.UpdateUserInfoRequest;
+import com.inia.soportedesk.auditoria.AdAuditoriaRegistro;
+import com.inia.soportedesk.auditoria.AdAuditoriaService;
 import com.inia.soportedesk.auditoria.MovimientoAuditoriaService;
 import com.inia.soportedesk.usuariosred.contrato.UsuarioRedContratoRepository;
 import jakarta.servlet.http.HttpServletRequest;
@@ -65,6 +67,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
@@ -95,6 +98,7 @@ public class ActiveDirectoryService {
     private final AdSyncJobStatus jobStatus;
     private final ApplicationEventPublisher eventPublisher;
     private final UsuarioRedContratoRepository contratoRepository;
+    private final AdAuditoriaService adAuditoriaService;
 
     public AdUserSearchResult buscarUsuarios(String q, String usuario, String nombre, String oficina, String ou, String estado) {
         SearchStateFilter state = SearchStateFilter.from(estado);
@@ -285,6 +289,34 @@ public class ActiveDirectoryService {
 
     public ActiveDirectoryResponse<AdUser> habilitarUsuario(String samAccountName) {
         return changeEnabled(samAccountName, true);
+    }
+
+    public synchronized ActiveDirectoryResponse<Void> eliminarUsuario(String samAccountName) {
+        String userDn = null;
+        DirContext context = null;
+        try {
+            context = contextFactory.openDirContext();
+            SearchResult result = findUser(context, samAccountName, new String[]{"distinguishedName"});
+            if (result == null) {
+                audit("ELIMINAR_USUARIO", samAccountName, null, 404, "Usuario no encontrado.");
+                return ActiveDirectoryResponse.error("Usuario no encontrado.");
+            }
+
+            userDn = result.getNameInNamespace();
+            context.destroySubcontext(userDn);
+            cacheRepository.findFirstBySamAccountNameIgnoreCase(samAccountName)
+                    .ifPresent(cacheRepository::delete);
+            audit("ELIMINAR_USUARIO", samAccountName, userDn, 200, "Usuario eliminado correctamente.");
+            eventPublisher.publishEvent(new AdCambioEvent(samAccountName, "ELIMINAR_USUARIO"));
+            return ActiveDirectoryResponse.ok("Usuario eliminado correctamente.", null);
+        } catch (Exception e) {
+            log.warn("Error eliminando usuario de Active Directory para samAccountName={}", samAccountName, e);
+            audit("ELIMINAR_USUARIO", samAccountName, userDn, 500, e.getMessage());
+            return ActiveDirectoryResponse.error(
+                    "No se pudo eliminar el usuario de Active Directory. Verifique sus dependencias e intente nuevamente.");
+        } finally {
+            closeQuietly(context);
+        }
     }
 
     public ActiveDirectoryResponse<AdUser> moverUsuarioOu(String samAccountName, MoveUserRequest body) {
@@ -1302,6 +1334,51 @@ public class ActiveDirectoryService {
                     request.getRequestURI(), dn == null ? samAccountName : dn, status, clientIp(), detail);
         } catch (RuntimeException ignored) {
         }
+    }
+
+    private void auditAd(String action, String samAccountName, String userDn, String resultado, String mensaje,
+                          String estadoAnterior, String estadoNuevo, String detalleExitoOError,
+                          UUID idTransaccion, Instant inicio) {
+        LocalDateTime fechaInicio = LocalDateTime.ofInstant(inicio, ZoneId.systemDefault());
+        LocalDateTime fechaFin = LocalDateTime.now();
+        adAuditoriaService.registrar(new AdAuditoriaRegistro(
+                currentUsername(), null, samAccountName, userDn, action, resultado, mensaje, detalleExitoOError,
+                estadoAnterior, estadoNuevo, samAccountName, request.getRequestURI(), request.getMethod(),
+                clientIp(), request.getHeader("User-Agent"), idTransaccion, fechaInicio, fechaFin));
+    }
+
+    String describirCambiosInfo(Attributes antes, UpdateUserInfoRequest body) throws Exception {
+        List<String> cambios = new ArrayList<>();
+        agregarCambio(cambios, "Nombre para mostrar", attr(antes, "displayName"), body.displayName());
+        agregarCambio(cambios, "Cargo", attr(antes, "title"), body.title());
+        agregarCambio(cambios, "Departamento", attr(antes, "department"), body.department());
+        agregarCambio(cambios, "Oficina", attr(antes, "physicalDeliveryOfficeName"), body.office());
+        agregarCambio(cambios, "Telefono", attr(antes, "telephoneNumber"), body.telephoneNumber());
+        agregarCambio(cambios, "Celular", attr(antes, "mobile"), body.mobile());
+        if (body.clearMail()) {
+            String mailAntes = blankToNull(attr(antes, "mail"));
+            if (mailAntes != null) {
+                cambios.add("Correo: " + mailAntes + " -> (eliminado)");
+            }
+        } else {
+            agregarCambio(cambios, "Correo", attr(antes, "mail"), body.mail());
+        }
+        agregarCambio(cambios, "Descripcion", attr(antes, "description"), body.description());
+        return cambios.isEmpty() ? null : "Campos actualizados: " + String.join(", ", cambios);
+    }
+
+    private void agregarCambio(List<String> cambios, String etiqueta, String antes, String nuevoValor) {
+        if (nuevoValor == null || nuevoValor.isBlank()) {
+            return;
+        }
+        String nuevo = nuevoValor.trim();
+        String antesNorm = blankToNull(antes);
+        if (!nuevo.equals(antesNorm)) {
+            cambios.add(etiqueta + ": " + (antesNorm == null ? "(vacio)" : antesNorm) + " -> " + nuevo);
+        }
+    }
+
+    private record AdAuditoriaDetalle(String estadoAnterior, String estadoNuevo, String detalleExito) {
     }
 
     private void closeQuietly(javax.naming.Context context) {
