@@ -17,7 +17,7 @@ export interface UsuarioSistemaRequest {
 
 export type NivelPermiso = 'VIEW' | 'EDIT';
 
-export type PermisoKind = 'write' | 'view';
+type PermisoKind = 'write' | 'view';
 
 export interface ModuloPermiso {
   key: string;
@@ -79,8 +79,8 @@ export const MODULOS: ModuloPermiso[] = [
   {
     key: 'herramientas',
     label: 'Aplicaciones',
-    kind: 'view',
+    kind: 'write',
     group: 'Diagnostico',
-    description: 'Permite usar ping, inventario, GPU, RAM, teclado y mouse.',
+    description: 'Ver permite usar diagnósticos; Editar también administra órdenes de servicio.',
   },
 ];

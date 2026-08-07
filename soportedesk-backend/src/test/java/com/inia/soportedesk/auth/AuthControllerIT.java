@@ -77,6 +77,15 @@ class AuthControllerIT {
     }
 
     @Test
+    void login_withMalformedJson_returns400() throws Exception {
+        mockMvc.perform(post("/api/auth/login")
+                        .contentType("application/json")
+                        .content("{username:invalid}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message", is("La solicitud contiene datos inválidos o un JSON mal formado.")));
+    }
+
+    @Test
     void me_withoutToken_returns401() throws Exception {
         mockMvc.perform(get("/api/auth/me"))
                 .andExpect(status().isUnauthorized());

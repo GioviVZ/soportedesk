@@ -4,6 +4,7 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Vpn } from './vpn.model';
 import { VpnService } from './vpn.service';
 import { VpnPasswordGeneratorComponent } from './vpn-password-generator.component';
+import { AuthService } from '../../core/auth/auth.service';
 
 @Component({
     selector: 'app-vpn-aprobar-form',
@@ -15,6 +16,7 @@ import { VpnPasswordGeneratorComponent } from './vpn-password-generator.componen
 export class VpnAprobarFormComponent implements OnChanges {
   private fb = inject(FormBuilder);
   private service = inject(VpnService);
+  private authService = inject(AuthService);
 
   @Input() vpn: Vpn | null = null;
   @Output() saved = new EventEmitter<void>();
@@ -36,6 +38,10 @@ export class VpnAprobarFormComponent implements OnChanges {
       credencialVpn: '',
       estado: 'Activo',
     });
+  }
+
+  get canEditCredencialManualmente(): boolean {
+    return this.authService.isAdmin();
   }
 
   useGeneratedPassword(password: string): void {

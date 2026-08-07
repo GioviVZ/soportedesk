@@ -15,7 +15,6 @@ import org.springframework.transaction.PlatformTransactionManager;
 
 import javax.sql.DataSource;
 import java.util.Map;
-
 @Configuration
 @EnableJpaRepositories(
         basePackages = "com.inia.soportedesk.glpi",
@@ -42,7 +41,9 @@ public class GlpiDataSourceConfig {
                 .dataSource(dataSource)
                 .packages("com.inia.soportedesk.glpi")
                 .persistenceUnit("glpi")
-                .properties(Map.of("hibernate.dialect", "org.hibernate.dialect.MySQLDialect"))
+                .properties(Map.of(
+                        "hibernate.physical_naming_strategy",
+                        "org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl"))
                 .build();
     }
 

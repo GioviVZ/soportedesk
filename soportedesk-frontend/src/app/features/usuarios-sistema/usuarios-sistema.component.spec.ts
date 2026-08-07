@@ -3,7 +3,7 @@ import { By } from '@angular/platform-browser';
 import { of } from 'rxjs';
 import { UsuariosSistemaComponent } from './usuarios-sistema.component';
 import { UsuarioSistemaService } from './usuario-sistema.service';
-import { UsuarioSistema, UsuarioSistemaRequest } from './usuario-sistema.model';
+import { MODULOS, UsuarioSistema, UsuarioSistemaRequest } from './usuario-sistema.model';
 
 describe('UsuariosSistemaComponent', () => {
   let fixture: ComponentFixture<UsuariosSistemaComponent>;
@@ -35,6 +35,10 @@ describe('UsuariosSistemaComponent', () => {
 
     fixture = TestBed.createComponent(UsuariosSistemaComponent);
     fixture.detectChanges();
+  });
+
+  it('permite asignar edición en Aplicaciones para administrar órdenes de servicio', () => {
+    expect(MODULOS.find((modulo) => modulo.key === 'herramientas')?.kind).toBe('write');
   });
 
   it('permite agregar Vista de Movimientos al actualizar permisos de un usuario', () => {

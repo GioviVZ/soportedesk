@@ -35,17 +35,17 @@ export interface CorreoFiltros {
   sinUso30Dias?: boolean;
 }
 
-export interface CorreoDependenciaCount {
+interface CorreoDependenciaCount {
   dependencia: string;
   total: number;
 }
 
-export interface CorreoSubdependenciaCount {
+interface CorreoSubdependenciaCount {
   subdependencia: string;
   total: number;
 }
 
-export interface CorreoInactividadAlerta {
+interface CorreoInactividadAlerta {
   email: string;
   nombreCompleto: string | null;
   detalle: string;

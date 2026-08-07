@@ -1,7 +1,17 @@
 .dashboard {
+  display: flex;
+  flex-direction: column;
   width: min(100%, 1320px);
+  max-width: 100%;
+  min-width: 0;
   margin: 0 auto;
 }
+
+/* Los accesos principales aparecen primero aunque los análisis terminen de cargar. */
+.dash-header { order: -30; }
+.dash-notice { order: -25; }
+.module-cards-heading { order: -20; }
+.cards-grid { order: -19; }
 
 .dash-header {
   display: grid;
@@ -13,7 +23,7 @@
   border: 1px solid transparent;
   border-radius: var(--radius-lg);
   background:
-    linear-gradient(135deg, rgba(71, 124, 33, .12), rgba(197, 221, 170, .09) 46%, color-mix(in srgb, var(--color-surface) 92%, transparent)),
+    linear-gradient(135deg, rgba(37, 99, 235, .16), rgba(191, 219, 254, .2) 46%, color-mix(in srgb, var(--color-surface) 92%, transparent)),
     var(--color-surface);
   box-shadow: var(--shadow-sm);
 }
@@ -64,7 +74,7 @@
   justify-items: end;
   min-width: 128px;
   padding: 14px 16px;
-  border: 1px solid rgba(71, 124, 33, .2);
+  border: 1px solid rgba(37, 99, 235, .22);
   border-radius: var(--radius-md);
   background: color-mix(in srgb, var(--color-surface) 86%, transparent);
   box-shadow: var(--shadow-sm);
@@ -97,7 +107,7 @@
 
 .freshness {
   color: var(--color-text-secondary);
-  font-size: 11.5px;
+  font-size: 11px;
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: .04em;
@@ -111,15 +121,15 @@
   gap: 7px;
   min-height: 36px;
   padding: 0 13px;
-  border: 1px solid rgba(71, 124, 33, .28);
+  border: 1px solid rgba(37, 99, 235, .32);
   border-radius: var(--radius-md);
   background: var(--color-primary);
   color: #fff;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 800;
   cursor: pointer;
   transition: transform var(--transition), box-shadow var(--transition), background var(--transition);
-  box-shadow: 0 10px 18px -14px rgba(42, 87, 38, .8);
+  box-shadow: 0 10px 18px -14px rgba(30, 64, 175, .8);
 
   &:hover:not(:disabled) {
     background: var(--color-primary-hover);
@@ -148,12 +158,31 @@
   margin: 0 0 14px;
   padding: 11px 13px;
   border: 1px solid rgba(250, 181, 11, .32);
-  border-left: 4px solid var(--color-warning);
   border-radius: var(--radius-md);
   background: var(--color-warning-light);
   color: var(--color-text);
-  font-size: 12.5px;
+  font-size: 14px;
   font-weight: 700;
+}
+
+.ubicacion-heading {
+  margin: -8px 0 12px;
+
+  h3 {
+    margin: 0 0 3px;
+    font-size: 16px;
+    font-weight: 800;
+  }
+
+  p {
+    margin: 0;
+    color: var(--color-text-secondary);
+    font-size: 14px;
+  }
+}
+
+.ubicacion-highlight {
+  margin-bottom: 22px;
 }
 
 .ops-grid {
@@ -202,30 +231,21 @@
 
   h3 {
     margin: 0 0 3px;
-    font-size: 15px;
+    font-size: 16px;
     font-weight: 800;
   }
 
   p {
     margin: 0;
     color: var(--color-text-secondary);
-    font-size: 12.5px;
+    font-size: 14px;
   }
 }
 
 .priority-panel {
-  position: relative;
   display: grid;
   gap: 12px;
-  overflow: hidden;
-
-  &::before {
-    content: '';
-    position: absolute;
-    inset: 0 auto 0 0;
-    width: 3px;
-    background: linear-gradient(180deg, var(--color-warning), color-mix(in srgb, var(--color-primary) 58%, transparent));
-  }
+  border-color: color-mix(in srgb, var(--color-warning) 22%, transparent);
 }
 
 .priority-panel__header {
@@ -237,14 +257,14 @@
   h3 {
     margin: 3px 0 2px;
     color: var(--color-heading);
-    font-size: 15px;
+    font-size: 16px;
     font-weight: 800;
   }
 
   p {
     margin: 0;
     color: var(--color-text-secondary);
-    font-size: 12px;
+    font-size: 14px;
   }
 }
 
@@ -253,7 +273,7 @@
   align-items: center;
   gap: 6px;
   color: var(--color-text-secondary);
-  font-size: 10.5px;
+  font-size: 11px;
   font-weight: 800;
   letter-spacing: .055em;
   text-transform: uppercase;
@@ -308,7 +328,7 @@
     display: block;
     overflow: hidden;
     color: var(--color-heading);
-    font-size: 12.5px;
+    font-size: 14px;
     font-weight: 800;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -356,14 +376,14 @@ a.priority-row {
   border-radius: var(--radius-sm);
   background: var(--color-primary-light);
   color: var(--color-primary);
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 800;
   font-variant-numeric: tabular-nums;
   line-height: 1;
 }
 
 .priority-value--date {
-  font-size: 12px;
+  font-size: 11px;
   letter-spacing: -.02em;
 }
 
@@ -391,7 +411,7 @@ a.priority-row {
 
   small {
     color: var(--color-text-secondary);
-    font-size: 12px;
+    font-size: 11px;
     font-weight: 800;
     text-align: right;
   }
@@ -406,14 +426,14 @@ a.priority-row {
 
   span {
     color: var(--color-text-secondary);
-    font-size: 12px;
+    font-size: 11px;
     font-weight: 800;
     text-transform: uppercase;
     letter-spacing: .04em;
   }
 
   strong {
-    font-size: 13px;
+    font-size: 14px;
     font-weight: 800;
     font-variant-numeric: tabular-nums;
   }
@@ -439,14 +459,14 @@ a.priority-row {
 
   h3 {
     margin: 0 0 3px;
-    font-size: 17px;
+    font-size: 16px;
     font-weight: 800;
   }
 
   p {
     margin: 0;
     color: var(--color-text-secondary);
-    font-size: 13px;
+    font-size: 14px;
   }
 }
 
@@ -464,14 +484,14 @@ a.priority-row {
   h3 {
     margin: 7px 0 3px;
     color: var(--color-heading);
-    font-size: 17px;
+    font-size: 16px;
     font-weight: 800;
   }
 
   p {
     margin: 0;
     color: var(--color-text-secondary);
-    font-size: 12.5px;
+    font-size: 14px;
   }
 }
 
@@ -501,7 +521,7 @@ a.priority-row {
   border-radius: 999px;
   background: var(--color-surface);
   color: var(--color-text-secondary);
-  font-size: 12.5px;
+  font-size: 11px;
   font-weight: 750;
   cursor: pointer;
   transition: border-color var(--transition), color var(--transition), background var(--transition), transform var(--transition);
@@ -531,7 +551,7 @@ a.priority-row {
 
 .modulo-breakdown-panel {
   display: grid;
-  grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr);
+  grid-template-columns: minmax(0, 1fr) minmax(220px, max-content);
   gap: 16px;
   min-height: 330px;
   margin: 0;
@@ -559,7 +579,7 @@ a.priority-row {
 
   span {
     color: var(--color-text-secondary);
-    font-size: 10.5px;
+    font-size: 11px;
     font-weight: 800;
     letter-spacing: .05em;
     text-transform: uppercase;
@@ -567,7 +587,7 @@ a.priority-row {
 
   strong {
     color: var(--color-heading);
-    font-size: 15px;
+    font-size: 16px;
     font-weight: 800;
   }
 }
@@ -591,6 +611,9 @@ a.priority-row {
 .modulo-breakdown-chart {
   display: grid;
   align-items: center;
+  justify-self: center;
+  width: 100%;
+  max-width: 320px;
   min-width: 0;
   min-height: 240px;
 }
@@ -598,6 +621,7 @@ a.priority-row {
 .modulo-breakdown-list {
   display: grid;
   align-content: start;
+  justify-self: start;
   gap: 8px;
   max-height: 240px;
   overflow-y: auto;
@@ -619,12 +643,12 @@ a.priority-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
-  padding: 10px 12px;
+  gap: 32px;
+  padding: 10px 16px;
   border-radius: var(--radius-sm);
   background: var(--color-muted);
   color: var(--color-text);
-  font-size: 13px;
+  font-size: 14px;
 
   strong {
     font-variant-numeric: tabular-nums;
@@ -636,7 +660,7 @@ a.priority-row {
   grid-column: 1 / -1;
   margin: 0;
   color: var(--color-text-secondary);
-  font-size: 13px;
+  font-size: 14px;
 }
 
 .modulo-breakdown-state--error {
@@ -648,6 +672,10 @@ a.priority-row {
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 16px;
   margin-bottom: 22px;
+}
+
+.module-card-wrap {
+  position: relative;
 }
 
 .module-card {
@@ -730,7 +758,9 @@ a.priority-row {
 }
 
 .module-card__actions {
-  position: relative;
+  position: absolute;
+  top: 18px;
+  right: 18px;
   z-index: 2;
   display: flex;
   align-items: center;
@@ -766,15 +796,19 @@ a.priority-row {
   background: var(--color-surface);
   box-shadow: var(--shadow-md);
 
-  button {
+  button,
+  a {
     display: block;
     width: 100%;
+    min-height: 0 !important;
     padding: 8px 10px;
     border: none;
     border-radius: var(--radius-sm);
     background: none;
     color: var(--color-text);
-    font-size: 12.5px;
+    font-size: 14px;
+    line-height: 1.35;
+    text-decoration: none;
     text-align: left;
 
     &:hover {
@@ -782,12 +816,6 @@ a.priority-row {
       color: var(--card-color);
     }
   }
-}
-
-.module-card__spark {
-  position: relative;
-  z-index: 1;
-  margin-top: -4px;
 }
 
 .module-card__title {
@@ -807,14 +835,14 @@ a.priority-row {
 
   strong {
     color: var(--color-text);
-    font-size: 17px;
+    font-size: 16px;
     font-weight: 800;
     line-height: 1.2;
   }
 
   small {
     color: var(--color-text-secondary);
-    font-size: 12.5px;
+    font-size: 14px;
     line-height: 1.35;
   }
 }
@@ -842,7 +870,7 @@ a.priority-row {
 .module-card__total {
   strong {
     color: var(--color-text);
-    font-size: 32px;
+    font-size: 34px;
     font-weight: 800;
     font-variant-numeric: tabular-nums;
     line-height: 1;
@@ -860,7 +888,7 @@ a.priority-row {
 .module-card__metric {
   strong {
     color: var(--card-color);
-    font-size: 24px;
+    font-size: 22px;
     font-weight: 800;
     font-variant-numeric: tabular-nums;
     line-height: 1;
@@ -868,7 +896,7 @@ a.priority-row {
 
   span {
     color: var(--color-text-secondary);
-    font-size: 11.5px;
+    font-size: 11px;
     font-weight: 750;
     line-height: 1.25;
   }
@@ -884,7 +912,7 @@ a.priority-row {
   padding-top: 12px;
   border-top: 1px solid var(--color-border);
   color: var(--card-color);
-  font-size: 12.5px;
+  font-size: 11px;
   font-weight: 800;
 
   svg {
@@ -904,6 +932,10 @@ a.priority-row {
   > * {
     min-width: 0;
   }
+}
+
+.charts-grid--single {
+  grid-template-columns: minmax(0, min(680px, 100%));
 }
 
 @keyframes spin {
@@ -998,4 +1030,41 @@ a.priority-row {
     grid-template-columns: 1fr;
   }
 
+}
+
+/* Pantallas grandes / paneles interactivos de pared: el contenido usa más ancho
+   real en vez de quedar como una isla angosta en el centro. */
+@media (min-width: 1600px) {
+  .dashboard {
+    width: min(100%, 1320px);
+  }
+
+  .cards-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1920px) {
+  .dashboard {
+    width: min(100%, 94vw, 1920px);
+  }
+}
+
+/* Cualquier puntero de baja precisión (dedo en táctil, sin importar el tamaño
+   físico de la pantalla): áreas de toque de al menos 44px. */
+@media (pointer: coarse) {
+  .refresh-btn,
+  .modulo-pill,
+  .collapse-btn {
+    min-height: 44px;
+  }
+
+  .module-card__menu-btn {
+    width: 40px;
+    height: 40px;
+  }
+
+  .modulo-pill {
+    padding: 0 18px;
+  }
 }

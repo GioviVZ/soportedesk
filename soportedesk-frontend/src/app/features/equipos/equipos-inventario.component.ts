@@ -2,7 +2,7 @@ import { Component, OnInit, computed, inject, signal, ChangeDetectionStrategy } 
 
 import { FormsModule } from '@angular/forms';
 import { GenericTableComponent, TableColumn } from '../../shared/generic-table/generic-table.component';
-import { EquipoKpis, EquipoResumen } from './equipo.model';
+import { EquipoKpis, EquipoResumen, EquipoSoftwareExport } from './equipo.model';
 import { EquipoService } from './equipo.service';
 import { EquipoDetailComponent } from './equipo-detail.component';
 import { ModalComponent } from '../../shared/modal/modal.component';
@@ -43,6 +43,7 @@ export class EquiposInventarioComponent implements OnInit {
   searchTerm = signal('');
   viewingId = signal<number | null>(null);
   viewingName = signal('');
+  exporting = signal(false);
 
   kpiCards = computed(() => {
     const k = this.kpis();
@@ -200,7 +201,22 @@ export class EquiposInventarioComponent implements OnInit {
   }
 
   exportExcel(): void {
-    const rows = this.filteredItems().map((item) => ({
+    const items = this.filteredItems();
+    if (!items.length || this.exporting()) return;
+    this.exporting.set(true);
+    this.service.getSoftwareForExport(items.map((item) => item.computerID)).subscribe({
+      next: (software) => {
+        this.writeExcel(items, software);
+        this.exporting.set(false);
+      },
+      error: () => {
+        this.exporting.set(false);
+      },
+    });
+  }
+
+  private writeExcel(items: EquipoTableRow[], software: EquipoSoftwareExport[]): void {
+    const rows = items.map((item) => ({
       Equipo: item.nombreEquipo ?? '',
       'Usuario de red activo': item.usuarioContacto ?? '',
       'Usuario normalizado': item.usuarioLimpio ?? '',
@@ -232,6 +248,29 @@ export class EquiposInventarioComponent implements OnInit {
 
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Equipos');
+
+    const equipmentById = new Map(items.map((item) => [item.computerID, item]));
+    const softwareRows = software.map((row) => {
+      const item = equipmentById.get(row.computerId);
+      return {
+        Equipo: item?.nombreEquipo ?? '',
+        'ID GLPI': row.computerId,
+        Usuario: item?.usuarioLimpio ?? '',
+        Sede: item?.sedeNombre ?? '',
+        Dependencia: item?.oficinaId ?? '',
+        Software: row.software ?? '',
+        Versión: row.version ?? '',
+        'Fecha de instalación': this.formatExportDate(row.fechaInstalacion),
+      };
+    });
+    const softwareWorksheet = XLSX.utils.json_to_sheet(softwareRows, {
+      header: ['Equipo', 'ID GLPI', 'Usuario', 'Sede', 'Dependencia', 'Software', 'Versión', 'Fecha de instalación'],
+    });
+    softwareWorksheet['!cols'] = [
+      { wch: 24 }, { wch: 12 }, { wch: 22 }, { wch: 18 },
+      { wch: 32 }, { wch: 44 }, { wch: 22 }, { wch: 22 },
+    ];
+    XLSX.utils.book_append_sheet(workbook, softwareWorksheet, 'Software instalado');
     XLSX.writeFile(workbook, `equipos-${this.exportDate()}.xlsx`);
   }
 

@@ -1,0 +1,227 @@
+.candidatos-persona-page,
+:host {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+}
+
+.candidatos-persona-page {
+  --module-color: var(--color-primary);
+}
+
+.access-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-sm);
+
+  div {
+    display: flex;
+    align-items: baseline;
+    gap: 7px;
+    color: var(--color-text-secondary);
+    font-size: 13px;
+  }
+
+  strong {
+    color: var(--color-text);
+    font-size: 18px;
+  }
+}
+
+.add-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 38px;
+  padding: 9px 16px;
+  background-color: var(--color-accent);
+  color: var(--color-white);
+  border: none;
+  border-radius: var(--radius-sm);
+  font-weight: 800;
+  font-size: 13px;
+  white-space: nowrap;
+
+  &:disabled {
+    opacity: 0.6;
+  }
+}
+
+.users-grid {
+  display: grid;
+  width: 100%;
+  min-width: 0;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr));
+  gap: 12px;
+}
+
+.user-card {
+  display: grid;
+  position: relative;
+  gap: 12px;
+  padding: 16px 14px 14px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-sm);
+  min-width: 0;
+  overflow: hidden;
+
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 0 0 auto;
+    height: 4px;
+    background: var(--color-primary);
+  }
+}
+
+.user-card__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.user-cell {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+
+  strong,
+  small {
+    display: block;
+  }
+
+  strong {
+    line-height: 1.2;
+    overflow-wrap: anywhere;
+  }
+
+  small {
+    margin-top: 2px;
+    color: var(--color-text-muted);
+    font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+    font-size: 12px;
+  }
+}
+
+.avatar-mini {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-sm);
+  background: var(--color-info-light);
+  color: var(--color-info);
+  font-weight: 900;
+  text-transform: uppercase;
+  flex-shrink: 0;
+}
+
+.access-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px;
+  border-radius: var(--radius-sm);
+  background: var(--color-muted);
+
+  span {
+    color: var(--color-text);
+    font-weight: 800;
+    font-size: 13px;
+    overflow-wrap: anywhere;
+  }
+
+  small {
+    color: var(--color-text-secondary);
+    font-size: 12px;
+    text-align: right;
+    white-space: nowrap;
+  }
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  flex-wrap: wrap;
+
+  button {
+    min-height: 34px;
+    padding: 7px 11px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    font-size: 12px;
+    font-weight: 800;
+    background: var(--color-surface);
+  }
+
+  .edit-btn {
+    color: var(--color-success);
+    border-color: rgba(22, 163, 74, .22);
+  }
+
+  .del-btn {
+    color: var(--color-danger);
+    border-color: rgba(220, 38, 38, .22);
+  }
+}
+
+.empty-state {
+  display: grid;
+  gap: 4px;
+  padding: 32px 16px;
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  text-align: center;
+
+  strong {
+    color: var(--color-text);
+  }
+
+  span {
+    color: var(--color-text-muted);
+    font-size: 12px;
+  }
+}
+
+@media (max-width: 760px) {
+  .user-card__head,
+  .access-summary {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .access-summary {
+    align-items: flex-start;
+  }
+
+  .access-summary small {
+    text-align: left;
+  }
+
+  .users-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .actions {
+    justify-content: stretch;
+  }
+
+  .actions button {
+    width: 100%;
+  }
+}

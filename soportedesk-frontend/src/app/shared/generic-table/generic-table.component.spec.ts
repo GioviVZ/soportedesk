@@ -43,6 +43,21 @@ describe('GenericTableComponent', () => {
     expect(deleted).toEqual(component.data[0]);
   });
 
+  it('uses the shared Ver action and emits the selected row', () => {
+    component.canView = true;
+    fixture.detectChanges();
+    let viewed: unknown;
+    component.view.subscribe((row) => (viewed = row));
+
+    const viewButton: HTMLButtonElement =
+      fixture.nativeElement.querySelector('tbody tr:first-child .btn-view-record');
+    expect(viewButton.textContent?.trim()).toBe('Ver');
+    expect(viewButton.querySelector('.ti-eye')).not.toBeNull();
+
+    viewButton.click();
+    expect(viewed).toEqual(component.data[0]);
+  });
+
   it('shows "Sin registros" when data is empty', () => {
     component.data = [];
     fixture.detectChanges();

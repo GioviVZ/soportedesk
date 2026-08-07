@@ -9,6 +9,7 @@ import com.inia.soportedesk.glpi.VwInvComputerFull;
 import com.inia.soportedesk.glpi.VwInvComputerFullRepository;
 import com.inia.soportedesk.glpi.GlpiComputerOficinaRepository;
 import com.inia.soportedesk.glpi.GlpiTecladoRepository;
+import com.inia.soportedesk.glpi.SoftwareExportRow;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -60,6 +61,13 @@ public class EquipoService {
     public List<String> findDependencias(String sede) { return repository.findDistinctDependencias(blankToNull(sede)); }
     public List<String> findSubdependencias(String sede, String dep) { return repository.findDistinctSubdependencias(blankToNull(sede), blankToNull(dep)); }
     public List<String> findFabricantes() { return repository.findDistinctFabricantes(); }
+
+    public List<SoftwareExportRow> findSoftwareForExport(List<Long> computerIds) {
+        if (computerIds == null || computerIds.isEmpty()) {
+            return List.of();
+        }
+        return repository.findSoftwareByComputerIds(computerIds.stream().distinct().toList());
+    }
 
     public EquipoDetalleResponse findById(Long id) {
         VwInvComputerFull equipo = repository.findById(id)

@@ -8,8 +8,11 @@ spring:
     username: sa
     password: ""
   jpa:
+    open-in-view: false
     hibernate:
       ddl-auto: create-drop
+    properties:
+      hibernate.hbm2ddl.schema_filter_provider: com.inia.soportedesk.config.TestSchemaFilterProvider
     defer-datasource-initialization: true
 
 jwt:
@@ -17,7 +20,7 @@ jwt:
   expiration-ms: 86400000
 
 licencia:
-  encryption-key: CBkkF72fkRZoZLynAdKy0wLsBqZJx2AycpfPEE+9+8o=
+  encryption-key: AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
 
 agente:
   inventario-token: test-agent-token

@@ -67,7 +67,8 @@ public class PrimaryDataSourceConfig {
                         "com.inia.soportedesk.wifi",
                         "com.inia.soportedesk.licencias",
                         "com.inia.soportedesk.herramientas",
-                        "com.inia.soportedesk.gestiontiinia")
+                        "com.inia.soportedesk.gestiontiinia",
+                        "com.inia.soportedesk.identidad")
                 .persistenceUnit("default")
                 .properties(properties)
                 .build();

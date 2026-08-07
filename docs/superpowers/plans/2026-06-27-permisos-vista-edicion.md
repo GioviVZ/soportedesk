@@ -2097,7 +2097,7 @@ GO
 Ask the user to confirm before running. If confirmed, run via `sqlcmd` (adjust path/auth if SSMS is preferred instead):
 
 ```bash
-sqlcmd -S 172.16.26.16 -U sa -P '$Lipknot86' -d ssti -i "docs/superpowers/migrations/2026-06-27-permisos-nivel.sql"
+sqlcmd -S 172.16.26.16 -U sa -P '${SSTI_DB_PASSWORD}' -d ssti -i "docs/superpowers/migrations/2026-06-27-permisos-nivel.sql"
 ```
 
 Expected: no errors; `SELECT TOP 5 * FROM dbo.permisos;` afterwards shows a populated `nivel` column with only `VIEW`/`EDIT` values.

@@ -18,7 +18,8 @@ class ModulosTest {
     @Test
     void soloVista_isSubsetOfValidos() {
         assertThat(Modulos.SOLO_VISTA).containsExactlyInAnyOrder(
-                "correos", "vpn", "auditoria", "herramientas");
+                "correos", "vpn", "auditoria");
         assertThat(Modulos.VALIDOS).containsAll(Modulos.SOLO_VISTA);
+        assertThat(Modulos.SOLO_VISTA).doesNotContain("herramientas");
     }
 }

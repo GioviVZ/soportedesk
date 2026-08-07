@@ -94,3 +94,260 @@
     background: var(--color-success-light);
   }
 }
+
+.test-guide {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 14px;
+  padding: 11px 13px;
+  border-left: 3px solid var(--color-primary);
+  border-radius: var(--radius-sm);
+  background: var(--color-primary-light);
+  color: var(--color-text-secondary);
+  font-size: 13px;
+
+  strong { color: var(--color-primary-hover); white-space: nowrap; }
+}
+
+.pixel-stage {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-height: 300px;
+  overflow: hidden;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  user-select: none;
+
+  &--active {
+    position: fixed;
+    inset: 0;
+    z-index: 2000;
+    width: 100vw;
+    height: 100dvh;
+    border: 0;
+    border-radius: 0;
+  }
+
+  &:fullscreen { width: 100vw; height: 100vh; border: 0; }
+}
+
+.pixel-stage__toolbar {
+  position: absolute;
+  top: 16px;
+  left: 50%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 46px;
+  padding: 8px 10px 8px 16px;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, .82);
+  color: #fff;
+  transform: translateX(-50%);
+  opacity: 0;
+  transition: opacity .15s ease;
+
+  button { min-height: 32px; padding: 5px 12px; border: 0; border-radius: 999px; background: #fff; color: #111827; font-weight: 800; }
+}
+
+.pixel-stage:hover .pixel-stage__toolbar,
+.pixel-stage:focus-within .pixel-stage__toolbar { opacity: 1; }
+.pixel-stage__preview { display: grid; gap: 4px; text-align: center; text-shadow: 0 1px 3px rgba(0,0,0,.25); }
+.pixel-stage__preview strong { font-size: 28px; }
+
+.pattern-controls {
+  display: grid;
+  grid-template-columns: repeat(8, minmax(72px, 1fr));
+  gap: 8px;
+  margin: 12px 0;
+  overflow-x: auto;
+  max-width: 100%;
+
+  button { display: grid; gap: 5px; min-height: 58px; padding: 6px; border: 1px solid var(--color-border); border-radius: var(--radius-sm); background: var(--color-surface); color: var(--color-text-secondary); }
+  button.active { border-color: var(--color-primary); box-shadow: 0 0 0 2px var(--color-primary-light); }
+  button.reviewed span::after { content: ' ✓'; color: var(--color-success); }
+  i { width: 100%; height: 22px; border: 1px solid rgba(15,23,42,.18); border-radius: 3px; }
+  span { font-size: 11px; font-weight: 750; }
+}
+
+.test-actions { justify-content: space-between; }
+.result-field { display: grid; gap: 5px; color: var(--color-text-secondary); font-size: 12px; font-weight: 700; }
+.result-field select { min-width: 190px; min-height: 38px; border: 1px solid var(--color-border); border-radius: var(--radius-sm); background: var(--color-surface); color: var(--color-text); }
+
+.mode-switch {
+  display: inline-flex;
+  gap: 4px;
+  margin-bottom: 12px;
+  padding: 4px;
+  border-radius: var(--radius-sm);
+  background: var(--color-muted);
+  max-width: 100%;
+  overflow-x: auto;
+
+  button { min-height: 40px; padding: 7px 13px; border: 0; border-radius: 4px; background: transparent; color: var(--color-text-secondary); font-weight: 750; }
+  button.active { background: var(--color-surface); color: var(--color-primary); box-shadow: var(--shadow-sm); }
+}
+
+.touch-stats {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 8px;
+  margin-bottom: 10px;
+
+  div { display: grid; gap: 2px; padding: 9px 11px; border: 1px solid var(--color-border); border-radius: var(--radius-sm); background: var(--color-muted); }
+  span { color: var(--color-text-secondary); font-size: 11px; text-transform: uppercase; }
+  strong { font-size: 19px; }
+}
+
+.touch-stage {
+  position: relative;
+  min-height: 440px;
+  overflow: hidden;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-md);
+  background: var(--color-bg);
+  touch-action: none;
+  user-select: none;
+
+  &:fullscreen { width: 100vw; height: 100vh; border: 0; border-radius: 0; background: var(--color-bg); }
+}
+
+.touch-stage__hint { position: absolute; inset: 0; display: grid; place-content: center; gap: 5px; padding: 24px; color: var(--color-text-secondary); text-align: center; pointer-events: none; }
+.touch-stage__hint strong { color: var(--color-text); font-size: 18px; }
+
+.touch-grid { position: absolute; inset: 0; display: grid; grid-template-columns: repeat(12, 1fr); grid-template-rows: repeat(8, 1fr); pointer-events: none; }
+.touch-grid i { border: 1px solid color-mix(in srgb, var(--color-border) 65%, transparent); background: transparent; }
+.touch-grid i.tested { background: color-mix(in srgb, var(--color-success) 34%, transparent); }
+
+.touch-point {
+  --touch-color: var(--color-primary);
+  position: absolute;
+  display: grid;
+  place-items: center;
+  width: 74px;
+  height: 74px;
+  margin: -37px;
+  border: 3px solid var(--touch-color);
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--touch-color) 18%, transparent);
+  color: var(--color-text);
+  pointer-events: none;
+  box-shadow: 0 0 0 6px color-mix(in srgb, var(--touch-color) 10%, transparent);
+}
+.touch-point strong { font-size: 16px; line-height: 1; }
+.touch-point span { font-size: 10px; }
+
+.precision-target { position: absolute; width: 64px; height: 64px; margin: -32px; border: 3px solid var(--color-danger); border-radius: 50%; pointer-events: none; box-shadow: 0 0 0 8px color-mix(in srgb, var(--color-danger) 14%, transparent); }
+.precision-target::before, .precision-target::after { content: ''; position: absolute; background: var(--color-danger); }
+.precision-target::before { width: 2px; inset: -10px auto -10px 50%; }
+.precision-target::after { height: 2px; inset: 50% -10px auto; }
+.precision-target i { position: absolute; inset: 50% auto auto 50%; width: 8px; height: 8px; border-radius: 50%; background: var(--color-danger); transform: translate(-50%, -50%); }
+
+.touch-footer { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 10px; }
+.touch-footer > div { display: grid; gap: 2px; }
+.touch-footer span { color: var(--color-text-secondary); font-size: 12px; }
+
+@media (max-width: 760px) {
+  .test-guide { display: grid; }
+  .touch-stats { grid-template-columns: repeat(3, 1fr); }
+  .touch-stage { min-height: 360px; }
+  .touch-footer { align-items: stretch; flex-direction: column; }
+}
+
+.sound-warning {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 16px;
+  padding: 12px 14px;
+  border: 1px solid color-mix(in srgb, var(--color-warning) 35%, var(--color-border));
+  border-radius: var(--radius-sm);
+  background: var(--color-warning-light);
+  color: var(--color-text-secondary);
+  font-size: 13px;
+
+  strong { color: var(--color-warning); white-space: nowrap; }
+}
+
+.sound-channel-test {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 18px;
+
+  button { display: grid; place-items: center; gap: 3px; min-width: 0; min-height: 104px; border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-muted); color: var(--color-text-secondary); }
+  button strong { color: var(--color-heading); font-size: 25px; }
+  button span { font-size: 12px; font-weight: 750; text-transform: uppercase; }
+  button.active { border-color: var(--color-primary); background: var(--color-primary-light); color: var(--color-primary-hover); box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary) 12%, transparent); }
+  button.active strong { color: var(--color-primary); }
+}
+
+.sound-controls {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+  margin-bottom: 16px;
+
+  label { display: grid; min-width: 0; gap: 8px; padding: 13px; border: 1px solid var(--color-border); border-radius: var(--radius-sm); }
+  label > span { display: flex; justify-content: space-between; color: var(--color-text-secondary); font-size: 13px; }
+  strong { color: var(--color-text); }
+  small { color: var(--color-text-muted); }
+  input { width: 100%; min-width: 0; accent-color: var(--color-primary); }
+}
+
+.sound-presets {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-bottom: 16px;
+  overflow-x: auto;
+  padding-bottom: 3px;
+
+  > span { margin-right: 4px; color: var(--color-text-secondary); font-size: 12px; font-weight: 750; white-space: nowrap; }
+  button { min-width: 62px; min-height: 38px; border: 1px solid var(--color-border); border-radius: 999px; background: var(--color-surface); color: var(--color-text-secondary); font-weight: 700; }
+  button.active { border-color: var(--color-primary); background: var(--color-primary-light); color: var(--color-primary); }
+}
+
+.sound-footer {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--color-border);
+
+  > label, select { min-height: 38px; }
+  > label { display: grid; min-width: 0; gap: 5px; color: var(--color-text-secondary); font-size: 12px; font-weight: 700; }
+  select { min-width: 170px; padding: 6px 9px; border: 1px solid var(--color-border); border-radius: var(--radius-sm); background: var(--color-surface); color: var(--color-text); }
+}
+
+.sound-result {
+  display: grid;
+  gap: 6px;
+  max-width: 420px;
+  margin-top: 16px;
+  color: var(--color-text-secondary);
+  font-size: 12px;
+  font-weight: 700;
+
+  select { min-height: 40px; padding: 7px 10px; border: 1px solid var(--color-border); border-radius: var(--radius-sm); background: var(--color-surface); color: var(--color-text); }
+}
+
+@media (max-width: 760px) {
+  .sound-warning { display: grid; }
+  .sound-controls { grid-template-columns: 1fr; }
+  .sound-footer { align-items: stretch; flex-direction: column; }
+  .sound-footer .button-row { align-items: stretch; }
+  .sound-footer select,
+  .sound-result,
+  .sound-result select { width: 100%; min-width: 0; max-width: none; }
+}
+
+@media (max-width: 420px) {
+  .touch-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .sound-channel-test { gap: 6px; }
+  .sound-channel-test button { min-height: 88px; padding-inline: 4px; }
+  .sound-channel-test button strong { font-size: 20px; }
+  .sound-channel-test button span { font-size: 10px; }
+}

@@ -1,8 +1,8 @@
 <div class="chart-card">
   <div class="chart-header">
     <div>
-      <h3>Usuarios de Red por Ubicacion</h3>
-      <p>Comparativo de cuentas activas e inactivas.</p>
+      <h3>Usuarios de Red por Oficina</h3>
+      <p>Las oficinas con más cuentas inactivas primero.</p>
     </div>
     <div class="toggle-group" aria-label="Nivel de agrupacion">
       <button type="button" [class.active]="nivel === 'sede'" (click)="setNivel('sede')">Sede</button>
@@ -11,11 +11,67 @@
   </div>
 
   @if (!error) {
-    <div class="chart-body">
-      <canvas baseChart [data]="chartData" [options]="chartOptions" type="bar"></canvas>
+    <div class="office-picker">
+      <label for="office-search">Buscar una oficina puntual</label>
+      <input
+        id="office-search"
+        type="text"
+        list="office-options"
+        [(ngModel)]="searchTerm"
+        (ngModelChange)="onSearch($event)"
+        placeholder="Escribí el nombre de una oficina..." />
+      <datalist id="office-options">
+        @for (row of rows; track row) {
+          <option [value]="row.nombre"></option>
+        }
+      </datalist>
     </div>
+
+    @if (selectedRow) {
+      <div class="office-detail">
+        <div class="office-detail__header">
+          <strong>{{ selectedRow.nombre }}</strong>
+          <button type="button" class="office-detail__clear" (click)="clearSelection()">Ver el resumen</button>
+        </div>
+        <div class="office-detail__body">
+          @if (selectedChartData) {
+            <div class="office-detail__chart">
+              <canvas baseChart [data]="selectedChartData" [options]="detailDoughnutOptions" [type]="'doughnut'"></canvas>
+            </div>
+          }
+          <div class="office-detail__stats">
+            <div class="office-stat office-stat--ok">
+              <strong>{{ selectedRow.activos }}</strong>
+              <span>Activos</span>
+            </div>
+            <div class="office-stat office-stat--warn">
+              <strong>{{ selectedRow.inactivos }}</strong>
+              <span>Inactivos</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    } @else {
+      <div class="office-rank-list">
+        @for (row of topRows; track row) {
+          <button type="button" class="office-rank-row" (click)="selectOffice(row.nombre)">
+            <span class="office-rank-row__name">{{ row.nombre }}</span>
+            <span class="office-rank-row__track"><i [style.width.%]="activosPercent(row)"></i></span>
+            <span class="office-rank-row__count" [class.office-rank-row__count--warn]="row.inactivos > 0">
+              {{ row.inactivos }} inactivos
+            </span>
+          </button>
+        }
+        @if (!topRows.length) {
+          <p class="chart-error">Sin datos para este nivel.</p>
+        }
+      </div>
+      @if (rows.length > topRows.length) {
+        <p class="office-rank-more">+{{ rows.length - topRows.length }} oficinas más — usá el buscador de arriba para verlas.</p>
+      }
+    }
   }
   @if (error) {
-    <p class="chart-error">No se pudo cargar el grafico</p>
+    <p class="chart-error">No se pudo cargar el listado</p>
   }
 </div>

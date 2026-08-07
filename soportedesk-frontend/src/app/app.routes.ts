@@ -195,6 +195,14 @@ export const routes: Routes = [
           ),
       },
       {
+        path: 'candidatos-persona',
+        canActivate: [adminGuard],
+        loadComponent: () =>
+          import('./features/candidatos-persona/candidatos-persona.component').then(
+            (m) => m.CandidatosPersonaComponent,
+          ),
+      },
+      {
         path: 'auditoria',
         canActivate: [moduloGuard('auditoria')],
         loadComponent: () =>

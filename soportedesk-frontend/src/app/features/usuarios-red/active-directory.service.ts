@@ -84,6 +84,10 @@ export class ActiveDirectoryService {
     return this.http.post<ActiveDirectoryResponse<AdUser>>(`${this.apiUrl}/usuarios/${encodeURIComponent(samAccountName)}/deshabilitar`, {});
   }
 
+  deleteUser(samAccountName: string): Observable<ActiveDirectoryResponse<void>> {
+    return this.http.delete<ActiveDirectoryResponse<void>>(`${this.apiUrl}/usuarios/${encodeURIComponent(samAccountName)}`);
+  }
+
   resetPassword(samAccountName: string, newPassword: string, forceChange: boolean): Observable<ActiveDirectoryResponse<AdUser>> {
     return this.http.post<ActiveDirectoryResponse<AdUser>>(`${this.apiUrl}/usuarios/${encodeURIComponent(samAccountName)}/reset-password`, {
       newPassword,

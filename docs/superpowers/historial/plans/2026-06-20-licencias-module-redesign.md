@@ -749,7 +749,7 @@ git commit -m "feat: add TipoBien catalog (entity, CRUD, tests)"
 
 **Interfaces:**
 - Produces: `LicenciaCredentialConverter` implementing `AttributeConverter<String, String>`, public constructor `LicenciaCredentialConverter(String base64Key)` (Spring injects `${licencia.encryption-key}` via `@Value`, but the test instantiates it directly with a literal key string — no Spring context needed). Task 4 (`Licencia` entity) consumes this class via `@Convert(converter = LicenciaCredentialConverter.class)` on the `claveActivacion` field.
-- The AES key used here (`CBkkF72fkRZoZLynAdKy0wLsBqZJx2AycpfPEE+9+8o=`) was verified to base64-decode to exactly 32 bytes (AES-256-compatible) before writing this plan.
+- The AES key used here (`${LICENCIA_ENCRYPTION_KEY}`) was verified to base64-decode to exactly 32 bytes (AES-256-compatible) before writing this plan.
 
 - [ ] **Step 1: Add the encryption key to `application.yml`**
 
@@ -757,7 +757,7 @@ In `soportedesk-backend/src/main/resources/application.yml`, after the `jwt:` bl
 
 ```yaml
 licencia:
-  encryption-key: ${LICENCIA_ENCRYPTION_KEY:CBkkF72fkRZoZLynAdKy0wLsBqZJx2AycpfPEE+9+8o=}
+  encryption-key: ${LICENCIA_ENCRYPTION_KEY:${LICENCIA_ENCRYPTION_KEY}}
 ```
 
 The file's top section should read:
@@ -768,7 +768,7 @@ jwt:
   expiration-ms: 86400000
 
 licencia:
-  encryption-key: ${LICENCIA_ENCRYPTION_KEY:CBkkF72fkRZoZLynAdKy0wLsBqZJx2AycpfPEE+9+8o=}
+  encryption-key: ${LICENCIA_ENCRYPTION_KEY:${LICENCIA_ENCRYPTION_KEY}}
 
 uploads:
   drivers-dir: uploads/drivers
@@ -780,7 +780,7 @@ In `soportedesk-backend/src/test/resources/application.yml`, after the `jwt:` bl
 
 ```yaml
 licencia:
-  encryption-key: CBkkF72fkRZoZLynAdKy0wLsBqZJx2AycpfPEE+9+8o=
+  encryption-key: ${LICENCIA_ENCRYPTION_KEY}
 ```
 
 The file's bottom section should read:
@@ -791,7 +791,7 @@ jwt:
   expiration-ms: 86400000
 
 licencia:
-  encryption-key: CBkkF72fkRZoZLynAdKy0wLsBqZJx2AycpfPEE+9+8o=
+  encryption-key: ${LICENCIA_ENCRYPTION_KEY}
 
 uploads:
   drivers-dir: build/test-uploads/drivers
@@ -808,7 +808,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 class LicenciaCredentialConverterTest {
 
-    private static final String TEST_KEY = "CBkkF72fkRZoZLynAdKy0wLsBqZJx2AycpfPEE+9+8o=";
+    private static final String TEST_KEY = "${LICENCIA_ENCRYPTION_KEY}";
 
     private final LicenciaCredentialConverter converter = new LicenciaCredentialConverter(TEST_KEY);
 

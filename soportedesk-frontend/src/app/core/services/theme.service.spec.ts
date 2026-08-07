@@ -1,6 +1,11 @@
 import { ThemeService } from './theme.service';
 
 describe('ThemeService', () => {
+  beforeEach(() => {
+    localStorage.removeItem('soportedesk-theme');
+    document.documentElement.removeAttribute('data-theme');
+  });
+
   afterEach(() => {
     localStorage.removeItem('soportedesk-theme');
     document.documentElement.removeAttribute('data-theme');

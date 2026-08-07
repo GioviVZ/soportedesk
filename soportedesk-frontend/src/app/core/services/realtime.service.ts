@@ -1,4 +1,5 @@
 import { Injectable, NgZone, inject } from '@angular/core';
+import { Router } from '@angular/router';
 import { environment } from '../../../environments/environment';
 import { AuthService } from '../auth/auth.service';
 
@@ -10,12 +11,13 @@ export interface RealtimeChange {
   fecha: string;
 }
 
-export const REALTIME_CHANGE_EVENT = 'soportedesk:data-change';
+const REALTIME_CHANGE_EVENT = 'soportedesk:data-change';
 
 @Injectable({ providedIn: 'root' })
 export class RealtimeService {
   private auth = inject(AuthService);
   private zone = inject(NgZone);
+  private router = inject(Router);
   private controller: AbortController | null = null;
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -40,6 +42,11 @@ export class RealtimeService {
         headers: { Authorization: `Bearer ${token}`, Accept: 'text/event-stream' },
         signal: this.controller.signal,
       });
+      if (response.status === 401) {
+        this.auth.logout();
+        await this.router.navigate(['/login']);
+        return;
+      }
       if (!response.ok || !response.body) throw new Error('SSE no disponible');
       await this.readStream(response.body);
     } catch (error) {

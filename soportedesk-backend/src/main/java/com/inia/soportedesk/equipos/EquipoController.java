@@ -1,6 +1,7 @@
 package com.inia.soportedesk.equipos;
 
 import com.inia.soportedesk.glpi.VwInvComputerFull;
+import com.inia.soportedesk.glpi.SoftwareExportRow;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -13,7 +14,6 @@ import java.util.List;
 public class EquipoController {
 
     private final EquipoService service;
-    private final EquipoRepository localEquipoRepository;
 
     @GetMapping
     @PreAuthorize("hasRole('ADMIN') || hasAuthority('READ_equipos')")
@@ -65,13 +65,13 @@ public class EquipoController {
         return service.findFabricantes();
     }
 
-    @GetMapping("/con-red")
+    @PostMapping("/software/export")
     @PreAuthorize("hasRole('ADMIN') || hasAuthority('READ_equipos')")
-    public List<Equipo> findConRed() {
-        return localEquipoRepository.findByTipoIn(List.of("Laptop", "Computadora"));
+    public List<SoftwareExportRow> findSoftwareForExport(@RequestBody List<Long> computerIds) {
+        return service.findSoftwareForExport(computerIds);
     }
 
-    @GetMapping("/salud")
+@GetMapping("/salud")
     @PreAuthorize("hasRole('ADMIN') || hasAuthority('READ_equipos')")
     public List<EquipoSaludDto> getSalud() {
         return service.getSalud();

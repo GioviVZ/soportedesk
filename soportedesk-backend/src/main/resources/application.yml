@@ -2,7 +2,7 @@ spring:
   application:
     name: soportedesk-backend
   profiles:
-    active: dev
+    active: ${SPRING_PROFILES_ACTIVE:dev}
   sql:
     init:
       mode: never
@@ -19,20 +19,38 @@ spring:
 server:
   port: 8080
 
+logging:
+  level:
+    root: INFO
+    org.springframework: INFO
+    org.hibernate.SQL: WARN
+
 jwt:
-  secret: ${JWT_SECRET:c29wb3J0ZWRlc2staW5pYS1zZWNyZXQta2V5LWNoYW5nZS1pbi1wcm9kdWNjaW9uLTEyMzQ1Ng==}
+  secret: ${JWT_SECRET}
   expiration-ms: 86400000
 
 licencia:
-  encryption-key: ${LICENCIA_ENCRYPTION_KEY:CBkkF72fkRZoZLynAdKy0wLsBqZJx2AycpfPEE+9+8o=}
+  encryption-key: ${LICENCIA_ENCRYPTION_KEY}
 
 agente:
-  inventario-token: ${AGENTE_INVENTARIO_TOKEN:change-me-agent-token}
+  inventario-token: ${AGENTE_INVENTARIO_TOKEN}
 
 uploads:
   drivers-dir: uploads/drivers
   evidencias-dir: uploads/evidencias
   intervenciones-dir: uploads/impresoras-intervenciones
+
+equipos:
+  # Job que mantiene dbo.equipo_asignacion al dia con glpi_computers.
+  # Por defecto todos los dias a las 3am. Cambiar solo si hace falta
+  # correrlo con otra frecuencia.
+  sync-glpi-cron: "0 0 3 * * *"
+
+identidad:
+  # Job que detecta cuentas AD nuevas sin persona y las deja en
+  # persona_candidato para revision -- nunca crea persona solo.
+  # Corre 30 minutos despues que el de equipos para no competir por I/O.
+  reconciliacion-cron: "0 30 3 * * *"
 
 ad:
   url: ${AD_URL:ldaps://SRV-DC02.inia.local:636}
@@ -47,14 +65,14 @@ spring:
     activate:
       on-profile: dev
   datasource:
-    url: jdbc:sqlserver://172.16.26.16:1433;databaseName=ssti;encrypt=false;trustServerCertificate=true
-    username: sa
-    password: $Lipknot86
+    url: ${SSTI_DB_URL}
+    username: ${SSTI_DB_USERNAME}
+    password: ${SSTI_DB_PASSWORD}
     driver-class-name: com.microsoft.sqlserver.jdbc.SQLServerDriver
 
 glpi:
   datasource:
-    url: jdbc:mysql://172.16.25.18:3306/glpi?useSSL=false&serverTimezone=America/Lima
-    username: usrbd
-    password: $Lipknot86
+    url: ${GLPI_DB_URL}
+    username: ${GLPI_DB_USERNAME}
+    password: ${GLPI_DB_PASSWORD}
     driver-class-name: com.mysql.cj.jdbc.Driver

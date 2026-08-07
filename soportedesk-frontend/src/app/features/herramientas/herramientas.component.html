@@ -18,18 +18,35 @@
     </div>
   </header>
 
-  <nav class="tool-tabs" aria-label="Aplicaciones disponibles">
-    @for (tab of tabs; track tab) {
-      <button
-        type="button"
-        [class.active]="activeTab === tab.id"
-        (click)="selectTab(tab.id)"
-        >
-        <strong>{{ tab.label }}</strong>
-        <span>{{ tab.detail }}</span>
-      </button>
-    }
-  </nav>
+  <div class="tool-groups">
+    <section class="tool-group" aria-labelledby="applications-title">
+      <div class="tool-group-heading">
+        <span class="tool-group-icon"><i class="ti ti-apps"></i></span>
+        <div><h3 id="applications-title">Aplicaciones</h3><p>Utilidades de soporte, red y gestión.</p></div>
+      </div>
+      <nav class="tool-tabs" aria-label="Aplicaciones disponibles">
+        @for (tab of applicationTabs; track tab.id) {
+          <button type="button" [class.active]="activeTab === tab.id" (click)="selectTab(tab.id)">
+            <strong>{{ tab.label }}</strong><span>{{ tab.detail }}</span>
+          </button>
+        }
+      </nav>
+    </section>
+
+    <section class="tool-group" aria-labelledby="equipment-tests-title">
+      <div class="tool-group-heading">
+        <span class="tool-group-icon test"><i class="ti ti-device-desktop-cog"></i></span>
+        <div><h3 id="equipment-tests-title">Testeo de equipo</h3><p>Pruebas de hardware y periféricos.</p></div>
+      </div>
+      <nav class="tool-tabs" aria-label="Pruebas del equipo">
+        @for (tab of equipmentTestTabs; track tab.id) {
+          <button type="button" [class.active]="activeTab === tab.id" (click)="selectTab(tab.id)">
+            <strong>{{ tab.label }}</strong><span>{{ tab.detail }}</span>
+          </button>
+        }
+      </nav>
+    </section>
+  </div>
 
   <section class="tool-panel" [class.active]="activeTab === 'equipo'">
     <div class="panel-heading">
@@ -128,6 +145,52 @@
     @if (pingResult?.output?.length) {
       <pre class="terminal">{{ pingResult?.output?.join('\n') }}</pre>
     }
+  </section>
+
+  <section class="tool-panel" [class.active]="activeTab === 'velocidad'">
+    <div class="speedtest-shell">
+      <header class="speedtest-heading">
+        <span class="eyebrow">Diagnóstico de Internet</span>
+        <h2>Prueba de velocidad</h2>
+        <p>Medición directa desde tu navegador hacia Internet.</p>
+      </header>
+
+      <div class="speedtest-stage">
+        <div class="speed-gauge" [class.running]="speedStats.status === 'running'">
+          <svg viewBox="0 0 220 130" aria-hidden="true">
+            <path class="gauge-track" d="M20 112 A90 90 0 0 1 200 112" pathLength="283" />
+            <path class="gauge-value" d="M20 112 A90 90 0 0 1 200 112" pathLength="283"
+                  [style.stroke-dashoffset]="speedGaugeOffset" />
+          </svg>
+          <div class="gauge-readout">
+            @if (speedStats.status === 'idle') {
+              <button type="button" class="speed-go" (click)="runSpeedTest()">INICIAR</button>
+            } @else {
+              <strong>{{ speedGaugeValue || '0' }}</strong><span>{{ speedGaugeUnit }}</span>
+            }
+          </div>
+        </div>
+        <strong class="speed-phase">{{ speedStats.phase }}</strong>
+        @if (speedStats.status !== 'running') {
+          <button type="button" class="speed-repeat" (click)="runSpeedTest()">
+            {{ speedStats.status === 'done' ? 'Repetir prueba' : speedStats.status === 'error' ? 'Intentar nuevamente' : 'Comenzar' }}
+          </button>
+        }
+      </div>
+
+      <div class="speed-results">
+        <div><span><i class="ti ti-arrow-down"></i> Descarga</span><strong>{{ speedStats.downloadMbps || '—' }}</strong><small>Mbps</small></div>
+        <div><span><i class="ti ti-arrow-up"></i> Subida</span><strong>{{ speedStats.uploadMbps || '—' }}</strong><small>Mbps</small></div>
+        <div><span><i class="ti ti-bolt"></i> Ping</span><strong>{{ speedStats.latencyMs || '—' }}</strong><small>ms</small></div>
+        <div><span><i class="ti ti-wave-sine"></i> Variación</span><strong>{{ speedStats.jitterMs || '—' }}</strong><small>ms</small></div>
+      </div>
+
+      @if (speedStats.status === 'running') {
+        <div class="speed-progress"><i [style.width.%]="speedStats.progress"></i></div>
+      }
+      <p class="speed-message">{{ speedStats.message }}</p>
+      <small class="speed-privacy">La medición se realiza desde este navegador contra Cloudflare. No utiliza la conexión del servidor SoporteDesk.</small>
+    </div>
   </section>
 
   <section class="tool-panel" [class.active]="activeTab === 'qr'">
@@ -470,6 +533,196 @@
       <div [class.ok]="mouseStats.wheel"><span>Rueda</span><strong>{{ statusText(mouseStats.wheel) }}</strong></div>
       <div [class.ok]="mouseStats.moves > 0"><span>Movimiento</span><strong>{{ mouseStats.moves }}</strong></div>
     </div>
+  </section>
+
+  <section class="tool-panel" [class.active]="activeTab === 'pantalla'">
+    <div class="panel-heading">
+      <div>
+        <h3>Prueba de pixeles</h3>
+        <p>Revisa ocho fondos solidos para localizar pixeles muertos, atascados o brillantes.</p>
+      </div>
+      <span class="status-pill" [class.ok]="pixelProgress === 100">{{ pixelProgress }}% revisado</span>
+    </div>
+
+    <div class="test-guide" role="note">
+      <strong>Antes de comenzar</strong>
+      <span>Limpia la pantalla y revisa cada color con poca luz. Flechas o espacio cambian el fondo; Esc termina.</span>
+    </div>
+
+    <div
+      #pixelStage
+      class="pixel-stage"
+      [class.pixel-stage--active]="pixelTestActive"
+      [style.background]="currentPixelPattern.color"
+      [style.color]="currentPixelPattern.textColor"
+      (click)="pixelTestActive && changePixelPattern(1)">
+      <div class="pixel-stage__toolbar" (click)="$event.stopPropagation()">
+        <strong>{{ currentPixelPattern.label }}</strong>
+        <span>{{ pixelPatternIndex + 1 }} / {{ pixelPatterns.length }}</span>
+        <button type="button" (click)="stopPixelTest()">Salir</button>
+      </div>
+      @if (!pixelTestActive) {
+        <div class="pixel-stage__preview">
+          <strong>{{ currentPixelPattern.label }}</strong>
+          <span>Vista previa del patron</span>
+        </div>
+      }
+    </div>
+
+    <div class="pattern-controls" aria-label="Patrones de color">
+      @for (pattern of pixelPatterns; track pattern.label; let i = $index) {
+        <button type="button" [class.active]="pixelPatternIndex === i" [class.reviewed]="pixelReviewed.has(i)" (click)="selectPixelPattern(i)">
+          <i [style.background]="pattern.color"></i><span>{{ pattern.label }}</span>
+        </button>
+      }
+    </div>
+
+    <div class="button-row test-actions">
+      <button type="button" class="primary-btn" (click)="startPixelTest()">Iniciar en pantalla completa</button>
+      <label class="result-field">Resultado
+        <select [(ngModel)]="pixelResult" (ngModelChange)="savePixelResult()">
+          <option value="">Seleccionar</option>
+          <option value="Sin defectos">Sin defectos</option>
+          <option value="Pixel muerto">Pixel muerto</option>
+          <option value="Pixel atascado">Pixel atascado</option>
+          <option value="Pixel brillante">Pixel brillante</option>
+          <option value="Requiere revision">Requiere revision</option>
+        </select>
+      </label>
+    </div>
+  </section>
+
+  <section class="tool-panel" [class.active]="activeTab === 'tactil'">
+    <div class="panel-heading">
+      <div>
+        <h3>Prueba de pantalla tactil</h3>
+        <p>Comprueba contactos simultaneos, zonas muertas y precision del digitalizador.</p>
+      </div>
+      <div class="button-row">
+        <button type="button" class="ghost-btn" (click)="resetTouchTest()">Reiniciar</button>
+        <button type="button" class="primary-btn" (click)="enterTouchFullscreen()">Pantalla completa</button>
+      </div>
+    </div>
+
+    <div class="mode-switch" role="group" aria-label="Modo de prueba tactil">
+      <button type="button" [class.active]="touchMode === 'multitouch'" (click)="setTouchMode('multitouch')">Multitactil</button>
+      <button type="button" [class.active]="touchMode === 'zonas'" (click)="setTouchMode('zonas')">Zonas muertas</button>
+      <button type="button" [class.active]="touchMode === 'precision'" (click)="setTouchMode('precision')">Precision</button>
+    </div>
+
+    <div class="touch-stats" aria-live="polite">
+      <div><span>Activos</span><strong>{{ touchPoints.length }}</strong></div>
+      <div><span>Maximo</span><strong>{{ touchMaxActive }}</strong></div>
+      <div><span>Total</span><strong>{{ touchTotal }}</strong></div>
+      <div><span>Presion</span><strong>{{ touchPressureMax * 100 | number:'1.0-0' }}%</strong></div>
+      @if (touchMode === 'zonas') { <div><span>Cobertura</span><strong>{{ touchGridCoverage }}%</strong></div> }
+      @if (touchMode === 'precision') { <div><span>Error medio</span><strong>{{ precisionAverageError }} px</strong></div> }
+    </div>
+
+    <div
+      #touchStage
+      class="touch-stage"
+      [class.touch-stage--grid]="touchMode === 'zonas'"
+      (pointerdown)="onTouchPointerDown($event)"
+      (pointermove)="onTouchPointerMove($event)"
+      (pointerup)="onTouchPointerUp($event)"
+      (pointercancel)="onTouchPointerUp($event)">
+      @if (touchMode === 'zonas') {
+        <div class="touch-grid" aria-hidden="true">
+          @for (cell of touchGrid; track $index) { <i [class.tested]="cell"></i> }
+        </div>
+      }
+      @if (touchMode === 'precision') {
+        <div class="precision-target" [style.left.%]="precisionTarget.x" [style.top.%]="precisionTarget.y"><i></i></div>
+      }
+      @if (!touchPoints.length && touchTotal === 0) {
+        <div class="touch-stage__hint">
+          <strong>{{ touchMode === 'zonas' ? 'Arrastra por toda la cuadricula' : (touchMode === 'precision' ? 'Toca el centro del objetivo' : 'Toca con uno o varios dedos') }}</strong>
+          <span>El mouse sirve para practicar, pero no valida el panel tactil.</span>
+        </div>
+      }
+      @for (point of touchPoints; track point.id) {
+        <div class="touch-point" [style.left.px]="point.x" [style.top.px]="point.y" [style.--touch-color]="point.color">
+          <strong>{{ point.id }}</strong><span>{{ point.x | number:'1.0-0' }}, {{ point.y | number:'1.0-0' }}</span>
+        </div>
+      }
+    </div>
+
+    <div class="touch-footer">
+      <div><strong>Actividad reciente</strong><span>{{ touchGestures[0] || 'Sin actividad' }}</span></div>
+      <button type="button" class="ghost-btn" (click)="saveTouchResult()" [disabled]="touchTotal === 0">Agregar al reporte</button>
+    </div>
+  </section>
+
+  <section class="tool-panel" [class.active]="activeTab === 'sonido'">
+    <div class="panel-heading">
+      <div>
+        <h3>Prueba de sonido</h3>
+        <p>Verifica canales izquierdo y derecho, respuesta de frecuencia y bajos.</p>
+      </div>
+      <span class="status-pill" [class.ok]="soundPlaying" [class.bad]="soundError">{{ soundPlaying ? 'Reproduciendo' : (soundError ? 'Error' : 'Listo') }}</span>
+    </div>
+
+    <div class="sound-warning" role="alert">
+      <strong>Protege tus oidos</strong>
+      <span>Baja primero el volumen del equipo. La herramienta inicia al 10% y limita su salida al 50%.</span>
+    </div>
+
+    <div class="sound-channel-test">
+      <button type="button" [class.active]="soundPlaying && soundChannel === 'left'" (click)="startSoundTest('left')"><strong>L</strong><span>Izquierda</span></button>
+      <button type="button" [class.active]="soundPlaying && soundChannel === 'both'" (click)="startSoundTest('both')"><strong>L + R</strong><span>Ambos</span></button>
+      <button type="button" [class.active]="soundPlaying && soundChannel === 'right'" (click)="startSoundTest('right')"><strong>R</strong><span>Derecha</span></button>
+    </div>
+
+    <div class="sound-controls">
+      <label>
+        <span>Frecuencia <strong>{{ soundFrequency }} Hz</strong></span>
+        <input type="range" min="20" max="20000" step="10" [ngModel]="soundFrequency" (ngModelChange)="updateSoundFrequency($event)" />
+        <small>20 Hz bajos · 440 Hz referencia · 20 kHz agudos</small>
+      </label>
+      <label>
+        <span>Volumen de la herramienta <strong>{{ soundVolume }}%</strong></span>
+        <input type="range" min="0" max="50" step="1" [ngModel]="soundVolume" (ngModelChange)="updateSoundVolume($event)" />
+        <small>El volumen final tambien depende de Windows y del dispositivo.</small>
+      </label>
+    </div>
+
+    <div class="sound-presets">
+      <span>Frecuencias rapidas</span>
+      @for (frequency of [40, 80, 250, 440, 1000, 4000, 8000, 16000]; track frequency) {
+        <button type="button" [class.active]="soundFrequency === frequency" (click)="updateSoundFrequency(frequency)">{{ frequency >= 1000 ? (frequency / 1000) + 'k' : frequency }} Hz</button>
+      }
+    </div>
+
+    <div class="sound-footer">
+      <label>Forma de onda
+        <select [ngModel]="soundWave" (ngModelChange)="updateSoundWave($event)">
+          <option value="sine">Seno suave</option>
+          <option value="triangle">Triangular</option>
+          <option value="square">Cuadrada</option>
+          <option value="sawtooth">Sierra</option>
+        </select>
+      </label>
+      <div class="button-row">
+        <button type="button" class="ghost-btn" (click)="stopSoundTest()" [disabled]="!soundPlaying">Detener</button>
+        <button type="button" class="ghost-btn" (click)="startSoundSweep()" [disabled]="soundSweepActive">Barrido 40 Hz - 16 kHz</button>
+        <button type="button" class="primary-btn" (click)="startSoundTest()">{{ soundPlaying ? 'Reiniciar tono' : 'Reproducir tono' }}</button>
+      </div>
+    </div>
+
+    @if (soundError) { <p class="error-text">{{ soundError }}</p> }
+
+    <label class="sound-result">Resultado de la revision
+      <select [(ngModel)]="soundResult" (ngModelChange)="saveSoundResult()">
+        <option value="">Seleccionar</option>
+        <option value="Canales y frecuencias correctos">Canales y frecuencias correctos</option>
+        <option value="Canal izquierdo sin sonido">Canal izquierdo sin sonido</option>
+        <option value="Canal derecho sin sonido">Canal derecho sin sonido</option>
+        <option value="Distorsion o ruido detectado">Distorsion o ruido detectado</option>
+        <option value="Bajos deficientes">Bajos deficientes</option>
+        <option value="Requiere revision">Requiere revision</option>
+      </select>
+    </label>
   </section>
 
   <section class="tool-panel" [class.active]="activeTab === 'microfono'">

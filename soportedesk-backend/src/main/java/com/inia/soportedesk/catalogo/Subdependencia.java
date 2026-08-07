@@ -24,4 +24,15 @@ public class Subdependencia {
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "dependencia_id", nullable = false)
     private Dependencia dependencia;
+
+    // Importado de GestionTI_INIA (Fase 1 del plan de normalizacion,
+    // 24-jul-2026) -- solo lectura, no forma parte de SubdependenciaRequest.
+    @Column(name = "org_unit_path")
+    private String orgUnitPath;
+
+    public Subdependencia(Long id, String nombre, Dependencia dependencia) {
+        this.id = id;
+        this.nombre = nombre;
+        this.dependencia = dependencia;
+    }
 }

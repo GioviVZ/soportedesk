@@ -6,8 +6,12 @@
     </div>
     <div class="filter-actions">
       <button type="button" class="ghost-action" (click)="clearFilters()" [disabled]="!hasActiveFilters">Limpiar</button>
-      <button type="button" class="primary-action" (click)="exportExcel()" [disabled]="filteredItems.length === 0">
-        Exportar Excel
+      <button type="button" class="primary-action excel-export-btn" (click)="exportExcel()" [disabled]="filteredItems.length === 0">
+        <svg class="excel-export-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" />
+          <path d="M14 2v6h6M8 13h2M8 17h2M14 13h2M14 17h2" />
+        </svg>
+        <span>Exportar Excel</span>
       </button>
     </div>
   </div>
@@ -153,7 +157,9 @@
             </div>
           </dl>
           <div class="printer-card-actions">
-            <button type="button" class="view" (click)="view.emit(item)">Ver</button>
+            <button type="button" class="btn-view-record" (click)="view.emit(item)" aria-label="Ver detalle de la impresora">
+              <i class="ti ti-eye" aria-hidden="true"></i><span>Ver</span>
+            </button>
             @if (canManage) {
               <button type="button" class="edit" (click)="edit.emit(item)">Editar</button>
             }

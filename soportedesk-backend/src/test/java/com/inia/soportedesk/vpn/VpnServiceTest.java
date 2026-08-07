@@ -8,6 +8,8 @@ import com.inia.soportedesk.exception.ResourceNotFoundException;
 import com.inia.soportedesk.glpi.VwInvComputerFull;
 import com.inia.soportedesk.glpi.VwInvComputerFullRepository;
 import com.inia.soportedesk.usuariosred.contrato.UsuarioRedContratoRepository;
+import com.inia.soportedesk.usuariosred.contrato.UsuarioRedContrato;
+import com.inia.soportedesk.catalogo.TipoContrato;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -49,6 +51,9 @@ class VpnServiceTest {
     private VpnConfigInstitucionalService configInstitucionalService;
 
     @Mock
+    private VpnNormalizedSyncService normalizedSyncService;
+
+    @Mock
     private ActiveDirectoryService activeDirectoryService;
 
     @Mock
@@ -63,7 +68,11 @@ class VpnServiceTest {
         request.setTipoEquipo("PERSONAL");
         request.setAntivirusVerificado(true);
         request.setAnalisisAntivirusRealizado(true);
+        request.setSistemaOperativoActualizado(true);
+        request.setForticlientInstalado(true);
+        request.setVencimientoAntivirus(LocalDate.of(2027, 1, 15));
         request.setTitularCargo("Profesional");
+        request.setNumeroTicket("TICKET-001");
         return request;
     }
 
@@ -85,9 +94,18 @@ class VpnServiceTest {
         request.setTitularApellidos("Torres");
         request.setTitularCorreo(email);
         request.setTitularEmpresa("Proveedor SAC");
+        request.setNumeroTicket("TICKET-EXT-001");
         request.setTitularMotivo("Soporte temporal");
         request.setTitularCargo("Especialista");
         request.setTipoEquipo("PERSONAL");
+        request.setAntivirusVerificado(true);
+        request.setAnalisisAntivirusRealizado(true);
+        request.setSistemaOperativoActualizado(true);
+        request.setForticlientInstalado(true);
+        request.setVencimientoAntivirus(LocalDate.of(2027, 1, 15));
+        request.setSistemaOperativoActualizado(true);
+        request.setForticlientInstalado(true);
+        request.setVencimientoAntivirus(LocalDate.of(2027, 1, 15));
         return request;
     }
 
@@ -277,6 +295,69 @@ class VpnServiceTest {
     }
 
     @Test
+    void findById_forTerceroConOrdenServicio_usesEarlierOsDateAndExposesIdentity() {
+        Vpn vpn = new Vpn();
+        vpn.setId(44L);
+        vpn.setTipoEquipo("PERSONAL");
+        vpn.setAdSamAccountName("mtercero");
+        vpn.setVencimientoAntivirus(LocalDate.of(2027, 12, 31));
+
+        TipoContrato tipo = new TipoContrato();
+        tipo.setNombre("Orden de Servicio");
+        UsuarioRedContrato orden = new UsuarioRedContrato();
+        orden.setUsuario("mtercero");
+        orden.setTipoContrato(tipo);
+        orden.setPersonalNombre("María");
+        orden.setPersonalApellidos("Torres");
+        orden.setNumeroContrato("OS-2026-0042");
+        orden.setFechaFin(LocalDate.of(2026, 10, 15));
+
+        when(repository.findById(44L)).thenReturn(Optional.of(vpn));
+        when(contratoRepository.findByUsuarioIgnoreCaseOrderByFechaInicioDesc("mtercero"))
+                .thenReturn(List.of(orden));
+
+        Vpn result = service.findById(44L);
+
+        assertThat(result.getVence()).isEqualTo(LocalDate.of(2026, 10, 15));
+        assertThat(result.getVenceOrigen()).isEqualTo("CONTRATO");
+        assertThat(result.isTerceroOrdenServicio()).isTrue();
+        assertThat(result.getTerceroNombre()).isEqualTo("María Torres");
+        assertThat(result.getNumeroOrdenServicio()).isEqualTo("OS-2026-0042");
+        assertThat(result.getTitularOrigenLabel()).isEqualTo("Tercero / OS");
+    }
+
+    @Test
+    void crearSolicitud_forEquipoIniaWithoutGlpi_rejectsIncompleteRequest() {
+        when(activeDirectoryService.buscarUsuarioCacheadoORefrescar("jruiz")).thenReturn(Optional.of(cacheUser()));
+        VpnRequest request = sampleRequest();
+        request.setTipoEquipo("INIA");
+        request.setVencimientoAntivirus(null);
+        request.setHostActualizado(true);
+
+        assertThatThrownBy(() -> service.crearSolicitud(request, authAs("jasistente")))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("seleccionar el equipo")
+                .hasMessageContaining("GLPI");
+    }
+
+    @Test
+    void crearSolicitud_forEquipoIniaWhoseGlpiRecordHasNoIp_rejectsIncompleteRequest() {
+        when(activeDirectoryService.buscarUsuarioCacheadoORefrescar("jruiz")).thenReturn(Optional.of(cacheUser()));
+        VwInvComputerFull equipo = new VwInvComputerFull();
+        equipo.setComputerID(42L);
+        equipo.setNombreEquipo("PC-SIN-IP");
+        when(glpiRepository.findById(42L)).thenReturn(Optional.of(equipo));
+        VpnRequest request = sampleRequest();
+        request.setTipoEquipo("INIA");
+        request.setGlpiComputerId(42L);
+        request.setHostActualizado(true);
+
+        assertThatThrownBy(() -> service.crearSolicitud(request, authAs("jasistente")))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("no tiene una IP");
+    }
+
+    @Test
     void crearSolicitud_withUnknownGlpiId_throwsResourceNotFoundException() {
         when(activeDirectoryService.buscarUsuarioCacheadoORefrescar("jruiz")).thenReturn(Optional.of(cacheUser()));
         when(glpiRepository.findById(999L)).thenReturn(Optional.empty());
@@ -349,9 +430,13 @@ class VpnServiceTest {
         request.setTitularEmpresa("ACME SAC");
         request.setTitularMotivo("Consultoria - Proyecto X");
         request.setTitularCargo("Gerente");
+        request.setNumeroTicket("TICKET-EXT-002");
         request.setTipoEquipo("PERSONAL");
         request.setAntivirusVerificado(true);
         request.setAnalisisAntivirusRealizado(true);
+        request.setSistemaOperativoActualizado(true);
+        request.setForticlientInstalado(true);
+        request.setVencimientoAntivirus(LocalDate.of(2027, 1, 15));
 
         Vpn result = service.crearSolicitud(request, authAs("jasistente"));
 
@@ -437,6 +522,12 @@ class VpnServiceTest {
         Vpn existing = new Vpn();
         existing.setId(7L);
         existing.setEstadoSolicitud("PENDIENTE");
+        existing.setTipoEquipo("PERSONAL");
+        existing.setAntivirusVerificado(true);
+        existing.setAnalisisAntivirusRealizado(true);
+        existing.setSistemaOperativoActualizado(true);
+        existing.setForticlientInstalado(true);
+        existing.setVencimientoAntivirus(LocalDate.of(2027, 1, 15));
         when(repository.findById(7L)).thenReturn(Optional.of(existing));
         when(usuarioRepository.findByUsername("mresponsable")).thenReturn(Optional.empty());
         when(repository.save(any(Vpn.class))).thenAnswer(inv -> inv.getArgument(0));
@@ -455,10 +546,34 @@ class VpnServiceTest {
     }
 
     @Test
+    void aprobar_whenPendingRequestIsIncomplete_rejectsApproval() {
+        Vpn existing = new Vpn();
+        existing.setId(7L);
+        existing.setEstadoSolicitud("PENDIENTE");
+        existing.setTipoEquipo("INIA");
+        when(repository.findById(7L)).thenReturn(Optional.of(existing));
+
+        VpnAprobarRequest request = new VpnAprobarRequest();
+        request.setUsuarioVpn("vpnuser1");
+        request.setCredencialVpn("Sup3rSecreta!");
+        request.setEstado("Activo");
+
+        assertThatThrownBy(() -> service.aprobar(7L, request, authAs("mresponsable")))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("incompleta");
+    }
+
+    @Test
     void aprobar_whenUsuarioVpnIsAlreadyApproved_rejectsDuplicate() {
         Vpn existing = new Vpn();
         existing.setId(7L);
         existing.setEstadoSolicitud("PENDIENTE");
+        existing.setTipoEquipo("PERSONAL");
+        existing.setAntivirusVerificado(true);
+        existing.setAnalisisAntivirusRealizado(true);
+        existing.setSistemaOperativoActualizado(true);
+        existing.setForticlientInstalado(true);
+        existing.setVencimientoAntivirus(LocalDate.of(2027, 1, 15));
         when(repository.findById(7L)).thenReturn(Optional.of(existing));
         when(repository.countApprovedByUsuarioVpn("vpnuser1", 7L)).thenReturn(1L);
 

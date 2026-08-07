@@ -1,0 +1,149 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-07-19T00:00:00Z",
+  "title": "Design System: Sistema Gestión de Soporte Informático INIA",
+  "extensions": {
+    "colorMeta": {
+      "verde-primario": {
+        "role": "primary",
+        "displayName": "Verde Primario",
+        "canonical": "#63a431",
+        "tonalRamp": ["#1c2e10", "#2d4a1a", "#3f6624", "#4f832b", "#63a431", "#83bd5c", "#a9d38b", "#d3e9bd"]
+      },
+      "verde-profundo": {
+        "role": "primary-deep",
+        "displayName": "Verde Profundo",
+        "canonical": "#2a5726",
+        "tonalRamp": ["#0d1f0b", "#153113", "#1e451b", "#254d21", "#2a5726", "#3d7238", "#568f4f", "#7aad70"]
+      },
+      "ambar-acento": {
+        "role": "secondary",
+        "displayName": "Ámbar de Acento",
+        "canonical": "#fab50b",
+        "tonalRamp": ["#4a3400", "#6e4e00", "#946900", "#bd8600", "#fab50b", "#ffc94a", "#ffdb85", "#ffecb8"]
+      },
+      "fondo": { "role": "neutral-bg", "displayName": "Fondo", "canonical": "#f1f3f0" },
+      "superficie": { "role": "neutral-surface", "displayName": "Superficie", "canonical": "#ffffff" },
+      "texto": { "role": "neutral-ink", "displayName": "Texto", "canonical": "#1e2d22" },
+      "texto-secundario": { "role": "neutral-ink-muted", "displayName": "Texto Secundario", "canonical": "#5f7064" },
+      "modulo-licencias": { "role": "module", "displayName": "Licencias (Azul Pizarra)", "canonical": "#456b8a" },
+      "modulo-correos": { "role": "module", "displayName": "Correos (Índigo Apagado)", "canonical": "#657195" },
+      "modulo-usuarios-red": { "role": "module", "displayName": "Usuarios de Red (Ámbar Oscuro)", "canonical": "#a86200" },
+      "modulo-vpn": { "role": "module", "displayName": "VPN (Terracota)", "canonical": "#b55245" },
+      "modulo-wifi": { "role": "module", "displayName": "WiFi (Teal)", "canonical": "#357783" },
+      "modulo-impresoras": { "role": "module", "displayName": "Impresoras (Gris Piedra)", "canonical": "#66746a" },
+      "modulo-equipos": { "role": "module", "displayName": "Equipos (Verde Insignia)", "canonical": "#63a431" },
+      "modulo-auditoria": { "role": "module", "displayName": "Auditoría (Oliva)", "canonical": "#756a42" }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Display", "purpose": "Valores numéricos grandes en tarjetas KPI (tabular-nums)." },
+      "headline": { "displayName": "Headline", "purpose": "Título de página o módulo." },
+      "title": { "displayName": "Title", "purpose": "Nombre del sistema, títulos de tarjeta." },
+      "body": { "displayName": "Body", "purpose": "Texto de tabla, formularios, contenido general." },
+      "label": { "displayName": "Label", "purpose": "Encabezados de tabla, eyebrows, etiquetas uppercase tracked." }
+    },
+    "shadows": [
+      { "name": "shadow-sm", "value": "0 1px 2px rgba(30,45,34,.04), 0 10px 24px -22px rgba(30,45,34,.3)", "purpose": "Reposo de tarjetas, stat pills, dashboard cards." },
+      { "name": "shadow-md", "value": "0 12px 30px -22px rgba(30,45,34,.34)", "purpose": "Hover de tarjetas y menús flotantes." },
+      { "name": "shadow-lg", "value": "0 22px 52px -26px rgba(30,45,34,.42)", "purpose": "Modales y sidebar móvil abierto." }
+    ],
+    "motion": [
+      { "name": "transition", "value": "150ms ease", "purpose": "Transición por defecto de color/fondo/borde en elementos interactivos." },
+      { "name": "transition-md", "value": "220ms ease", "purpose": "Transición de sombra y transform en hover de tarjetas/menús." }
+    ],
+    "breakpoints": [
+      { "name": "sm", "value": "420px" },
+      { "name": "md", "value": "520px" },
+      { "name": "lg", "value": "768px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Botón Primario",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Acción principal de una vista; degradado verde-primario a verde-profundo.",
+      "html": "<button class=\"ds-btn-primary\">Guardar</button>",
+      "css": ".ds-btn-primary { display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; border: none; border-radius: var(--radius-sm, 5px); font-weight: 500; font-size: 13px; color: #fff; background: linear-gradient(135deg, var(--color-primary, #63a431), var(--color-brand-deep, #2a5726)); box-shadow: 0 9px 18px -12px rgba(42,87,38,.72); transition: background 150ms ease, transform 150ms ease, box-shadow 220ms ease; } .ds-btn-primary:hover { background: linear-gradient(135deg, var(--color-primary-hover, #5d982d), #244b21); transform: translateY(-2px); box-shadow: 0 13px 24px -13px rgba(42,87,38,.82); } .ds-btn-primary:focus-visible { outline: 2px solid var(--color-accent, #63a431); outline-offset: 2px; }"
+    },
+    {
+      "name": "Botón Ghost",
+      "kind": "button",
+      "refersTo": "button-ghost",
+      "description": "Acción secundaria; transparente con borde sutil.",
+      "html": "<button class=\"ds-btn-ghost\">Cancelar</button>",
+      "css": ".ds-btn-ghost { display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; border-radius: var(--radius-sm, 5px); border: 1px solid var(--color-border, #e1e5df); background: transparent; color: var(--color-text-secondary, #5f7064); font-weight: 500; font-size: 13px; transition: background 150ms ease, color 150ms ease, border-color 150ms ease, transform 150ms ease; } .ds-btn-ghost:hover { background: var(--color-primary-light, #eef6e8); color: var(--color-brand-deep, #2a5726); border-color: rgba(71,124,33,.34); transform: translateY(-1px); }"
+    },
+    {
+      "name": "Botón Ver Registro",
+      "kind": "button",
+      "refersTo": "button-view-record",
+      "description": "Botón pill exclusivo para la acción 'ver detalle' en tablas y tarjetas de todos los módulos.",
+      "html": "<button class=\"ds-btn-view\">Ver</button>",
+      "css": ".ds-btn-view { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-width: 68px; min-height: 32px; padding: 6px 12px; border: 0; border-radius: 999px; background: color-mix(in srgb, var(--color-primary, #63a431) 11%, var(--color-surface, #fff)); color: var(--color-secondary, #2a5726); font-weight: 800; font-size: 12.5px; transition: background 150ms ease, color 150ms ease, box-shadow 220ms ease, transform 150ms ease; } .ds-btn-view:hover { background: var(--color-primary, #63a431); color: var(--color-on-module, #fff); box-shadow: 0 9px 18px -13px rgba(99,164,49,.72); transform: translateY(-1px); }"
+    },
+    {
+      "name": "Badge de Estado",
+      "kind": "chip",
+      "refersTo": "badge-success",
+      "description": "Chip de estado semántico (éxito/advertencia/peligro/info/neutro).",
+      "html": "<span class=\"ds-badge ds-badge--success\">Activo</span>",
+      "css": ".ds-badge { display: inline-flex; align-items: center; justify-content: center; min-height: 24px; border: 1px solid transparent; border-radius: var(--radius-sm, 5px); padding: 3px 10px; font-size: 12px; font-weight: 700; line-height: 1.2; } .ds-badge--success { background: var(--color-success-light, #e7f3e9); color: var(--color-success, #2f7d4a); }"
+    },
+    {
+      "name": "Tarjeta KPI",
+      "kind": "card",
+      "refersTo": "module-dash-stat",
+      "description": "Tarjeta de estadística con acento de color de módulo, valor tabular grande y barra superior.",
+      "html": "<div class=\"ds-kpi\"><strong>128</strong><span>Equipos activos</span></div>",
+      "css": ".ds-kpi { position: relative; display: grid; gap: 9px; padding: 17px; border-radius: var(--radius-md, 7px); background: var(--color-surface, #fff); box-shadow: 0 1px 2px rgba(30,45,34,.04), 0 10px 24px -22px rgba(30,45,34,.3); overflow: hidden; transition: transform 220ms ease, box-shadow 220ms ease; } .ds-kpi::before { content: ''; position: absolute; inset: 0 0 auto; height: 4px; background: var(--color-primary, #63a431); } .ds-kpi strong { font-size: 34px; font-weight: 800; font-variant-numeric: tabular-nums; color: var(--color-heading, #244b21); } .ds-kpi span { font-size: 11px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; color: var(--color-primary, #63a431); } .ds-kpi:hover { transform: translateY(-2px); box-shadow: 0 12px 30px -22px rgba(30,45,34,.34); }"
+    },
+    {
+      "name": "Campo de Texto",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "Input de texto estándar con foco verde y halo suave.",
+      "html": "<input class=\"ds-input\" type=\"text\" placeholder=\"Buscar...\" />",
+      "css": ".ds-input { width: 100%; padding: 9px 12px; border: 1px solid var(--color-border-strong, #c8d1ca); border-radius: var(--radius-sm, 5px); background: var(--color-surface, #fff); color: var(--color-text, #1e2d22); font-size: 13px; outline: none; transition: border-color 150ms ease, box-shadow 150ms ease; } .ds-input:focus { border-color: var(--color-accent, #63a431); box-shadow: 0 0 0 3px rgba(71,124,33,.18); } .ds-input::placeholder { color: var(--color-text-muted, #98a49b); }"
+    },
+    {
+      "name": "Ítem de Navegación",
+      "kind": "nav",
+      "refersTo": "nav-item-active",
+      "description": "Ítem de sidebar en estado activo, con barra izquierda de 3px como único uso permitido de acento lateral.",
+      "html": "<a class=\"ds-nav-item ds-nav-item--active\" href=\"#\">Equipos</a>",
+      "css": ".ds-nav-item { position: relative; display: flex; align-items: center; gap: 12px; min-height: 44px; padding: 9px 12px; border-radius: 7px; font-size: 13.5px; font-weight: 600; color: var(--color-text-secondary, #5f7064); text-decoration: none; transition: color 150ms ease, background 150ms ease, transform 150ms ease; } .ds-nav-item--active { color: var(--color-primary-hover, #5d982d); background: var(--color-primary-light, #eef6e8); font-weight: 700; } .ds-nav-item--active::before { content: ''; position: absolute; left: 0; top: 10px; bottom: 10px; width: 3px; border-radius: 0 4px 4px 0; background: var(--color-primary, #63a431); }"
+    }
+  ],
+  "narrative": {
+    "northStar": "Panel Operativo INIA",
+    "overview": "Este es un sistema de trabajo, no un producto de consumo: cada pantalla existe para que el equipo de soporte técnico de INIA vea el estado real de equipos, impresoras, licencias, VPN, WiFi y usuarios de red, organizado por sede y dependencia. La superficie es sobria y contenida en reposo — fondo neutro (#f1f3f0), tarjetas blancas planas, bordes casi invisibles — y reserva el verde institucional y el ámbar de acento para comunicar significado: qué módulo es, qué estado tiene un registro, qué acción es primaria. No hay gradientes decorativos, drenched surfaces ni efectos de marketing; el sistema explícitamente rechaza el look de dashboard SaaS genérico e intercambiable. Mantiene modo claro y modo oscuro como ciudadanos de primera clase: el oscuro usa su propia rampa de verdes más claros y fondos casi negros con tinte verde sutil.",
+    "keyCharacteristics": [
+      "Verde INIA (#63a431) como color de marca y acento único; el resto del sistema es neutro hasta que necesita comunicar estado o módulo.",
+      "Cada módulo de negocio tiene su propio color de identidad, usado como barra superior de 3-4px y variable --dash-module-color.",
+      "Sombras suaves y ambientales, nunca decorativas: plano en reposo, elevado en hover/foco.",
+      "Tipografía única (DM Sans) en múltiples pesos; no hay mezcla de familias.",
+      "Modo claro y modo oscuro con paridad total de componentes."
+    ],
+    "rules": [
+      { "name": "La Regla del Acento Único", "body": "El verde primario es el único color usado para acción/marca fuera de badges de estado o de módulo; el ámbar de acento aparece en dosis mínimas, nunca como fondo de sección.", "section": "colors" },
+      { "name": "La Regla del Módulo Silencioso", "body": "El color de módulo vive en una barra de 3-4px, un ícono o una variable --dash-module-color, nunca tiñe una superficie completa.", "section": "colors" },
+      { "name": "La Regla de Una Sola Familia", "body": "Todo el sistema usa DM Sans; la jerarquía se construye con peso y tamaño, no con una segunda tipografía.", "section": "typography" },
+      { "name": "La Regla Ambiental", "body": "Ninguna sombra decora una superficie en reposo más allá de shadow-sm; toda sombra más marcada aparece solo en hover, foco u overlay.", "section": "elevation" }
+    ],
+    "dos": [
+      "Do usar el verde primario (#63a431) como único color de acción/marca fuera de badges de estado o de módulo.",
+      "Do mantener el fondo de página en el gris verdoso neutro (#f1f3f0), nunca blanco puro ni un crema/arena cálido.",
+      "Do reservar sombras por encima de shadow-sm para estados de interacción, no para el reposo.",
+      "Do mostrar el color de cada módulo como acento, no como fondo de sección completo.",
+      "Do mantener paridad completa entre modo claro y modo oscuro en cada componente nuevo."
+    ],
+    "donts": [
+      "Don't usar border-left/border-right de color como acento decorativo en tarjetas o alerts, salvo el indicador de ítem activo del sidebar.",
+      "Don't introducir una segunda familia tipográfica.",
+      "Don't usar gradiente de fondo grande, glassmorphism decorativo o superficies drenched de color.",
+      "Don't aplicar texto gris claro sobre fondo casi blanco 'por elegancia'; todo texto de cuerpo debe cumplir ≥4.5:1 de contraste.",
+      "Don't dar a un color de módulo el mismo peso visual que el verde de marca."
+    ]
+  }
+}

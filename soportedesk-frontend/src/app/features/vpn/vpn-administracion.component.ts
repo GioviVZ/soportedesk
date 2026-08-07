@@ -158,8 +158,12 @@ type EstadoSolicitud = 'PENDIENTE' | 'APROBADO' | 'RECHAZADO' | 'OBSERVADO';
                 <dd>{{ item.titularCargo || 'Sin cargo' }}</dd>
               </div>
               <div>
+                <dt>Ticket</dt>
+                <dd>{{ item.numeroTicket || 'Sin ticket' }}</dd>
+              </div>
+              <div>
                 <dt>Equipo</dt>
-                <dd>{{ item.glpiNombreEquipo || item.equipo?.host || item.tipoEquipo || 'Sin equipo' }}</dd>
+                <dd>{{ item.glpiNombreEquipo || item.tipoEquipo || 'Sin equipo' }}</dd>
               </div>
               <div>
                 <dt>Solicitado</dt>
@@ -171,7 +175,7 @@ type EstadoSolicitud = 'PENDIENTE' | 'APROBADO' | 'RECHAZADO' | 'OBSERVADO';
               </div>
             </dl>
             <footer>
-              <button type="button" class="view" (click)="onView(item)">Ver</button>
+              <button type="button" class="btn-view-record" (click)="onView(item)" aria-label="Ver detalle de la solicitud VPN"><i class="ti ti-eye" aria-hidden="true"></i><span>Ver</span></button>
             </footer>
           </article>
         }
@@ -234,6 +238,7 @@ export class VpnAdministracionComponent implements OnInit {
     { key: 'adOrganizationalUnit', label: 'Dependencia' },
     { key: 'adOffice', label: 'Subdependencia' },
     { key: 'titularCargo', label: 'Cargo' },
+    { key: 'numeroTicket', label: 'Ticket' },
     { key: 'titularOrigenLabel', label: 'Origen' },
     { key: 'estadoSolicitud', label: 'Estado solicitud' },
     { key: 'estado', label: 'Estado' },

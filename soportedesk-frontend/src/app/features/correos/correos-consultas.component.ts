@@ -1,10 +1,11 @@
-import { Component, OnInit, inject, ChangeDetectionStrategy } from '@angular/core';
+import { Component, OnDestroy, OnInit, inject, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ModalComponent } from '../../shared/modal/modal.component';
 import { Correo, CorreoFiltros } from './correo.model';
 import { CorreoService } from './correo.service';
 import * as XLSX from 'xlsx';
+import { Subject, debounceTime, distinctUntilChanged, takeUntil } from 'rxjs';
 
 @Component({
     selector: 'app-correos-consultas',
@@ -13,8 +14,10 @@ import * as XLSX from 'xlsx';
     changeDetection: ChangeDetectionStrategy.Eager,
     styleUrls: ['./correos.shared.scss', './correos-consultas-empty.scss']
 })
-export class CorreosConsultasComponent implements OnInit {
+export class CorreosConsultasComponent implements OnInit, OnDestroy {
   private service = inject(CorreoService);
+  private readonly searchQueue = new Subject<string>();
+  private readonly destroy$ = new Subject<void>();
 
   items: Correo[] = [];
   sedes: string[] = [];
@@ -35,10 +38,20 @@ export class CorreosConsultasComponent implements OnInit {
   readonly modalidadOpciones = ['CAP', 'CAS', 'EXTERNO', 'GENERICO', 'PRACTICANTE'];
 
   ngOnInit(): void {
+    this.searchQueue.pipe(
+      debounceTime(350),
+      distinctUntilChanged(),
+      takeUntil(this.destroy$),
+    ).subscribe(() => this.load());
     this.service.getSedes().subscribe((sedes) => (this.sedes = sedes));
     this.service.getDependencias().subscribe((dependencias) => (this.dependencias = dependencias));
     this.service.getSubdependencias().subscribe((subdependencias) => (this.subdependencias = subdependencias));
     this.load();
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 
   load(): void {
@@ -56,7 +69,7 @@ export class CorreosConsultasComponent implements OnInit {
 
   onSearch(term: string): void {
     this.searchTerm = term;
-    this.load();
+    this.searchQueue.next(term.trim());
   }
 
   onFiltroChange(): void {

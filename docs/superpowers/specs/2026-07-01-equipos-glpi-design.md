@@ -46,7 +46,7 @@ glpi:
   datasource:
     url: jdbc:mysql://172.16.25.18:3306/glpi?useSSL=false&serverTimezone=America/Lima
     username: usrbd
-    password: $Lipknot86
+    password: ${SSTI_DB_PASSWORD}
     driver-class-name: com.mysql.cj.jdbc.Driver
 ```
 

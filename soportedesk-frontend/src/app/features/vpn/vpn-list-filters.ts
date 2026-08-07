@@ -1,7 +1,7 @@
 import { Vpn } from './vpn.model';
 
-export type VpnEstadoFiltro = 'TODOS' | 'PENDIENTE' | 'APROBADO' | 'RECHAZADO' | 'OBSERVADO';
-export type VpnOrdenFiltro = 'nuevas' | 'recientes' | 'rechazados' | 'observados';
+type VpnEstadoFiltro = 'TODOS' | 'PENDIENTE' | 'APROBADO' | 'RECHAZADO' | 'OBSERVADO';
+type VpnOrdenFiltro = 'nuevas' | 'recientes' | 'rechazados' | 'observados';
 
 export interface VpnListFilters {
   query: string;
@@ -64,15 +64,15 @@ export function cargoOptions(items: Vpn[]): string[] {
   return uniqueSorted(items.map(cargoLabel));
 }
 
-export function dependenciaLabel(item: Vpn): string {
+function dependenciaLabel(item: Vpn): string {
   return clean(item.adOrganizationalUnit) || clean(item.titularEmpresa) || EMPTY_DEPENDENCIA;
 }
 
-export function subdependenciaLabel(item: Vpn): string {
+function subdependenciaLabel(item: Vpn): string {
   return clean(item.adOffice) || EMPTY_SUBDEPENDENCIA;
 }
 
-export function cargoLabel(item: Vpn): string {
+function cargoLabel(item: Vpn): string {
   return clean(item.titularCargo) || EMPTY_CARGO;
 }
 
@@ -122,6 +122,12 @@ function searchableText(item: Vpn): string {
   return normalize(
     [
       item.titularNombreCompleto,
+      item.terceroNombre,
+      item.numeroOrdenServicio,
+      item.vencimientoOrdenServicio,
+      item.ultimoContratoTipo,
+      item.ultimoContratoNumero,
+      item.ultimoContratoFechaFin,
       item.adSamAccountName,
       item.adDisplayName,
       item.adMail,

@@ -1,8 +1,8 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, inject, ChangeDetectionStrategy } from '@angular/core';
+import { Component, OnDestroy, OnInit, inject, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { finalize } from 'rxjs';
+import { Subject, debounceTime, distinctUntilChanged, finalize, takeUntil } from 'rxjs';
 import * as XLSX from 'xlsx';
 import { AuthService } from '../../core/auth/auth.service';
 import { ModalComponent } from '../../shared/modal/modal.component';
@@ -32,6 +32,7 @@ type OrdenCampo = 'nombre' | 'oficina' | 'vencimiento';
             <input
               name="termino"
               [(ngModel)]="termino"
+              (ngModelChange)="onSearchChange($event)"
               placeholder="Nombre, usuario, contrato, oficina o sin nombre"
               autocomplete="off"
               [disabled]="searching"
@@ -44,14 +45,12 @@ type OrdenCampo = 'nombre' | 'oficina' | 'vencimiento';
                 </button>
               }
             </div>
-            <button type="submit" class="btn btn-primary consulta-submit" [disabled]="!canSearch">
-              <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                <path d="m9 18 6-6-6-6" />
+            <button type="button" class="btn btn-secondary consulta-submit excel-export-btn" (click)="exportExcel()" [disabled]="!itemsVisibles.length || searching || directorioLoading">
+              <svg class="excel-export-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" />
+                <path d="M14 2v6h6M8 13h2M8 17h2M14 13h2M14 17h2" />
               </svg>
-              Buscar
-            </button>
-            <button type="button" class="btn btn-secondary consulta-submit" (click)="exportExcel()" [disabled]="!itemsVisibles.length || searching || directorioLoading">
-              Exportar Excel
+              <span>Exportar Excel</span>
             </button>
           </form>
     
@@ -179,7 +178,7 @@ type OrdenCampo = 'nombre' | 'oficina' | 'vencimiento';
                       }
                     </td>
                     <td class="consulta-row-actions">
-                      <button type="button" class="ghost-action" (click)="abrirResultado(item)">Ver</button>
+                      <button type="button" class="btn-view-record" (click)="abrirResultado(item)" aria-label="Ver detalle del usuario"><i class="ti ti-eye" aria-hidden="true"></i><span>Ver</span></button>
                     </td>
                   </tr>
                 }
@@ -255,7 +254,7 @@ type OrdenCampo = 'nombre' | 'oficina' | 'vencimiento';
                     </span>
                   }
                 </span>
-                <span class="consulta-action">Ver</span>
+                <span class="consulta-action btn-view-record"><i class="ti ti-eye" aria-hidden="true"></i><span>Ver</span></span>
               </button>
             }
           </section>
@@ -397,11 +396,13 @@ type OrdenCampo = 'nombre' | 'oficina' | 'vencimiento';
         './usuario-red-contratos-panel.scss',
     ]
 })
-export class UsuariosRedConsultasComponent implements OnInit {
+export class UsuariosRedConsultasComponent implements OnInit, OnDestroy {
   private adService = inject(ActiveDirectoryService);
   private contratoService = inject(UsuarioRedContratoService);
   private authService = inject(AuthService);
   private router = inject(Router);
+  private readonly searchQueue = new Subject<string>();
+  private readonly destroy$ = new Subject<void>();
 
   selectedUser: AdUser | null = null;
   selectedConsulta: UsuarioRedConsultaResultado | null = null;
@@ -461,7 +462,27 @@ export class UsuariosRedConsultasComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    this.searchQueue.pipe(
+      debounceTime(400),
+      distinctUntilChanged(),
+      takeUntil(this.destroy$),
+    ).subscribe(() => this.buscar());
     this.cargarDirectorio();
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+
+  onSearchChange(value: string): void {
+    this.termino = value;
+    if (value.trim().length < 2) {
+      this.resultados = [];
+      this.searched = false;
+      this.searchError = '';
+    }
+    this.searchQueue.next(value.trim());
   }
 
   private cargarDirectorio(): void {

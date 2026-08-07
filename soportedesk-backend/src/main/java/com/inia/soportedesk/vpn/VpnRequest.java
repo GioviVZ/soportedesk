@@ -35,6 +35,10 @@ public class VpnRequest {
     @Size(max = 255)
     private String titularCargo;
 
+    @NotBlank(message = "El número de ticket es obligatorio")
+    @Size(max = 50)
+    private String numeroTicket;
+
     @NotBlank
     @Pattern(regexp = "INIA|PERSONAL", message = "El tipo de equipo debe ser INIA o PERSONAL")
     private String tipoEquipo;

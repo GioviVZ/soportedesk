@@ -47,7 +47,12 @@
       </label>
       <label class="field">
         Credencial / Contraseña VPN *
-        <input type="text" formControlName="credencialVpn" placeholder="Genera una credencial segura" readonly />
+        <input
+          type="text"
+          formControlName="credencialVpn"
+          [placeholder]="canEditCredencialManualmente ? 'Genera una credencial o ingrésala manualmente' : 'Genera una credencial segura'"
+          [readonly]="!canEditCredencialManualmente"
+        />
         @if (form.controls.credencialVpn.hasError('minlength')) {
           <small>La credencial debe tener al menos 17 caracteres.</small>
         }

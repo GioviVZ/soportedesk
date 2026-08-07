@@ -6,7 +6,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 class LicenciaCredentialConverterTest {
 
-    private static final String TEST_KEY = "CBkkF72fkRZoZLynAdKy0wLsBqZJx2AycpfPEE+9+8o=";
+    private static final String TEST_KEY = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=";
 
     private final LicenciaCredentialConverter converter = new LicenciaCredentialConverter(TEST_KEY);
 

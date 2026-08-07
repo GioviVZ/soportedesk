@@ -2,18 +2,14 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { Equipo, EquipoDashboardCompleto, EquipoDetalleResponse, EquipoEnrichmentDto, EquipoEvidencia, EquipoKpis, EquipoResumen, EquipoSaludItem, HistorialItem } from './equipo.model';
+import { EquipoDashboardCompleto, EquipoDetalleResponse, EquipoEnrichmentDto, EquipoEvidencia, EquipoKpis, EquipoResumen, EquipoSaludItem, EquipoSoftwareExport, HistorialItem } from './equipo.model';
 
 @Injectable({ providedIn: 'root' })
 export class EquipoService {
   private http = inject(HttpClient);
   private readonly apiUrl = `${environment.apiUrl}/equipos`;
 
-  getConRed(): Observable<Equipo[]> {
-    return this.http.get<Equipo[]>(`${this.apiUrl}/con-red`);
-  }
-
-  getAll(filters: {
+getAll(filters: {
     search?: string;
     sede?: string;
     tipo?: string;
@@ -62,6 +58,10 @@ export class EquipoService {
 
   getDetalle(id: number): Observable<EquipoDetalleResponse> {
     return this.http.get<EquipoDetalleResponse>(`${this.apiUrl}/${id}`);
+  }
+
+  getSoftwareForExport(computerIds: number[]): Observable<EquipoSoftwareExport[]> {
+    return this.http.post<EquipoSoftwareExport[]>(`${this.apiUrl}/software/export`, computerIds);
   }
 
   getEnrichment(id: number): Observable<EquipoEnrichmentDto | null> {

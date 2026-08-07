@@ -52,8 +52,14 @@ import { Vpn } from './vpn.model';
           <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><path d="M14 2v6h6" />
         </svg>
         <div class="detail-grid">
+          <div class="detail-field"><span class="detail-label">Número de ticket</span><span class="detail-value">{{ vpn.numeroTicket || 'No registrado' }}</span></div>
           @if (vpn.titularTipo === 'EXTERNO') {
             <div class="detail-field"><span class="detail-label">Empresa</span><span class="detail-value">{{ vpn.titularEmpresa || 'No registrado' }}</span></div>
+          }
+          @if (vpn.terceroOrdenServicio) {
+            <div class="detail-field"><span class="detail-label">Tercero / Orden de servicio</span><span class="detail-value">{{ vpn.terceroNombre || vpn.titularNombreCompleto }}<small>OS {{ vpn.numeroOrdenServicio || 'sin número' }} · vence {{ vpn.vencimientoOrdenServicio || 'sin fecha' }}</small></span></div>
+          } @else if (vpn.ultimoContratoTipo || vpn.ultimoContratoNumero) {
+            <div class="detail-field"><span class="detail-label">Último contrato</span><span class="detail-value">{{ vpn.ultimoContratoTipo || 'Contrato' }}<small>{{ vpn.ultimoContratoNumero || 'Sin número' }} · vence {{ vpn.ultimoContratoFechaFin || 'sin fecha' }}</small></span></div>
           }
           @if (vpn.titularTipo === 'EXTERNO') {
             <div class="detail-field"><span class="detail-label">Motivo</span><span class="detail-value">{{ vpn.titularMotivo || 'No registrado' }}</span></div>

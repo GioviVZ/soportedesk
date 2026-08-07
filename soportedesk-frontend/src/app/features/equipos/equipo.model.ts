@@ -132,22 +132,26 @@ export interface EquipoKpis {
   eeasCount: number;
 }
 
-export interface EquipoFabricanteCount {
+interface EquipoFabricanteCount {
   fabricante: string;
   total: number;
 }
 
-export interface EquipoDependenciaCount {
+interface EquipoDependenciaCount {
   dependencia: string;
   total: number;
 }
 
-export interface EquipoSubdependenciaCount {
+export interface EquipoSoftwareExport extends EquipoSoftware {
+  computerId: number;
+}
+
+interface EquipoSubdependenciaCount {
   subdependencia: string;
   total: number;
 }
 
-export interface EquipoSaludResumen {
+interface EquipoSaludResumen {
   rojos: number;
   amarillos: number;
   ok: number;
@@ -177,22 +181,4 @@ export interface EquipoEvidencia {
   descripcion: string | null;
   subidoPor: string;
   fechaSubida: string;
-}
-
-export interface Equipo {
-  id: number;
-  numeroSerie: string | null;
-  codigoPatrimonial: string | null;
-  codigoInventario: string | null;
-  tipo: string;
-  marca: string;
-  modelo: string;
-  host: string | null;
-  ip: string | null;
-  usuarioRed: { id: number; nombre: string; usuario: string } | null;
-  sede: { id: number; nombre: string } | null;
-  dependencia: { id: number; nombre: string } | null;
-  subdependencia: { id: number; nombre: string } | null;
-  asignado: string | null;
-  estado: string;
 }

@@ -1,6 +1,5 @@
 import { inject } from '@angular/core';
 import { CanActivateFn, Router } from '@angular/router';
-import { catchError, map, of } from 'rxjs';
 import { AuthService } from './auth.service';
 
 export const authGuard: CanActivateFn = () => {
@@ -8,14 +7,15 @@ export const authGuard: CanActivateFn = () => {
   const router = inject(Router);
 
   if (authService.isLoggedIn()) {
-    return authService.refreshSession().pipe(
-      map(() => true),
-      catchError(() => {
+    // Construye el layout inmediatamente con la sesión local y sincroniza
+    // los permisos en segundo plano. Cada API continúa validando el token.
+    authService.refreshSession().subscribe({
+      error: () => {
         authService.logout();
         router.navigate(['/login']);
-        return of(false);
-      }),
-    );
+      },
+    });
+    return true;
   }
 
   router.navigate(['/login']);

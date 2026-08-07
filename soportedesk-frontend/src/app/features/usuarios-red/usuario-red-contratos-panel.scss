@@ -91,3 +91,16 @@
   gap: 8px;
   flex: 0 0 auto;
 }
+
+@media (pointer: coarse), (max-width: 760px) {
+  .record-action { min-height: 44px; }
+}
+
+@media (max-width: 560px) {
+  .contrato-item,
+  .contrato-actions {
+    width: 100%;
+  }
+
+  .contrato-actions .record-action { flex: 1; }
+}

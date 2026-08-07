@@ -9,5 +9,7 @@ import { ThemeService } from './core/services/theme.service';
     templateUrl: './app.component.html'
 })
 export class AppComponent {
-  private theme = inject(ThemeService);
+  constructor() {
+    inject(ThemeService);
+  }
 }

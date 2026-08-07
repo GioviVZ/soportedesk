@@ -42,27 +42,27 @@ export function impresoraEstadoTone(estado: string): BadgeTone {
   return IMPRESORA_ESTADOS.find((item) => item.value === estado)?.tone ?? 'neutral';
 }
 
-export interface ImpresoraMarcaCount {
+interface ImpresoraMarcaCount {
   marca: string;
   total: number;
 }
 
-export interface ImpresoraSedeCount {
+interface ImpresoraSedeCount {
   sede: string;
   total: number;
 }
 
-export interface ImpresoraDependenciaCount {
+interface ImpresoraDependenciaCount {
   dependencia: string;
   total: number;
 }
 
-export interface ImpresoraSubdependenciaCount {
+interface ImpresoraSubdependenciaCount {
   subdependencia: string;
   total: number;
 }
 
-export interface ImpresoraConsumibleCount {
+interface ImpresoraConsumibleCount {
   color: string;
   variante: string;
   codigo: string;

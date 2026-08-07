@@ -31,17 +31,17 @@ export interface AdFilterOption {
   total: number;
 }
 
-export interface OuUsuariosCount {
+interface OuUsuariosCount {
   ou: string;
   activos: number;
 }
 
-export interface OfficeUsuariosCount {
+interface OfficeUsuariosCount {
   oficina: string;
   activos: number;
 }
 
-export interface AdUserAlerta {
+interface AdUserAlerta {
   samAccountName: string;
   displayName: string | null;
   detalle: string;
@@ -58,7 +58,7 @@ export interface ActiveDirectoryDashboardCompleto extends ActiveDirectoryDashboa
   totalCuentasBloqueadas: number;
 }
 
-export interface AdSyncResponse {
+interface AdSyncResponse {
   usuariosSincronizados: number;
   controladoresDominio: number;
   sincronizadoEn: string;

@@ -1,13 +1,14 @@
 package com.inia.soportedesk.impresoras;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.inia.soportedesk.catalogo.Dependencia;
 import com.inia.soportedesk.catalogo.MarcaImpresora;
 import com.inia.soportedesk.catalogo.ModeloImpresora;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -29,7 +30,7 @@ class ImpresoraControllerIT {
     @Autowired
     private ObjectMapper objectMapper;
 
-    @MockBean
+    @MockitoBean
     private ImpresoraService service;
 
     private ImpresoraRequest sampleRequest() {
@@ -75,6 +76,25 @@ class ImpresoraControllerIT {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].modeloImpresora.marca.nombre", is("HP")))
                 .andExpect(jsonPath("$[0].modeloImpresora.nombre", is("M404dn")));
+    }
+
+    @Test
+    @WithMockUser(authorities = {"ROLE_SOPORTE", "READ_impresoras"})
+    void findAll_withSelfReferencedDependencia_serializesWithoutCycle() throws Exception {
+        Dependencia dependencia = new Dependencia();
+        dependencia.setId(10L);
+        dependencia.setNombre("Oficina de Tecnologias de la Informacion");
+        dependencia.setDependenciaPadre(dependencia);
+
+        Impresora impresora = sampleImpresora();
+        impresora.setDependencia(dependencia);
+        when(service.findAll(null)).thenReturn(List.of(impresora));
+
+        mockMvc.perform(get("/api/impresoras"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].dependencia.nombre",
+                        is("Oficina de Tecnologias de la Informacion")))
+                .andExpect(jsonPath("$[0].dependencia.dependenciaPadre").doesNotExist());
     }
 
     @Test

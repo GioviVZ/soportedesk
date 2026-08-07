@@ -4,8 +4,10 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.domain.EntityScan;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
+import org.springframework.scheduling.annotation.EnableScheduling;
 
 @SpringBootApplication
+@EnableScheduling
 @EntityScan(basePackages = {
         "com.inia.soportedesk.auth",
         "com.inia.soportedesk.catalogo",
@@ -19,7 +21,8 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
         "com.inia.soportedesk.wifi",
         "com.inia.soportedesk.licencias",
         "com.inia.soportedesk.herramientas",
-        "com.inia.soportedesk.gestiontiinia"
+        "com.inia.soportedesk.gestiontiinia",
+        "com.inia.soportedesk.identidad"
 })
 @EnableJpaRepositories(basePackages = {
         "com.inia.soportedesk.auth",
@@ -34,7 +37,8 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
         "com.inia.soportedesk.wifi",
         "com.inia.soportedesk.licencias",
         "com.inia.soportedesk.herramientas",
-        "com.inia.soportedesk.gestiontiinia"
+        "com.inia.soportedesk.gestiontiinia",
+        "com.inia.soportedesk.identidad"
 }, entityManagerFactoryRef = "entityManagerFactory", transactionManagerRef = "transactionManager")
 public class SoportedeskApplication {
     public static void main(String[] args) {

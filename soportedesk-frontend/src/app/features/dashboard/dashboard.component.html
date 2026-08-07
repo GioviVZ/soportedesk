@@ -29,6 +29,18 @@
     </div>
   }
 
+  @if (showUsuariosChart) {
+    <div class="section-heading ubicacion-heading">
+      <div>
+        <h3>Usuarios de red por oficina</h3>
+        <p>Lo primero para responder "qué tiene cada oficina" con los datos disponibles hoy.</p>
+      </div>
+    </div>
+    <section class="ubicacion-highlight">
+      <app-usuarios-red-por-ubicacion-chart />
+    </section>
+  }
+
   <div class="section-heading module-cards-heading">
     <div>
       <h3>Módulos principales</h3>
@@ -38,57 +50,61 @@
 
   <div class="cards-grid">
     @for (card of cards; track card) {
-      <a
-        class="module-card"
-        [routerLink]="card.path"
-        [queryParams]="card.queryParams"
-        [style.--card-color]="card.color">
-        <div class="module-card__top">
-          <span class="module-card__icon" [innerHTML]="card.icon"></span>
-          <div class="module-card__actions" appClickOutside (appClickOutside)="openCardMenu === card.label && closeCardMenu()">
-            <span
-              class="module-card__health"
-              [class.module-card__health--success]="card.healthState === 'success'"
-              [class.module-card__health--warning]="card.healthState === 'warning'">
-              {{ card.healthLabel }}
-            </span>
-            <button type="button" class="module-card__menu-btn" (click)="toggleCardMenu(card.label, $event)" aria-label="Acciones rápidas">
-              <i class="ti ti-dots-vertical"></i>
-            </button>
-            @if (openCardMenu === card.label) {
-              <div class="module-card__menu-list">
-                <button type="button" (click)="selectModulo(card.modulo); $event.preventDefault(); $event.stopPropagation()">
-                  Ver desglose aquí
-                </button>
-              </div>
-            }
+      <div class="module-card-wrap" [style.--card-color]="card.color">
+        <a
+          class="module-card"
+          [routerLink]="card.path"
+          [queryParams]="card.queryParams">
+          <div class="module-card__top">
+            <span class="module-card__icon" [innerHTML]="card.icon"></span>
           </div>
-        </div>
-        <div class="module-card__title">
-          <span>{{ card.category }}</span>
-          <strong>{{ card.label }}</strong>
-          <small>{{ card.description }}</small>
-        </div>
-        <div class="module-card__numbers">
-          <div class="module-card__total">
-            <strong>{{ card.value }}</strong>
-            <span>Total registros</span>
+          <div class="module-card__title">
+            <span>{{ card.category }}</span>
+            <strong>{{ card.label }}</strong>
+            <small>{{ card.description }}</small>
           </div>
-          <div class="module-card__metric">
-            <span>{{ card.metricLabel }}</span>
-            <strong>{{ card.metricValue }}</strong>
+          <div class="module-card__numbers">
+            <div class="module-card__total">
+              <strong>{{ card.value }}</strong>
+              <span>Total registros</span>
+            </div>
+            <div class="module-card__metric">
+              <span>{{ card.metricLabel }}</span>
+              <strong>{{ card.metricValue }}</strong>
+            </div>
           </div>
+          <div class="module-card__footer">
+            <span>{{ card.actionLabel }}</span>
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="9 18 15 12 9 6"/>
+            </svg>
+          </div>
+        </a>
+        <div class="module-card__actions" appClickOutside (appClickOutside)="openCardMenu === card.label && closeCardMenu()">
+          <span
+            class="module-card__health"
+            [class.module-card__health--success]="card.healthState === 'success'"
+            [class.module-card__health--warning]="card.healthState === 'warning'">
+            {{ card.healthLabel }}
+          </span>
+          <button type="button" class="module-card__menu-btn" (click)="toggleCardMenu(card.label, $event)" [attr.aria-label]="'Acciones rápidas de ' + card.label">
+            <i class="ti ti-dots-vertical"></i>
+          </button>
+          @if (openCardMenu === card.label) {
+            <div class="module-card__menu-list">
+              <button type="button" (click)="selectModulo(card.modulo); closeCardMenu()">
+                Ver desglose aquí
+              </button>
+              @if (administrationPath(card); as path) {
+                <a [routerLink]="path" (click)="closeCardMenu()">Administración</a>
+              }
+              @if (moduleDashboardPath(card); as path) {
+                <a [routerLink]="path" (click)="closeCardMenu()">Dashboard</a>
+              }
+            </div>
+          }
         </div>
-        <div class="module-card__spark">
-          <app-apex-chart [options]="card.sparklineOptions" />
-        </div>
-        <div class="module-card__footer">
-          <span>{{ card.actionLabel }}</span>
-          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="9 18 15 12 9 6"/>
-          </svg>
-        </div>
-      </a>
+      </div>
     }
   </div>
 
@@ -191,15 +207,18 @@
         <p>Una vista permanece abierta; elegí otro módulo para comparar.</p>
       </div>
       <div class="modulo-selector" role="tablist" aria-label="Módulo del desglose">
-        @for (pill of moduloPills; track pill) {
+        @for (pill of moduloPills; track pill; let i = $index) {
           <button
+            #pillBtn
             type="button"
             role="tab"
             class="modulo-pill"
             [class.active]="selectedModulo === pill.key"
             [attr.aria-selected]="selectedModulo === pill.key"
+            [attr.tabindex]="selectedModulo === pill.key ? 0 : -1"
             [style.--pill-color]="pill.color"
-            (click)="selectModulo(pill.key)">
+            (click)="selectModulo(pill.key)"
+            (keydown)="onModuloKeydown($event, i)">
             {{ pill.label }}
           </button>
         }
@@ -226,9 +245,9 @@
         </p>
       }
       @if (!breakdownLoading && !breakdownError) {
-        @if (breakdownChartOptions) {
+        @if (breakdownChartData) {
           <div class="modulo-breakdown-chart">
-            <app-apex-chart [options]="breakdownChartOptions" />
+            <canvas baseChart [data]="breakdownChartData" [options]="breakdownDoughnutOptions" [type]="'doughnut'"></canvas>
           </div>
         }
         <div class="modulo-breakdown-list">
@@ -247,21 +266,18 @@
     }
   </section>
 
-  <div class="section-heading analytics-heading">
-    <div>
-      <h3>Análisis operativo</h3>
-      <p>Distribución de usuarios y licencias para revisar carga por área.</p>
+  @if (showLicenciasChart) {
+    <div class="section-heading analytics-heading">
+      <div>
+        <h3>Análisis operativo</h3>
+        <p>Distribución de licencias para revisar carga por área.</p>
+      </div>
     </div>
-  </div>
 
-  <div class="charts-grid">
-    @if (showUsuariosChart) {
-      <app-usuarios-red-por-ubicacion-chart />
-    }
-    @if (showLicenciasChart) {
+    <div class="charts-grid charts-grid--single">
       <app-licencias-por-tipo-chart />
-    }
-  </div>
+    </div>
+  }
 
   @if (showOrdenesServicio) {
     <section class="service-orders-card">

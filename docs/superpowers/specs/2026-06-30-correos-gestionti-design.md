@@ -36,7 +36,7 @@ gestionti:
   datasource:
     url: jdbc:sqlserver://172.16.26.16:1433;databaseName=GestionTI_INIA;encrypt=false;trustServerCertificate=true
     username: sa
-    password: $Lipknot86
+    password: ${SSTI_DB_PASSWORD}
     driver-class-name: com.microsoft.sqlserver.jdbc.SQLServerDriver
 ```
 

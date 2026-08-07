@@ -49,9 +49,11 @@ export class VpnFormComponent implements OnChanges {
     titularNombre: [''],
     titularApellidos: [''],
     titularCorreo: [''],
+    sinCorreo: [false],
     titularEmpresa: [''],
     titularMotivo: [''],
     titularCargo: ['', Validators.required],
+    numeroTicket: ['', Validators.required],
     tipoEquipo: ['PERSONAL' as 'INIA' | 'PERSONAL', Validators.required],
     tieneGlpi: [false],
     glpiComputerId: [null as number | null],
@@ -108,7 +110,8 @@ export class VpnFormComponent implements OnChanges {
         sistemaOperativoActualizado: this.vpn.sistemaOperativoActualizado ?? false,
         forticlientInstalado: this.vpn.forticlientInstalado ?? false,
         vencimientoAntivirus: this.vpn.vencimientoAntivirus ?? null,
-        titularCargo: this.vpn.titularCargo ?? '',
+        titularCargo: this.vpn.titularCargo === 'Director' ? 'Director General' : (this.vpn.titularCargo ?? ''),
+        numeroTicket: this.vpn.numeroTicket ?? '',
       });
       this.applyVerificacionValidators();
       if (this.vpn.glpiComputerId && this.vpn.glpiNombreEquipo) {
@@ -127,6 +130,13 @@ export class VpnFormComponent implements OnChanges {
           office: this.vpn.adOffice,
           organizationalUnit: this.vpn.adOrganizationalUnit,
           enabled: true,
+          terceroOrdenServicio: this.vpn.terceroOrdenServicio,
+          terceroNombre: this.vpn.terceroNombre,
+          numeroOrdenServicio: this.vpn.numeroOrdenServicio,
+          vencimientoOrdenServicio: this.vpn.vencimientoOrdenServicio,
+          ultimoContratoTipo: this.vpn.ultimoContratoTipo,
+          ultimoContratoNumero: this.vpn.ultimoContratoNumero,
+          ultimoContratoFechaFin: this.vpn.ultimoContratoFechaFin,
         };
         this.setTitularModo('ad-seleccionado');
       } else if (this.vpn.usuarioRed) {
@@ -138,6 +148,13 @@ export class VpnFormComponent implements OnChanges {
           office: null,
           organizationalUnit: null,
           enabled: true,
+          terceroOrdenServicio: false,
+          terceroNombre: null,
+          numeroOrdenServicio: null,
+          vencimientoOrdenServicio: null,
+          ultimoContratoTipo: null,
+          ultimoContratoNumero: null,
+          ultimoContratoFechaFin: null,
         };
         this.setTitularModo('ad-seleccionado');
       } else if (this.vpn.titularTipo === 'EXTERNO') {
@@ -145,6 +162,7 @@ export class VpnFormComponent implements OnChanges {
           titularNombre: this.vpn.titularNombre ?? '',
           titularApellidos: this.vpn.titularApellidos ?? '',
           titularCorreo: this.vpn.titularCorreo ?? '',
+          sinCorreo: !this.vpn.titularCorreo,
           titularEmpresa: this.vpn.titularEmpresa ?? '',
           titularMotivo: this.vpn.titularMotivo ?? '',
         });
@@ -214,6 +232,13 @@ export class VpnFormComponent implements OnChanges {
     this.setTitularModo('buscando');
   }
 
+  onSinCorreoChange(): void {
+    if (this.form.controls.sinCorreo.value) {
+      this.form.controls.titularCorreo.setValue('');
+    }
+    this.form.controls.titularCorreo.updateValueAndValidity();
+  }
+
   setTitularModo(modo: TitularModo): void {
     const cruzaFronteraExterno = (this.titularModo === 'externo') !== (modo === 'externo');
     this.titularModo = modo;
@@ -253,6 +278,13 @@ export class VpnFormComponent implements OnChanges {
   }
 
   onEquipoSelected(equipo: EquipoResumen): void {
+    if (!equipo.ipEquipo?.trim()) {
+      this.form.patchValue({ glpiComputerId: null });
+      this.equipoSeleccionado = null;
+      this.saveError = 'Este equipo no tiene una IP registrada en GLPI. Actualice GLPI antes de continuar.';
+      return;
+    }
+    this.saveError = '';
     this.equipoSeleccionado = equipo;
     this.equipoResults = [];
     this.equipoSearchTerm = '';
@@ -274,10 +306,11 @@ export class VpnFormComponent implements OnChanges {
       titularTipo: esExterno ? ('EXTERNO' as const) : null,
       titularNombre: esExterno ? raw.titularNombre : null,
       titularApellidos: esExterno ? raw.titularApellidos : null,
-      titularCorreo: esExterno ? raw.titularCorreo : null,
+      titularCorreo: esExterno && !raw.sinCorreo ? (raw.titularCorreo.trim() || null) : null,
       titularEmpresa: esExterno ? raw.titularEmpresa : null,
       titularMotivo: esExterno ? raw.titularMotivo : null,
       titularCargo: raw.titularCargo,
+      numeroTicket: raw.numeroTicket,
       tipoEquipo: raw.tipoEquipo,
       glpiComputerId: raw.tieneGlpi ? raw.glpiComputerId : null,
       antivirusVerificado: raw.antivirusVerificado,
@@ -312,7 +345,7 @@ export class VpnFormComponent implements OnChanges {
     if (this.titularModo === 'externo') {
       nombre.setValidators(Validators.required);
       apellidos.setValidators(Validators.required);
-      correo.setValidators(Validators.required);
+      correo.setValidators(Validators.email);
       empresa.setValidators(Validators.required);
       motivo.setValidators(Validators.required);
     } else {
@@ -332,20 +365,24 @@ export class VpnFormComponent implements OnChanges {
 
   private applyVerificacionValidators(): void {
     const tieneGlpiCtrl = this.form.controls.tieneGlpi;
+    const glpiComputerIdCtrl = this.form.controls.glpiComputerId;
     const hostActualizadoCtrl = this.form.controls.hostActualizado;
     const vencimientoCtrl = this.form.controls.vencimientoAntivirus;
 
     if (this.esInia) {
       tieneGlpiCtrl.setValidators(Validators.requiredTrue);
+      glpiComputerIdCtrl.setValidators(Validators.required);
       hostActualizadoCtrl.setValidators(Validators.requiredTrue);
       vencimientoCtrl.clearValidators();
     } else {
       tieneGlpiCtrl.clearValidators();
+      glpiComputerIdCtrl.clearValidators();
       hostActualizadoCtrl.clearValidators();
       vencimientoCtrl.setValidators(Validators.required);
     }
 
     tieneGlpiCtrl.updateValueAndValidity();
+    glpiComputerIdCtrl.updateValueAndValidity();
     hostActualizadoCtrl.updateValueAndValidity();
     vencimientoCtrl.updateValueAndValidity();
   }
@@ -371,6 +408,7 @@ export class VpnFormComponent implements OnChanges {
       forticlientInstalado: false,
       vencimientoAntivirus: null,
       titularCargo: '',
+      sinCorreo: false,
     });
     this.applyTitularValidators();
     this.applyVerificacionValidators();

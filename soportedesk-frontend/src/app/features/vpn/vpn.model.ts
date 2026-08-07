@@ -6,11 +6,17 @@ export interface Vpn {
   adMail: string | null;
   adOffice: string | null;
   adOrganizationalUnit: string | null;
-  equipo: { id: number; marca: string; modelo: string; tipo: string; host: string | null; ip: string | null } | null;
   vence: string | null;
   vencimientoBaseVpn: string | null;
   vencimientoContrato: string | null;
   venceOrigen: 'CONTRATO' | 'INSTITUCIONAL' | 'ANTIVIRUS_PERSONAL' | null;
+  terceroOrdenServicio: boolean;
+  terceroNombre: string | null;
+  numeroOrdenServicio: string | null;
+  vencimientoOrdenServicio: string | null;
+  ultimoContratoTipo: string | null;
+  ultimoContratoNumero: string | null;
+  ultimoContratoFechaFin: string | null;
   estado: string;
   tieneAntivirus: boolean | null;
   vencimientoAntivirus: string | null;
@@ -40,12 +46,15 @@ export interface Vpn {
   titularEmpresa: string | null;
   titularMotivo: string | null;
   titularCargo: string;
+  numeroTicket: string | null;
   titularNombreCompleto: string;
   titularOrigenLabel: string;
 }
 
 export const CARGOS_VPN = [
-  'Director',
+  'Director General',
+  'Jefe de Unidad',
+  'Jefe',
   'Secretaria',
   'Profesional',
   'Gerente',
@@ -68,6 +77,7 @@ export interface VpnSolicitudRequest {
   titularEmpresa: string | null;
   titularMotivo: string | null;
   titularCargo: string;
+  numeroTicket: string;
   tipoEquipo: 'INIA' | 'PERSONAL';
   glpiComputerId: number | null;
   antivirusVerificado: boolean;
@@ -85,6 +95,13 @@ export interface VpnUsuarioRedOption {
   office: string | null;
   organizationalUnit: string | null;
   enabled: boolean;
+  terceroOrdenServicio: boolean;
+  terceroNombre: string | null;
+  numeroOrdenServicio: string | null;
+  vencimientoOrdenServicio: string | null;
+  ultimoContratoTipo: string | null;
+  ultimoContratoNumero: string | null;
+  ultimoContratoFechaFin: string | null;
 }
 
 export interface VpnAprobarRequest {
@@ -117,22 +134,22 @@ export interface VpnConfigInstitucionalRequest {
   vencimientoAntivirus: string;
 }
 
-export interface VpnTipoEquipoCount {
+interface VpnTipoEquipoCount {
   tipoEquipo: string;
   total: number;
 }
 
-export interface VpnDependenciaCount {
+interface VpnDependenciaCount {
   dependencia: string;
   total: number;
 }
 
-export interface VpnSubdependenciaCount {
+interface VpnSubdependenciaCount {
   subdependencia: string;
   total: number;
 }
 
-export interface VpnVencimientoAlerta {
+interface VpnVencimientoAlerta {
   vpnId: number;
   titular: string;
   tipoEquipo: string | null;

@@ -6,6 +6,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.mock.http.MockHttpInputMessage;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
+import org.springframework.web.context.request.async.AsyncRequestTimeoutException;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -38,6 +42,26 @@ class GlobalExceptionHandlerTest {
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
         assertThat(response.getBody().getMessage()).doesNotContain("internal detail");
     }
+
+    @Test
+    void handleUnreadableMessage_returnsBadRequestWithoutParserDetails() {
+        ResponseEntity<ApiError> response = handler.handleUnreadableMessage(
+                new HttpMessageNotReadableException(
+                        "Unexpected token near internal payload",
+                        new MockHttpInputMessage(new byte[0])));
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+        assertThat(response.getBody().getMessage()).doesNotContain("internal payload");
+    }
+
+    @Test
+    void handleMethodNotAllowed_returns405() {
+        ResponseEntity<ApiError> response = handler.handleMethodNotAllowed(
+                new HttpRequestMethodNotSupportedException("POST"));
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.METHOD_NOT_ALLOWED);
+    }
+
     @Test
     void handleDataIntegrityViolation_returnsConflictWithoutSqlDetails() {
         ResponseEntity<ApiError> response = handler.handleDataIntegrityViolation(
@@ -45,6 +69,14 @@ class GlobalExceptionHandlerTest {
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
         assertThat(response.getBody().getMessage()).doesNotContain("UX_secret_table");
+    }
+
+    @Test
+    void handleAsyncRequestTimeout_returnsServiceUnavailableWithoutLoggingAsUnexpected() {
+        ResponseEntity<Void> response = handler.handleAsyncRequestTimeout(new AsyncRequestTimeoutException());
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.SERVICE_UNAVAILABLE);
+        assertThat(response.getBody()).isNull();
     }
 
     @Test

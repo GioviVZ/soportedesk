@@ -363,6 +363,19 @@ IF COL_LENGTH('dbo.impresoras', 'referencia') IS NULL
     ALTER TABLE dbo.impresoras ADD referencia NVARCHAR(255) NULL;
 GO
 
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'UIX_impresoras_serie' AND object_id = OBJECT_ID(N'dbo.impresoras'))
+    CREATE UNIQUE INDEX UIX_impresoras_serie ON dbo.impresoras (serie) WHERE serie IS NOT NULL;
+GO
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'UIX_impresoras_codigo_inventario' AND object_id = OBJECT_ID(N'dbo.impresoras'))
+    CREATE UNIQUE INDEX UIX_impresoras_codigo_inventario ON dbo.impresoras (codigo_inventario) WHERE codigo_inventario IS NOT NULL;
+GO
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'UIX_impresoras_codigo_patrimonial' AND object_id = OBJECT_ID(N'dbo.impresoras'))
+    CREATE UNIQUE INDEX UIX_impresoras_codigo_patrimonial ON dbo.impresoras (codigo_patrimonial) WHERE codigo_patrimonial IS NOT NULL;
+GO
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'UIX_impresoras_ip' AND object_id = OBJECT_ID(N'dbo.impresoras'))
+    CREATE UNIQUE INDEX UIX_impresoras_ip ON dbo.impresoras (ip) WHERE ip IS NOT NULL;
+GO
+
 -- ============================================================
 -- CORREOS INSTITUCIONALES
 -- ============================================================

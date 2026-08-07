@@ -5,22 +5,31 @@ import {
   HostListener,
   OnInit,
   OnDestroy,
+  NgZone,
   ViewChild,
   inject,
   ChangeDetectionStrategy
 } from '@angular/core';
-
+import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import * as THREE from 'three';
 import QRCode from 'qrcode';
+import SpeedTest, { Results as CloudflareSpeedResults } from '@cloudflare/speedtest';
 import { ActivatedRoute } from '@angular/router';
 import { AuthService } from '../../core/auth/auth.service';
 import { EquipoDatosResult, OrdenServicio, PingResult } from './herramientas.model';
 import { HerramientasService } from './herramientas.service';
 
-type ToolTab = 'equipo' | 'ping' | 'qr' | 'vencimientos' | 'gpu' | 'ram' | 'teclado' | 'mouse' | 'microfono' | 'camara';
+type ToolTab = 'equipo' | 'ping' | 'velocidad' | 'qr' | 'vencimientos' | 'gpu' | 'ram' | 'teclado' | 'mouse' | 'pantalla' | 'tactil' | 'sonido' | 'microfono' | 'camara';
 type TestState = 'idle' | 'running' | 'done' | 'error';
 type QrFormat = 'png' | 'jpg' | 'svg';
+type ScreenResult = '' | 'Sin defectos' | 'Pixel muerto' | 'Pixel atascado' | 'Pixel brillante' | 'Requiere revision';
+type TouchMode = 'multitouch' | 'zonas' | 'precision';
+type SoundChannel = 'left' | 'both' | 'right';
+type OscillatorWave = OscillatorType;
+
+interface PixelPattern { label: string; color: string; textColor: string; }
+interface TouchPoint { id: number; x: number; y: number; pressure: number; color: string; }
 
 interface ToolTabItem {
   id: ToolTab;
@@ -90,6 +99,17 @@ interface CamStats {
   message: string;
 }
 
+interface SpeedTestStats {
+  status: TestState;
+  phase: string;
+  progress: number;
+  latencyMs: number;
+  jitterMs: number;
+  downloadMbps: number;
+  uploadMbps: number;
+  message: string;
+}
+
 const KEY_ROWS = [
   ['Escape', 'F1', 'F2', 'F3', 'F4', 'F5', 'F6', 'F7', 'F8', 'F9', 'F10', 'F11', 'F12'],
   ['Backquote', 'Digit1', 'Digit2', 'Digit3', 'Digit4', 'Digit5', 'Digit6', 'Digit7', 'Digit8', 'Digit9', 'Digit0', 'Minus', 'Equal', 'Backspace'],
@@ -122,31 +142,43 @@ const KEY_LABELS: Record<string, string> = {
 
 @Component({
     selector: 'app-herramientas',
-    imports: [FormsModule],
+    imports: [CommonModule, FormsModule],
     templateUrl: './herramientas.component.html',
     changeDetection: ChangeDetectionStrategy.Eager,
     styleUrls: ['./herramientas.component.scss', './herramientas-tests.scss']
 })
 export class HerramientasComponent implements OnInit, AfterViewInit, OnDestroy {
   private service = inject(HerramientasService);
+  private zone = inject(NgZone);
   private authService = inject(AuthService);
   private route = inject(ActivatedRoute);
 
   @ViewChild('gpuCanvas') gpuCanvas?: ElementRef<HTMLCanvasElement>;
   @ViewChild('cameraVideo') cameraVideo?: ElementRef<HTMLVideoElement>;
+  @ViewChild('pixelStage') pixelStage?: ElementRef<HTMLElement>;
+  @ViewChild('touchStage') touchStage?: ElementRef<HTMLElement>;
 
-  readonly tabs: ToolTabItem[] = [
+  readonly applicationTabs: ToolTabItem[] = [
     { id: 'equipo', label: 'Equipo', detail: 'Datos' },
     { id: 'ping', label: 'Ping', detail: 'Red' },
+    { id: 'velocidad', label: 'Velocidad', detail: 'Navegador' },
     { id: 'qr', label: 'QR', detail: 'Link' },
     { id: 'vencimientos', label: 'Conteo de días', detail: 'Órdenes' },
+  ];
+
+  readonly equipmentTestTabs: ToolTabItem[] = [
     { id: 'gpu', label: 'GPU', detail: 'WebGL' },
     { id: 'ram', label: 'RAM', detail: 'Memoria web' },
     { id: 'teclado', label: 'Teclado', detail: 'Entrada' },
     { id: 'mouse', label: 'Mouse', detail: 'Botones' },
+    { id: 'pantalla', label: 'Pantalla', detail: 'Pixeles' },
+    { id: 'tactil', label: 'Tactil', detail: 'Toques' },
+    { id: 'sonido', label: 'Sonido', detail: 'L / R' },
     { id: 'microfono', label: 'Micrófono', detail: 'Audio' },
     { id: 'camara', label: 'Cámara', detail: 'Video' },
   ];
+
+  readonly tabs: ToolTabItem[] = [...this.applicationTabs, ...this.equipmentTestTabs];
 
   readonly keyRows = KEY_ROWS;
 
@@ -159,6 +191,35 @@ export class HerramientasComponent implements OnInit, AfterViewInit, OnDestroy {
   pingState: TestState = 'idle';
   pingResult: PingResult | null = null;
   pingError = '';
+  speedStats: SpeedTestStats = {
+    status: 'idle',
+    phase: 'Lista para iniciar',
+    progress: 0,
+    latencyMs: 0,
+    jitterMs: 0,
+    downloadMbps: 0,
+    uploadMbps: 0,
+    message: 'Mide la conexión a Internet de este navegador.',
+  };
+  private activeSpeedTest: SpeedTest | null = null;
+
+  get speedGaugeValue(): number {
+    if (this.speedStats.phase.includes('subida')) return this.speedStats.uploadMbps;
+    if (this.speedStats.phase.includes('descarga') || this.speedStats.status === 'done') return this.speedStats.downloadMbps;
+    return this.speedStats.latencyMs;
+  }
+
+  get speedGaugeUnit(): string {
+    return this.speedStats.phase.includes('latencia') ? 'ms' : 'Mbps';
+  }
+
+  get speedGaugeOffset(): number {
+    const value = Math.max(0, this.speedGaugeValue);
+    const normalized = this.speedGaugeUnit === 'ms'
+      ? Math.min(value / 150, 1)
+      : Math.min(Math.log10(value + 1) / Math.log10(1001), 1);
+    return 283 - (283 * normalized);
+  }
 
   qrLink = '';
   qrFormat: QrFormat = 'png';
@@ -221,6 +282,51 @@ export class HerramientasComponent implements OnInit, AfterViewInit, OnDestroy {
     y: 0,
   };
 
+  readonly pixelPatterns: PixelPattern[] = [
+    { label: 'Rojo', color: '#ff0000', textColor: '#ffffff' },
+    { label: 'Verde', color: '#00ff00', textColor: '#07140a' },
+    { label: 'Azul', color: '#0000ff', textColor: '#ffffff' },
+    { label: 'Blanco', color: '#ffffff', textColor: '#111827' },
+    { label: 'Negro', color: '#000000', textColor: '#ffffff' },
+    { label: 'Cian', color: '#00ffff', textColor: '#07140a' },
+    { label: 'Magenta', color: '#ff00ff', textColor: '#ffffff' },
+    { label: 'Amarillo', color: '#ffff00', textColor: '#111827' },
+  ];
+  pixelPatternIndex = 0;
+  pixelTestActive = false;
+  pixelResult: ScreenResult = '';
+  pixelReviewed = new Set<number>();
+
+  touchMode: TouchMode = 'multitouch';
+  touchPoints: TouchPoint[] = [];
+  touchMaxActive = 0;
+  touchTotal = 0;
+  touchPressureMax = 0;
+  touchGestures: string[] = [];
+  readonly touchGridColumns = 12;
+  readonly touchGridRows = 8;
+  touchGrid = Array.from({ length: 96 }, () => false);
+  precisionTarget = { x: 50, y: 50 };
+  precisionHits = 0;
+  precisionErrors: number[] = [];
+  private activeTouchPoints = new Map<number, TouchPoint>();
+  private readonly touchColors = ['#2563eb', '#dc2626', '#16a34a', '#d97706', '#7c3aed', '#0891b2', '#db2777', '#4f46e5', '#65a30d', '#ea580c'];
+
+  soundPlaying = false;
+  soundChannel: SoundChannel = 'both';
+  soundFrequency = 440;
+  soundVolume = 10;
+  soundWave: OscillatorWave = 'sine';
+  soundSweepActive = false;
+  soundError = '';
+  soundResult = '';
+  private soundAudioContext: AudioContext | null = null;
+  private soundOscillator: OscillatorNode | null = null;
+  private soundGain: GainNode | null = null;
+  private soundPanner: StereoPannerNode | null = null;
+  private soundSweepTimer?: ReturnType<typeof setInterval>;
+  private soundStartedAt = 0;
+
   micStats: MicStats = {
     status: 'idle',
     level: 0,
@@ -246,6 +352,7 @@ export class HerramientasComponent implements OnInit, AfterViewInit, OnDestroy {
   private gpuFrameSamples: number[] = [];
   private gpuStartedAt = 0;
   private gpuLastFrameAt = 0;
+  // Se conserva mientras dura la prueba para evitar que el recolector libere la memoria medida.
   private ramBuffer: Uint8Array | null = null;
   private micStream: MediaStream | null = null;
   private micAudioContext: AudioContext | null = null;
@@ -269,6 +376,22 @@ export class HerramientasComponent implements OnInit, AfterViewInit, OnDestroy {
     return this.ordenesServicio.filter((orden) => !orden.finalizada).length;
   }
 
+  get currentPixelPattern(): PixelPattern {
+    return this.pixelPatterns[this.pixelPatternIndex];
+  }
+
+  get pixelProgress(): number {
+    return Math.round((this.pixelReviewed.size / this.pixelPatterns.length) * 100);
+  }
+
+  get touchGridCoverage(): number {
+    return Math.round((this.touchGrid.filter(Boolean).length / this.touchGrid.length) * 100);
+  }
+
+  get precisionAverageError(): number {
+    return this.precisionErrors.length ? Math.round(this.average(this.precisionErrors)) : 0;
+  }
+
   ngOnInit(): void {
     const requestedTab = this.route.snapshot.queryParamMap.get('tab') as ToolTab | null;
     if (requestedTab && this.tabs.some((tab) => tab.id === requestedTab)) {
@@ -282,6 +405,9 @@ export class HerramientasComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
+    this.activeSpeedTest?.pause();
+    this.stopPixelTest();
+    this.stopSoundTest();
     this.stopGpuTest();
     this.renderer?.dispose();
     this.ramBuffer = null;
@@ -290,6 +416,12 @@ export class HerramientasComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   selectTab(tab: ToolTab): void {
+    if (this.activeTab === 'pantalla' && tab !== 'pantalla') {
+      this.stopPixelTest();
+    }
+    if (this.activeTab === 'sonido' && tab !== 'sonido') {
+      this.stopSoundTest();
+    }
     if (this.activeTab === 'microfono' && tab !== 'microfono') {
       this.stopMicTest();
     }
@@ -307,6 +439,230 @@ export class HerramientasComponent implements OnInit, AfterViewInit, OnDestroy {
     if (tab === 'camara') {
       this.loadCamDevices();
     }
+  }
+
+  async startPixelTest(): Promise<void> {
+    this.pixelTestActive = true;
+    this.pixelReviewed.add(this.pixelPatternIndex);
+    try {
+      await this.pixelStage?.nativeElement.requestFullscreen();
+    } catch {
+      // La prueba sigue disponible en modo expandido cuando el navegador bloquea fullscreen.
+    }
+  }
+
+  stopPixelTest(): void {
+    this.pixelTestActive = false;
+    if (document.fullscreenElement === this.pixelStage?.nativeElement) {
+      void document.exitFullscreen();
+    }
+  }
+
+  changePixelPattern(offset: number): void {
+    this.pixelPatternIndex = (this.pixelPatternIndex + offset + this.pixelPatterns.length) % this.pixelPatterns.length;
+    this.pixelReviewed.add(this.pixelPatternIndex);
+  }
+
+  selectPixelPattern(index: number): void {
+    this.pixelPatternIndex = index;
+    this.pixelReviewed.add(index);
+  }
+
+  savePixelResult(): void {
+    if (!this.pixelResult) return;
+    this.addReport('Pantalla', `${this.pixelProgress}% de patrones revisados; resultado: ${this.pixelResult}; ${this.clientInfo.pantalla}`);
+  }
+
+  setTouchMode(mode: TouchMode): void {
+    this.touchMode = mode;
+    this.touchPoints = [];
+    this.activeTouchPoints.clear();
+  }
+
+  async enterTouchFullscreen(): Promise<void> {
+    try {
+      await this.touchStage?.nativeElement.requestFullscreen();
+    } catch {
+      // El área conserva su tamaño normal si fullscreen no está permitido.
+    }
+  }
+
+  onTouchPointerDown(event: PointerEvent): void {
+    if (event.pointerType === 'mouse' && event.button !== 0) return;
+    event.preventDefault();
+    (event.currentTarget as HTMLElement).setPointerCapture(event.pointerId);
+    this.touchTotal++;
+    this.updateTouchPoint(event);
+    this.touchMaxActive = Math.max(this.touchMaxActive, this.activeTouchPoints.size);
+    if (this.touchMode === 'precision') this.registerPrecisionHit(event);
+  }
+
+  onTouchPointerMove(event: PointerEvent): void {
+    if (!this.activeTouchPoints.has(event.pointerId)) return;
+    event.preventDefault();
+    this.updateTouchPoint(event);
+  }
+
+  onTouchPointerUp(event: PointerEvent): void {
+    if (!this.activeTouchPoints.has(event.pointerId)) return;
+    event.preventDefault();
+    this.activeTouchPoints.delete(event.pointerId);
+    this.touchPoints = [...this.activeTouchPoints.values()];
+    if (!this.activeTouchPoints.size) this.pushGesture('Toque o trazo completado');
+  }
+
+  resetTouchTest(): void {
+    this.activeTouchPoints.clear();
+    this.touchPoints = [];
+    this.touchMaxActive = 0;
+    this.touchTotal = 0;
+    this.touchPressureMax = 0;
+    this.touchGestures = [];
+    this.touchGrid = Array.from({ length: this.touchGridColumns * this.touchGridRows }, () => false);
+    this.precisionHits = 0;
+    this.precisionErrors = [];
+    this.precisionTarget = { x: 50, y: 50 };
+  }
+
+  saveTouchResult(): void {
+    const details = this.touchMode === 'zonas'
+      ? `cobertura ${this.touchGridCoverage}%`
+      : this.touchMode === 'precision'
+        ? `${this.precisionHits} objetivos, error medio ${this.precisionAverageError}px`
+        : `máximo ${this.touchMaxActive} contactos simultáneos`;
+    this.addReport('Pantalla tactil', `${details}; ${this.touchTotal} contactos; presión máxima ${Math.round(this.touchPressureMax * 100)}%`);
+  }
+
+  private updateTouchPoint(event: PointerEvent): void {
+    const stage = this.touchStage?.nativeElement;
+    if (!stage) return;
+    const rect = stage.getBoundingClientRect();
+    const x = Math.max(0, Math.min(event.clientX - rect.left, rect.width));
+    const y = Math.max(0, Math.min(event.clientY - rect.top, rect.height));
+    const pressure = event.pressure || (event.buttons ? .5 : 0);
+    const point: TouchPoint = {
+      id: event.pointerId,
+      x,
+      y,
+      pressure,
+      color: this.touchColors[Math.abs(event.pointerId) % this.touchColors.length],
+    };
+    this.activeTouchPoints.set(event.pointerId, point);
+    this.touchPoints = [...this.activeTouchPoints.values()];
+    this.touchPressureMax = Math.max(this.touchPressureMax, pressure);
+    if (this.activeTouchPoints.size === 2) this.pushGesture('Multitouch: 2 contactos');
+    if (this.touchMode === 'zonas') {
+      const column = Math.min(Math.floor((x / Math.max(rect.width, 1)) * this.touchGridColumns), this.touchGridColumns - 1);
+      const row = Math.min(Math.floor((y / Math.max(rect.height, 1)) * this.touchGridRows), this.touchGridRows - 1);
+      this.touchGrid[row * this.touchGridColumns + column] = true;
+    }
+  }
+
+  private registerPrecisionHit(event: PointerEvent): void {
+    const stage = this.touchStage?.nativeElement;
+    if (!stage) return;
+    const rect = stage.getBoundingClientRect();
+    const targetX = rect.width * this.precisionTarget.x / 100;
+    const targetY = rect.height * this.precisionTarget.y / 100;
+    const actualX = event.clientX - rect.left;
+    const actualY = event.clientY - rect.top;
+    this.precisionErrors.push(Math.hypot(actualX - targetX, actualY - targetY));
+    this.precisionHits++;
+    const sequence = [[14, 16], [86, 16], [86, 84], [14, 84], [50, 50], [50, 12], [88, 50], [50, 88], [12, 50]];
+    const next = sequence[this.precisionHits % sequence.length];
+    this.precisionTarget = { x: next[0], y: next[1] };
+  }
+
+  private pushGesture(label: string): void {
+    if (this.touchGestures[0] === label) return;
+    this.touchGestures = [label, ...this.touchGestures].slice(0, 5);
+  }
+
+  async startSoundTest(channel: SoundChannel = this.soundChannel): Promise<void> {
+    this.stopSoundTest();
+    this.soundError = '';
+    this.soundChannel = channel;
+    try {
+      const context = new AudioContext();
+      await context.resume();
+      const oscillator = context.createOscillator();
+      const gain = context.createGain();
+      const panner = context.createStereoPanner();
+      oscillator.type = this.soundWave;
+      oscillator.frequency.value = this.clampSoundFrequency(this.soundFrequency);
+      gain.gain.value = this.clampSoundVolume(this.soundVolume) / 100;
+      panner.pan.value = channel === 'left' ? -1 : channel === 'right' ? 1 : 0;
+      oscillator.connect(gain).connect(panner).connect(context.destination);
+      oscillator.start();
+      this.soundAudioContext = context;
+      this.soundOscillator = oscillator;
+      this.soundGain = gain;
+      this.soundPanner = panner;
+      this.soundPlaying = true;
+    } catch {
+      this.soundError = 'El navegador no pudo iniciar la salida de audio. Revise el dispositivo de reproducción.';
+      this.stopSoundTest();
+    }
+  }
+
+  stopSoundTest(): void {
+    if (this.soundSweepTimer) clearInterval(this.soundSweepTimer);
+    this.soundSweepTimer = undefined;
+    this.soundSweepActive = false;
+    try { this.soundOscillator?.stop(); } catch { /* ya estaba detenido */ }
+    this.soundOscillator?.disconnect();
+    this.soundGain?.disconnect();
+    this.soundPanner?.disconnect();
+    void this.soundAudioContext?.close();
+    this.soundOscillator = null;
+    this.soundGain = null;
+    this.soundPanner = null;
+    this.soundAudioContext = null;
+    this.soundPlaying = false;
+  }
+
+  updateSoundFrequency(value: number): void {
+    this.soundFrequency = this.clampSoundFrequency(value);
+    this.soundOscillator?.frequency.setValueAtTime(this.soundFrequency, this.soundAudioContext?.currentTime ?? 0);
+  }
+
+  updateSoundVolume(value: number): void {
+    this.soundVolume = this.clampSoundVolume(value);
+    this.soundGain?.gain.setValueAtTime(this.soundVolume / 100, this.soundAudioContext?.currentTime ?? 0);
+  }
+
+  updateSoundWave(wave: OscillatorWave): void {
+    this.soundWave = wave;
+    if (this.soundOscillator) this.soundOscillator.type = wave;
+  }
+
+  async startSoundSweep(): Promise<void> {
+    await this.startSoundTest('both');
+    if (!this.soundPlaying || !this.soundOscillator || !this.soundAudioContext) return;
+    this.soundSweepActive = true;
+    this.soundStartedAt = performance.now();
+    const durationSeconds = 12;
+    this.soundOscillator.frequency.cancelScheduledValues(this.soundAudioContext.currentTime);
+    this.soundOscillator.frequency.setValueAtTime(40, this.soundAudioContext.currentTime);
+    this.soundOscillator.frequency.exponentialRampToValueAtTime(16000, this.soundAudioContext.currentTime + durationSeconds);
+    this.soundSweepTimer = setInterval(() => {
+      const progress = Math.min((performance.now() - this.soundStartedAt) / (durationSeconds * 1000), 1);
+      this.soundFrequency = Math.round(40 * Math.pow(16000 / 40, progress));
+      if (progress >= 1) this.stopSoundTest();
+    }, 100);
+  }
+
+  saveSoundResult(): void {
+    if (!this.soundResult) return;
+    this.addReport('Sonido', `${this.soundResult}; canales ${this.soundChannel}; frecuencia probada ${this.soundFrequency} Hz`);
+  }
+
+  private clampSoundFrequency(value: number): number {
+    return Math.max(20, Math.min(Number(value) || 440, 20000));
+  }
+
+  private clampSoundVolume(value: number): number {
+    return Math.max(0, Math.min(Number(value) || 0, 50));
   }
 
   runPing(): void {
@@ -330,6 +686,93 @@ export class HerramientasComponent implements OnInit, AfterViewInit, OnDestroy {
         this.pingError = err?.error?.message ?? 'No se pudo ejecutar la prueba.';
       },
     });
+  }
+
+  async runSpeedTest(): Promise<void> {
+    if (this.speedStats.status === 'running') return;
+    this.speedStats = {
+      status: 'running',
+      phase: 'Midiendo latencia',
+      progress: 5,
+      latencyMs: 0,
+      jitterMs: 0,
+      downloadMbps: 0,
+      uploadMbps: 0,
+      message: 'Midiendo desde este navegador hacia Internet. No cierres la pestaña.',
+    };
+
+    try {
+      if (!navigator.onLine) throw new Error('Sin conexión a Internet');
+      const measurements = [
+        { type: 'latency' as const, numPackets: 10 },
+        { type: 'download' as const, bytes: 100_000, count: 5, bypassMinDuration: true },
+        { type: 'download' as const, bytes: 1_000_000, count: 5 },
+        { type: 'download' as const, bytes: 10_000_000, count: 3 },
+        { type: 'download' as const, bytes: 25_000_000, count: 2 },
+        { type: 'upload' as const, bytes: 100_000, count: 5, bypassMinDuration: true },
+        { type: 'upload' as const, bytes: 1_000_000, count: 4 },
+        { type: 'upload' as const, bytes: 10_000_000, count: 2 },
+      ];
+      const test = new SpeedTest({
+        autoStart: false,
+        measurements,
+        logAimApiUrl: null,
+        measureDownloadLoadedLatency: true,
+        measureUploadLoadedLatency: true,
+      });
+      this.activeSpeedTest = test;
+
+      await new Promise<void>((resolve, reject) => {
+        test.onPhaseChange = ({ measurementId, measurement }) => {
+          this.zone.run(() => {
+            this.speedStats.phase = measurement.type === 'latency' ? 'Midiendo latencia'
+              : measurement.type === 'download' ? 'Midiendo descarga'
+              : 'Midiendo subida';
+            this.speedStats.progress = Math.max(5, Math.round((measurementId / measurements.length) * 95));
+            this.updateSpeedResults(test.results);
+          });
+        };
+        test.onResultsChange = () => this.zone.run(() => this.updateSpeedResults(test.results));
+        test.onFinish = (results) => {
+          this.zone.run(() => {
+            this.updateSpeedResults(results);
+            resolve();
+          });
+        };
+        test.onError = (message) => this.zone.run(() => reject(new Error(message)));
+        test.play();
+      });
+
+      this.speedStats.status = 'done';
+      this.speedStats.phase = 'Prueba completada';
+      this.speedStats.progress = 100;
+      this.speedStats.message = 'Resultado de la conexión navegador ↔ red perimetral de Cloudflare.';
+      this.addReport(
+        'Velocidad de red',
+        `${this.speedStats.latencyMs} ms; descarga ${this.speedStats.downloadMbps} Mbps; subida ${this.speedStats.uploadMbps} Mbps`,
+      );
+    } catch (error) {
+      this.speedStats.status = 'error';
+      this.speedStats.phase = 'No se pudo completar';
+      const detail = error instanceof Error ? error.message.trim() : '';
+      this.speedStats.message = detail
+        ? `La red bloqueó la medición: ${detail}`
+        : 'Revisa la conexión, VPN, proxy o firewall e inténtalo nuevamente.';
+    } finally {
+      this.activeSpeedTest = null;
+    }
+  }
+
+  private updateSpeedResults(results: CloudflareSpeedResults): void {
+    const summary = results.getSummary();
+    if (typeof summary.latency === 'number') this.speedStats.latencyMs = this.roundOne(summary.latency);
+    if (typeof summary.jitter === 'number') this.speedStats.jitterMs = this.roundOne(summary.jitter);
+    if (typeof summary.download === 'number') this.speedStats.downloadMbps = this.roundOne(summary.download / 1_000_000);
+    if (typeof summary.upload === 'number') this.speedStats.uploadMbps = this.roundOne(summary.upload / 1_000_000);
+  }
+
+  private roundOne(value: number): number {
+    return Math.round(value * 10) / 10;
   }
 
   capturarDatosEquipo(): void {
@@ -674,12 +1117,13 @@ export class HerramientasComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   releaseRam(): void {
+    const releasedMb = this.ramBuffer ? Math.round(this.ramBuffer.byteLength / (1024 * 1024)) : 0;
     this.ramBuffer = null;
     this.ramStats = {
       ...this.ramStats,
       status: 'idle',
       allocatedMb: 0,
-      message: 'Memoria liberada',
+      message: releasedMb > 0 ? `Memoria liberada (${releasedMb} MB)` : 'Memoria liberada',
     };
   }
 
@@ -1078,6 +1522,21 @@ export class HerramientasComponent implements OnInit, AfterViewInit, OnDestroy {
 
   @HostListener('window:keydown', ['$event'])
   onKeyDown(event: KeyboardEvent): void {
+    if (this.activeTab === 'pantalla' && this.pixelTestActive) {
+      if (event.code === 'ArrowRight' || event.code === 'Space') {
+        event.preventDefault();
+        this.changePixelPattern(1);
+      } else if (event.code === 'ArrowLeft') {
+        event.preventDefault();
+        this.changePixelPattern(-1);
+      } else if (event.key.toLowerCase() === 'f') {
+        event.preventDefault();
+        void this.startPixelTest();
+      } else if (event.code === 'Escape') {
+        this.stopPixelTest();
+      }
+      return;
+    }
     if (this.activeTab !== 'teclado') {
       return;
     }
@@ -1095,6 +1554,13 @@ export class HerramientasComponent implements OnInit, AfterViewInit, OnDestroy {
     }
     event.preventDefault();
     this.pressedKeys.delete(event.code);
+  }
+
+  @HostListener('document:fullscreenchange')
+  onFullscreenChange(): void {
+    if (!document.fullscreenElement && this.pixelTestActive) {
+      this.pixelTestActive = false;
+    }
   }
 
   private setupGpuScene(): void {

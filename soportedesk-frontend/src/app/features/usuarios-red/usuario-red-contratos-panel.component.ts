@@ -36,7 +36,10 @@ import { UsuarioRedContrato, UsuarioRedContratoRequest, esTipoContratoOs } from 
       }
     
       @if (editable) {
-        <button type="button" class="btn btn-primary" (click)="openCreate()">
+        <button type="button" class="btn btn-primary btn-create-record" (click)="openCreate()">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M12 5v14M5 12h14" />
+          </svg>
           Agregar contrato
         </button>
       }
@@ -66,8 +69,18 @@ import { UsuarioRedContrato, UsuarioRedContratoRequest, esTipoContratoOs } from 
               </div>
               @if (editable) {
                 <div class="contrato-actions">
-                  <button type="button" class="link-danger" (click)="openEdit(c)">Editar</button>
-                  <button type="button" class="link-danger" (click)="remove(c)">Eliminar</button>
+                  <button type="button" class="record-action link-edit" (click)="openEdit(c)">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                      <path d="M12 20h9" /><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L8 18l-4 1 1-4Z" />
+                    </svg>
+                    Editar
+                  </button>
+                  <button type="button" class="record-action link-danger" (click)="remove(c)">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                      <path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6M10 11v5M14 11v5" />
+                    </svg>
+                    Eliminar
+                  </button>
                 </div>
               }
             </div>

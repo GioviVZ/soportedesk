@@ -111,15 +111,20 @@ const EDITABLE_STATES = new Set(['PENDIENTE', 'OBSERVADO']);
                       <button type="button" class="vpn-person-link" (click)="onView(item)">
                         <strong>{{ item.titularNombreCompleto || 'Sin nombre registrado' }}</strong>
                         <span>{{ item.adSamAccountName || item.titularCorreo || item.adMail || 'Sin usuario de red' }}</span>
+                        @if (item.terceroOrdenServicio) {
+                          <small>OS {{ item.numeroOrdenServicio || 'sin número' }} · vence {{ item.vencimientoOrdenServicio || 'sin fecha' }}</small>
+                        } @else if (item.ultimoContratoTipo || item.ultimoContratoNumero) {
+                          <small>{{ item.ultimoContratoTipo || 'Contrato' }} {{ item.ultimoContratoNumero || 'sin número' }} · vence {{ item.ultimoContratoFechaFin || 'sin fecha' }}</small>
+                        }
                       </button>
                     </td>
                     <td><strong>{{ item.adOffice || item.adOrganizationalUnit || 'Sin ubicación' }}</strong>@if (item.adOffice && item.adOrganizationalUnit) {
                     <span>{{ item.adOrganizationalUnit }}</span>
                   }</td>
-                  <td><strong>{{ item.glpiNombreEquipo || item.equipo?.host || item.tipoEquipo || 'Sin equipo' }}</strong><span>{{ item.tipoEquipo }}</span></td>
+                  <td><strong>{{ item.glpiNombreEquipo || item.tipoEquipo || 'Sin equipo' }}</strong><span>{{ item.tipoEquipo }}</span></td>
                   <td><strong>{{ item.fechaSolicitud | date:'dd/MM/yyyy' }}</strong><app-vencimiento-badge [fecha]="item.vence" /></td>
                   <td><app-status-badge [label]="item.estadoSolicitud" [tone]="estadoTone(item.estadoSolicitud)" /></td>
-                  <td class="vpn-row-actions"><button type="button" (click)="onView(item)">Ver</button>@if (canEditSolicitud(item)) {
+                  <td class="vpn-row-actions"><button type="button" class="btn-view-record" (click)="onView(item)" aria-label="Ver detalle de la solicitud VPN"><i class="ti ti-eye" aria-hidden="true"></i><span>Ver</span></button>@if (canEditSolicitud(item)) {
                   <button type="button" (click)="onEdit(item)">Editar</button>
                 }</td>
               </tr>
@@ -150,6 +155,11 @@ const EDITABLE_STATES = new Set(['PENDIENTE', 'OBSERVADO']);
               <span>{{ item.titularOrigenLabel || item.titularTipo }}</span>
               <strong>{{ item.titularNombreCompleto }}</strong>
               <small>{{ item.adSamAccountName || item.titularCorreo || item.adMail || 'Sin usuario' }}</small>
+              @if (item.terceroOrdenServicio) {
+                <small>OS {{ item.numeroOrdenServicio || 'sin número' }} · vence {{ item.vencimientoOrdenServicio || 'sin fecha' }}</small>
+              } @else if (item.ultimoContratoTipo || item.ultimoContratoNumero) {
+                <small>{{ item.ultimoContratoTipo || 'Contrato' }} {{ item.ultimoContratoNumero || 'sin número' }} · vence {{ item.ultimoContratoFechaFin || 'sin fecha' }}</small>
+              }
             </div>
             <app-status-badge [label]="item.estadoSolicitud" [tone]="estadoTone(item.estadoSolicitud)" />
           </header>
@@ -160,7 +170,7 @@ const EDITABLE_STATES = new Set(['PENDIENTE', 'OBSERVADO']);
             </div>
             <div>
               <dt>Equipo</dt>
-              <dd>{{ item.glpiNombreEquipo || item.equipo?.host || item.tipoEquipo || 'Sin equipo' }}</dd>
+              <dd>{{ item.glpiNombreEquipo || item.tipoEquipo || 'Sin equipo' }}</dd>
             </div>
             <div>
               <dt>Solicitud</dt>
@@ -169,7 +179,7 @@ const EDITABLE_STATES = new Set(['PENDIENTE', 'OBSERVADO']);
           </dl>
           <footer>
             <app-vencimiento-badge [fecha]="item.vence" />
-            <button type="button" class="view" (click)="onView(item)">Ver</button>
+            <button type="button" class="btn-view-record" (click)="onView(item)" aria-label="Ver detalle de la solicitud VPN"><i class="ti ti-eye" aria-hidden="true"></i><span>Ver</span></button>
             @if (canEditSolicitud(item)) {
               <button type="button" class="edit" (click)="onEdit(item)">Editar</button>
             }

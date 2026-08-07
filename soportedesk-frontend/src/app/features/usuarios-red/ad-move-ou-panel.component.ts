@@ -1,9 +1,10 @@
 
-import { Component, EventEmitter, Input, Output, inject, ChangeDetectionStrategy } from '@angular/core';
+import { Component, EventEmitter, Input, OnDestroy, OnInit, Output, inject, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { SectionCardComponent } from '../../shared/section-card/section-card.component';
 import { ActiveDirectoryService } from './active-directory.service';
 import { ActiveDirectoryOu, AdPanelResult } from './active-directory.model';
+import { Subject, debounceTime, distinctUntilChanged, takeUntil } from 'rxjs';
 
 @Component({
     selector: 'app-ad-move-ou-panel',
@@ -19,8 +20,8 @@ import { ActiveDirectoryOu, AdPanelResult } from './active-directory.model';
       }
     
       <div class="inline-search">
-        <input name="ouSearch" [(ngModel)]="ouSearch" placeholder="Buscar OU" (keyup.enter)="search()" />
-        <button type="button" class="btn btn-ghost" (click)="search()">Buscar</button>
+        <input name="ouSearch" [(ngModel)]="ouSearch" (ngModelChange)="onSearchChange($event)"
+               placeholder="Buscar OU" autocomplete="off" />
       </div>
       @if (results.length) {
         <div class="pick-list">
@@ -37,8 +38,10 @@ import { ActiveDirectoryOu, AdPanelResult } from './active-directory.model';
     changeDetection: ChangeDetectionStrategy.Eager,
     styleUrl: './usuarios-red.shared.scss'
 })
-export class AdMoveOuPanelComponent {
+export class AdMoveOuPanelComponent implements OnInit, OnDestroy {
   private adService = inject(ActiveDirectoryService);
+  private readonly searchQueue = new Subject<string>();
+  private readonly destroy$ = new Subject<void>();
 
   @Input({ required: true }) samAccountName!: string;
   @Output() saved = new EventEmitter<AdPanelResult>();
@@ -47,6 +50,25 @@ export class AdMoveOuPanelComponent {
   results: ActiveDirectoryOu[] = [];
   working = false;
   error = '';
+
+  ngOnInit(): void {
+    this.searchQueue.pipe(
+      debounceTime(350),
+      distinctUntilChanged(),
+      takeUntil(this.destroy$),
+    ).subscribe(() => this.search());
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+
+  onSearchChange(value: string): void {
+    this.ouSearch = value;
+    if (value.trim().length < 2) this.results = [];
+    this.searchQueue.next(value.trim());
+  }
 
   search(): void {
     const term = this.ouSearch.trim();

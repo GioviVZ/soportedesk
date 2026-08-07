@@ -1,6 +1,6 @@
 @if (open) {
-  <div class="overlay" (click)="close()">
-    <div class="dialog" [class.wide]="size === 'wide'" role="dialog" aria-modal="true" [attr.aria-label]="title" (click)="$event.stopPropagation()">
+  <div class="overlay">
+    <div class="dialog" [class.wide]="size === 'wide'" role="dialog" aria-modal="true" [attr.aria-label]="title">
       <header>
         <h2>{{ title }}</h2>
         <button type="button" class="close" (click)="close()" aria-label="Cerrar modal" title="Cerrar">&times;</button>

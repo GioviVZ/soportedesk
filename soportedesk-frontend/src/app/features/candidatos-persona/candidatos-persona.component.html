@@ -1,0 +1,73 @@
+<div class="module-page candidatos-persona-page">
+  <div class="module-header">
+    <div>
+      <span class="module-eyebrow">Administracion</span>
+      <h2>Candidatos a Persona</h2>
+      <p>Cuentas de AD detectadas sin persona asociada. Confirma para crear la persona o descarta si no corresponde.</p>
+    </div>
+    <div class="module-stats">
+      <div class="stat-pill">
+        <strong>{{ candidatos.length }}</strong>
+        <span>Pendientes</span>
+      </div>
+      <div class="stat-pill">
+        <strong>{{ countPor('PERSONAL') }}</strong>
+        <span>Personal</span>
+      </div>
+      <div class="stat-pill">
+        <strong>{{ countPor('FUNCIONAL') }}</strong>
+        <span>Funcional</span>
+      </div>
+      <div class="stat-pill">
+        <strong>{{ countPor('SERVICIO') }}</strong>
+        <span>Servicio</span>
+      </div>
+      <div class="stat-pill">
+        <strong>{{ sinClasificar }}</strong>
+        <span>Sin clasificar</span>
+      </div>
+    </div>
+  </div>
+
+  <section class="access-toolbar">
+    <div>
+      <strong>{{ candidatos.length }}</strong>
+      <span>candidatos pendientes de revision</span>
+    </div>
+    <button class="add-btn" type="button" [disabled]="buscando" (click)="detectarAhora()">
+      {{ buscando ? 'Buscando...' : 'Detectar cuentas nuevas' }}
+    </button>
+  </section>
+
+  @if (candidatos.length > 0) {
+    <div class="users-grid">
+      @for (c of candidatos; track c.id) {
+        <article class="user-card">
+          <div class="user-card__head">
+            <div class="user-cell">
+              <span class="avatar-mini">{{ c.nombres.charAt(0) }}</span>
+              <div>
+                <strong>{{ c.nombres }} {{ c.apellidos }}</strong>
+                <small>{{ c.samAccountName }}</small>
+              </div>
+            </div>
+            <app-status-badge [label]="etiqueta(c.clasificacionSugerida)" [tone]="tono(c.clasificacionSugerida)" />
+          </div>
+          <div class="access-summary">
+            <span>{{ c.correoInstitucional || 'Sin correo institucional' }}</span>
+            <small>Detectado {{ c.fechaDeteccion | date: 'dd/MM/yyyy HH:mm' }}</small>
+          </div>
+          <div class="actions">
+            <button class="edit-btn" type="button" (click)="confirmar(c)">Confirmar</button>
+            <button class="del-btn" type="button" (click)="descartar(c)">Descartar</button>
+          </div>
+        </article>
+      }
+    </div>
+  } @else {
+    <div class="empty-state">
+      <strong>No hay candidatos pendientes de revision</strong>
+      <span>Cuando el job de reconciliacion detecte cuentas AD sin persona, apareceran aqui.</span>
+    </div>
+  }
+</div>

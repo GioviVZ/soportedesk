@@ -1,6 +1,6 @@
+@use './app/core/styles/variables';
+@use './app/core/styles/bootstrap';
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap');
-@import './app/core/styles/variables';
-@import './app/core/styles/bootstrap';
 
 *, *::before, *::after { box-sizing: border-box; }
 
@@ -30,6 +30,7 @@ html, body {
 
 html {
   min-width: 320px;
+  -webkit-text-size-adjust: 100%;
 }
 
 button {
@@ -37,6 +38,14 @@ button {
   font-family: inherit;
   font-size: inherit;
   transition: color var(--transition), background var(--transition), border-color var(--transition), box-shadow var(--transition-md), transform var(--transition);
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+a,
+input,
+select,
+textarea {
   -webkit-tap-highlight-color: transparent;
 }
 
@@ -48,6 +57,148 @@ a:focus-visible {
   outline: 2px solid var(--color-accent);
   outline-offset: 2px;
   border-radius: var(--radius-sm);
+}
+
+/* Exportacion Excel: una accion consistente y reconocible en todos los modulos. */
+:is(button, a).excel-export-btn.excel-export-btn.excel-export-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-width: 0;
+  min-height: 44px !important;
+  padding: 9px 14px !important;
+  border: 1px solid #286d42 !important;
+  border-radius: var(--radius-sm) !important;
+  background: #2f7d4a !important;
+  color: #fff !important;
+  box-shadow: 0 8px 18px -14px rgba(30, 94, 54, .9);
+  font-size: 13px !important;
+  font-weight: 750 !important;
+  line-height: 1.1;
+  letter-spacing: .005em;
+  white-space: nowrap;
+
+  span,
+  strong,
+  b,
+  .excel-export-icon {
+    color: #fff !important;
+    stroke: currentColor;
+  }
+
+  .excel-export-icon {
+    width: 18px;
+    height: 18px;
+    flex: 0 0 auto;
+    transition: transform var(--transition-md);
+  }
+
+  &:hover:not(:disabled) {
+    border-color: #205c37 !important;
+    background: #276a3f !important;
+    color: #fff !important;
+    box-shadow: 0 12px 22px -14px rgba(30, 94, 54, .95);
+    transform: translateY(-1px);
+
+    .excel-export-icon { transform: translateY(-1px); }
+  }
+
+  &:focus-visible {
+    outline: 3px solid color-mix(in srgb, #2f7d4a 28%, transparent);
+    outline-offset: 2px;
+  }
+
+  &:disabled {
+    border-color: var(--color-border-strong) !important;
+    background: var(--color-muted) !important;
+    color: var(--color-text-muted) !important;
+  }
+}
+
+.filter-actions > .excel-export-btn,
+.results-actions > .excel-export-btn {
+  order: 20;
+}
+
+:root[data-theme='dark'] :is(button, a).excel-export-btn.excel-export-btn.excel-export-btn {
+  border-color: #80c596 !important;
+  background: #72b98a !important;
+  color: #fff !important;
+  box-shadow: 0 10px 22px -15px rgba(0, 0, 0, .95);
+
+  &:hover:not(:disabled) {
+    border-color: #9ad4aa !important;
+    background: #8aca9d !important;
+    color: #fff !important;
+  }
+
+  &:focus-visible {
+    outline-color: rgba(128, 197, 150, .38);
+  }
+
+  &:disabled {
+    border-color: var(--color-border-strong) !important;
+    background: var(--color-muted) !important;
+    color: var(--color-text-muted) !important;
+  }
+}
+
+/* Acción de consulta compartida por tablas y tarjetas de todos los módulos. */
+:is(button, a, span).btn-view-record.btn-view-record {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-width: 68px;
+  min-height: 32px;
+  padding: 6px 12px;
+  border: 0;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--color-primary) 11%, var(--color-surface));
+  color: var(--color-secondary);
+  box-shadow: none;
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: .01em;
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    color var(--transition),
+    background var(--transition),
+    box-shadow var(--transition-md),
+    transform var(--transition);
+
+  .ti {
+    font-size: 16px;
+    line-height: 1;
+    opacity: .78;
+    transition: transform var(--transition), opacity var(--transition);
+  }
+
+  &:hover {
+    color: var(--color-on-module);
+    background: var(--color-primary);
+    box-shadow: 0 9px 18px -13px color-mix(in srgb, var(--color-primary) 72%, transparent);
+    transform: translateY(-1px);
+
+    .ti {
+      opacity: 1;
+      transform: scale(1.08);
+    }
+  }
+
+  &:active {
+    box-shadow: none;
+    transform: translateY(0) scale(.98);
+  }
+
+  &:focus-visible {
+    outline: 3px solid color-mix(in srgb, var(--color-primary) 25%, transparent);
+    outline-offset: 2px;
+  }
 }
 
 input, select, textarea {
@@ -95,6 +246,8 @@ h1,h2,h3,h4,h5,h6 { font-weight: 600; line-height: 1.3; margin: 0 0 16px; }
 .page,
 .module-page {
   width: min(100%, 1320px);
+  max-width: 100%;
+  min-width: 0;
   margin: 0 auto;
 }
 
@@ -209,13 +362,13 @@ h1,h2,h3,h4,h5,h6 { font-weight: 600; line-height: 1.3; margin: 0 0 16px; }
   min-width: 0;
 
   &-primary {
-    background: linear-gradient(135deg, var(--color-primary), var(--color-brand-deep));
+    background: #2563eb;
     color: #fff;
-    box-shadow: 0 9px 18px -12px rgba(42, 87, 38, .72);
+    box-shadow: 0 8px 18px -12px rgba(37, 99, 235, .72);
     &:hover {
-      background: linear-gradient(135deg, var(--color-primary-hover), #244b21);
-      transform: translateY(-2px);
-      box-shadow: 0 13px 24px -13px rgba(42, 87, 38, .82);
+      background: #1d4ed8;
+      transform: translateY(-1px);
+      box-shadow: 0 12px 22px -13px rgba(37, 99, 235, .82);
     }
   }
   &-danger {
@@ -367,6 +520,264 @@ h1,h2,h3,h4,h5,h6 { font-weight: 600; line-height: 1.3; margin: 0 0 16px; }
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
   gap: 12px;
+}
+
+/*
+ * Sistema global de botones
+ * --------------------------
+ * Las pantallas historicamente usaron nombres distintos para la misma accion.
+ * Este bloque los agrupa por intencion y mantiene color, altura, foco y estados
+ * consistentes en todos los modulos sin alterar botones de pestanas o tarjetas.
+ */
+:root {
+  --button-primary: #2563eb;
+  --button-primary-hover: #1d4ed8;
+  --button-secondary: #475569;
+  --button-secondary-hover: #334155;
+  --button-success: #15803d;
+  --button-success-hover: #166534;
+  --button-danger: #b42318;
+  --button-danger-hover: #912018;
+  --button-focus: rgba(37, 99, 235, .30);
+  --button-height: 40px;
+  --button-radius: 8px;
+}
+
+:is(
+  .btn,
+  .primary-btn,
+  .ghost-btn,
+  .primary-action,
+  .ghost-action,
+  .secondary-action,
+  .save-btn,
+  .submit-btn,
+  .add-btn,
+  .edit-btn,
+  .del-btn,
+  .back-btn,
+  .refresh-btn,
+  .export-btn,
+  .footer-close,
+  .ver-ficha-btn,
+  .view-link,
+  .btn-create-user,
+  .btn-create-record,
+  .btn-edit-record,
+  .link-edit,
+  .link-danger,
+  button.secondary,
+  button.danger,
+  button[type='submit']
+) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: var(--button-height);
+  padding: 9px 16px;
+  border: 1px solid transparent;
+  border-radius: var(--button-radius);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 750;
+  line-height: 1.1;
+  letter-spacing: .005em;
+  text-decoration: none;
+  white-space: nowrap;
+  box-shadow: 0 7px 16px -12px rgba(15, 23, 42, .65);
+}
+
+:is(
+  .btn-primary,
+  .primary-btn,
+  .primary-action,
+  .save-btn,
+  .submit-btn,
+  .add-btn,
+  button[type='submit']
+) {
+  border-color: var(--button-primary) !important;
+  background: var(--button-primary) !important;
+  background-image: none !important;
+  color: #fff !important;
+
+  &:hover:not(:disabled) {
+    border-color: var(--button-primary-hover) !important;
+    background: var(--button-primary-hover) !important;
+    color: #fff !important;
+    transform: translateY(-1px);
+    box-shadow: 0 12px 22px -13px rgba(37, 99, 235, .82);
+  }
+}
+
+:is(.btn-create-user, .btn-create-record) {
+  border-color: var(--button-success) !important;
+  background: var(--button-success) !important;
+  background-image: none !important;
+  color: #fff !important;
+
+  &:hover:not(:disabled) {
+    border-color: var(--button-success-hover) !important;
+    background: var(--button-success-hover) !important;
+    background-image: none !important;
+    color: #fff !important;
+    transform: translateY(-1px);
+  }
+}
+
+:is(.btn-edit-record, .link-edit) {
+  border-color: var(--button-secondary) !important;
+  background: var(--button-secondary) !important;
+  background-image: none !important;
+  color: #fff !important;
+
+  &:hover:not(:disabled) {
+    border-color: var(--button-secondary-hover) !important;
+    background: var(--button-secondary-hover) !important;
+    color: #fff !important;
+    transform: translateY(-1px);
+  }
+}
+
+.link-danger {
+  border-color: var(--button-danger) !important;
+  background: var(--button-danger) !important;
+  color: #fff !important;
+
+  &:hover:not(:disabled) {
+    border-color: var(--button-danger-hover) !important;
+    background: var(--button-danger-hover) !important;
+    color: #fff !important;
+    transform: translateY(-1px);
+  }
+}
+
+:is(
+  .btn-ghost,
+  .ghost-btn,
+  .ghost-action,
+  .secondary-action,
+  .back-btn,
+  .footer-close,
+  .ver-ficha-btn,
+  button.secondary
+) {
+  border-color: var(--button-secondary) !important;
+  background: var(--button-secondary) !important;
+  background-image: none !important;
+  color: #fff !important;
+
+  &:hover:not(:disabled) {
+    border-color: var(--button-secondary-hover) !important;
+    background: var(--button-secondary-hover) !important;
+    color: #fff !important;
+    transform: translateY(-1px);
+  }
+}
+
+:is(.btn-danger, .del-btn, .danger-action, .evidencia-delete, button.danger) {
+  border-color: var(--button-danger) !important;
+  background: var(--button-danger) !important;
+  background-image: none !important;
+  color: #fff !important;
+
+  &:hover:not(:disabled) {
+    border-color: var(--button-danger-hover) !important;
+    background: var(--button-danger-hover) !important;
+    color: #fff !important;
+    transform: translateY(-1px);
+  }
+}
+
+:is(.edit-btn, .view-link, .refresh-btn) {
+  border-color: var(--button-secondary) !important;
+  background: var(--button-secondary) !important;
+  background-image: none !important;
+  color: #fff !important;
+
+  &:hover:not(:disabled) {
+    border-color: var(--button-secondary-hover) !important;
+    background: var(--button-secondary-hover) !important;
+    color: #fff !important;
+    transform: translateY(-1px);
+  }
+}
+
+:is(button, a):is(
+  .btn,
+  .primary-btn,
+  .ghost-btn,
+  .primary-action,
+  .ghost-action,
+  .secondary-action,
+  .save-btn,
+  .submit-btn,
+  .add-btn,
+  .edit-btn,
+  .del-btn,
+  .back-btn,
+  .refresh-btn,
+  .export-btn,
+  .footer-close,
+  .ver-ficha-btn,
+  .view-link,
+  .excel-export-btn,
+  .btn-view-record,
+  .danger,
+  .secondary
+):focus-visible,
+button[type='submit']:focus-visible {
+  outline: 3px solid var(--button-focus) !important;
+  outline-offset: 2px;
+}
+
+:is(button, a):is(
+  .btn,
+  .primary-btn,
+  .ghost-btn,
+  .primary-action,
+  .ghost-action,
+  .secondary-action,
+  .save-btn,
+  .submit-btn,
+  .add-btn,
+  .edit-btn,
+  .del-btn,
+  .back-btn,
+  .refresh-btn,
+  .export-btn,
+  .footer-close,
+  .ver-ficha-btn,
+  .view-link,
+  .excel-export-btn,
+  .btn-view-record,
+  .danger,
+  .secondary
+):disabled,
+button[type='submit']:disabled {
+  border-color: #94a3b8 !important;
+  background: #94a3b8 !important;
+  background-image: none !important;
+  color: #f8fafc !important;
+  opacity: .72;
+  transform: none !important;
+}
+
+/* Acciones compactas de tabla: misma semantica, menor huella visual. */
+:is(.edit-btn, .del-btn, .btn-view-record, .view-link, .btn-icon) {
+  min-height: 34px;
+  padding: 7px 12px;
+  border-radius: 7px;
+  font-size: 12.5px;
+}
+
+@media (max-width: 700px) {
+  :root { --button-height: 44px; }
+
+  :is(.form-actions, .modal-actions, .filter-actions, .report-actions) > :is(button, a) {
+    min-height: 44px;
+  }
 }
 
 .module-dash-stat {
@@ -750,6 +1161,129 @@ app-equipos-dashboard { --dash-module-color: var(--color-equipos); }
 
   .module-dash-breakdowns {
     grid-template-columns: 1fr;
+  }
+}
+
+/* Base adaptable compartida por todos los módulos. */
+@media (max-width: 1199px) {
+  .page,
+  .module-page {
+    width: 100%;
+  }
+
+  :is(.tabs, .ad-tabs, .tool-tabs, .module-tabs, .segmented-control) {
+    max-width: 100%;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scrollbar-gutter: stable;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Las navegaciones principales de cada módulo deben mostrar siempre todas
+     sus opciones; si falta espacio, saltan de fila en lugar de quedar ocultas. */
+  .ad-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    width: 100%;
+    min-width: 0;
+    overflow-x: visible;
+    scrollbar-gutter: auto;
+  }
+
+  .ad-tabs > a,
+  .ad-tabs > button {
+    flex: 0 1 auto;
+    max-width: 100%;
+  }
+
+  :is(.table-scroll, .simple-table, .equipment-admin-table) {
+    max-width: 100%;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  :is(.filter-actions, .results-actions, .report-actions, .button-row, .modal-actions, .form-actions, [modal-footer]) {
+    flex-wrap: wrap;
+  }
+
+  /* El ancho por sí solo identifica teléfonos y tablets incluso cuando un
+     navegador no informa correctamente pointer: coarse. */
+  button,
+  .btn,
+  [role='button'] {
+    min-height: 44px !important;
+  }
+}
+
+@media (max-width: 760px) {
+  input:not([type='checkbox']):not([type='radio']):not([type='range']),
+  select,
+  textarea {
+    min-height: 44px;
+    font-size: 16px;
+  }
+
+  :is(.filter-actions, .results-actions, .report-actions, .button-row, .modal-actions, .form-actions, [modal-footer]) {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    width: 100%;
+  }
+
+  :is(.filter-actions, .results-actions, .report-actions, .button-row, .modal-actions, .form-actions, [modal-footer]) > button,
+  :is(.filter-actions, .results-actions, .report-actions, .button-row, .modal-actions, .form-actions, [modal-footer]) > .btn {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+/* En iPad y otras pantallas táctiles el tamaño visual puede ser amplio,
+   pero el dedo sigue necesitando objetivos de al menos 44px. */
+@media (pointer: coarse) {
+  button,
+  .btn,
+  [role='button'] {
+    min-height: 44px !important;
+  }
+
+  :is(.btn-icon, .icon-btn, .icon-action) {
+    min-width: 44px;
+  }
+
+  :is(.tabs, .ad-tabs, .tool-tabs, .module-tabs, .segmented-control) :is(a, button) {
+    min-height: 44px;
+  }
+}
+
+/* Monitores 4K y pantallas interactivas grandes: más superficie útil sin
+   perder legibilidad a distancia. */
+@media (min-width: 1920px) {
+  .page,
+  .module-page {
+    width: min(100%, 94vw, 1920px);
+  }
+}
+
+@media (min-width: 2560px) {
+  html,
+  body {
+    font-size: 17px;
+  }
+
+  .page,
+  .module-page {
+    width: min(100%, 94vw, 2600px);
+  }
+
+  body .dashboard {
+    width: min(100%, 94vw, 2600px) !important;
+  }
+
+  button,
+  .btn,
+  input,
+  select {
+    min-height: 46px !important;
   }
 }
 
@@ -1154,4 +1688,32 @@ input[type="number"], input[type="date"], select, textarea {
 @media (max-width: 370px) {
   .dashboard .service-orders-list { grid-template-columns: 1fr; }
   .dashboard .service-order-tile { aspect-ratio: auto; min-height: 210px; }
+}
+
+/* Garantía final de interacción táctil. Se ubica al cierre para prevalecer
+   sobre las medidas compactas de componentes heredados. */
+html body button,
+html body .btn,
+html body [role='button'] {
+  min-height: 44px !important;
+  min-block-size: 44px !important;
+}
+
+html body :is(.btn-icon, .icon-btn, .icon-action) {
+  min-width: 44px !important;
+  min-inline-size: 44px !important;
+}
+
+@media (min-width: 2560px) {
+  html body .dashboard {
+    width: min(100%, 94vw, 2600px) !important;
+    max-width: 100% !important;
+  }
+
+  html body button,
+  html body .btn,
+  html body [role='button'] {
+    min-height: 46px !important;
+    min-block-size: 46px !important;
+  }
 }

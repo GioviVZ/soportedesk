@@ -5,7 +5,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -14,7 +14,9 @@ import java.util.List;
 import static org.hamcrest.Matchers.is;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringBootTest
@@ -27,7 +29,7 @@ class HerramientasControllerIT {
     @Autowired
     private ObjectMapper objectMapper;
 
-    @MockBean
+    @MockitoBean
     private HerramientasService service;
 
     @Test
@@ -68,6 +70,34 @@ class HerramientasControllerIT {
         mockMvc.perform(post("/api/herramientas/ping")
                         .contentType("application/json")
                         .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @WithMockUser(authorities = {"ROLE_SOPORTE", "READ_herramientas"})
+    void speedTestDownload_withReadAuthority_returnsRequestedPayload() throws Exception {
+        mockMvc.perform(get("/api/herramientas/speed-test/download")
+                        .param("bytes", "4096"))
+                .andExpect(status().isOk())
+                .andExpect(header().string("Cache-Control", "no-store"))
+                .andExpect(header().string("X-Speed-Test-Bytes", "4096"))
+                .andExpect(header().longValue("Content-Length", 4096));
+    }
+
+    @Test
+    @WithMockUser(authorities = {"ROLE_SOPORTE", "READ_herramientas"})
+    void speedTestUpload_returnsReceivedByteCount() throws Exception {
+        mockMvc.perform(post("/api/herramientas/speed-test/upload")
+                        .contentType("application/octet-stream")
+                        .content(new byte[2048]))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.bytesReceived", is(2048)));
+    }
+
+    @Test
+    @WithMockUser(roles = "SOPORTE")
+    void speedTest_withoutReadAuthority_returnsForbidden() throws Exception {
+        mockMvc.perform(get("/api/herramientas/speed-test/ping"))
                 .andExpect(status().isForbidden());
     }
 }

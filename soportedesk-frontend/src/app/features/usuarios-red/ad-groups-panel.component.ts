@@ -1,7 +1,7 @@
 
-import { Component, EventEmitter, Input, OnInit, Output, inject, ChangeDetectionStrategy } from '@angular/core';
+import { Component, EventEmitter, Input, OnDestroy, OnInit, Output, inject, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Observable } from 'rxjs';
+import { Observable, Subject, debounceTime, distinctUntilChanged, takeUntil } from 'rxjs';
 import { SectionCardComponent } from '../../shared/section-card/section-card.component';
 import { ActiveDirectoryService } from './active-directory.service';
 import { ActiveDirectoryGroup, ActiveDirectoryResponse, AdPanelResult, AdUser } from './active-directory.model';
@@ -21,8 +21,8 @@ import { ActiveDirectoryGroup, ActiveDirectoryResponse, AdPanelResult, AdUser } 
       }
     
       <div class="inline-search">
-        <input name="groupSearch" [(ngModel)]="groupSearch" placeholder="Buscar grupo" (keyup.enter)="search()" />
-        <button type="button" class="btn btn-ghost" (click)="search()">Buscar</button>
+        <input name="groupSearch" [(ngModel)]="groupSearch" (ngModelChange)="onSearchChange($event)"
+               placeholder="Buscar grupo" autocomplete="off" />
       </div>
       @if (results.length) {
         <div class="pick-list">
@@ -39,7 +39,7 @@ import { ActiveDirectoryGroup, ActiveDirectoryResponse, AdPanelResult, AdUser } 
           @for (group of groups; track group) {
             <div>
               <span>{{ group.cn }}</span>
-              <button type="button" class="link-danger" [disabled]="working" (click)="remove(group.dn)">Quitar</button>
+              <button type="button" class="record-action link-danger" [disabled]="working" (click)="remove(group.dn)">Quitar</button>
             </div>
           }
         </div>
@@ -49,8 +49,10 @@ import { ActiveDirectoryGroup, ActiveDirectoryResponse, AdPanelResult, AdUser } 
     changeDetection: ChangeDetectionStrategy.Eager,
     styleUrl: './usuarios-red.shared.scss'
 })
-export class AdGroupsPanelComponent implements OnInit {
+export class AdGroupsPanelComponent implements OnInit, OnDestroy {
   private adService = inject(ActiveDirectoryService);
+  private readonly searchQueue = new Subject<string>();
+  private readonly destroy$ = new Subject<void>();
 
   @Input({ required: true }) samAccountName!: string;
   @Output() changed = new EventEmitter<AdPanelResult>();
@@ -62,7 +64,23 @@ export class AdGroupsPanelComponent implements OnInit {
   error = '';
 
   ngOnInit(): void {
+    this.searchQueue.pipe(
+      debounceTime(350),
+      distinctUntilChanged(),
+      takeUntil(this.destroy$),
+    ).subscribe(() => this.search());
     this.loadGroups();
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+
+  onSearchChange(value: string): void {
+    this.groupSearch = value;
+    if (value.trim().length < 2) this.results = [];
+    this.searchQueue.next(value.trim());
   }
 
   search(): void {

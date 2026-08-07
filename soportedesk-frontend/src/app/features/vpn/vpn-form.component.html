@@ -31,6 +31,11 @@
             <li (click)="onAdUserSelected(u)">
               <strong>{{ u.displayName || u.samAccountName }}</strong>
               <span>{{ u.samAccountName }}</span>
+              @if (u.terceroOrdenServicio) {
+                <small>Tercero / OS {{ u.numeroOrdenServicio || 'sin número' }} · vence {{ u.vencimientoOrdenServicio || 'sin fecha' }}</small>
+              } @else if (u.ultimoContratoTipo || u.ultimoContratoNumero) {
+                <small>{{ u.ultimoContratoTipo || 'Contrato' }} {{ u.ultimoContratoNumero || 'sin número' }} · vence {{ u.ultimoContratoFechaFin || 'sin fecha' }}</small>
+              }
               @if (u.mail || u.office || u.organizationalUnit) {
                 <small>
                   {{ u.mail || 'Sin correo' }} · {{ u.office || u.organizationalUnit || 'Sin oficina' }}
@@ -59,6 +64,18 @@
         <span class="ad-label">Usuario</span>
         <span>{{ adUserSelected.samAccountName }}</span>
       </div>
+      @if (adUserSelected.terceroOrdenServicio) {
+        <div class="ad-preview-row">
+          <span class="ad-label">Orden de servicio</span>
+          <span>{{ adUserSelected.numeroOrdenServicio || 'Sin número' }} · vence {{ adUserSelected.vencimientoOrdenServicio || 'sin fecha' }}</span>
+        </div>
+      }
+      @if (!adUserSelected.terceroOrdenServicio && (adUserSelected.ultimoContratoTipo || adUserSelected.ultimoContratoNumero)) {
+        <div class="ad-preview-row">
+          <span class="ad-label">Último contrato</span>
+          <span>{{ adUserSelected.ultimoContratoTipo || 'Contrato' }} {{ adUserSelected.ultimoContratoNumero || 'sin número' }} · vence {{ adUserSelected.ultimoContratoFechaFin || 'sin fecha' }}</span>
+        </div>
+      }
       <div class="ad-preview-row">
         <span class="ad-label">Nombre</span>
         <span>{{ adUserSelected.displayName || adUserSelected.samAccountName }}</span>
@@ -89,8 +106,19 @@
       <input type="text" formControlName="titularApellidos" />
     </div>
     <div class="field">
-      <label>Correo *</label>
-      <input type="email" formControlName="titularCorreo" />
+      <label>Correo <span class="optional-label">(opcional)</span></label>
+      <input
+        type="email"
+        formControlName="titularCorreo"
+        [readonly]="form.controls.sinCorreo.value"
+        placeholder="correo@ejemplo.com"
+        autocomplete="email"
+      />
+      <span class="hint">Puede ingresar libremente un correo personal o institucional.</span>
+      <label class="no-email-option">
+        <input type="checkbox" formControlName="sinCorreo" (change)="onSinCorreoChange()" />
+        <span>La persona no cuenta con correo electrónico</span>
+      </label>
     </div>
     <div class="field">
       <label>Empresa *</label>
@@ -123,6 +151,11 @@
       </select>
     </div>
   }
+
+  <div class="field">
+    <label>Número de ticket *</label>
+    <input type="text" formControlName="numeroTicket" placeholder="Ej. MESA-2026-0431" />
+  </div>
 
   <hr class="divider" />
 

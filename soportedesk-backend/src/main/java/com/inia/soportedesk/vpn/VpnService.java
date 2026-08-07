@@ -9,6 +9,7 @@ import com.inia.soportedesk.exception.ResourceNotFoundException;
 import com.inia.soportedesk.glpi.VwInvComputerFull;
 import com.inia.soportedesk.glpi.VwInvComputerFullRepository;
 import com.inia.soportedesk.usuariosred.contrato.UsuarioRedContratoRepository;
+import com.inia.soportedesk.usuariosred.contrato.UsuarioRedContrato;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.security.core.Authentication;
@@ -21,7 +22,7 @@ import java.time.LocalDateTime;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -37,6 +38,7 @@ public class VpnService {
     private final VwInvComputerFullRepository glpiRepository;
     private final UsuarioRepository usuarioRepository;
     private final VpnConfigInstitucionalService configInstitucionalService;
+    private final VpnNormalizedSyncService normalizedSyncService;
 
     public List<Vpn> findAll(String search) {
         List<Vpn> result = search == null || search.isBlank()
@@ -83,7 +85,10 @@ public class VpnService {
 
         return resultados.values().stream()
                 .limit(20)
-                .map(VpnUsuarioRedOption::from)
+                .map(usuario -> {
+                    UsuarioRedContrato contrato = ultimoContratoDe(usuario.getSamAccountName()).orElse(null);
+                    return VpnUsuarioRedOption.from(usuario, contrato, contrato != null && esOrdenServicio(contrato));
+                })
                 .toList();
     }
 
@@ -176,6 +181,8 @@ public class VpnService {
         vpn.setSolicitadoPorNombre(nombreDe(auth.getName()));
         vpn.setFechaSolicitud(LocalDateTime.now());
         copySolicitudFields(vpn, request);
+        validateNumeroTicket(vpn);
+        validateSolicitudCompleta(vpn);
         validateNoDuplicateSolicitud(vpn);
         return saveAndApplyVence(vpn);
     }
@@ -187,6 +194,8 @@ public class VpnService {
             throw new IllegalArgumentException("Solo se puede editar una solicitud pendiente u observada");
         }
         copySolicitudFields(vpn, request);
+        validateNumeroTicket(vpn);
+        validateSolicitudCompleta(vpn);
         validateNoDuplicateSolicitud(vpn);
         if ("OBSERVADO".equals(vpn.getEstadoSolicitud())) {
             vpn.setEstadoSolicitud("PENDIENTE");
@@ -200,6 +209,8 @@ public class VpnService {
         if (!"PENDIENTE".equals(vpn.getEstadoSolicitud())) {
             throw new IllegalArgumentException("Solo se puede aprobar una solicitud pendiente");
         }
+        // Protege también solicitudes antiguas creadas antes de esta validación.
+        validateSolicitudCompleta(vpn);
         String usuarioVpn = request.getUsuarioVpn().trim();
         if (repository.countApprovedByUsuarioVpn(usuarioVpn, vpn.getId()) > 0) {
             throw new IllegalArgumentException("El usuario VPN " + usuarioVpn + " ya esta asignado a otro acceso aprobado.");
@@ -231,8 +242,11 @@ public class VpnService {
         return saveAndApplyVence(vpn);
     }
 
+    @Transactional
     public void delete(Long id) {
-        repository.delete(findById(id));
+        Vpn vpn = findById(id);
+        normalizedSyncService.deleteMirror(id);
+        repository.delete(vpn);
     }
 
     public void maskCredencialesIfNeeded(Vpn vpn, Authentication auth) {
@@ -275,6 +289,7 @@ public class VpnService {
         vpn.setForticlientInstalado(request.getForticlientInstalado());
         vpn.setVencimientoAntivirus(request.getVencimientoAntivirus());
         vpn.setTitularCargo(request.getTitularCargo());
+        vpn.setNumeroTicket(isBlank(request.getNumeroTicket()) ? null : request.getNumeroTicket().trim());
 
         if (!isBlank(request.getUsuarioRedSamAccountName())) {
             String samAccountName = normalizeAccountSearchTerm(request.getUsuarioRedSamAccountName());
@@ -287,7 +302,10 @@ public class VpnService {
             }
             vpn.setTitularTipo("AD");
             vpn.setAdSamAccountName(usuarioRed.getSamAccountName());
-            vpn.setAdDisplayName(usuarioRed.getDisplayName());
+            vpn.setAdDisplayName(ultimoContratoDe(usuarioRed.getSamAccountName())
+                    .map(this::nombreTercero)
+                    .filter(nombre -> !nombre.isBlank())
+                    .orElse(usuarioRed.getDisplayName()));
             vpn.setAdMail(usuarioRed.getMail());
             vpn.setAdOffice(usuarioRed.getOffice());
             vpn.setAdOrganizationalUnit(usuarioRed.getOrganizationalUnit());
@@ -338,6 +356,41 @@ public class VpnService {
         return s == null || s.isBlank();
     }
 
+    private void validateSolicitudCompleta(Vpn vpn) {
+        if (!Boolean.TRUE.equals(vpn.getAntivirusVerificado())
+                || !Boolean.TRUE.equals(vpn.getAnalisisAntivirusRealizado())
+                || !Boolean.TRUE.equals(vpn.getSistemaOperativoActualizado())
+                || !Boolean.TRUE.equals(vpn.getForticlientInstalado())) {
+            throw new IllegalArgumentException(
+                    "La solicitud VPN está incompleta: debe completar todas las verificaciones técnicas.");
+        }
+
+        if ("INIA".equals(vpn.getTipoEquipo())) {
+            if (vpn.getGlpiComputerId() == null || isBlank(vpn.getGlpiNombreEquipo())) {
+                throw new IllegalArgumentException(
+                        "La solicitud VPN está incompleta: debe seleccionar el equipo de INIA desde GLPI.");
+            }
+            if (isBlank(vpn.getGlpiIpEquipo())) {
+                throw new IllegalArgumentException(
+                        "La solicitud VPN está incompleta: el equipo seleccionado en GLPI no tiene una IP registrada.");
+            }
+            if (!Boolean.TRUE.equals(vpn.getHostActualizado())) {
+                throw new IllegalArgumentException(
+                        "La solicitud VPN está incompleta: debe confirmar que el host está actualizado.");
+            }
+        } else if ("PERSONAL".equals(vpn.getTipoEquipo()) && vpn.getVencimientoAntivirus() == null) {
+            throw new IllegalArgumentException(
+                    "La solicitud VPN está incompleta: debe registrar el vencimiento del antivirus.");
+        }
+    }
+
+    private void validateNumeroTicket(Vpn vpn) {
+        if (isBlank(vpn.getNumeroTicket())) {
+            throw new IllegalArgumentException(
+                    "La solicitud VPN esta incompleta: debe registrar el numero de ticket.");
+        }
+    }
+
     private void validateNoDuplicateSolicitud(Vpn vpn) {
         Long currentId = vpn.getId();
         if (!isBlank(vpn.getAdSamAccountName())
@@ -382,7 +435,9 @@ public class VpnService {
 
     private Vpn saveAndApplyVence(Vpn vpn) {
         Vpn saved = repository.save(vpn);
+        repository.flush();
         aplicarVence(saved);
+        normalizedSyncService.sync(saved);
         return saved;
     }
 
@@ -390,7 +445,23 @@ public class VpnService {
         LocalDate vencimientoBase = "INIA".equals(vpn.getTipoEquipo())
                 ? configInstitucionalService.getVencimiento()
                 : vpn.getVencimientoAntivirus();
-        LocalDate vencimientoContrato = vencimientoContrato(vpn.getAdSamAccountName());
+        Optional<UsuarioRedContrato> ordenServicio = ordenServicioDe(vpn.getAdSamAccountName());
+        Optional<UsuarioRedContrato> ultimoContrato = ultimoContratoDe(vpn.getAdSamAccountName());
+        LocalDate vencimientoContrato = ordenServicio.map(UsuarioRedContrato::getFechaFin).orElse(null);
+
+        vpn.setTerceroOrdenServicio(ordenServicio.isPresent());
+        vpn.setTerceroNombre(ordenServicio.map(this::nombreTercero).filter(nombre -> !nombre.isBlank()).orElse(null));
+        vpn.setNumeroOrdenServicio(ordenServicio.map(UsuarioRedContrato::getNumeroContrato).orElse(null));
+        vpn.setVencimientoOrdenServicio(vencimientoContrato);
+        vpn.setUltimoContratoTipo(ultimoContrato
+                .map(UsuarioRedContrato::getTipoContrato)
+                .map(tipo -> tipo.getNombre())
+                .orElse(null));
+        vpn.setUltimoContratoNumero(ultimoContrato.map(UsuarioRedContrato::getNumeroContrato).orElse(null));
+        vpn.setUltimoContratoFechaFin(ultimoContrato.map(UsuarioRedContrato::getFechaFin).orElse(null));
+        ultimoContrato.map(this::nombreTercero)
+                .filter(nombre -> !nombre.isBlank())
+                .ifPresent(nombre -> vpn.setAdDisplayName(nombre));
 
         vpn.setVencimientoBaseVpn(vencimientoBase);
         vpn.setVencimientoContrato(vencimientoContrato);
@@ -405,16 +476,35 @@ public class VpnService {
         vpn.setVenceOrigen("INIA".equals(vpn.getTipoEquipo()) ? "INSTITUCIONAL" : "ANTIVIRUS_PERSONAL");
     }
 
-    private LocalDate vencimientoContrato(String samAccountName) {
+    private Optional<UsuarioRedContrato> ordenServicioDe(String samAccountName) {
         if (isBlank(samAccountName)) {
-            return null;
+            return Optional.empty();
         }
         String usuario = normalizeAccountSearchTerm(samAccountName);
         return contratoRepository.findByUsuarioIgnoreCaseOrderByFechaInicioDesc(usuario).stream()
-                .map(contrato -> contrato.getFechaFin())
-                .filter(Objects::nonNull)
-                .max(LocalDate::compareTo)
-                .orElse(null);
+                .filter(this::esOrdenServicio)
+                .filter(contrato -> contrato.getFechaFin() != null)
+                .max(java.util.Comparator.comparing(UsuarioRedContrato::getFechaFin));
+    }
+
+    private Optional<UsuarioRedContrato> ultimoContratoDe(String samAccountName) {
+        if (isBlank(samAccountName)) return Optional.empty();
+        String usuario = normalizeAccountSearchTerm(samAccountName);
+        return contratoRepository.findByUsuarioIgnoreCaseOrderByFechaInicioDesc(usuario).stream().findFirst();
+    }
+
+    private boolean esOrdenServicio(UsuarioRedContrato contrato) {
+        if (contrato.getTipoContrato() == null || isBlank(contrato.getTipoContrato().getNombre())) return false;
+        String tipo = java.text.Normalizer.normalize(contrato.getTipoContrato().getNombre(), java.text.Normalizer.Form.NFD)
+                .replaceAll("\\p{M}", "")
+                .toLowerCase();
+        return tipo.contains("orden") && tipo.contains("servicio");
+    }
+
+    private String nombreTercero(UsuarioRedContrato contrato) {
+        String nombre = contrato.getPersonalNombre() == null ? "" : contrato.getPersonalNombre().trim();
+        String apellidos = contrato.getPersonalApellidos() == null ? "" : contrato.getPersonalApellidos().trim();
+        return (nombre + " " + apellidos).trim();
     }
 
     private boolean canViewCredenciales(Vpn vpn, Authentication auth) {

@@ -21,6 +21,7 @@ describe('AdMoveOuPanelComponent', () => {
     component.ouSearch = 'a';
     component.search();
     httpMock.expectNone((req) => req.url === '/api/active-directory/ous');
+    expect(component.results).toEqual([]);
   });
 
   it('busca OUs y llena los resultados', () => {

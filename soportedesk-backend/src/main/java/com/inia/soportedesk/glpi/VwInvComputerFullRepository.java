@@ -12,6 +12,9 @@ public interface VwInvComputerFullRepository extends JpaRepository<VwInvComputer
 
     long countByEliminado(Integer eliminado);
 
+    @Query("SELECT v.computerID FROM VwInvComputerFull v WHERE v.eliminado = 0")
+    List<Long> findActiveComputerIds();
+
     @Query("""
         SELECT v FROM VwInvComputerFull v
         WHERE v.eliminado = 0
@@ -89,4 +92,17 @@ public interface VwInvComputerFullRepository extends JpaRepository<VwInvComputer
         ORDER BY s.name
     """, nativeQuery = true)
     List<SoftwareRow> findSoftwareByComputerId(@Param("computerId") Long computerId);
+
+    @Query(value = """
+        SELECT iss.items_id AS computerId, s.name AS software, sv.name AS version,
+               iss.date_install AS fechaInstalacion
+        FROM glpi_items_softwareversions iss
+        JOIN glpi_softwareversions sv ON sv.id = iss.softwareversions_id
+        JOIN glpi_softwares s ON s.id = sv.softwares_id
+        WHERE iss.itemtype = 'Computer'
+          AND iss.items_id IN (:computerIds)
+          AND iss.is_deleted = 0
+        ORDER BY iss.items_id, s.name, sv.name
+    """, nativeQuery = true)
+    List<SoftwareExportRow> findSoftwareByComputerIds(@Param("computerIds") List<Long> computerIds);
 }

@@ -34,4 +34,23 @@ export class HerramientasService {
   deleteOrdenServicio(id: number): Observable<void> {
     return this.http.delete<void>(`${this.apiUrl}/ordenes-servicio/${id}`);
   }
+
+  speedTestPing(): Observable<void> {
+    return this.http.get<void>(`${this.apiUrl}/speed-test/ping`);
+  }
+
+  speedTestDownload(bytes: number): Observable<ArrayBuffer> {
+    return this.http.get(`${this.apiUrl}/speed-test/download`, {
+      params: { bytes },
+      responseType: 'arraybuffer',
+    });
+  }
+
+  speedTestUpload(payload: ArrayBuffer): Observable<{ bytesReceived: number }> {
+    return this.http.post<{ bytesReceived: number }>(
+      `${this.apiUrl}/speed-test/upload`,
+      payload,
+      { headers: { 'Content-Type': 'application/octet-stream' } },
+    );
+  }
 }

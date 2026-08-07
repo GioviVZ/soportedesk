@@ -11,9 +11,11 @@ import { UsuarioRedContratosPanelComponent } from './usuario-red-contratos-panel
     imports: [StatusBadgeComponent, SectionCardComponent, UsuarioRedContratosPanelComponent],
     template: `
     @if (user) {
+      <div class="selected-user-detail">
       <section class="identity-band">
         <div class="avatar">{{ initials }}</div>
         <div class="identity-main">
+          <small class="identity-kicker">Cuenta seleccionada</small>
           <h3>{{ user.displayName || user.samAccountName }}</h3>
           <span>{{ user.userPrincipalName || user.samAccountName }}</span>
           @if (user.organizationalUnit) {
@@ -26,7 +28,7 @@ import { UsuarioRedContratosPanelComponent } from './usuario-red-contratos-panel
             <app-status-badge [label]="user.locked ? 'Bloqueado' : 'Sin bloqueo'" [tone]="user.locked ? 'danger' : 'success'" />
           </div>
           @if (showManage) {
-            <button type="button" class="btn btn-primary" (click)="manage.emit(user.samAccountName)">
+            <button type="button" class="btn btn-primary btn-edit-record" (click)="manage.emit(user.samAccountName)">
               Editar usuario
               <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                 <line x1="5" y1="12" x2="19" y2="12" /><path d="m12 5 7 7-7 7" />
@@ -79,6 +81,7 @@ import { UsuarioRedContratosPanelComponent } from './usuario-red-contratos-panel
         </app-section-card>
         <app-usuario-red-contratos-panel [usuario]="user.samAccountName" [editable]="puedeEditarContratos" />
       </section>
+      </div>
     }
     `,
     changeDetection: ChangeDetectionStrategy.Eager,

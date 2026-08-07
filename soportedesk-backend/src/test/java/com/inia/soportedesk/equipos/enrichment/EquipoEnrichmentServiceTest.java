@@ -28,6 +28,7 @@ class EquipoEnrichmentServiceTest {
     @Mock private SedeRepository sedeRepository;
     @Mock private DependenciaRepository dependenciaRepository;
     @Mock private SubdependenciaRepository subdependenciaRepository;
+    @Mock private EquipoAsignacionSyncService asignacionSyncService;
     @InjectMocks private EquipoEnrichmentService service;
 
     @Test

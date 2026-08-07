@@ -242,6 +242,7 @@
 
 .ad-result-list {
   display: grid;
+  grid-auto-rows: max-content;
   align-content: start;
   gap: 8px;
   flex: 1 1 auto;
@@ -259,7 +260,11 @@
   display: grid;
   grid-template-columns: 38px minmax(0, 1fr);
   align-items: start;
+  align-self: start;
   gap: 10px 12px;
+  width: 100%;
+  height: auto;
+  min-height: max-content;
   min-width: 0;
   padding: 12px;
   border: 1px solid var(--color-border);
@@ -364,6 +369,7 @@
   .ad-result-card {
     grid-template-columns: 42px minmax(0, 1fr) 38px;
     align-items: center;
+    min-height: 76px;
   }
 
   .result-avatar {
@@ -388,11 +394,11 @@
 
 @container ad-user-search (min-width: 640px) {
   .ad-result-card {
-    grid-template-columns: 42px minmax(0, 1fr) minmax(150px, .8fr) 38px;
+    grid-template-columns: 42px minmax(0, 1.15fr) minmax(150px, .85fr) minmax(112px, auto) 38px;
   }
 
   .result-state {
-    grid-column: 2 / 4;
+    grid-column: auto;
     justify-content: flex-start;
   }
 }

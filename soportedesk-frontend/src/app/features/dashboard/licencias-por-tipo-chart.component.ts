@@ -19,7 +19,7 @@ export class LicenciasPorTipoChartComponent implements OnInit {
 
   chartData: ChartData<'bar', number[], string> = {
     labels: [],
-    datasets: [{ data: [], label: 'Claves', backgroundColor: '#456b8a' }],
+    datasets: [{ data: [], label: 'Claves', backgroundColor: '#456b8a', maxBarThickness: 32 }],
   };
 
   chartOptions: ChartConfiguration<'bar'>['options'] = {
@@ -51,7 +51,7 @@ export class LicenciasPorTipoChartComponent implements OnInit {
   private applyData(rows: LicenciaTipoCount[]): void {
     this.chartData = {
       labels: rows.map((r) => r.nombre),
-      datasets: [{ data: rows.map((r) => r.totalClaves), label: 'Claves', backgroundColor: '#456b8a' }],
+      datasets: [{ data: rows.map((r) => r.totalClaves), label: 'Claves', backgroundColor: '#456b8a', maxBarThickness: 32 }],
     };
   }
 }

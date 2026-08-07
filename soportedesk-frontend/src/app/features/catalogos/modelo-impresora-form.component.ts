@@ -9,7 +9,7 @@ import {
   ModeloImpresoraToner,
 } from '../../core/models/catalogo.model';
 
-export const TONER_COLORES = ['Negro', 'Cyan', 'Magenta', 'Amarillo'];
+const TONER_COLORES = ['Negro', 'Cyan', 'Magenta', 'Amarillo'];
 
 @Component({
     selector: 'app-modelo-impresora-form',

@@ -23,7 +23,8 @@ describe('UsuariosRedPorUbicacionChartComponent', () => {
     );
     req.flush([{ nombre: 'Lima', activos: 10, inactivos: 2 }]);
 
-    expect(component.chartData.labels).toEqual(['Lima']);
+    expect(component.rows.map((r) => r.nombre)).toEqual(['Lima']);
+    expect(component.topRows.map((r) => r.nombre)).toEqual(['Lima']);
   });
 
   it('requests dependencia-level data when the toggle changes', () => {
@@ -35,7 +36,23 @@ describe('UsuariosRedPorUbicacionChartComponent', () => {
     const req = httpMock.expectOne((r) => r.params.get('nivel') === 'dependencia');
     req.flush([{ nombre: 'TI', activos: 8, inactivos: 0 }]);
 
-    expect(component.chartData.labels).toEqual(['TI']);
+    expect(component.rows.map((r) => r.nombre)).toEqual(['TI']);
+  });
+
+  it('ranks offices by inactivos and finds a selected office by name', () => {
+    component.ngOnInit();
+    httpMock.expectOne((r) => r.params.get('nivel') === 'sede').flush([
+      { nombre: 'Lima', activos: 10, inactivos: 1 },
+      { nombre: 'Cusco', activos: 5, inactivos: 6 },
+    ]);
+
+    expect(component.topRows.map((r) => r.nombre)).toEqual(['Cusco', 'Lima']);
+
+    component.selectOffice('Lima');
+    expect(component.selectedRow?.nombre).toBe('Lima');
+
+    component.clearSelection();
+    expect(component.selectedRow).toBeNull();
   });
 
   it('flags an error when the request fails, without throwing', () => {

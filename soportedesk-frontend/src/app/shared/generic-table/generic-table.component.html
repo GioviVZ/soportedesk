@@ -45,7 +45,9 @@
           @if (canView || canEdit) {
             <td class="actions">
               @if (canView) {
-                <button type="button" class="view-btn" (click)="view.emit(row)" aria-label="Ver registro" title="Ver registro">Ver</button>
+                <button type="button" class="btn-view-record" (click)="view.emit(row)" aria-label="Ver registro" title="Ver registro">
+                  <i class="ti ti-eye" aria-hidden="true"></i><span>Ver</span>
+                </button>
               }
               @if (canEdit) {
                 <button type="button" class="edit-btn" (click)="edit.emit(row)" aria-label="Editar registro" title="Editar registro">Editar</button>

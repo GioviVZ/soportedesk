@@ -132,8 +132,8 @@ import { UsuarioRedContratoService } from './usuario-red-contrato.service';
           <div class="field full">
             <label>Unidad organizativa destino</label>
             <div class="inline-search">
-              <input name="ouSearch" [(ngModel)]="ouSearch" placeholder="Buscar OU" (keyup.enter)="searchOus()" />
-              <button type="button" class="btn btn-ghost" (click)="searchOus()">Buscar</button>
+              <input name="ouSearch" [(ngModel)]="ouSearch" (ngModelChange)="onOuSearchChange($event)"
+                     placeholder="Buscar OU" autocomplete="off" />
             </div>
             @if (form.ouDestinoDn) {
               <div class="selected-dn">{{ form.ouDestinoDn }}</div>
@@ -207,7 +207,12 @@ import { UsuarioRedContratoService } from './usuario-red-contrato.service';
     
     <footer modal-footer class="modal-actions">
       <button type="button" class="btn btn-ghost" (click)="cancelled.emit()">Cancelar</button>
-      <button type="submit" form="ad-create-user-edit-form" class="btn btn-primary" [disabled]="working || correosLoading">{{ contratoEnabled ? 'Crear en AD y registrar contrato' : 'Crear en AD' }}</button>
+      <button type="submit" form="ad-create-user-edit-form" class="btn btn-primary btn-create-user" [disabled]="working || correosLoading">
+        <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="8.5" cy="7" r="4" /><path d="M20 8v6M23 11h-6" />
+        </svg>
+        {{ contratoEnabled ? 'Crear en AD y registrar contrato' : 'Crear en AD' }}
+      </button>
     </footer>
     `,
     changeDetection: ChangeDetectionStrategy.Eager,
@@ -231,6 +236,7 @@ export class AdCreateUserPanelComponent implements OnInit {
   dependenciaId: number | null = null;
   subdependenciaId: number | null = null;
   ouSearch = '';
+  private ouSearchTimeout?: ReturnType<typeof setTimeout>;
   ouResults: ActiveDirectoryOu[] = [];
   working = false;
   error = '';
@@ -325,6 +331,16 @@ export class AdCreateUserPanelComponent implements OnInit {
     const term = this.ouSearch.trim();
     if (term.length < 2) return;
     this.adService.searchOus(term).subscribe((ous) => (this.ouResults = ous));
+  }
+
+  onOuSearchChange(value: string): void {
+    this.ouSearch = value;
+    clearTimeout(this.ouSearchTimeout);
+    if (value.trim().length < 2) {
+      this.ouResults = [];
+      return;
+    }
+    this.ouSearchTimeout = setTimeout(() => this.searchOus(), 350);
   }
 
   selectOu(ou: ActiveDirectoryOu): void {

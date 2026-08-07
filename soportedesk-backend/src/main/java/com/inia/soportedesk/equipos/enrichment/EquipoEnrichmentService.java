@@ -8,6 +8,7 @@ import com.inia.soportedesk.catalogo.Subdependencia;
 import com.inia.soportedesk.catalogo.SubdependenciaRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -23,11 +24,13 @@ public class EquipoEnrichmentService {
     private final SedeRepository sedeRepository;
     private final DependenciaRepository dependenciaRepository;
     private final SubdependenciaRepository subdependenciaRepository;
+    private final EquipoAsignacionSyncService asignacionSyncService;
 
     public Optional<EquipoEnrichmentDto> findByComputerId(Long computerId) {
         return repository.findByComputerId(computerId).map(this::toDto);
     }
 
+    @Transactional
     public EquipoEnrichmentDto save(Long computerId, EquipoEnrichmentDto dto, String username) {
         EquipoEnrichment entity = repository.findByComputerId(computerId).orElseGet(() -> {
             EquipoEnrichment e = new EquipoEnrichment();
@@ -71,7 +74,10 @@ public class EquipoEnrichmentService {
         entity.setRevisadoPor(username);
         entity.setFechaRevision(LocalDateTime.now());
 
-        return toDto(repository.save(entity));
+        EquipoEnrichment saved = repository.save(entity);
+        repository.flush();
+        asignacionSyncService.sync(saved);
+        return toDto(saved);
     }
 
     public List<HistorialItemDto> getHistorial(Long computerId) {

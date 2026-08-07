@@ -1,5 +1,5 @@
 
-import { Component, OnDestroy, OnInit, inject, ChangeDetectionStrategy } from '@angular/core';
+import { Component, OnDestroy, OnInit, ViewChild, inject, ChangeDetectionStrategy } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { Subscription, interval } from 'rxjs';
 import { switchMap, takeWhile } from 'rxjs/operators';
@@ -15,7 +15,7 @@ import { AdGroupsPanelComponent } from './ad-groups-panel.component';
 import { AdMoveOuPanelComponent } from './ad-move-ou-panel.component';
 import { AdEditInfoPanelComponent } from './ad-edit-info-panel.component';
 
-type Panel = 'create' | 'password' | 'groups' | 'ou' | 'info' | null;
+type Panel = 'create' | 'password' | 'groups' | 'ou' | 'info' | 'delete' | null;
 
 @Component({
     selector: 'app-usuarios-red-administracion',
@@ -31,14 +31,14 @@ type Panel = 'create' | 'password' | 'groups' | 'ou' | 'info' | null;
     AdEditInfoPanelComponent
 ],
     template: `
-    <div class="usuarios-red-page">
+    <div class="usuarios-red-page admin-page">
       <div class="module-dash-toolbar">
         <div class="module-dash-title">
           <strong>Sincronización con Active Directory</strong>
           <span>{{ lastSyncLabel() }}</span>
         </div>
         <div class="module-dash-actions">
-          <button type="button" class="module-dash-refresh" (click)="startSync()" [disabled]="$safeNavigationMigration(syncStatus?.running)">
+          <button type="button" class="module-dash-refresh ad-sync-button" (click)="startSync()" [disabled]="$safeNavigationMigration(syncStatus?.running)">
             <span class="module-dash-refresh-icon" aria-hidden="true"></span>
             {{ syncStatus?.running ? 'Sincronizando' : 'Sincronizar AD' }}
           </button>
@@ -59,8 +59,15 @@ type Panel = 'create' | 'password' | 'groups' | 'ou' | 'info' | null;
     
       <app-ad-admin-summary [dashboard]="dashboard" />
     
-      <section class="actions-grid admin-primary-actions">
-        <button type="button" class="action-card create" (click)="openPanel('create')">
+      <section class="admin-actions-panel" aria-labelledby="admin-actions-title">
+        <div class="admin-actions-heading">
+          <div>
+            <h3 id="admin-actions-title">Acciones rápidas</h3>
+            <p>Selecciona una cuenta para habilitar las opciones de administración.</p>
+          </div>
+        </div>
+        <div class="actions-grid admin-primary-actions">
+        <button type="button" class="action-card action-create" (click)="openPanel('create')">
           <span class="action-icon">
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="8.5" cy="7" r="4" />
@@ -70,7 +77,7 @@ type Panel = 'create' | 'password' | 'groups' | 'ou' | 'info' | null;
           <strong>Crear usuario de red</strong>
           <small>Alta directa en Active Directory</small>
         </button>
-        <button type="button" class="action-card" (click)="openPanel('password')" [disabled]="!user">
+        <button type="button" class="action-card action-password" (click)="openPanel('password')" [disabled]="!user">
           <span class="action-icon">
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <circle cx="7.5" cy="15.5" r="5.5" /><path d="m21 2-9.6 9.6" /><path d="m15.5 7.5 3 3L22 7l-3-3" />
@@ -79,7 +86,7 @@ type Panel = 'create' | 'password' | 'groups' | 'ou' | 'info' | null;
           <strong>Restablecer clave</strong>
           <small>Clave temporal y cambio obligatorio</small>
         </button>
-        <button type="button" class="action-card" (click)="unlock()" [disabled]="working || !user || !user.locked">
+        <button type="button" class="action-card action-unlock" (click)="unlock()" [disabled]="working || !user || !user.locked">
           <span class="action-icon">
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 9.9-1" />
@@ -88,7 +95,7 @@ type Panel = 'create' | 'password' | 'groups' | 'ou' | 'info' | null;
           <strong>Desbloquear</strong>
           <small>Libera bloqueo por intentos fallidos</small>
         </button>
-        <button type="button" class="action-card" [class.danger]="user?.enabled" (click)="toggleEnabled()" [disabled]="working || !user">
+        <button type="button" class="action-card action-toggle" [class.action-disable]="user?.enabled" [class.action-enable]="!user?.enabled" (click)="toggleEnabled()" [disabled]="working || !user">
           <span class="action-icon">
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M18.36 6.64a9 9 0 1 1-12.73 0" /><line x1="12" y1="2" x2="12" y2="12" />
@@ -97,7 +104,7 @@ type Panel = 'create' | 'password' | 'groups' | 'ou' | 'info' | null;
           <strong>{{ user?.enabled ? 'Deshabilitar' : 'Habilitar' }}</strong>
           <small>Control de acceso al dominio</small>
         </button>
-        <button type="button" class="action-card" (click)="openPanel('groups')" [disabled]="!user">
+        <button type="button" class="action-card action-groups" (click)="openPanel('groups')" [disabled]="!user">
           <span class="action-icon">
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" />
@@ -107,7 +114,7 @@ type Panel = 'create' | 'password' | 'groups' | 'ou' | 'info' | null;
           <strong>Grupos</strong>
           <small>Agregar o quitar membresías</small>
         </button>
-        <button type="button" class="action-card" (click)="openPanel('ou')" [disabled]="!user">
+        <button type="button" class="action-card action-ou" (click)="openPanel('ou')" [disabled]="!user">
           <span class="action-icon">
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
@@ -116,7 +123,7 @@ type Panel = 'create' | 'password' | 'groups' | 'ou' | 'info' | null;
           <strong>Mover OU</strong>
           <small>Reubicar la cuenta en AD</small>
         </button>
-        <button type="button" class="action-card" (click)="openPanel('info')" [disabled]="!user">
+        <button type="button" class="action-card action-edit" (click)="openPanel('info')" [disabled]="!user">
           <span class="action-icon">
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
@@ -126,6 +133,16 @@ type Panel = 'create' | 'password' | 'groups' | 'ou' | 'info' | null;
           <strong>Editar datos</strong>
           <small>Contacto, cargo y descripcion</small>
         </button>
+        <button type="button" class="action-card action-delete" (click)="openPanel('delete')" [disabled]="working || !user">
+          <span class="action-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M3 6h18" /><path d="M8 6V4h8v2" /><path d="M19 6l-1 14H6L5 6" /><path d="M10 11v5M14 11v5" />
+            </svg>
+          </span>
+          <strong>Eliminar usuario</strong>
+          <small>Eliminación permanente de Active Directory</small>
+        </button>
+        </div>
       </section>
     
       <div class="admin-workspace">
@@ -189,6 +206,26 @@ type Panel = 'create' | 'password' | 'groups' | 'ou' | 'info' | null;
         <app-ad-edit-info-panel [user]="user" (saved)="onPanelSaved($event)" (cancelled)="closePanel()" />
       }
     </app-modal>
+
+    <app-modal title="Confirmar eliminación" [open]="activePanel === 'delete'" [hideDefaultFooter]="true" (closed)="closePanel()">
+      @if (activePanel === 'delete' && user) {
+        <section class="delete-confirmation">
+          <span class="delete-confirmation__icon" aria-hidden="true">!</span>
+          <div>
+            <strong>¿Eliminar permanentemente a {{ user.displayName || user.samAccountName }}?</strong>
+            <p>Se eliminará la cuenta <b>{{ user.samAccountName }}</b> de Active Directory. Esta acción no se puede deshacer.</p>
+          </div>
+        </section>
+      }
+      @if (activePanel === 'delete' && user) {
+        <div modal-footer class="delete-confirmation__actions">
+          <button type="button" class="btn" (click)="closePanel()" [disabled]="working">Cancelar</button>
+          <button type="button" class="btn delete-confirmation__submit" (click)="confirmDelete()" [disabled]="working">
+            {{ working ? 'Eliminando...' : 'Sí, eliminar usuario' }}
+          </button>
+        </div>
+      }
+    </app-modal>
     `,
     changeDetection: ChangeDetectionStrategy.Eager,
     styleUrl: './usuarios-red.shared.scss'
@@ -196,6 +233,8 @@ type Panel = 'create' | 'password' | 'groups' | 'ou' | 'info' | null;
 export class UsuariosRedAdministracionComponent implements OnInit, OnDestroy {
   private adService = inject(ActiveDirectoryService);
   private route = inject(ActivatedRoute);
+
+  @ViewChild(AdUserSearchComponent) private userSearch?: AdUserSearchComponent;
 
   dashboard: ActiveDirectoryDashboard | null = null;
   syncStatus: AdSyncStatus | null = null;
@@ -325,6 +364,30 @@ export class UsuariosRedAdministracionComponent implements OnInit, OnDestroy {
       ? this.adService.disableUser(this.user.samAccountName)
       : this.adService.enableUser(this.user.samAccountName);
     this.runAction(request);
+  }
+
+  confirmDelete(): void {
+    if (!this.user || this.working) return;
+    const samAccountName = this.user.samAccountName;
+    this.working = true;
+    this.adService.deleteUser(samAccountName).subscribe({
+      next: (response) => {
+        this.working = false;
+        if (!response.success) {
+          this.flash('error', response.message);
+          return;
+        }
+        this.user = null;
+        this.userSearch?.removeResult(samAccountName);
+        this.closePanel();
+        this.loadDashboard();
+        this.flash('success', response.message);
+      },
+      error: () => {
+        this.working = false;
+        this.flash('error', 'No se pudo eliminar el usuario de Active Directory.');
+      },
+    });
   }
 
   private loadUser(sam: string, openEdit = false): void {

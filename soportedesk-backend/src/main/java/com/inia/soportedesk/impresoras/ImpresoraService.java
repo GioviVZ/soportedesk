@@ -1,13 +1,17 @@
 package com.inia.soportedesk.impresoras;
 
+import com.inia.soportedesk.catalogo.Dependencia;
 import com.inia.soportedesk.catalogo.DependenciaRepository;
 import com.inia.soportedesk.catalogo.ModeloImpresoraRepository;
+import com.inia.soportedesk.catalogo.Sede;
 import com.inia.soportedesk.catalogo.SedeRepository;
+import com.inia.soportedesk.catalogo.Subdependencia;
 import com.inia.soportedesk.catalogo.SubdependenciaRepository;
 import com.inia.soportedesk.catalogo.TipoImpresoraRepository;
 import com.inia.soportedesk.exception.ResourceNotFoundException;
 import com.inia.soportedesk.impresoras.intervencion.ImpresoraIntervencionService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
@@ -17,6 +21,7 @@ import java.util.regex.Pattern;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class ImpresoraService {
 
     private static final Pattern IPV4 = Pattern.compile(
@@ -118,6 +123,7 @@ public class ImpresoraService {
                     topConsumibles, consumibleCounts.size()
             );
         } catch (Exception e) {
+            log.error("No se pudo construir el dashboard de impresoras", e);
             return new ImpresoraDashboardCompleto(0, 0, 0, 0, List.of(), List.of(), List.of(), List.of(), List.of(), 0);
         }
     }
@@ -138,6 +144,7 @@ public class ImpresoraService {
         return repository.save(impresora);
     }
 
+    @Transactional
     public void delete(Long id) {
         Impresora impresora = findById(id);
         intervencionService.eliminarTodasDeImpresora(id);
@@ -149,18 +156,31 @@ public class ImpresoraService {
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "Modelo de impresora no encontrado: " + request.getModeloImpresoraId())));
         impresora.setEstado(request.getEstado());
-        impresora.setSede(request.getSedeId() != null
+        Sede sede = request.getSedeId() != null
                 ? sedeRepository.findById(request.getSedeId())
                         .orElseThrow(() -> new ResourceNotFoundException("Sede no encontrada: " + request.getSedeId()))
-                : null);
-        impresora.setDependencia(request.getDependenciaId() != null
+                : null;
+        Dependencia dependencia = request.getDependenciaId() != null
                 ? dependenciaRepository.findById(request.getDependenciaId())
                         .orElseThrow(() -> new ResourceNotFoundException("Dependencia no encontrada: " + request.getDependenciaId()))
-                : null);
-        impresora.setSubdependencia(request.getSubdependenciaId() != null
+                : null;
+        Subdependencia subdependencia = request.getSubdependenciaId() != null
                 ? subdependenciaRepository.findById(request.getSubdependenciaId())
                         .orElseThrow(() -> new ResourceNotFoundException("Subdependencia no encontrada: " + request.getSubdependenciaId()))
-                : null);
+                : null;
+
+        if (sede != null && dependencia != null && dependencia.getSede() != null
+                && !sede.getId().equals(dependencia.getSede().getId())) {
+            throw new IllegalArgumentException("La dependencia seleccionada no pertenece a la sede indicada.");
+        }
+        if (dependencia != null && subdependencia != null && subdependencia.getDependencia() != null
+                && !dependencia.getId().equals(subdependencia.getDependencia().getId())) {
+            throw new IllegalArgumentException("La subdependencia seleccionada no pertenece a la dependencia indicada.");
+        }
+
+        impresora.setSede(sede);
+        impresora.setDependencia(dependencia);
+        impresora.setSubdependencia(subdependencia);
         impresora.setTipoImpresora(request.getTipoImpresoraId() != null
                 ? tipoImpresoraRepository.findById(request.getTipoImpresoraId())
                         .orElseThrow(() -> new ResourceNotFoundException("Tipo de impresora no encontrado: " + request.getTipoImpresoraId()))

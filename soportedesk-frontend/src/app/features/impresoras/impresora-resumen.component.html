@@ -2,8 +2,12 @@
   <div class="resumen-header" (click)="toggle()">
     <span class="resumen-title">Resumen de consumibles</span>
     <div class="resumen-actions">
-      <button type="button" class="export-btn" (click)="exportExcel($event)" [disabled]="rows.length === 0">
-        Exportar Excel
+      <button type="button" class="export-btn excel-export-btn" (click)="exportExcel($event)" [disabled]="rows.length === 0">
+        <svg class="excel-export-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" />
+          <path d="M14 2v6h6M8 13h2M8 17h2M14 13h2M14 17h2" />
+        </svg>
+        <span>Exportar Excel</span>
       </button>
       <span class="chevron" [class.collapsed]="collapsed">v</span>
     </div>

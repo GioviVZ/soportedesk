@@ -19,7 +19,6 @@ import org.springframework.web.util.ContentCachingRequestWrapper;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.util.Iterator;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
@@ -252,9 +251,7 @@ public class AuditoriaFilter extends OncePerRequestFilter {
         }
         if (node.isObject()) {
             ObjectNode sanitized = objectMapper.createObjectNode();
-            Iterator<Map.Entry<String, JsonNode>> fields = node.fields();
-            while (fields.hasNext()) {
-                Map.Entry<String, JsonNode> field = fields.next();
+            for (Map.Entry<String, JsonNode> field : node.properties()) {
                 sanitized.set(field.getKey(), sanitize(field.getValue(), field.getKey()));
             }
             return sanitized;

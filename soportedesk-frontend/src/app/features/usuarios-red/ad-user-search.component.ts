@@ -36,12 +36,6 @@ type EstadoFiltro = 'all' | 'enabled' | 'locked' | 'disabled';
             }
           </label>
     
-          <button type="submit" class="btn btn-primary query-submit" [disabled]="loading || !canSearch">
-            <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="11" cy="11" r="8" /><path d="m21 21-4.3-4.3" />
-            </svg>
-            {{ loading ? 'Buscando...' : 'Buscar' }}
-          </button>
         </form>
     
         <div class="query-tools">
@@ -308,6 +302,10 @@ export class AdUserSearchComponent implements OnInit, OnDestroy {
 
   trackBySam(_index: number, user: AdUserSummary): string {
     return user.samAccountName;
+  }
+
+  removeResult(samAccountName: string): void {
+    this.results = this.results.filter((user) => user.samAccountName.toLowerCase() !== samAccountName.toLowerCase());
   }
 
   ngOnDestroy(): void {

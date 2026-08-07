@@ -1,6 +1,5 @@
 package com.inia.soportedesk.vpn;
 
-import com.inia.soportedesk.equipos.Equipo;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -22,9 +21,12 @@ public class Vpn {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "equipo_id")
-    private Equipo equipo;
+    // La columna equipo_id y su FK hacia dbo.equipos existian pero
+    // dbo.equipos siempre tuvo 0 filas (verificado en la auditoria
+    // original) -- se retiro la tabla en la Fase 0 del plan de
+    // normalizacion (24-jul-2026). Este campo nunca resolvia una fila
+    // real; se elimina porque con la tabla ya retirada, el JOIN EAGER
+    // rompia CADA consulta VPN ("Invalid object name 'equipos'").
 
     @Transient
     private LocalDate vence;
@@ -37,6 +39,27 @@ public class Vpn {
 
     @Transient
     private String venceOrigen;
+
+    @Transient
+    private boolean terceroOrdenServicio;
+
+    @Transient
+    private String terceroNombre;
+
+    @Transient
+    private String numeroOrdenServicio;
+
+    @Transient
+    private LocalDate vencimientoOrdenServicio;
+
+    @Transient
+    private String ultimoContratoTipo;
+
+    @Transient
+    private String ultimoContratoNumero;
+
+    @Transient
+    private LocalDate ultimoContratoFechaFin;
 
     @Column(nullable = false)
     private String estado;
@@ -55,6 +78,9 @@ public class Vpn {
 
     @Column(name = "estado_solicitud", nullable = false)
     private String estadoSolicitud = "PENDIENTE";
+
+    @Column(name = "numero_ticket")
+    private String numeroTicket;
 
     @Column(name = "tipo_equipo")
     private String tipoEquipo;
@@ -152,6 +178,7 @@ public class Vpn {
 
     @Transient
     public String getTitularOrigenLabel() {
+        if (terceroOrdenServicio) return "Tercero / OS";
         return "EXTERNO".equals(titularTipo) ? "Externo" : "AD";
     }
 }

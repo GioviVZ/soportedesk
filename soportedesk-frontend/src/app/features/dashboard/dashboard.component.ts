@@ -1,19 +1,16 @@
-import { Component, HostListener, OnInit, inject, ChangeDetectionStrategy } from '@angular/core';
+import { Component, HostListener, OnInit, inject, ChangeDetectionStrategy, ViewChildren, QueryList, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { ChartConfiguration, ChartData } from 'chart.js';
 import { BaseChartDirective } from 'ng2-charts';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
-import ApexCharts from 'apexcharts';
 import { AuthService } from '../../core/auth/auth.service';
 import { DashboardService } from './dashboard.service';
 import { DashboardCounts } from './dashboard-counts.model';
 import { UsuariosRedPorUbicacionChartComponent } from './usuarios-red-por-ubicacion-chart.component';
 import { LicenciasPorTipoChartComponent } from './licencias-por-tipo-chart.component';
-import { RealtimeChange } from '../../core/services/realtime.service';
 import { OrdenServicio } from '../herramientas/herramientas.model';
 import { ModuloBreakdownItem, ModuloKey } from './modulo-breakdown-item.model';
-import { ApexChartComponent } from '../../shared/apex-chart.component';
 import { ClickOutsideDirective } from '../../shared/directives/click-outside.directive';
 
 interface DashboardCard {
@@ -31,7 +28,6 @@ interface DashboardCard {
   actionLabel: string;
   queryParams?: Record<string, string>;
   modulo: ModuloKey;
-  sparklineOptions: ApexCharts.ApexOptions;
 }
 
 interface ModuloPill {
@@ -75,7 +71,6 @@ const ICONS: Record<string, string> = {
         BaseChartDirective,
         UsuariosRedPorUbicacionChartComponent,
         LicenciasPorTipoChartComponent,
-        ApexChartComponent,
         ClickOutsideDirective,
     ],
     templateUrl: './dashboard.component.html',
@@ -103,11 +98,13 @@ export class DashboardComponent implements OnInit {
   error = false;
   updatedAt: Date | null = null;
 
+  @ViewChildren('pillBtn') pillButtons!: QueryList<ElementRef<HTMLButtonElement>>;
+
   selectedModulo: ModuloKey | null = null;
   breakdownLoading = false;
   breakdownError = false;
   breakdownItems: ModuloBreakdownItem[] = [];
-  breakdownChartOptions: ApexCharts.ApexOptions | null = null;
+  breakdownChartData: ChartData<'doughnut', number[], string> | null = null;
   openCardMenu: string | null = null;
 
   composicionChartData: ChartData<'doughnut', number[], string> = {
@@ -125,6 +122,18 @@ export class DashboardComponent implements OnInit {
     maintainAspectRatio: false,
     cutout: '62%',
     plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, boxHeight: 10, usePointStyle: true } } },
+  };
+
+  breakdownDoughnutOptions: ChartConfiguration<'doughnut'>['options'] = {
+    responsive: true,
+    maintainAspectRatio: false,
+    cutout: '58%',
+    plugins: {
+      legend: {
+        position: 'bottom',
+        labels: { boxWidth: 10, boxHeight: 10, usePointStyle: true },
+      },
+    },
   };
 
   lineOptions: ChartConfiguration<'line'>['options'] = {
@@ -238,20 +247,6 @@ export class DashboardComponent implements OnInit {
     return pills;
   }
 
-  /** Serie sintética (sin histórico real todavía): variación leve terminando en el valor actual, solo decorativa. */
-  private sparkline(value: number, color: string): ApexCharts.ApexOptions {
-    const base = Math.max(value, 1);
-    const data = [0.72, 0.85, 0.68, 0.94, 0.8, 1].map((factor) => Math.round(base * factor));
-    return {
-      chart: { type: 'area', height: 44, sparkline: { enabled: true }, animations: { enabled: false } },
-      series: [{ data }],
-      stroke: { curve: 'smooth', width: 2 },
-      fill: { type: 'gradient', gradient: { opacityFrom: .35, opacityTo: 0 } },
-      colors: [color],
-      tooltip: { enabled: false },
-    };
-  }
-
   toggleCardMenu(cardLabel: string, event: Event): void {
     event.preventDefault();
     event.stopPropagation();
@@ -262,12 +257,22 @@ export class DashboardComponent implements OnInit {
     this.openCardMenu = null;
   }
 
+  onModuloKeydown(event: KeyboardEvent, index: number): void {
+    if (event.key !== 'ArrowRight' && event.key !== 'ArrowLeft') return;
+    event.preventDefault();
+    const count = this.moduloPills.length;
+    if (!count) return;
+    const nextIndex = event.key === 'ArrowRight' ? (index + 1) % count : (index - 1 + count) % count;
+    this.selectModulo(this.moduloPills[nextIndex].key);
+    queueMicrotask(() => this.pillButtons.get(nextIndex)?.nativeElement.focus());
+  }
+
   selectModulo(modulo: ModuloKey | null): void {
     this.selectedModulo = modulo;
     this.openCardMenu = null;
     if (!modulo) {
       this.breakdownItems = [];
-      this.breakdownChartOptions = null;
+      this.breakdownChartData = null;
       return;
     }
 
@@ -292,7 +297,7 @@ export class DashboardComponent implements OnInit {
         this.breakdownLoading = false;
         this.breakdownError = true;
         this.breakdownItems = [];
-        this.breakdownChartOptions = null;
+        this.breakdownChartData = null;
       },
     });
   }
@@ -304,16 +309,15 @@ export class DashboardComponent implements OnInit {
     const colors = this.selectedModulo === 'equipos'
       ? ['#527b9b', '#2a5726', '#9bc477']
       : this.buildTonalPalette(color, items.length);
-    this.breakdownChartOptions = {
-      chart: { type: 'donut', height: 240 },
-      series: items.map((item) => item.count),
+    this.breakdownChartData = items.length ? {
       labels: items.map((item) => item.label),
-      colors,
-      stroke: { width: 2, colors: ['rgba(255,255,255,.58)'] },
-      legend: { position: 'bottom' },
-      dataLabels: { enabled: false },
-      tooltip: { y: { formatter: (val: number) => `${val}` } },
-    };
+      datasets: [{
+        data: items.map((item) => item.count),
+        backgroundColor: colors,
+        borderColor: 'rgba(255,255,255,.58)',
+        borderWidth: 2,
+      }],
+    } : null;
   }
 
   get selectedModuloLabel(): string {
@@ -366,7 +370,6 @@ export class DashboardComponent implements OnInit {
         healthState: 'neutral',
         actionLabel: 'Abrir licencias',
         modulo: 'licencias',
-        sparklineOptions: this.sparkline(counts.licencias, '#456b8a'),
       },
       {
         label: 'Correos Institucionales',
@@ -382,14 +385,13 @@ export class DashboardComponent implements OnInit {
         healthState: 'neutral',
         actionLabel: 'Abrir correos',
         modulo: 'correos',
-        sparklineOptions: this.sparkline(counts.correos, '#657195'),
       },
       {
         label: 'Usuarios de Red/AD',
         description: 'Cuentas activas e historicas',
         value: counts.usuariosRed,
         path: '/usuarios-red/consultas',
-        color: '#fab50b',
+        color: '#a86200',
         icon: this.svg('users'),
         category: 'Active Directory',
         metricLabel: 'Usuarios activos',
@@ -398,14 +400,13 @@ export class DashboardComponent implements OnInit {
         healthState: counts.usuariosRedInactivos > 0 ? 'warning' : 'success',
         actionLabel: 'Buscar usuarios',
         modulo: 'usuarios-red',
-        sparklineOptions: this.sparkline(counts.usuariosRed, '#fab50b'),
       },
       {
         label: 'VPN',
         description: 'Credenciales de acceso remoto',
         value: counts.vpn,
         path: '/vpn',
-        color: '#fa896b',
+        color: '#b55245',
         icon: this.svg('lock'),
         category: 'Acceso remoto',
         metricLabel: 'Solicitudes pendientes',
@@ -414,7 +415,6 @@ export class DashboardComponent implements OnInit {
         healthState: counts.vpnPendientes > 0 ? 'warning' : 'success',
         actionLabel: 'Gestionar VPN',
         modulo: 'vpn',
-        sparklineOptions: this.sparkline(counts.vpn, '#fa896b'),
       },
       {
         label: 'Claves WiFi',
@@ -430,7 +430,6 @@ export class DashboardComponent implements OnInit {
         healthState: 'neutral',
         actionLabel: 'Abrir WiFi',
         modulo: 'wifi',
-        sparklineOptions: this.sparkline(counts.wifi, '#357783'),
       },
       {
         label: 'Impresoras',
@@ -446,14 +445,13 @@ export class DashboardComponent implements OnInit {
         healthState: 'neutral',
         actionLabel: 'Abrir impresoras',
         modulo: 'impresoras',
-        sparklineOptions: this.sparkline(counts.impresoras, '#66746a'),
       },
       {
         label: 'Inventario de Equipos',
         description: 'Inventario operativo asignado',
         value: counts.equipos,
         path: '/equipos',
-        color: '#5d982d',
+        color: '#63a431',
         icon: this.svg('monitor'),
         category: 'Infraestructura',
         metricLabel: 'Equipos asignados',
@@ -462,7 +460,6 @@ export class DashboardComponent implements OnInit {
         healthState: 'success',
         actionLabel: 'Abrir equipos',
         modulo: 'equipos',
-        sparklineOptions: this.sparkline(counts.equipos, '#5d982d'),
       },
     ];
 
@@ -472,7 +469,7 @@ export class DashboardComponent implements OnInit {
         description: 'Cuentas marcadas como inactivas',
         value: counts.usuariosRedInactivos,
         path: '/usuarios-red/dashboard',
-        color: '#fab50b',
+        color: '#a86200',
         icon: this.svg('userX'),
         category: 'Alertas AD',
         metricLabel: 'Cuentas por revisar',
@@ -481,7 +478,6 @@ export class DashboardComponent implements OnInit {
         healthState: counts.usuariosRedInactivos > 0 ? 'warning' : 'success',
         actionLabel: 'Ver desactivados',
         modulo: 'usuarios-red',
-        sparklineOptions: this.sparkline(counts.usuariosRedInactivos, '#fab50b'),
       });
     }
 
@@ -609,6 +605,45 @@ export class DashboardComponent implements OnInit {
     if (path.startsWith('/impresoras')) return this.authService.canRead('impresoras');
     if (path.startsWith('/equipos')) return this.authService.canRead('equipos');
     return true;
+  }
+
+  administrationPath(card: DashboardCard): string | null {
+    const paths: Partial<Record<ModuloKey, string>> = {
+      licencias: '/licencias/administracion',
+      'usuarios-red': '/usuarios-red/administracion',
+      vpn: '/vpn/administracion',
+      wifi: '/wifi/administracion',
+      impresoras: '/impresoras/administracion',
+      equipos: '/equipos/mantenimiento',
+    };
+
+    const hasAccess = card.modulo === 'vpn'
+      ? this.authService.isAdmin()
+        || this.authService.canWrite('solicitar-vpn')
+        || this.authService.canWrite('aprobar-vpn')
+      : this.authService.canWrite(card.modulo);
+
+    return hasAccess ? paths[card.modulo] ?? null : null;
+  }
+
+  moduleDashboardPath(card: DashboardCard): string | null {
+    const paths: Partial<Record<ModuloKey, string>> = {
+      licencias: '/licencias/dashboard',
+      correos: '/correos/dashboard',
+      'usuarios-red': '/usuarios-red/dashboard',
+      vpn: '/vpn/dashboard',
+      wifi: '/wifi/dashboard',
+      impresoras: '/impresoras/dashboard',
+      equipos: '/equipos/dashboard',
+    };
+
+    const hasAccess = card.modulo === 'correos'
+      ? this.authService.canRead('correos')
+      : card.modulo === 'vpn'
+        ? this.authService.isAdmin() || this.authService.canWrite('aprobar-vpn')
+        : this.authService.canWrite(card.modulo);
+
+    return hasAccess ? paths[card.modulo] ?? null : null;
   }
 
   private sumAllowed(items: Array<[string, number]>): number {
