@@ -7,10 +7,11 @@
 .breakdown {
   --breakdown-accent: var(--dash-module-color, var(--color-accent));
   overflow: hidden;
-  border: 1px solid color-mix(in srgb, var(--breakdown-accent) 27%, var(--color-border));
-  border-radius: var(--radius-md);
-  background: var(--color-surface);
-  box-shadow: var(--shadow-md);
+  border: 1px solid var(--glass-stroke);
+  border-radius: var(--radius-lg);
+  background: var(--glass-bg);
+  box-shadow: var(--shadow-sm);
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
 }
 
 .breakdown__header {
@@ -22,9 +23,8 @@
   width: 100%;
   min-height: 76px;
   padding: 13px 14px 13px 16px;
-  background:
-    linear-gradient(115deg, color-mix(in srgb, var(--breakdown-accent) 7%, transparent), transparent 46%),
-    transparent;
+  border-top: 4px solid var(--breakdown-accent);
+  background: transparent;
   color: var(--color-text);
   text-align: left;
 }

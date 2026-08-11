@@ -12,6 +12,7 @@ public record DashboardCounts(
         long impresoras,
         long equipos,
         long usuariosRedInactivos,
+        long usuariosRedPorVencer,
         LocalDate proximoVencimientoUsuarioRed
 ) {
 }

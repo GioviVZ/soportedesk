@@ -3,23 +3,21 @@
   <div class="login-brand">
     <div class="brand-content">
       <div class="brand-icon">
-        <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/>
-        </svg>
+        <i class="ti ti-stack-2" aria-hidden="true"></i>
       </div>
       <h1 class="brand-title">Sistema Gestión de Soporte Informático</h1>
       <p class="brand-subtitle">Instituto Nacional de Innovación Agraria</p>
       <div class="brand-features">
         <div class="feature-item">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          <i class="ti ti-circle-check" aria-hidden="true"></i>
           Gestión de licencias y correos
         </div>
         <div class="feature-item">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          <i class="ti ti-circle-check" aria-hidden="true"></i>
           Control de equipos y VPN
         </div>
         <div class="feature-item">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          <i class="ti ti-circle-check" aria-hidden="true"></i>
           Dashboard en tiempo real
         </div>
       </div>
@@ -42,16 +40,16 @@
           [attr.title]="themeService.theme() === 'dark' ? 'Modo claro' : 'Modo oscuro'"
           >
           @if (themeService.theme() === 'dark') {
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.42 1.42M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.42-1.41M17.66 6.34l1.41-1.41"/></svg>
+            <i class="ti ti-sun-high" aria-hidden="true"></i>
           } @else {
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <i class="ti ti-moon-stars" aria-hidden="true"></i>
           }
         </button>
       </div>
 
       <div class="form-field">
         <label for="username">
-          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          <i class="ti ti-user" aria-hidden="true"></i>
           Usuario
         </label>
         <input
@@ -65,7 +63,7 @@
 
       <div class="form-field">
         <label for="password">
-          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          <i class="ti ti-lock" aria-hidden="true"></i>
           Contraseña
         </label>
         <div class="input-group">
@@ -78,10 +76,10 @@
             />
           <button type="button" class="eye-btn" (click)="togglePassword()" [attr.aria-label]="showPassword ? 'Ocultar' : 'Mostrar'">
             @if (!showPassword) {
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              <i class="ti ti-eye" aria-hidden="true"></i>
             }
             @if (showPassword) {
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+              <i class="ti ti-eye-off" aria-hidden="true"></i>
             }
           </button>
         </div>
@@ -89,14 +87,14 @@
 
       @if (errorMessage) {
         <div class="error-msg" role="alert">
-          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          <i class="ti ti-alert-circle" aria-hidden="true"></i>
           {{ errorMessage }}
         </div>
       }
 
       <button type="submit" class="submit-btn" [disabled]="form.invalid || loading">
         @if (loading) {
-          <svg class="spin" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+          <i class="spin ti ti-loader-2" aria-hidden="true"></i>
         }
         <span>{{ loading ? 'Ingresando...' : 'Ingresar al sistema' }}</span>
       </button>

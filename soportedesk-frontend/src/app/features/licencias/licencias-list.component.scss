@@ -116,7 +116,7 @@
   padding: 16px;
   border-radius: var(--radius-md);
   background: var(--color-licencias-light);
-  border: 1px solid rgba(99, 164, 49, .18);
+  border: 1px solid rgba(21, 84, 173, .18);
 
   span {
     color: var(--color-licencias);
@@ -223,11 +223,3 @@
     overflow-wrap: anywhere;
   }
 }
-.ad-tabs {
-  display: flex; gap: 4px; margin-bottom: 18px; padding: 4px;
-  border: 1px solid var(--color-border); border-radius: var(--radius-md);
-  background: var(--color-surface); width: fit-content; max-width: 100%; overflow-x: auto;
-}
-.ad-tabs a { padding: 9px 16px; border-radius: var(--radius-sm); color: var(--color-text-secondary); font-size: 13px; font-weight: 600; text-decoration: none; white-space: nowrap; }
-.ad-tabs a:hover { background: var(--color-muted); color: var(--color-text); }
-.ad-tabs a.active { background: var(--color-licencias); color: #fff; }

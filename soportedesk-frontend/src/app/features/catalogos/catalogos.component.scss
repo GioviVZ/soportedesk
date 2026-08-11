@@ -64,7 +64,7 @@
   box-shadow: var(--shadow-sm);
 
   &.active {
-    border-color: rgba(71, 124, 33, .4);
+    border-color: rgba(21, 84, 173, .4);
     box-shadow: 0 10px 24px rgba(15, 23, 42, .08);
   }
 }
@@ -151,7 +151,7 @@
   cursor: pointer;
 
   &.active {
-    border-color: rgba(71, 124, 33, .44);
+    border-color: rgba(21, 84, 173, .44);
     background: var(--color-surface);
     box-shadow: inset 3px 0 0 var(--color-info);
   }
@@ -281,7 +281,7 @@ table {
   gap: 14px;
   align-items: center;
   padding: 16px;
-  border: 1px solid rgba(71, 124, 33, .26);
+  border: 1px solid rgba(21, 84, 173, .26);
   border-radius: var(--radius-md);
   background: var(--color-surface);
   box-shadow: var(--shadow-sm);
@@ -557,9 +557,7 @@ td button {
 }
 
 :host-context(:root[data-theme='dark']) .appearance-card {
-  background:
-    linear-gradient(135deg, rgba(71, 124, 33, .08), transparent 42%),
-    var(--color-surface);
+  background: var(--glass-bg);
 }
 
 :host-context(:root[data-theme='dark']) .theme-toggle button.active {

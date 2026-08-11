@@ -9,6 +9,7 @@ import com.inia.soportedesk.gestiontiinia.VwGwDashboardRepository;
 import com.inia.soportedesk.herramientas.ordenes.OrdenServicioResponse;
 import com.inia.soportedesk.herramientas.ordenes.OrdenServicioService;
 import com.inia.soportedesk.usuariosred.contrato.UsuarioRedContratoRepository;
+import com.inia.soportedesk.usuariosred.contrato.UsuarioRedContrato;
 import com.inia.soportedesk.vpn.VpnRepository;
 import com.inia.soportedesk.wifi.WifiRepository;
 import lombok.RequiredArgsConstructor;
@@ -36,6 +37,9 @@ public class DashboardService {
     private final UsuarioRedContratoRepository usuarioRedContratoRepository;
 
     public DashboardCounts getCounts() {
+        LocalDate hoy = LocalDate.now();
+        List<UsuarioRedContrato> contratosPorVencer = usuarioRedContratoRepository
+                .findVencimientosUsuarioRed(hoy, hoy.plusDays(30));
         return new DashboardCounts(
                 licenciaRepository.count(),
                 correoRepository.count(),
@@ -46,7 +50,8 @@ public class DashboardService {
                 impresoraRepository.count(),
                 equipoService.getKpis().totalActivos(),
                 adUsuarioCacheRepository.countByEnabledFalse(),
-                usuarioRedContratoRepository.findProximoVencimientoUsuarioRed(LocalDate.now())
+                contratosPorVencer.size(),
+                contratosPorVencer.isEmpty() ? null : contratosPorVencer.get(0).getFechaFin()
         );
     }
 
@@ -62,6 +67,7 @@ public class DashboardService {
                 canRead(auth, "impresoras") ? counts.impresoras() : 0,
                 canRead(auth, "equipos") ? counts.equipos() : 0,
                 canWrite(auth, "usuarios-red") ? counts.usuariosRedInactivos() : 0,
+                canRead(auth, "usuarios-red") ? counts.usuariosRedPorVencer() : 0,
                 canRead(auth, "usuarios-red") ? counts.proximoVencimientoUsuarioRed() : null
         );
     }

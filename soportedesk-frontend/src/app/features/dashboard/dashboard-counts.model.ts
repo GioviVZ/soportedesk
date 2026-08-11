@@ -8,5 +8,6 @@ export interface DashboardCounts {
   impresoras: number;
   equipos: number;
   usuariosRedInactivos: number;
+  usuariosRedPorVencer: number;
   proximoVencimientoUsuarioRed: string | null;
 }

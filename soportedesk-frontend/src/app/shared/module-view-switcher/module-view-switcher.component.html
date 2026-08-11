@@ -1,0 +1,15 @@
+<nav class="view-switcher" [attr.aria-label]="ariaLabel()">
+  @for (item of items(); track item.route) {
+    <a
+      [routerLink]="item.route"
+      routerLinkActive="is-active"
+      ariaCurrentWhenActive="page"
+      [routerLinkActiveOptions]="{ exact: true }"
+    >
+      <span class="view-switcher__icon" aria-hidden="true">
+        <i class="ti {{ item.icon }}"></i>
+      </span>
+      <span>{{ item.label }}</span>
+    </a>
+  }
+</nav>

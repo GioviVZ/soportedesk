@@ -21,7 +21,8 @@ describe('DashboardComponent', () => {
     impresoras: 7,
     equipos: 15,
     usuariosRedInactivos: 2,
-    proximoVencimientoUsuarioRed: '2026-07-31',
+    usuariosRedPorVencer: 4,
+    proximoVencimientoUsuarioRed: '2026-08-20',
   };
 
   beforeEach(() => {
@@ -74,12 +75,13 @@ describe('DashboardComponent', () => {
     expect(routerLink.href).toBe('/usuarios-red/dashboard');
   });
 
-  it('shows the next network-user expiration in priority attention', () => {
+  it('shows the number of network-user contracts expiring in priority attention', () => {
     const priorityRows = fixture.debugElement.queryAll(By.css('.priority-row'));
-    const expiration = priorityRows.find((row) => row.nativeElement.textContent.includes('Vencimiento de usuarios de red'));
+    const expiration = priorityRows.find((row) => row.nativeElement.textContent.includes('Contratos de usuarios por vencer'));
 
     expect(expiration).toBeTruthy();
-    expect(expiration!.nativeElement.textContent).toContain('31/07');
+    expect(expiration!.nativeElement.textContent).toContain('4');
+    expect(expiration!.nativeElement.textContent).toContain('20/08/2026');
     expect(expiration!.injector.get(RouterLink).href).toBe('/usuarios-red/consultas');
   });
 

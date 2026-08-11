@@ -56,7 +56,7 @@
           [routerLink]="card.path"
           [queryParams]="card.queryParams">
           <div class="module-card__top">
-            <span class="module-card__icon" [innerHTML]="card.icon"></span>
+            <span class="module-card__icon"><i [class]="'ti ' + card.icon" aria-hidden="true"></i></span>
           </div>
           <div class="module-card__title">
             <span>{{ card.category }}</span>
@@ -75,9 +75,7 @@
           </div>
           <div class="module-card__footer">
             <span>{{ card.actionLabel }}</span>
-            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-              <polyline points="9 18 15 12 9 6"/>
-            </svg>
+            <i class="ti ti-arrow-up-right" aria-hidden="true"></i>
           </div>
         </a>
         <div class="module-card__actions" appClickOutside (appClickOutside)="openCardMenu === card.label && closeCardMenu()">

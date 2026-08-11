@@ -32,12 +32,13 @@ class DashboardControllerIT {
     @WithMockUser(roles = "SOPORTE")
     void getCounts_allowsAuthenticatedUser() throws Exception {
         when(service.getCounts(any(Authentication.class))).thenReturn(
-                new DashboardCounts(5, 12, 20, 3, 1, 4, 7, 15, 2, LocalDate.of(2026, 8, 15)));
+                new DashboardCounts(5, 12, 20, 3, 1, 4, 7, 15, 2, 4, LocalDate.of(2026, 8, 15)));
 
         mockMvc.perform(get("/api/dashboard/counts"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.licencias", is(5)))
                 .andExpect(jsonPath("$.usuariosRed", is(20)))
+                .andExpect(jsonPath("$.usuariosRedPorVencer", is(4)))
                 .andExpect(jsonPath("$.proximoVencimientoUsuarioRed", is("2026-08-15")));
     }
 

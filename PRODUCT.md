@@ -49,10 +49,10 @@ dependencia), no solo totales globales.
 
 ## Anti-references
 
-No se mencionaron anti-referencias concretas en esta ronda. Guía general
-por defecto: evitar el look genérico de dashboard SaaS intercambiable sin
-identidad propia; mantener la identidad verde/amarillo de INIA ya establecida
-en `_variables.scss` en vez de reemplazarla por una paleta genérica.
+Evitar el look genérico de dashboard SaaS intercambiable, los gradientes
+decorativos y el vidrio aplicado sin propósito. La identidad digital actual usa
+azul marino, negro azulado y blanco; los colores semánticos se reservan para
+estados operativos.
 
 ## Design Principles
 

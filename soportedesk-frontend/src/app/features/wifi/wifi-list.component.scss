@@ -61,7 +61,7 @@
   }
 
   &.loading {
-    background: linear-gradient(135deg, #ffffff, var(--color-wifi-light));
+    background: var(--color-wifi-light);
   }
 }
 
@@ -109,11 +109,3 @@
     }
   }
 }
-.ad-tabs {
-  display: flex; gap: 4px; margin-bottom: 18px; padding: 4px;
-  border: 1px solid var(--color-border); border-radius: var(--radius-md);
-  background: var(--color-surface); width: fit-content; max-width: 100%; overflow-x: auto;
-}
-.ad-tabs a { padding: 9px 16px; border-radius: var(--radius-sm); color: var(--color-text-secondary); font-size: 13px; font-weight: 600; text-decoration: none; white-space: nowrap; }
-.ad-tabs a:hover { background: var(--color-muted); color: var(--color-text); }
-.ad-tabs a.active { background: var(--color-wifi); color: #fff; }

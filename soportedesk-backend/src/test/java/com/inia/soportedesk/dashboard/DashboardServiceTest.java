@@ -11,6 +11,7 @@ import com.inia.soportedesk.licencias.LicenciaRepository;
 import com.inia.soportedesk.vpn.VpnRepository;
 import com.inia.soportedesk.wifi.WifiRepository;
 import com.inia.soportedesk.usuariosred.contrato.UsuarioRedContratoRepository;
+import com.inia.soportedesk.usuariosred.contrato.UsuarioRedContrato;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -60,6 +61,9 @@ class DashboardServiceTest {
 
     @Test
     void getCounts_returnsCountForEachModule() {
+        LocalDate hoy = LocalDate.now();
+        UsuarioRedContrato contratoPorVencer = new UsuarioRedContrato();
+        contratoPorVencer.setFechaFin(hoy.plusDays(6));
         when(licenciaRepository.count()).thenReturn(5L);
         when(correoRepository.count()).thenReturn(12L);
         when(adUsuarioCacheRepository.count()).thenReturn(20L);
@@ -69,8 +73,8 @@ class DashboardServiceTest {
         when(impresoraRepository.count()).thenReturn(7L);
         when(equipoService.getKpis()).thenReturn(new EquipoKpisDto(15L, 6L, 7L, 2L, 10L, 5L));
         when(adUsuarioCacheRepository.countByEnabledFalse()).thenReturn(1L);
-        when(usuarioRedContratoRepository.findProximoVencimientoUsuarioRed(LocalDate.now()))
-                .thenReturn(LocalDate.of(2026, 8, 15));
+        when(usuarioRedContratoRepository.findVencimientosUsuarioRed(hoy, hoy.plusDays(30)))
+                .thenReturn(List.of(contratoPorVencer));
 
         DashboardCounts counts = service.getCounts();
 
@@ -83,7 +87,8 @@ class DashboardServiceTest {
         assertThat(counts.impresoras()).isEqualTo(7L);
         assertThat(counts.equipos()).isEqualTo(15L);
         assertThat(counts.usuariosRedInactivos()).isEqualTo(1L);
-        assertThat(counts.proximoVencimientoUsuarioRed()).isEqualTo(LocalDate.of(2026, 8, 15));
+        assertThat(counts.usuariosRedPorVencer()).isEqualTo(1L);
+        assertThat(counts.proximoVencimientoUsuarioRed()).isEqualTo(hoy.plusDays(6));
     }
 
     @Test

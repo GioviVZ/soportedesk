@@ -3,7 +3,6 @@ import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { ChartConfiguration, ChartData } from 'chart.js';
 import { BaseChartDirective } from 'ng2-charts';
-import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { AuthService } from '../../core/auth/auth.service';
 import { DashboardService } from './dashboard.service';
 import { DashboardCounts } from './dashboard-counts.model';
@@ -19,7 +18,7 @@ interface DashboardCard {
   value: number;
   path: string;
   color: string;
-  icon: SafeHtml;
+  icon: string;
   category: string;
   metricLabel: string;
   metricValue: number;
@@ -53,14 +52,14 @@ interface MixItem {
 }
 
 const ICONS: Record<string, string> = {
-  key: `<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="7.5" cy="15.5" r="5.5"/><path d="M21 2l-9.6 9.6"/><path d="M15.5 7.5l3 3L22 7l-3-3"/></svg>`,
-  mail: `<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>`,
-  users: `<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>`,
-  lock: `<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>`,
-  wifi: `<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg>`,
-  printer: `<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>`,
-  monitor: `<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>`,
-  userX: `<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="17" y1="8" x2="22" y2="13"/><line x1="22" y1="8" x2="17" y2="13"/></svg>`,
+  key: 'ti-key',
+  mail: 'ti-mail',
+  users: 'ti-users-group',
+  lock: 'ti-shield-lock',
+  wifi: 'ti-wifi',
+  printer: 'ti-printer',
+  monitor: 'ti-device-desktop-analytics',
+  userX: 'ti-user-exclamation',
 };
 
 @Component({
@@ -80,7 +79,6 @@ const ICONS: Record<string, string> = {
 export class DashboardComponent implements OnInit {
   private dashboardService = inject(DashboardService);
   private authService = inject(AuthService);
-  private sanitizer = inject(DomSanitizer);
 
   cards: DashboardCard[] = [];
   moduloPills: ModuloPill[] = [];
@@ -109,12 +107,12 @@ export class DashboardComponent implements OnInit {
 
   composicionChartData: ChartData<'doughnut', number[], string> = {
     labels: [],
-    datasets: [{ data: [], backgroundColor: ['#5d982d', '#6aa6ad', '#f2bf45'] }],
+    datasets: [{ data: [], backgroundColor: ['#0b2f6b', '#1554ad', '#304b70'] }],
   };
 
   volumenChartData: ChartData<'line', number[], string> = {
     labels: [],
-    datasets: [{ data: [], label: 'Registros', borderColor: '#63a431', backgroundColor: 'rgba(99,164,49,.16)', tension: .35, fill: true, pointBackgroundColor: '#63a431' }],
+    datasets: [{ data: [], label: 'Registros', borderColor: '#1554ad', backgroundColor: 'rgba(21,84,173,.14)', tension: .35, fill: true, pointBackgroundColor: '#0b2f6b' }],
   };
 
   doughnutOptions: ChartConfiguration<'doughnut'>['options'] = {
@@ -232,8 +230,8 @@ export class DashboardComponent implements OnInit {
     });
   }
 
-  private svg(key: string): SafeHtml {
-    return this.sanitizer.bypassSecurityTrustHtml(ICONS[key]);
+  private svg(key: string): string {
+    return ICONS[key];
   }
 
   private toModuloPills(cards: DashboardCard[]): ModuloPill[] {
@@ -305,9 +303,9 @@ export class DashboardComponent implements OnInit {
   private applyBreakdown(items: ModuloBreakdownItem[]): void {
     this.breakdownItems = items;
     const pill = this.moduloPills.find((p) => p.key === this.selectedModulo);
-    const color = pill?.color ?? '#63a431';
+    const color = pill?.color ?? '#0b2f6b';
     const colors = this.selectedModulo === 'equipos'
-      ? ['#527b9b', '#2a5726', '#9bc477']
+      ? ['#0b2f6b', '#1554ad', '#6e94c9']
       : this.buildTonalPalette(color, items.length);
     this.breakdownChartData = items.length ? {
       labels: items.map((item) => item.label),
@@ -336,7 +334,7 @@ export class DashboardComponent implements OnInit {
       const amount = towardLight
         ? Math.min(.2 + step * .12, .78)
         : Math.min(.1 + step * .11, .6);
-      return this.mixHex(base, towardLight ? '#ffffff' : '#17231b', amount);
+      return this.mixHex(base, towardLight ? '#ffffff' : '#07172d', amount);
     });
   }
 
@@ -361,7 +359,7 @@ export class DashboardComponent implements OnInit {
         description: 'Claves y software registrado',
         value: counts.licencias,
         path: '/licencias',
-        color: '#456b8a',
+        color: '#173f73',
         icon: this.svg('key'),
         category: 'Software',
         metricLabel: 'Licencias activas',
@@ -376,7 +374,7 @@ export class DashboardComponent implements OnInit {
         description: 'Cuentas y accesos de correo',
         value: counts.correos,
         path: '/correos',
-        color: '#657195',
+        color: '#234f8b',
         icon: this.svg('mail'),
         category: 'Comunicaciones',
         metricLabel: 'Cuentas registradas',
@@ -391,13 +389,17 @@ export class DashboardComponent implements OnInit {
         description: 'Cuentas activas e historicas',
         value: counts.usuariosRed,
         path: '/usuarios-red/consultas',
-        color: '#a86200',
+        color: '#0b5aa7',
         icon: this.svg('users'),
         category: 'Active Directory',
         metricLabel: 'Usuarios activos',
         metricValue: this.usuariosActivos,
-        healthLabel: counts.usuariosRedInactivos > 0 ? `${counts.usuariosRedInactivos} inactivos` : 'Sin inactivos',
-        healthState: counts.usuariosRedInactivos > 0 ? 'warning' : 'success',
+        healthLabel: counts.usuariosRedPorVencer > 0
+          ? `${counts.usuariosRedPorVencer} contratos por vencer`
+          : counts.usuariosRedInactivos > 0
+            ? `${counts.usuariosRedInactivos} inactivos`
+            : 'Sin alertas',
+        healthState: counts.usuariosRedPorVencer > 0 || counts.usuariosRedInactivos > 0 ? 'warning' : 'success',
         actionLabel: 'Buscar usuarios',
         modulo: 'usuarios-red',
       },
@@ -406,7 +408,7 @@ export class DashboardComponent implements OnInit {
         description: 'Credenciales de acceso remoto',
         value: counts.vpn,
         path: '/vpn',
-        color: '#b55245',
+        color: '#102f63',
         icon: this.svg('lock'),
         category: 'Acceso remoto',
         metricLabel: 'Solicitudes pendientes',
@@ -421,7 +423,7 @@ export class DashboardComponent implements OnInit {
         description: 'Redes y claves administradas',
         value: counts.wifi,
         path: '/wifi',
-        color: '#357783',
+        color: '#15618f',
         icon: this.svg('wifi'),
         category: 'Conectividad',
         metricLabel: 'Redes registradas',
@@ -436,7 +438,7 @@ export class DashboardComponent implements OnInit {
         description: 'Equipos de impresion registrados',
         value: counts.impresoras,
         path: '/impresoras',
-        color: '#66746a',
+        color: '#304b70',
         icon: this.svg('printer'),
         category: 'Perifericos',
         metricLabel: 'Impresoras registradas',
@@ -451,7 +453,7 @@ export class DashboardComponent implements OnInit {
         description: 'Inventario operativo asignado',
         value: counts.equipos,
         path: '/equipos',
-        color: '#63a431',
+        color: '#0b2f6b',
         icon: this.svg('monitor'),
         category: 'Infraestructura',
         metricLabel: 'Equipos asignados',
@@ -469,7 +471,7 @@ export class DashboardComponent implements OnInit {
         description: 'Cuentas marcadas como inactivas',
         value: counts.usuariosRedInactivos,
         path: '/usuarios-red/dashboard',
-        color: '#a86200',
+        color: '#0b5aa7',
         icon: this.svg('userX'),
         category: 'Alertas AD',
         metricLabel: 'Cuentas por revisar',
@@ -501,12 +503,13 @@ export class DashboardComponent implements OnInit {
       const vencimiento = counts.proximoVencimientoUsuarioRed;
       const diasRestantes = this.daysUntil(vencimiento);
       items.push({
-        label: 'Vencimiento de usuarios de red',
-        value: vencimiento ? this.formatCompactDate(vencimiento) : '—',
-        detail: vencimiento ? this.vencimientoDetail(vencimiento, diasRestantes) : 'Sin fechas futuras registradas',
+        label: 'Contratos de usuarios por vencer',
+        value: counts.usuariosRedPorVencer,
+        detail: vencimiento
+          ? `${counts.usuariosRedPorVencer} en los próximos 30 días · ${this.vencimientoDetail(vencimiento, diasRestantes)}`
+          : 'Sin contratos por vencer en los próximos 30 días',
         path: '/usuarios-red/consultas',
-        state: diasRestantes !== null && diasRestantes <= 30 ? 'warning' : 'neutral',
-        valueKind: 'date',
+        state: counts.usuariosRedPorVencer > 0 ? 'warning' : 'success',
       });
     }
 
@@ -532,11 +535,6 @@ export class DashboardComponent implements OnInit {
     return Math.round((target.getTime() - today.getTime()) / 86400000);
   }
 
-  private formatCompactDate(value: string): string {
-    const [year, month, day] = value.split('-');
-    return year && month && day ? `${day}/${month}` : value;
-  }
-
   private vencimientoDetail(value: string, diasRestantes: number | null): string {
     const [year, month, day] = value.split('-');
     const fecha = year && month && day ? `${day}/${month}/${year}` : value;
@@ -547,9 +545,9 @@ export class DashboardComponent implements OnInit {
 
   private toMixItems(counts: DashboardCounts): MixItem[] {
     const raw = [
-      { label: 'Accesos', value: this.sumAllowed([['licencias', counts.licencias], ['correos', counts.correos], ['usuarios-red', counts.usuariosRed], ['vpn', counts.vpn], ['wifi', counts.wifi]]), color: '#63a431' },
-      { label: 'Infraestructura', value: this.sumAllowed([['impresoras', counts.impresoras], ['equipos', counts.equipos]]), color: '#357783' },
-      { label: 'Alertas', value: this.sumAllowed([['usuarios-red', counts.usuariosRedInactivos]]) + (this.authService.canWrite('aprobar-vpn') ? counts.vpnPendientes : 0), color: '#fab50b' },
+      { label: 'Accesos', value: this.sumAllowed([['licencias', counts.licencias], ['correos', counts.correos], ['usuarios-red', counts.usuariosRed], ['vpn', counts.vpn], ['wifi', counts.wifi]]), color: '#0b2f6b' },
+      { label: 'Infraestructura', value: this.sumAllowed([['impresoras', counts.impresoras], ['equipos', counts.equipos]]), color: '#1554ad' },
+      { label: 'Alertas', value: this.sumAllowed([['usuarios-red', counts.usuariosRedInactivos + counts.usuariosRedPorVencer]]) + (this.authService.canWrite('aprobar-vpn') ? counts.vpnPendientes : 0), color: '#304b70' },
     ].filter((item) => item.value > 0);
 
     const total = raw.reduce((sum, item) => sum + item.value, 0);
@@ -562,13 +560,13 @@ export class DashboardComponent implements OnInit {
   private applyOverviewCharts(counts: DashboardCounts): void {
     const accesos = this.sumAllowed([['licencias', counts.licencias], ['correos', counts.correos], ['usuarios-red', counts.usuariosRed], ['vpn', counts.vpn], ['wifi', counts.wifi]]);
     const infraestructura = this.sumAllowed([['impresoras', counts.impresoras], ['equipos', counts.equipos]]);
-    const alertas = this.sumAllowed([['usuarios-red', counts.usuariosRedInactivos]]) + (this.authService.canWrite('aprobar-vpn') ? counts.vpnPendientes : 0);
+    const alertas = this.sumAllowed([['usuarios-red', counts.usuariosRedInactivos + counts.usuariosRedPorVencer]]) + (this.authService.canWrite('aprobar-vpn') ? counts.vpnPendientes : 0);
 
     this.composicionChartData = {
       labels: ['Accesos', 'Infraestructura', 'Alertas'],
       datasets: [{
         data: [accesos, infraestructura, alertas],
-        backgroundColor: ['#5d982d', '#6aa6ad', '#f2bf45'],
+        backgroundColor: ['#0b2f6b', '#1554ad', '#304b70'],
         borderColor: 'rgba(255,255,255,.58)',
         borderWidth: 2,
         hoverOffset: 7,
@@ -581,11 +579,11 @@ export class DashboardComponent implements OnInit {
       datasets: [{
         data: rows.map((card) => card.value),
         label: 'Registros',
-        borderColor: '#63a431',
-        backgroundColor: 'rgba(99,164,49,.16)',
+        borderColor: '#1554ad',
+        backgroundColor: 'rgba(21,84,173,.14)',
         tension: .35,
         fill: true,
-        pointBackgroundColor: '#63a431',
+        pointBackgroundColor: '#0b2f6b',
       }],
     };
   }

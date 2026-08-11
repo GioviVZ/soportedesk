@@ -20,12 +20,11 @@
   gap: 18px;
   margin-bottom: 18px;
   padding: 18px;
-  border: 1px solid transparent;
-  border-radius: var(--radius-lg);
-  background:
-    linear-gradient(135deg, rgba(37, 99, 235, .16), rgba(191, 219, 254, .2) 46%, color-mix(in srgb, var(--color-surface) 92%, transparent)),
-    var(--color-surface);
+  border: 1px solid var(--glass-stroke);
+  border-radius: var(--radius-xl);
+  background: var(--glass-bg-strong);
   box-shadow: var(--shadow-sm);
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
 }
 
 .dash-title {
@@ -37,7 +36,7 @@
     margin: 0;
     font-size: clamp(24px, 2.5vw, 34px);
     font-weight: 800;
-    letter-spacing: 0;
+    letter-spacing: -.045em;
     color: var(--color-heading);
   }
 }
@@ -47,9 +46,9 @@
   align-items: center;
   width: fit-content;
   padding: 3px 9px;
-  border-radius: var(--radius-sm);
-  background: color-mix(in srgb, var(--color-surface) 72%, transparent);
-  color: var(--color-primary);
+  border-radius: 999px;
+  background: #0b2f6b;
+  color: #fff;
   font-size: 11px;
   font-weight: 800;
   text-transform: uppercase;
@@ -74,9 +73,9 @@
   justify-items: end;
   min-width: 128px;
   padding: 14px 16px;
-  border: 1px solid rgba(37, 99, 235, .22);
-  border-radius: var(--radius-md);
-  background: color-mix(in srgb, var(--color-surface) 86%, transparent);
+  border: 1px solid var(--glass-stroke);
+  border-radius: var(--radius-lg);
+  background: var(--glass-bg-soft);
   box-shadow: var(--shadow-sm);
 }
 
@@ -204,10 +203,11 @@
   min-width: 0;
   min-height: 310px;
   padding: 17px;
-  border: 1px solid transparent;
-  border-radius: var(--radius-md);
-  background: var(--color-surface);
+  border: 1px solid var(--glass-stroke);
+  border-radius: var(--radius-lg);
+  background: var(--glass-bg);
   box-shadow: var(--shadow-sm);
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
 
   canvas {
     max-height: 230px;
@@ -216,10 +216,11 @@
 
 .ops-panel {
   padding: 17px;
-  border: 1px solid transparent;
-  border-radius: var(--radius-md);
-  background: var(--color-surface);
+  border: 1px solid var(--glass-stroke);
+  border-radius: var(--radius-lg);
+  background: var(--glass-bg);
   box-shadow: var(--shadow-sm);
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
 }
 
 .panel-heading {
@@ -316,7 +317,7 @@
   padding: 8px 9px;
   border: 1px solid transparent;
   border-radius: var(--radius-md);
-  background: var(--color-muted);
+  background: var(--glass-bg-soft);
   color: var(--color-text);
   text-decoration: none;
 }
@@ -356,7 +357,7 @@ a.priority-row {
   transition: border-color var(--transition), background var(--transition), transform var(--transition);
 
   &:hover {
-    border-color: rgba(71, 124, 33, .26);
+    border-color: rgba(21, 84, 173, .26);
     background: var(--color-surface);
     transform: translateY(-1px);
 
@@ -557,8 +558,8 @@ a.priority-row {
   margin: 0;
   padding: 16px 18px 18px;
   border: 1px solid transparent;
-  border-radius: var(--radius-md);
-  background: var(--color-surface);
+  border-radius: var(--radius-lg);
+  background: var(--glass-bg-strong);
   box-shadow: var(--shadow-sm);
 }
 
@@ -684,25 +685,26 @@ a.priority-row {
   gap: 16px;
   min-height: 238px;
   padding: 18px;
-  border: 1px solid transparent;
-  border-radius: var(--radius-md);
-  background: var(--color-surface);
+  border: 1px solid var(--glass-stroke);
+  border-radius: var(--radius-xl);
+  background: var(--glass-bg);
   color: var(--color-text);
   text-decoration: none;
   transition: border-color var(--transition), box-shadow var(--transition), transform var(--transition);
   box-shadow: var(--shadow-sm);
   overflow: hidden;
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
 
   &::before {
     content: '';
     position: absolute;
     inset: 0 0 auto;
     height: 4px;
-    background: linear-gradient(90deg, var(--card-color), transparent 78%);
+    background: var(--card-color);
   }
 
   &:hover {
-    border-color: rgba(71, 124, 33, .24);
+    border-color: color-mix(in srgb, var(--card-color) 32%, var(--glass-stroke));
     box-shadow: var(--shadow-md);
     transform: translateY(-2px);
   }
@@ -723,14 +725,12 @@ a.priority-row {
   justify-content: center;
   width: 46px;
   height: 46px;
-  border-radius: var(--radius-md);
-  color: var(--card-color);
-  background: color-mix(in srgb, var(--card-color) 12%, white);
+  border-radius: 14px;
+  color: #fff;
+  background: var(--card-color);
+  box-shadow: 0 12px 22px -16px color-mix(in srgb, var(--card-color) 85%, transparent);
 
-  svg {
-    width: 22px;
-    height: 22px;
-  }
+  .ti { font-size: 23px; }
 }
 
 .module-card__health {
@@ -774,8 +774,8 @@ a.priority-row {
   width: 26px;
   height: 26px;
   border: 1px solid var(--color-border);
-  border-radius: var(--radius-sm);
-  background: var(--color-surface);
+  border-radius: 10px;
+  background: var(--glass-bg-strong);
   color: var(--color-text-secondary);
   font-size: 14px;
 
@@ -793,7 +793,8 @@ a.priority-row {
   padding: 4px;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
-  background: var(--color-surface);
+  background: var(--glass-bg-strong);
+  backdrop-filter: blur(calc(var(--glass-blur) + 4px));
   box-shadow: var(--shadow-md);
 
   button,
@@ -864,7 +865,8 @@ a.priority-row {
   padding: 12px;
   border: none;
   border-radius: var(--radius-md);
-  background: color-mix(in srgb, var(--color-muted) 78%, transparent);
+  border: 1px solid var(--glass-edge);
+  background: var(--glass-bg-soft);
 }
 
 .module-card__total {
@@ -915,12 +917,13 @@ a.priority-row {
   font-size: 11px;
   font-weight: 800;
 
-  svg {
+  .ti {
+    font-size: 16px;
     transition: transform var(--transition);
   }
 }
 
-.module-card:hover .module-card__footer svg {
+.module-card:hover .module-card__footer .ti {
   transform: translateX(3px);
 }
 

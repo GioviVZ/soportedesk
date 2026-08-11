@@ -6,7 +6,7 @@
 }
 
 :host-context(:root[data-theme='dark']) .shell {
-  background: #030504;
+  background: #02050b;
 }
 
 .content {
@@ -24,7 +24,7 @@ main {
   overflow-x: hidden;
   overflow-y: auto;
   padding:
-    0 max(clamp(18px, 2vw, 24px), env(safe-area-inset-right))
+    clamp(18px, 2vw, 24px) max(clamp(18px, 2vw, 24px), env(safe-area-inset-right))
     max(clamp(18px, 2vw, 24px), env(safe-area-inset-bottom))
     max(clamp(18px, 2vw, 24px), env(safe-area-inset-left));
   background: var(--color-bg);
@@ -37,8 +37,8 @@ main {
   display: none;
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, .5);
-  backdrop-filter: blur(2px);
+  background: rgba(0, 4, 12, .68);
+  backdrop-filter: blur(7px);
   z-index: 150;
   opacity: 0;
   pointer-events: none;
@@ -58,7 +58,7 @@ main {
 @media (max-width: 760px) {
   main {
     padding:
-      0 max(12px, env(safe-area-inset-right))
+      12px max(12px, env(safe-area-inset-right))
       max(12px, env(safe-area-inset-bottom))
       max(12px, env(safe-area-inset-left));
   }

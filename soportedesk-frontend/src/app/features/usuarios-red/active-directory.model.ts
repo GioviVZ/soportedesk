@@ -56,6 +56,8 @@ export interface ActiveDirectoryDashboardCompleto extends ActiveDirectoryDashboa
   totalCuentasInactivas: number;
   cuentasBloqueadas: AdUserAlerta[];
   totalCuentasBloqueadas: number;
+  contratosPorVencer: AdUserAlerta[];
+  totalContratosPorVencer: number;
 }
 
 interface AdSyncResponse {

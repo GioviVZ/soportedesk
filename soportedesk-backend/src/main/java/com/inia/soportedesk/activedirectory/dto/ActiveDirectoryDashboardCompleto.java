@@ -14,6 +14,8 @@ public record ActiveDirectoryDashboardCompleto(
         List<AdUserAlerta> cuentasInactivas,
         int totalCuentasInactivas,
         List<AdUserAlerta> cuentasBloqueadas,
-        int totalCuentasBloqueadas
+        int totalCuentasBloqueadas,
+        List<AdUserAlerta> contratosPorVencer,
+        int totalContratosPorVencer
 ) {
 }

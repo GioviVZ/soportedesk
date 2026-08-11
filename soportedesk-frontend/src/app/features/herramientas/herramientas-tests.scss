@@ -62,7 +62,7 @@
   overflow: hidden;
   border: 1px dashed var(--color-border-strong);
   border-radius: var(--radius-sm);
-  background: linear-gradient(135deg, var(--color-muted) 0%, var(--color-accent-subtle) 100%);
+  background: var(--color-accent-subtle);
   user-select: none;
 
   strong {

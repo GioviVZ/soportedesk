@@ -1,5 +1,4 @@
 <header class="header">
-  <!-- Hamburger (mobile) -->
   <button
     type="button"
     class="hamburger"
@@ -8,38 +7,59 @@
     aria-controls="main-sidebar"
     [attr.aria-expanded]="layout.sidebarOpen()"
   >
-    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-      <line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/>
-    </svg>
+    <i class="ti ti-menu-2" aria-hidden="true"></i>
     <span>Módulos</span>
   </button>
 
   <div class="header-left">
     <span class="system-name">SoporteDesk <span class="inia">INIA</span></span>
-    <small class="system-subtitle">Panel operativo de tecnología</small>
+    <small class="system-subtitle greeting-line">
+      <i class="ti {{ saludoIcon }}" aria-hidden="true"></i>
+      <span>{{ saludo }}, <strong>{{ primerNombre }}</strong></span>
+    </small>
   </div>
 
   <div class="header-right">
-    <div class="user-chip" (click)="toggleMenu()">
+    <button
+      type="button"
+      class="header-icon-btn"
+      (click)="themeService.toggle()"
+      [attr.aria-label]="themeService.theme() === 'dark' ? 'Usar modo claro' : 'Usar modo oscuro'"
+      [attr.title]="themeService.theme() === 'dark' ? 'Modo claro' : 'Modo oscuro'"
+    >
+      <i class="ti" [class.ti-sun-high]="themeService.theme() === 'dark'" [class.ti-moon-stars]="themeService.theme() !== 'dark'" aria-hidden="true"></i>
+    </button>
+
+    <div
+      class="user-chip"
+      role="button"
+      tabindex="0"
+      aria-haspopup="menu"
+      [attr.aria-expanded]="menuOpen"
+      [class.is-open]="menuOpen"
+      (click)="toggleMenu()"
+      (keydown.enter)="toggleMenu()"
+      (keydown.space)="toggleMenu(); $event.preventDefault()"
+    >
       <div class="avatar">{{ initials }}</div>
       <div class="user-info">
         <span class="nombre">{{ nombre }}</span>
         <span class="rol-badge" [class.admin]="rol === 'ADMIN'">{{ rol }}</span>
       </div>
+      <i class="user-chevron ti ti-chevron-down" aria-hidden="true"></i>
 
       @if (menuOpen) {
-        <div class="user-menu" (click)="$event.stopPropagation()">
-          <button type="button" (click)="openCambiarPassword()">Cambiar contraseña</button>
+        <div class="user-menu" role="menu" (click)="$event.stopPropagation()">
+          <button type="button" role="menuitem" (click)="openCambiarPassword()">
+            <i class="ti ti-lock-password" aria-hidden="true"></i>
+            Cambiar contraseña
+          </button>
         </div>
       }
     </div>
 
     <button type="button" class="logout-btn" (click)="logout()" title="Cerrar sesión">
-      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
-        <polyline points="16 17 21 12 16 7"/>
-        <line x1="21" y1="12" x2="9" y2="12"/>
-      </svg>
+      <i class="ti ti-logout-2" aria-hidden="true"></i>
       <span>Salir</span>
     </button>
   </div>

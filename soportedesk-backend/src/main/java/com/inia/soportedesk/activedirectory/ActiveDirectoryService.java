@@ -22,6 +22,7 @@ import com.inia.soportedesk.activedirectory.dto.UpdateUserInfoRequest;
 import com.inia.soportedesk.auditoria.AdAuditoriaRegistro;
 import com.inia.soportedesk.auditoria.AdAuditoriaService;
 import com.inia.soportedesk.auditoria.MovimientoAuditoriaService;
+import com.inia.soportedesk.usuariosred.contrato.UsuarioRedContrato;
 import com.inia.soportedesk.usuariosred.contrato.UsuarioRedContratoRepository;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
@@ -55,6 +56,7 @@ import javax.naming.ldap.Rdn;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
@@ -574,6 +576,10 @@ public class ActiveDirectoryService {
             List<AdUsuarioCache> passwords = cacheRepository.findTop10ByDaysSincePasswordChangeGreaterThanOrderByDaysSincePasswordChangeDesc((long) PASSWORD_EXPIRED_DAYS);
             List<AdUsuarioCache> inactive = cacheRepository.findTop10ByDaysSinceLastLogonGreaterThanOrderByDaysSinceLastLogonDesc((long) INACTIVE_ACCOUNT_DAYS);
             List<AdUsuarioCache> blocked = cacheRepository.findTop10ByLockedTrueOrderByLockoutTimeDesc();
+            LocalDate hoy = LocalDate.now();
+            List<UsuarioRedContrato> contratosPorVencer = java.util.Optional.ofNullable(
+                    contratoRepository.findVencimientosUsuarioRed(hoy, hoy.plusDays(30)))
+                    .orElseGet(List::of);
 
             return new ActiveDirectoryDashboardCompleto(
                     enabled,
@@ -590,7 +596,9 @@ public class ActiveDirectoryService {
                             .limit(10)
                             .map(row -> new AdUserAlerta(row.getSamAccountName(), row.getDisplayName(), lockoutDetail(row.getLockoutTime())))
                             .toList(),
-                    locked
+                    locked,
+                    contratoAlerts(contratosPorVencer, hoy),
+                    contratosPorVencer.size()
             );
         } catch (Exception e) {
             log.warn("Error construyendo dashboard completo de Active Directory", e);
@@ -1166,8 +1174,35 @@ public class ActiveDirectoryService {
                 .toList();
     }
 
+    private List<AdUserAlerta> contratoAlerts(List<UsuarioRedContrato> contratos, LocalDate hoy) {
+        return contratos.stream()
+                .limit(10)
+                .map(contrato -> {
+                    String titular = ((contrato.getPersonalNombre() == null ? "" : contrato.getPersonalNombre().trim())
+                            + " "
+                            + (contrato.getPersonalApellidos() == null ? "" : contrato.getPersonalApellidos().trim())).trim();
+                    long dias = java.time.temporal.ChronoUnit.DAYS.between(hoy, contrato.getFechaFin());
+                    String plazo = dias == 0 ? "vence hoy" : dias == 1 ? "vence mañana" : "vence en " + dias + " días";
+                    String numero = blankToDefault(contrato.getNumeroContrato(), "Sin número de contrato");
+                    String fecha = contrato.getFechaFin().format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy"));
+                    return new AdUserAlerta(
+                            contrato.getUsuario(),
+                            blankToDefault(titular, contrato.getUsuario()),
+                            numero + " · " + plazo + " · " + fecha
+                    );
+                })
+                .toList();
+    }
+
     private ActiveDirectoryDashboardCompleto emptyDashboardCompleto() {
-        return new ActiveDirectoryDashboardCompleto(0, 0, 0, 0, List.of(), List.of(), List.of(), 0, List.of(), 0, List.of(), 0);
+        return new ActiveDirectoryDashboardCompleto(
+                0, 0, 0, 0,
+                List.of(), List.of(),
+                List.of(), 0,
+                List.of(), 0,
+                List.of(), 0,
+                List.of(), 0
+        );
     }
 
     private String blankToDefault(String value, String fallback) {

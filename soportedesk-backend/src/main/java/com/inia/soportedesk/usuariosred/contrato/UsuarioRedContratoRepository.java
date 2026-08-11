@@ -82,4 +82,25 @@ public interface UsuarioRedContratoRepository extends JpaRepository<UsuarioRedCo
               )
             """)
     LocalDate findProximoVencimientoUsuarioRed(@Param("desde") LocalDate desde);
+
+    @Query("""
+            SELECT c
+            FROM UsuarioRedContrato c
+            WHERE c.fechaFin BETWEEN :desde AND :hasta
+              AND c.fechaFin = (
+                  SELECT MAX(c2.fechaFin)
+                  FROM UsuarioRedContrato c2
+                  WHERE LOWER(c2.usuario) = LOWER(c.usuario)
+                    AND c2.fechaFin IS NOT NULL
+              )
+              AND c.id = (
+                  SELECT MAX(c3.id)
+                  FROM UsuarioRedContrato c3
+                  WHERE LOWER(c3.usuario) = LOWER(c.usuario)
+                    AND c3.fechaFin = c.fechaFin
+              )
+            ORDER BY c.fechaFin ASC, LOWER(c.usuario) ASC
+            """)
+    List<UsuarioRedContrato> findVencimientosUsuarioRed(@Param("desde") LocalDate desde,
+                                                         @Param("hasta") LocalDate hasta);
 }
