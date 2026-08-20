@@ -1,0 +1,53 @@
+<section class="equipment-images" [class.detail-section]="sectionNumber" [class.admin-panel]="!sectionNumber" aria-labelledby="equipment-images-title">
+  <div class="images-heading">
+    @if (sectionNumber) { <span class="section-number">{{ sectionNumber }}</span> }
+    <div>
+      <h3 id="equipment-images-title">Imágenes del equipo <small>{{ evidencias().length }}</small></h3>
+      <p>Fotos para identificar el equipo, sus etiquetas, serie y estado físico.</p>
+    </div>
+  </div>
+
+  @if (canWrite) {
+    <div class="image-upload-area">
+      <div class="image-upload-copy">
+        <strong>Agregar imágenes</strong>
+        <span>JPG, PNG o WEBP · máximo 8 MB por imagen</span>
+      </div>
+      <input type="text" placeholder="Descripción para las imágenes (opcional)" [(ngModel)]="description" [ngModelOptions]="{standalone: true}" />
+      <label class="image-upload-button" [class.disabled]="uploading()">
+        {{ uploading() ? 'Subiendo...' : 'Seleccionar imágenes' }}
+        <input type="file" accept="image/jpeg,image/png,image/webp" multiple (change)="onFilesSelected($event)" [disabled]="uploading()" hidden />
+      </label>
+    </div>
+  }
+
+  @if (error()) { <p class="images-error" role="alert">{{ error() }}</p> }
+
+  @if (loading()) {
+    <p class="images-empty" aria-live="polite">Cargando imágenes...</p>
+  } @else if (evidencias().length) {
+    <div class="images-grid">
+      @for (image of evidencias(); track image.id) {
+        <article class="image-card">
+          <button type="button" class="image-thumb" (click)="view(image.previewUrl)" [disabled]="!image.previewUrl" [attr.aria-label]="'Ampliar ' + image.nombreOriginal">
+            @if (image.previewUrl) { <img [src]="image.previewUrl" [alt]="image.descripcion || image.nombreOriginal" /> }
+            @else { <span>Cargando...</span> }
+          </button>
+          <div class="image-meta">
+            <strong>{{ image.descripcion || image.nombreOriginal }}</strong>
+            <span>{{ image.subidoPor }} · {{ formatDate(image.fechaSubida) }}</span>
+          </div>
+          @if (canWrite) {
+            <button type="button" class="image-delete" (click)="remove(image)" [attr.aria-label]="'Eliminar ' + image.nombreOriginal">✕</button>
+          }
+        </article>
+      }
+    </div>
+  } @else {
+    <p class="images-empty">Aún no hay imágenes registradas para este equipo.</p>
+  }
+</section>
+
+<app-modal title="Imagen del equipo" [open]="viewerUrl() !== null" (closed)="closeViewer()">
+  @if (viewerUrl()) { <img [src]="viewerUrl()" class="image-viewer" alt="Imagen ampliada del equipo" /> }
+</app-modal>

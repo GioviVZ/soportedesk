@@ -24,6 +24,16 @@ public class EquipoEnrichmentDto {
     private Long subdependenciaId;
     private String subdependenciaNombre;
     private String numeroSerieOverride;
+    private String monitorFabricanteOverride;
+    private String monitorModeloOverride;
+    private String monitorNumeroSerieOverride;
+    private String monitorCodigoPatrimonial;
+    private String monitorCodigoInternoOverride;
+    private String monitor2FabricanteOverride;
+    private String monitor2ModeloOverride;
+    private String monitor2NumeroSerieOverride;
+    private String monitor2CodigoPatrimonial;
+    private String monitor2CodigoInternoOverride;
     private String estadoDepuracion;
     private String observaciones;
     private String revisadoPor;

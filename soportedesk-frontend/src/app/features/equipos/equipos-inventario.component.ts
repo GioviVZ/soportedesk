@@ -65,6 +65,8 @@ export class EquiposInventarioComponent implements OnInit {
     { key: 'fabricanteModelo', label: 'Fabricante / Modelo' },
     { key: 'numeroserie', label: 'Serie' },
     { key: 'ipEquipo', label: 'IP' },
+    { key: 'anydeskId', label: 'AnyDesk ID' },
+    { key: 'rustdeskId', label: 'RustDesk ID' },
   ];
 
   filteredItems = computed(() => {
@@ -218,32 +220,54 @@ export class EquiposInventarioComponent implements OnInit {
   private writeExcel(items: EquipoTableRow[], software: EquipoSoftwareExport[]): void {
     const rows = items.map((item) => ({
       Equipo: item.nombreEquipo ?? '',
-      'Usuario de red activo': item.usuarioContacto ?? '',
-      'Usuario normalizado': item.usuarioLimpio ?? '',
+      'Usuario asignado': item.usuarioLimpio ?? '',
+      'Usuario de red (AD)': item.usuarioContacto ?? '',
       Sede: item.sedeNombre ?? '',
       Dependencia: item.oficinaId ?? '',
       Subdependencia: item.unidadId ?? '',
       Tipo: item.tipoEquipo ?? '',
-      Fabricante: item.fabricanteEquipo ?? '',
+      Marca: item.fabricanteEquipo ?? '',
       Modelo: item.modeloEquipo ?? '',
       'Número de serie': item.numeroserie ?? '',
-      'Código interno': item.codigoInterno ?? '',
+      IP: item.ipEquipo ?? '',
+      'Código de Inventario': item.codigoInterno ?? '',
+      'Código patrimonial': item.codigoPatrimonial ?? '',
+      'AnyDesk ID': item.anydeskId ?? '',
+      'RustDesk ID': item.rustdeskId ?? '',
       CPU: item.cpuModelos ?? '',
       'RAM GB': item.ramTotalGb ?? '',
       'Disco GB': item.diskTotalGb ?? '',
-      IP: item.ipEquipo ?? '',
       'Fecha de alta en GLPI': this.formatExportDate(item.fechaCreacion),
       'Último inventario automático': this.formatExportDate(item.ultimaActualizacion),
       'Meses sin actualizar': this.monthsSince(item.ultimaActualizacion),
       'Estado de actualización': this.isOutdated(item.ultimaActualizacion) ? 'Actualizar registro' : 'Al día',
+      'Monitor 1 - Marca': item.monitor1Marca ?? '',
+      'Monitor 1 - Modelo': item.monitor1Modelo ?? '',
+      'Monitor 1 - Serie': item.monitor1Serie ?? '',
+      'Monitor 1 - Código de Inventario': item.monitorCodigoInternoOverride ?? '',
+      'Monitor 1 - Código patrimonial': item.monitorCodigoPatrimonial ?? '',
+      'Monitor 2 - Marca': item.monitor2Marca ?? '',
+      'Monitor 2 - Modelo': item.monitor2Modelo ?? '',
+      'Monitor 2 - Serie': item.monitor2Serie ?? '',
+      'Monitor 2 - Código de Inventario': item.monitor2CodigoInternoOverride ?? '',
+      'Monitor 2 - Código patrimonial': item.monitor2CodigoPatrimonial ?? '',
+      'Teclado - Marca': item.tecladoMarca ?? '',
+      'Teclado - Modelo': item.tecladoModelo ?? '',
+      'Teclado - Serie': item.tecladoNumeroSerie ?? '',
+      'Teclado - Código de Inventario': item.tecladoCodigoInventario ?? '',
+      'Teclado - Código patrimonial': item.tecladoCodigoPatrimonial ?? '',
     }));
 
     const worksheet = XLSX.utils.json_to_sheet(rows);
     worksheet['!cols'] = [
-      { wch: 22 }, { wch: 24 }, { wch: 28 }, { wch: 18 }, { wch: 32 },
+      { wch: 22 }, { wch: 24 }, { wch: 24 }, { wch: 18 }, { wch: 32 },
       { wch: 32 }, { wch: 16 }, { wch: 18 }, { wch: 26 }, { wch: 22 },
-      { wch: 18 }, { wch: 38 }, { wch: 10 }, { wch: 10 }, { wch: 16 },
+      { wch: 16 }, { wch: 20 }, { wch: 22 }, { wch: 18 }, { wch: 18 },
+      { wch: 38 }, { wch: 10 }, { wch: 10 },
       { wch: 22 }, { wch: 28 }, { wch: 22 }, { wch: 24 },
+      { wch: 18 }, { wch: 18 }, { wch: 18 }, { wch: 22 }, { wch: 22 },
+      { wch: 18 }, { wch: 18 }, { wch: 18 }, { wch: 22 }, { wch: 22 },
+      { wch: 18 }, { wch: 18 }, { wch: 18 }, { wch: 22 }, { wch: 22 },
     ];
 
     const workbook = XLSX.utils.book_new();

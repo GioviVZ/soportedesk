@@ -1,17 +1,220 @@
-<app-modal [title]="'Editar datos · ' + nombreEquipo" [open]="open" size="wide" [hideDefaultFooter]="true" (closed)="close()">
-  <div class="admin-edit-intro"><strong>Datos administrativos</strong><span>Completa únicamente la información necesaria para identificar y asignar el equipo.</span></div>
+<app-modal [title]="'Administrar equipo · ' + nombreEquipo" [open]="open" size="wide" [hideDefaultFooter]="true" (closed)="close()">
+  <div class="admin-edit-intro"><strong>Datos principales y administrativos</strong><span>Verifica la identidad del equipo y corrige únicamente la información que sea necesaria.</span></div>
   @if (error()) {
-    <div class="notice error">{{ error() }}</div>
+    <div class="notice error">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10" /><path d="M12 8v4" /><path d="M12 16h.01" /></svg>
+      {{ error() }}
+    </div>
   }
-  <div class="info-grid admin-edit-grid">
-    <label><span>Tipo de equipo</span><select [value]="form.tipoOverride || ''" (change)="update('tipoOverride', $any($event.target).value)"><option value="">Seleccione...</option>@for (tipo of tiposEquipo(); track tipo) {
-    <option [value]="tipo">{{ tipo }}</option>
-  }</select></label>
-  <label><span>Nombre del usuario asignado</span><input type="text" [value]="form.nombreAsignadoOverride || ''" (input)="update('nombreAsignadoOverride', $any($event.target).value)" /></label>
-  <label><span>Usuario asignado</span><input type="text" [value]="form.usuarioAsignadoOverride || ''" (input)="update('usuarioAsignadoOverride', $any($event.target).value)" placeholder="Ej. jperez@INIA-RED" /></label>
-  <label><span>Código interno</span><input type="text" [value]="form.codigoInternoOverride || ''" (input)="update('codigoInternoOverride', $any($event.target).value)" /></label>
-  <label><span>Número de serie</span><input type="text" [value]="form.numeroSerieOverride || ''" (input)="update('numeroSerieOverride', $any($event.target).value)" /></label>
-</div>
-<div class="ubicacion-cell"><strong>Ubicación según catálogos</strong><app-ubicacion-select [showTipoContrato]="false" [sedeId]="form.sedeId" [dependenciaId]="form.dependenciaId" [subdependenciaId]="form.subdependenciaId" (sedeIdChange)="onSedeChange($event)" (dependenciaIdChange)="onDependenciaChange($event)" (subdependenciaIdChange)="onSubdependenciaChange($event)" /></div>
-<footer modal-footer class="enrichment-actions"><button type="button" class="ver-ficha-btn" (click)="close()">Cancelar</button><button type="button" class="save-btn" (click)="save()" [disabled]="saving()">{{ saving() ? 'Guardando...' : 'Guardar cambios' }}</button></footer>
+
+  @if (detail(); as equipo) {
+    <app-section-card title="Datos principales del equipo">
+      <svg icon xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <rect x="3" y="4" width="18" height="12" rx="2" /><path d="M8 20h8" /><path d="M12 16v4" />
+      </svg>
+      <p class="section-subtitle">Información efectiva que actualmente usa el sistema.</p>
+      <dl class="equipment-main-grid">
+        <div><dt>Equipo</dt><dd>{{ equipo.nombreEquipo || '-' }}</dd></div>
+        <div><dt>Usuario asignado</dt><dd>{{ equipo.usuarioContacto || 'Sin usuario' }}</dd></div>
+        <div><dt>Tipo</dt><dd>{{ effectiveType() || 'Sin tipo' }}</dd></div>
+        <div class="brand-value"><dt>Marca</dt><dd>{{ equipo.fabricanteEquipo || 'Sin marca' }}</dd></div>
+        <div class="brand-value"><dt>Modelo</dt><dd>{{ equipo.modeloEquipo || 'Sin modelo' }}</dd></div>
+        <div><dt>Número de serie</dt><dd>{{ equipo.numeroserie || 'Sin serie' }}</dd></div>
+        <div><dt>Dirección IP</dt><dd>{{ equipo.ipEquipo || 'Sin IP' }}</dd></div>
+        <div><dt>Ubicación</dt><dd>{{ equipo.sedeNombre || 'Sin ubicación' }}</dd></div>
+        <div><dt>Dirección / dependencia</dt><dd>{{ equipo.oficinaId || 'Sin dirección' }}</dd></div>
+        <div><dt>Oficina / unidad</dt><dd>{{ equipo.unidadId || 'Sin oficina' }}</dd></div>
+        <div><dt>Procesador</dt><dd>{{ equipo.cpuModelos || 'Sin información' }}</dd></div>
+        <div><dt>Memoria RAM</dt><dd>{{ equipo.ramTotalGb != null ? equipo.ramTotalGb + ' GB' : 'Sin información' }}</dd></div>
+        <div><dt>Disco</dt><dd>{{ equipo.diskTotalGb != null ? equipo.diskTotalGb + ' GB' : 'Sin información' }}</dd></div>
+        <div><dt>Último inventario</dt><dd>{{ equipo.ultimaActualizacion ? (equipo.ultimaActualizacion | date:'dd/MM/yyyy HH:mm') : 'Sin fecha' }}</dd></div>
+        @if (equipo.monitor1Nombre || equipo.monCantidad) {
+          <div><dt>Monitor 1</dt><dd>{{ equipo.monitor1Nombre || 'Sin nombre' }} · {{ equipo.monitor1Marca || 'Sin marca' }} {{ equipo.monitor1Modelo || '' }}</dd></div>
+          <div><dt>Serie monitor 1 (GLPI)</dt><dd>{{ equipo.monitor1Serie || 'Sin serie registrada' }}</dd></div>
+        } @else {
+          <div><dt>Monitor</dt><dd>Sin monitor vinculado</dd></div>
+        }
+        @if (equipo.monitor2Nombre) {
+          <div><dt>Monitor 2</dt><dd>{{ equipo.monitor2Nombre }} · {{ equipo.monitor2Marca || 'Sin marca' }} {{ equipo.monitor2Modelo || '' }}</dd></div>
+          <div><dt>Serie monitor 2 (GLPI)</dt><dd>{{ equipo.monitor2Serie || 'Sin serie registrada' }}</dd></div>
+        }
+      </dl>
+    </app-section-card>
+
+    <div class="brand-model-verification" [class.editing]="editingBrandModel()">
+      <app-section-card title="Verificación de marca y modelo">
+        <svg icon xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M9 11l3 3L22 4" /><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
+        </svg>
+        <div class="brand-model-summary">
+          <span>Actual: {{ equipo.fabricanteEquipo || 'Sin marca' }} · {{ equipo.modeloEquipo || 'Sin modelo' }}</span>
+          <label class="brand-model-check">
+            <input type="checkbox" [checked]="editingBrandModel()" (change)="onBrandModelEditingChange($any($event.target).checked)" />
+            <span>La marca o el modelo son incorrectos</span>
+          </label>
+        </div>
+
+        @if (editingBrandModel()) {
+          <div class="two-col">
+            <div class="field"><label>Marca correcta</label><input type="text" [value]="form.fabricanteOverride || ''" (input)="update('fabricanteOverride', $any($event.target).value)" autocomplete="off" /></div>
+            <div class="field"><label>Modelo correcto</label><input type="text" [value]="form.modeloOverride || ''" (input)="update('modeloOverride', $any($event.target).value)" autocomplete="off" /></div>
+          </div>
+          <p class="field-hint">La corrección se guardará como dato administrativo y no modificará el registro original de GLPI.</p>
+        }
+      </app-section-card>
+    </div>
+  }
+
+  <app-section-card title="Códigos del CPU o Laptop">
+    <svg icon xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><path d="M14 2v6h6" /><path d="M9 13h6" /><path d="M9 17h6" />
+    </svg>
+    <p class="section-subtitle">Ambos códigos se registran manualmente y se guardan en SoporteDesk.</p>
+    <div class="two-col">
+      <div class="field"><label>Código de Inventario</label><input type="text" maxlength="100" [value]="form.codigoInternoOverride || ''" (input)="update('codigoInternoOverride', $any($event.target).value)" placeholder="Ingrese el código de inventario" autocomplete="off" /></div>
+      <div class="field"><label>Código patrimonial</label><input type="text" maxlength="50" [value]="form.codigoPatrimonial || ''" (input)="update('codigoPatrimonial', $any($event.target).value)" placeholder="Ingrese el código patrimonial" autocomplete="off" /></div>
+    </div>
+  </app-section-card>
+
+  <app-section-card title="Datos administrativos editables">
+    <svg icon xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" /><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4Z" />
+    </svg>
+    <p class="section-subtitle">Asignación y ubicación institucional.</p>
+    <div class="two-col">
+      <div class="field">
+        <label>Tipo de equipo</label>
+        <select [value]="form.tipoOverride || ''" (change)="update('tipoOverride', $any($event.target).value)">
+          <option value="">Seleccione...</option>
+          @for (tipo of tiposEquipo(); track tipo) { <option [value]="tipo">{{ tipo }}</option> }
+        </select>
+      </div>
+      <div class="field"><label>Nombre del usuario asignado</label><input type="text" [value]="form.nombreAsignadoOverride || ''" (input)="update('nombreAsignadoOverride', $any($event.target).value)" /></div>
+      <div class="field"><label>Usuario asignado</label><input type="text" [value]="form.usuarioAsignadoOverride || ''" (input)="update('usuarioAsignadoOverride', $any($event.target).value)" placeholder="Ej. jperez@INIA-RED" /></div>
+      <div class="field"><label>Número de serie</label><input type="text" [value]="form.numeroSerieOverride || ''" (input)="update('numeroSerieOverride', $any($event.target).value)" /></div>
+    </div>
+  </app-section-card>
+
+  <app-section-card title="Códigos del Monitor 1">
+    <svg icon xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <rect x="3" y="4" width="18" height="12" rx="2" /><path d="M8 20h8" /><path d="M12 16v4" />
+    </svg>
+    <p class="section-subtitle">GLPI no registra código patrimonial ni de inventario para monitores: se guardan aquí, en SoporteDesk.</p>
+    <div class="two-col">
+      <div class="field"><label>Marca del monitor</label><input type="text" [value]="form.monitorFabricanteOverride || ''" (input)="update('monitorFabricanteOverride', $any($event.target).value)" autocomplete="off" /></div>
+      <div class="field"><label>Modelo del monitor</label><input type="text" [value]="form.monitorModeloOverride || ''" (input)="update('monitorModeloOverride', $any($event.target).value)" autocomplete="off" /></div>
+      <div class="field"><label>Número de serie del monitor</label><input type="text" [value]="form.monitorNumeroSerieOverride || ''" (input)="update('monitorNumeroSerieOverride', $any($event.target).value)" autocomplete="off" /></div>
+      <div class="field"><label>Código de Inventario del monitor</label><input type="text" maxlength="100" [value]="form.monitorCodigoInternoOverride || ''" (input)="update('monitorCodigoInternoOverride', $any($event.target).value)" placeholder="Ingrese el código de inventario" autocomplete="off" /></div>
+      <div class="field"><label>Código patrimonial del monitor</label><input type="text" maxlength="50" [value]="form.monitorCodigoPatrimonial || ''" (input)="update('monitorCodigoPatrimonial', $any($event.target).value)" placeholder="Ingrese el código patrimonial" autocomplete="off" /></div>
+    </div>
+  </app-section-card>
+
+  @if (!mostrarMonitor2()) {
+    <button type="button" class="add-monitor2-btn" (click)="mostrarMonitor2.set(true)">+ Este equipo tiene un segundo monitor</button>
+  } @else {
+    <app-section-card title="Códigos del Monitor 2">
+      <svg icon xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <rect x="3" y="4" width="18" height="12" rx="2" /><path d="M8 20h8" /><path d="M12 16v4" />
+      </svg>
+      <p class="section-subtitle">Datos administrativos del segundo monitor, si el equipo tiene más de uno.</p>
+      <div class="two-col">
+        <div class="field"><label>Marca del monitor</label><input type="text" [value]="form.monitor2FabricanteOverride || ''" (input)="update('monitor2FabricanteOverride', $any($event.target).value)" autocomplete="off" /></div>
+        <div class="field"><label>Modelo del monitor</label><input type="text" [value]="form.monitor2ModeloOverride || ''" (input)="update('monitor2ModeloOverride', $any($event.target).value)" autocomplete="off" /></div>
+        <div class="field"><label>Número de serie del monitor</label><input type="text" [value]="form.monitor2NumeroSerieOverride || ''" (input)="update('monitor2NumeroSerieOverride', $any($event.target).value)" autocomplete="off" /></div>
+        <div class="field"><label>Código de Inventario del monitor</label><input type="text" maxlength="100" [value]="form.monitor2CodigoInternoOverride || ''" (input)="update('monitor2CodigoInternoOverride', $any($event.target).value)" placeholder="Ingrese el código de inventario" autocomplete="off" /></div>
+        <div class="field"><label>Código patrimonial del monitor</label><input type="text" maxlength="50" [value]="form.monitor2CodigoPatrimonial || ''" (input)="update('monitor2CodigoPatrimonial', $any($event.target).value)" placeholder="Ingrese el código patrimonial" autocomplete="off" /></div>
+      </div>
+    </app-section-card>
+  }
+
+  <app-section-card title="Teclado">
+    <svg icon xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <rect x="2" y="6" width="20" height="12" rx="2" /><path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M6 14h12" />
+    </svg>
+    @if (teclado(); as tecladoActual) {
+      <p class="section-subtitle">Registrado en GLPI. Ya no se puede editar desde aquí.</p>
+      <dl class="equipment-main-grid">
+        <div><dt>Marca</dt><dd>{{ tecladoActual.marcafield || '-' }}</dd></div>
+        <div><dt>Modelo</dt><dd>{{ tecladoActual.modelofield || '-' }}</dd></div>
+        <div><dt>Número de serie</dt><dd>{{ tecladoActual.nmerodeseriefield || '-' }}</dd></div>
+        <div><dt>Código de Inventario</dt><dd>{{ tecladoActual.cdigodeinventariofield || 'Sin código' }}</dd></div>
+        <div><dt>Código patrimonial</dt><dd>{{ tecladoActual.cdigopatrimonialfield || 'Sin código' }}</dd></div>
+      </dl>
+    } @else if (!creandoTeclado()) {
+      <div class="danger-zone-row">
+        <div><strong>Este equipo no tiene teclado registrado en GLPI</strong><span>Si es un ingreso nuevo, complétalo aquí.</span></div>
+        <button type="button" class="ver-ficha-btn" (click)="creandoTeclado.set(true)">Registrar teclado</button>
+      </div>
+    } @else {
+      <p class="section-subtitle">Marca, modelo y número de serie son obligatorios.</p>
+      <div class="two-col">
+        <div class="field"><label>Marca</label><input type="text" [value]="tecladoMarca" (input)="tecladoMarca = $any($event.target).value" autocomplete="off" /></div>
+        <div class="field"><label>Modelo</label><input type="text" [value]="tecladoModelo" (input)="tecladoModelo = $any($event.target).value" autocomplete="off" /></div>
+        <div class="field"><label>Número de serie</label><input type="text" [value]="tecladoNumeroSerie" (input)="tecladoNumeroSerie = $any($event.target).value" autocomplete="off" /></div>
+        <div class="field"><label>Código de Inventario</label><input type="text" [value]="tecladoCodigoInventario" (input)="tecladoCodigoInventario = $any($event.target).value" autocomplete="off" /></div>
+        <div class="field"><label>Código patrimonial</label><input type="text" [value]="tecladoCodigoPatrimonial" (input)="tecladoCodigoPatrimonial = $any($event.target).value" autocomplete="off" /></div>
+      </div>
+      @if (tecladoError()) {
+        <div class="notice error">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10" /><path d="M12 8v4" /><path d="M12 16h.01" /></svg>
+          {{ tecladoError() }}
+        </div>
+      }
+      <div class="danger-zone-actions">
+        <button type="button" class="ver-ficha-btn" (click)="cancelarTeclado()">Cancelar</button>
+        <button type="button" class="save-btn" [disabled]="!tecladoValido() || tecladoGuardando()" (click)="crearTeclado()">{{ tecladoGuardando() ? 'Guardando...' : 'Registrar teclado' }}</button>
+      </div>
+    }
+  </app-section-card>
+
+  <app-section-card title="Ubicación según catálogos">
+    <svg icon xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M12 21s7-4.35 7-11a7 7 0 1 0-14 0c0 6.65 7 11 7 11z" /><circle cx="12" cy="10" r="2" />
+    </svg>
+    <app-ubicacion-select [showTipoContrato]="false" [sedeId]="form.sedeId" [dependenciaId]="form.dependenciaId" [subdependenciaId]="form.subdependenciaId" (sedeIdChange)="onSedeChange($event)" (dependenciaIdChange)="onDependenciaChange($event)" (subdependenciaIdChange)="onSubdependenciaChange($event)" />
+  </app-section-card>
+
+  <section class="danger-zone">
+    @if (!confirmingBaja()) {
+      <div class="danger-zone-row">
+        <div><strong>¿Este registro es antiguo o está mal?</strong><span>Dar de baja lo elimina de GLPI y de SoporteDesk. No se puede deshacer desde aquí.</span></div>
+        <button type="button" class="danger-btn" (click)="confirmingBaja.set(true)">Dar de baja</button>
+      </div>
+    } @else {
+      <div class="danger-zone-confirm">
+        <p class="danger-zone-warning">Vas a dar de baja este equipo de forma permanente. Indica el motivo para continuar.</p>
+        <div class="two-col">
+          <div class="field">
+            <label>Motivo</label>
+            <select [value]="motivoBaja" (change)="motivoBaja = $any($event.target).value">
+              <option value="">Seleccione...</option>
+              <option value="Registro duplicado o erróneo">Registro duplicado o erróneo</option>
+              <option value="Equipo retirado físicamente">Equipo retirado físicamente</option>
+              <option value="Otro">Otro</option>
+            </select>
+          </div>
+          @if (motivoBaja === 'Otro') {
+            <div class="field"><label>Detalle</label><input type="text" [value]="motivoBajaDetalle" (input)="motivoBajaDetalle = $any($event.target).value" placeholder="Especifique el motivo" autocomplete="off" /></div>
+          }
+        </div>
+        @if (bajaError()) {
+          <div class="notice error">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10" /><path d="M12 8v4" /><path d="M12 16h.01" /></svg>
+            {{ bajaError() }}
+          </div>
+        }
+        <div class="danger-zone-actions">
+          <button type="button" class="ver-ficha-btn" (click)="cancelarBaja()">Cancelar</button>
+          <button type="button" class="danger-btn" [disabled]="!motivoBajaValido() || bajaEnCurso()" (click)="confirmarBaja()">{{ bajaEnCurso() ? 'Dando de baja...' : 'Confirmar baja' }}</button>
+        </div>
+      </div>
+    }
+  </section>
+
+  <app-equipo-evidencias [computerId]="computerId" />
+
+  <footer modal-footer class="enrichment-actions">
+    <button type="button" class="ver-ficha-btn" (click)="close()">Cancelar</button>
+    <button type="button" class="save-btn" (click)="save()" [disabled]="saving()">{{ saving() ? 'Guardando...' : 'Guardar cambios' }}</button>
+  </footer>
 </app-modal>

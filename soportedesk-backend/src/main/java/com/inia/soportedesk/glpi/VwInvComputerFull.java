@@ -4,6 +4,7 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import jakarta.persistence.Transient;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -143,4 +144,82 @@ public class VwInvComputerFull {
 
     @Column(name = "UUID_Equipo")
     private String uuidEquipo;
+
+    @Transient
+    private String anydeskId;
+
+    @Transient
+    private String rustdeskId;
+
+    @Transient
+    private String codigoPatrimonial;
+
+    @Transient
+    private String monitorFabricanteOverride;
+
+    @Transient
+    private String monitorModeloOverride;
+
+    @Transient
+    private String monitorNumeroSerieOverride;
+
+    @Transient
+    private String monitorCodigoPatrimonial;
+
+    @Transient
+    private String monitorCodigoInternoOverride;
+
+    @Transient
+    private String tecladoMarca;
+
+    @Transient
+    private String tecladoModelo;
+
+    @Transient
+    private String tecladoNumeroSerie;
+
+    @Transient
+    private String tecladoCodigoInventario;
+
+    @Transient
+    private String tecladoCodigoPatrimonial;
+
+    @Transient
+    private String monitor1Nombre;
+
+    @Transient
+    private String monitor1Marca;
+
+    @Transient
+    private String monitor1Modelo;
+
+    @Transient
+    private String monitor1Serie;
+
+    @Transient
+    private String monitor2Nombre;
+
+    @Transient
+    private String monitor2Marca;
+
+    @Transient
+    private String monitor2Modelo;
+
+    @Transient
+    private String monitor2Serie;
+
+    @Transient
+    private String monitor2FabricanteOverride;
+
+    @Transient
+    private String monitor2ModeloOverride;
+
+    @Transient
+    private String monitor2NumeroSerieOverride;
+
+    @Transient
+    private String monitor2CodigoPatrimonial;
+
+    @Transient
+    private String monitor2CodigoInternoOverride;
 }

@@ -94,7 +94,14 @@ export class UbicacionSelectComponent implements OnInit, OnChanges {
       this.dependencias = [];
       return;
     }
-    this.catalogoService.getDependencias(sedeId).subscribe((dependencias) => (this.dependencias = dependencias));
+    this.catalogoService.getDependencias(sedeId).subscribe((dependencias) => {
+      this.dependencias = dependencias;
+      if (!this.dependenciaId && dependencias.length === 1) {
+        this.dependenciaId = dependencias[0].id;
+        this.dependenciaIdChange.emit(this.dependenciaId);
+        this.loadSubdependencias(this.dependenciaId);
+      }
+    });
   }
 
   private loadSubdependencias(dependenciaId: number | null): void {
@@ -102,8 +109,12 @@ export class UbicacionSelectComponent implements OnInit, OnChanges {
       this.subdependencias = [];
       return;
     }
-    this.catalogoService
-      .getSubdependencias(dependenciaId)
-      .subscribe((subdependencias) => (this.subdependencias = subdependencias));
+    this.catalogoService.getSubdependencias(dependenciaId).subscribe((subdependencias) => {
+      this.subdependencias = subdependencias;
+      if (!this.subdependenciaId && subdependencias.length === 1) {
+        this.subdependenciaId = subdependencias[0].id;
+        this.subdependenciaIdChange.emit(this.subdependenciaId);
+      }
+    });
   }
 }

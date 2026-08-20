@@ -3,38 +3,177 @@
   <div class="equipment-admin-count"><strong>{{ filtered().length }}</strong><span>equipos</span></div>
 </section>
 
-<section class="equipment-admin-filters">
-  <label><span>Buscar equipo o usuario asignado</span><input type="search" [ngModel]="query()" (ngModelChange)="query.set($event)" placeholder="Nombre del equipo, usuario, sede o tipo" /></label>
-  <button type="button" [class.active]="onlyRecent()" (click)="onlyRecent.set(!onlyRecent())">Recientes <strong>{{ recientes().length }}</strong></button>
+<section class="equipment-admin-filters" aria-label="Filtros de administración de inventario">
+  <div class="equipment-admin-filter-head">
+    <div>
+      <span>Filtros combinables</span>
+      <strong aria-live="polite">{{ filtered().length }} de {{ items().length }} equipos</strong>
+    </div>
+    <div class="equipment-admin-filter-actions">
+      <button type="button" class="equipment-admin-clear" (click)="clearFilters()" [disabled]="!hasActiveFilters()">
+        Limpiar filtros@if (activeFilterCount()) { <span>({{ activeFilterCount() }})</span> }
+      </button>
+      <button type="button" class="primary-action excel-export-btn" (click)="exportExcel()" [disabled]="filtered().length === 0 || exporting()">
+        <svg class="excel-export-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" />
+          <path d="M14 2v6h6M8 13h2M8 17h2M14 13h2M14 17h2" />
+        </svg>
+        <span>{{ exporting() ? 'Preparando Excel...' : 'Exportar Excel' }}</span>
+      </button>
+    </div>
+  </div>
+
+  <label class="equipment-admin-search">
+    <span>Buscar equipo o usuario asignado</span>
+    <input
+      type="search"
+      [ngModel]="query()"
+      (ngModelChange)="query.set($event)"
+      placeholder="Equipo, usuario, marca, modelo, ubicación, dirección u oficina"
+      autocomplete="off"
+    />
+  </label>
+
+  <div class="equipment-admin-filter-grid">
+    <label>
+      <span>Ubicación (sede)</span>
+      <select [ngModel]="selectedUbicacion()" (ngModelChange)="onUbicacionChange($event)">
+        <option value="">Todas las ubicaciones</option>
+        <option [value]="missingFilter">Sin ubicación</option>
+        @for (ubicacion of ubicaciones(); track ubicacion) {
+          <option [value]="ubicacion">{{ ubicacion }}</option>
+        }
+      </select>
+    </label>
+
+    <label>
+      <span>Dirección / dependencia</span>
+      <select [ngModel]="selectedDireccion()" (ngModelChange)="onDireccionChange($event)">
+        <option value="">Todas las direcciones</option>
+        <option [value]="missingFilter">Sin dirección</option>
+        @for (direccion of direcciones(); track direccion) {
+          <option [value]="direccion">{{ direccion }}</option>
+        }
+      </select>
+    </label>
+
+    <label>
+      <span>Oficina / unidad</span>
+      <select [ngModel]="selectedOficina()" (ngModelChange)="selectedOficina.set($event)">
+        <option value="">Todas las oficinas</option>
+        <option [value]="missingFilter">Sin oficina</option>
+        @for (oficina of oficinas(); track oficina) {
+          <option [value]="oficina">{{ oficina }}</option>
+        }
+      </select>
+    </label>
+
+    <label>
+      <span>Tipo de equipo</span>
+      <select [ngModel]="selectedTipo()" (ngModelChange)="selectedTipo.set($event)">
+        <option value="">Todos los tipos</option>
+        <option [value]="missingFilter">Sin tipo</option>
+        @for (tipo of tipos(); track tipo) {
+          <option [value]="tipo">{{ tipo }}</option>
+        }
+      </select>
+    </label>
+
+    <label>
+      <span>Ordenar por</span>
+      <select [ngModel]="sortBy()" (ngModelChange)="sortBy.set($event)">
+        <option value="equipo">Nombre del equipo</option>
+        <option value="ubicacion">Ubicación</option>
+        <option value="direccion">Dirección / dependencia</option>
+        <option value="oficina">Oficina / unidad</option>
+        <option value="recientes">Más recientes</option>
+      </select>
+    </label>
+
+    <button
+      type="button"
+      class="equipment-admin-recent"
+      [class.active]="onlyRecent()"
+      [attr.aria-pressed]="onlyRecent()"
+      (click)="onlyRecent.set(!onlyRecent())"
+    >
+      Recientes <strong>{{ recientes().length }}</strong>
+    </button>
+  </div>
+
+  <small class="equipment-admin-filter-help">Los filtros seleccionados se aplican al mismo tiempo.</small>
 </section>
 
 @if (filtered().length) {
-  <div class="equipment-admin-table">
-    <table><thead><tr><th>Equipo</th><th>Usuario asignado</th><th>Sede</th><th>Tipo</th><th>Datos pendientes</th><th></th></tr></thead>
-    <tbody>@for (item of filtered(); track item) {
-      <tr>
-        <td><strong>{{ item.nombreEquipo }}</strong>@if (item.fechaCreacion) {
-        <small>Agregado {{ item.fechaCreacion | date:'dd/MM/yyyy' }}</small>
-      }</td>
-      <td>{{ item.usuarioContacto || 'Sin usuario' }}</td><td>{{ item.sedeNombre || 'Sin sede' }}</td><td>{{ item.tipoEquipo || 'Sin tipo' }}</td>
-      <td>@if (item.sinUsuario) {
-        <span class="tag-warn">Usuario</span>
-        }@if (item.sinSede) {
-        <span class="tag-warn">Sede</span>
-        }@if (item.sinDependencia) {
-        <span class="tag-warn">Dependencia</span>
-        }@if (item.sinSubdependencia) {
-        <span class="tag-warn">Subdependencia</span>
-        }@if (item.sinNumeroSerie) {
-        <span class="tag-warn">Serie</span>
-        }@if (item.sinCodigoPatrimonial) {
-        <span class="tag-warn">Código</span>
-      }</td>
-      <td><button type="button" class="view-link" (click)="edit(item)">Editar datos</button></td>
-    </tr>
-  }</tbody>
-</table>
-</div>
+  <div class="desktop-table-shell">
+    <div class="equipment-admin-table">
+      <table><thead><tr><th>Equipo</th><th>Usuario asignado</th><th>Ubicación</th><th>Dirección / dependencia</th><th>Oficina / unidad</th><th>Tipo</th><th>Marca / modelo</th><th>Datos pendientes</th><th></th></tr></thead>
+      <tbody>@for (item of filtered(); track item) {
+        <tr>
+          <td><strong>{{ item.nombreEquipo }}</strong>@if (item.fechaCreacion) {
+          <small>Agregado {{ item.fechaCreacion | date:'dd/MM/yyyy' }}</small>
+        }</td>
+        <td>{{ item.usuarioContacto || 'Sin usuario' }}</td>
+        <td>{{ item.sedeNombre || 'Sin ubicación' }}</td>
+        <td>{{ item.dependenciaNombre || 'Sin dirección' }}</td>
+        <td>{{ item.subdependenciaNombre || 'Sin oficina' }}</td>
+        <td>{{ item.tipoEquipo || 'Sin tipo' }}</td>
+        <td><strong>{{ item.fabricanteEquipo || 'Sin marca' }}</strong><small>{{ item.modeloEquipo || 'Sin modelo' }}</small></td>
+        <td>@if (item.sinUsuario) {
+          <span class="tag-warn">Usuario</span>
+          }@if (item.sinSede) {
+          <span class="tag-warn">Sede</span>
+          }@if (item.sinDependencia) {
+          <span class="tag-warn">Dependencia</span>
+          }@if (item.sinSubdependencia) {
+          <span class="tag-warn">Subdependencia</span>
+          }@if (item.sinNumeroSerie) {
+          <span class="tag-warn">Serie</span>
+          }@if (item.sinCodigoPatrimonial) {
+          <span class="tag-warn">Código</span>
+        }</td>
+        <td><button type="button" class="view-link" (click)="edit(item)">Ver / editar</button></td>
+      </tr>
+    }</tbody>
+  </table>
+  </div>
+  </div>
+
+  <section class="mobile-equipment-list" aria-label="Equipos">
+    @for (item of filtered(); track item) {
+      <article class="equipment-card">
+        <div class="card-head">
+          <div>
+            <strong>{{ item.nombreEquipo }}</strong>
+            <span>{{ item.usuarioContacto || 'Sin usuario asignado' }}</span>
+          </div>
+          <em>{{ item.tipoEquipo || 'Equipo' }}</em>
+        </div>
+        <dl>
+          <div><dt>Ubicación</dt><dd>{{ item.sedeNombre || 'Sin ubicación' }}</dd></div>
+          <div><dt>Dirección</dt><dd>{{ item.dependenciaNombre || 'Sin dirección' }}</dd></div>
+          <div><dt>Oficina</dt><dd>{{ item.subdependenciaNombre || 'Sin oficina' }}</dd></div>
+          <div><dt>Marca / Modelo</dt><dd>{{ item.fabricanteEquipo || 'Sin marca' }} {{ item.modeloEquipo || '' }}</dd></div>
+        </dl>
+        @if (item.sinUsuario || item.sinSede || item.sinDependencia || item.sinSubdependencia || item.sinNumeroSerie || item.sinCodigoPatrimonial) {
+          <div class="mobile-card-tags">
+            @if (item.sinUsuario) { <span class="tag-warn">Usuario</span> }
+            @if (item.sinSede) { <span class="tag-warn">Sede</span> }
+            @if (item.sinDependencia) { <span class="tag-warn">Dependencia</span> }
+            @if (item.sinSubdependencia) { <span class="tag-warn">Subdependencia</span> }
+            @if (item.sinNumeroSerie) { <span class="tag-warn">Serie</span> }
+            @if (item.sinCodigoPatrimonial) { <span class="tag-warn">Código</span> }
+          </div>
+        }
+        <footer>
+          <span>{{ item.fabricanteEquipo || item.sedeNombre || 'Equipo registrado' }}</span>
+          <button type="button" class="btn-view-record" (click)="edit(item)" aria-label="Ver o editar el equipo">
+            <i class="ti ti-edit" aria-hidden="true"></i><span>Ver / editar</span>
+          </button>
+        </footer>
+      </article>
+    }
+  </section>
 } @else {
   <p class="salud-ok">No hay equipos para los filtros seleccionados.</p>
 }

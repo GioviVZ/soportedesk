@@ -2,7 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { EquipoDashboardCompleto, EquipoDetalleResponse, EquipoEnrichmentDto, EquipoEvidencia, EquipoKpis, EquipoResumen, EquipoSaludItem, EquipoSoftwareExport, HistorialItem } from './equipo.model';
+import { EquipoDashboardCompleto, EquipoDetalleResponse, EquipoEnrichmentDto, EquipoEvidencia, EquipoKpis, EquipoResumen, EquipoSaludItem, EquipoSoftwareExport, HistorialItem, TecladoInput } from './equipo.model';
 
 @Injectable({ providedIn: 'root' })
 export class EquipoService {
@@ -70,6 +70,14 @@ getAll(filters: {
 
   saveEnrichment(id: number, dto: EquipoEnrichmentDto): Observable<EquipoEnrichmentDto> {
     return this.http.put<EquipoEnrichmentDto>(`${this.apiUrl}/${id}/enrichment`, dto);
+  }
+
+  darDeBaja(id: number, motivo: string): Observable<EquipoEnrichmentDto> {
+    return this.http.post<EquipoEnrichmentDto>(`${this.apiUrl}/${id}/baja`, { motivo });
+  }
+
+  crearTeclado(id: number, teclado: TecladoInput): Observable<void> {
+    return this.http.post<void>(`${this.apiUrl}/${id}/teclado`, teclado);
   }
 
   getHistorial(id: number): Observable<HistorialItem[]> {

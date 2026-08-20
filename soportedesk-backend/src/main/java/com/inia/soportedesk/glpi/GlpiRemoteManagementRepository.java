@@ -1,0 +1,13 @@
+package com.inia.soportedesk.glpi;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+
+import java.util.Collection;
+import java.util.List;
+
+@Repository
+public interface GlpiRemoteManagementRepository extends JpaRepository<GlpiRemoteManagement, Long> {
+    List<GlpiRemoteManagement> findByItemsIdInAndItemtypeAndIsDeleted(
+            Collection<Long> itemsIds, String itemtype, Integer isDeleted);
+}

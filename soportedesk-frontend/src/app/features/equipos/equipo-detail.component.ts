@@ -1,11 +1,10 @@
-import { Component, Input, Output, EventEmitter, OnInit, OnDestroy, computed, inject, signal, ChangeDetectionStrategy } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnInit, computed, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 
 import { ActivatedRoute, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
-import { EquipoDetalle, EquipoEvidencia, EquipoOficina, EquipoSoftware, EquipoTeclado } from './equipo.model';
+import { EquipoDetalle, EquipoOficina, EquipoSoftware, EquipoTeclado } from './equipo.model';
 import { EquipoService } from './equipo.service';
-import { ModalComponent } from '../../shared/modal/modal.component';
-import { AuthService } from '../../core/auth/auth.service';
+import { EquipoEvidenciasComponent } from './equipo-evidencias.component';
 
 interface MonitorRow {
   nombre: string;
@@ -14,22 +13,17 @@ interface MonitorRow {
   serial: string;
 }
 
-interface EvidenciaView extends EquipoEvidencia {
-  previewUrl: string | null;
-}
-
 @Component({
     selector: 'app-equipo-detail',
-    imports: [FormsModule, ModalComponent],
+    imports: [FormsModule, EquipoEvidenciasComponent],
     templateUrl: './equipo-detail.component.html',
     changeDetection: ChangeDetectionStrategy.Eager,
     styleUrl: './equipo-detail.component.scss'
 })
-export class EquipoDetailComponent implements OnInit, OnDestroy {
+export class EquipoDetailComponent implements OnInit {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
   private service = inject(EquipoService);
-  private authService = inject(AuthService);
 
   @Input() id: number | null = null;
   @Input() embedded = false;
@@ -43,12 +37,6 @@ export class EquipoDetailComponent implements OnInit, OnDestroy {
   softwareFilter = signal('');
   softwareExpanded = signal(false);
   readonly softwarePreviewCount = 6;
-
-  evidencias = signal<EvidenciaView[]>([]);
-  subiendoEvidencia = signal(false);
-  errorEvidencia = signal<string | null>(null);
-  visorUrl = signal<string | null>(null);
-  descripcionEvidencia = '';
 
   private equipoId = 0;
 
@@ -65,10 +53,6 @@ export class EquipoDetailComponent implements OnInit, OnDestroy {
       : all.slice(0, this.softwarePreviewCount);
   });
 
-  get canWrite(): boolean {
-    return this.authService.canWrite('equipos');
-  }
-
   ngOnInit(): void {
     this.equipoId = this.id ?? Number(this.route.snapshot.paramMap.get('id'));
     this.service.getDetalle(this.equipoId).subscribe((response) => {
@@ -77,69 +61,6 @@ export class EquipoDetailComponent implements OnInit, OnDestroy {
       this.teclado.set(response.teclado);
       this.oficina.set(response.oficina);
       this.tipoEfectivo.set(response.tipoEfectivo);
-    });
-    this.loadEvidencias();
-  }
-
-  ngOnDestroy(): void {
-    this.evidencias().forEach((e) => { if (e.previewUrl) URL.revokeObjectURL(e.previewUrl); });
-    const visor = this.visorUrl();
-    if (visor) URL.revokeObjectURL(visor);
-  }
-
-  loadEvidencias(): void {
-    this.service.getEvidencias(this.equipoId).subscribe((items) => {
-      const views: EvidenciaView[] = items.map((item) => ({ ...item, previewUrl: null }));
-      this.evidencias.set(views);
-      views.forEach((view) => {
-        this.service.descargarEvidencia(this.equipoId, view.id).subscribe((blob) => {
-          view.previewUrl = URL.createObjectURL(blob);
-          this.evidencias.set([...this.evidencias()]);
-        });
-      });
-    });
-  }
-
-  onFileSelected(event: Event): void {
-    const input = event.target as HTMLInputElement;
-    const file = input.files?.[0];
-    if (!file) return;
-
-    this.subiendoEvidencia.set(true);
-    this.errorEvidencia.set(null);
-    this.service.subirEvidencia(this.equipoId, file, this.descripcionEvidencia).subscribe({
-      next: (nueva) => {
-        this.subiendoEvidencia.set(false);
-        this.descripcionEvidencia = '';
-        input.value = '';
-        const view: EvidenciaView = { ...nueva, previewUrl: null };
-        this.evidencias.set([view, ...this.evidencias()]);
-        this.service.descargarEvidencia(this.equipoId, nueva.id).subscribe((blob) => {
-          view.previewUrl = URL.createObjectURL(blob);
-          this.evidencias.set([...this.evidencias()]);
-        });
-      },
-      error: (err) => {
-        this.subiendoEvidencia.set(false);
-        this.errorEvidencia.set(err?.error?.message || 'No se pudo subir la evidencia.');
-        input.value = '';
-      },
-    });
-  }
-
-  verEvidencia(url: string | null): void {
-    if (url) this.visorUrl.set(url);
-  }
-
-  cerrarVisor(): void {
-    this.visorUrl.set(null);
-  }
-
-  eliminarEvidencia(evidencia: EvidenciaView): void {
-    if (!confirm(`¿Eliminar la evidencia "${evidencia.nombreOriginal}"?`)) return;
-    this.service.eliminarEvidencia(this.equipoId, evidencia.id).subscribe(() => {
-      if (evidencia.previewUrl) URL.revokeObjectURL(evidencia.previewUrl);
-      this.evidencias.set(this.evidencias().filter((e) => e.id !== evidencia.id));
     });
   }
 
@@ -201,21 +122,24 @@ export class EquipoDetailComponent implements OnInit, OnDestroy {
   }
 
   private parseMonitores(equipo: EquipoDetalle | null): MonitorRow[] {
-    if (!equipo || !equipo.monCantidad) return [];
-    const nombres = this.splitPipe(equipo.monNombres);
-    const modelos = this.splitPipe(equipo.monModelos);
-    const fabricantes = this.splitPipe(equipo.monFabricantes);
-    const seriales = this.splitPipe(equipo.monSeriales);
-    const count = Math.max(equipo.monCantidad, nombres.length, modelos.length, fabricantes.length, seriales.length);
-    return Array.from({ length: count }, (_, i) => ({
-      nombre: nombres[i] ?? '-',
-      modelo: modelos[i] ?? '-',
-      fabricante: fabricantes[i] ?? '-',
-      serial: seriales[i] ?? '-',
-    }));
-  }
-
-  private splitPipe(value: string | null | undefined): string[] {
-    return (value ?? '').split('|').map((p) => p.trim()).filter(Boolean);
+    if (!equipo) return [];
+    const monitores: MonitorRow[] = [];
+    if (equipo.monitor1Nombre || equipo.monitor1Serie || equipo.monitor1Marca || equipo.monitor1Modelo) {
+      monitores.push({
+        nombre: equipo.monitor1Nombre ?? '-',
+        modelo: equipo.monitor1Modelo ?? '-',
+        fabricante: equipo.monitor1Marca ?? '-',
+        serial: equipo.monitor1Serie ?? '-',
+      });
+    }
+    if (equipo.monitor2Nombre || equipo.monitor2Serie || equipo.monitor2Marca || equipo.monitor2Modelo) {
+      monitores.push({
+        nombre: equipo.monitor2Nombre ?? '-',
+        modelo: equipo.monitor2Modelo ?? '-',
+        fabricante: equipo.monitor2Marca ?? '-',
+        serial: equipo.monitor2Serie ?? '-',
+      });
+    }
+    return monitores;
   }
 }

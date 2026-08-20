@@ -60,6 +60,36 @@ public class EquipoEnrichment {
     @Column(name = "numero_serie_override")
     private String numeroSerieOverride;
 
+    @Column(name = "monitor_fabricante_override")
+    private String monitorFabricanteOverride;
+
+    @Column(name = "monitor_modelo_override")
+    private String monitorModeloOverride;
+
+    @Column(name = "monitor_numero_serie_override")
+    private String monitorNumeroSerieOverride;
+
+    @Column(name = "monitor_codigo_patrimonial")
+    private String monitorCodigoPatrimonial;
+
+    @Column(name = "monitor_codigo_interno_override")
+    private String monitorCodigoInternoOverride;
+
+    @Column(name = "monitor2_fabricante_override")
+    private String monitor2FabricanteOverride;
+
+    @Column(name = "monitor2_modelo_override")
+    private String monitor2ModeloOverride;
+
+    @Column(name = "monitor2_numero_serie_override")
+    private String monitor2NumeroSerieOverride;
+
+    @Column(name = "monitor2_codigo_patrimonial")
+    private String monitor2CodigoPatrimonial;
+
+    @Column(name = "monitor2_codigo_interno_override")
+    private String monitor2CodigoInternoOverride;
+
     @Column(name = "estado_depuracion")
     private String estadoDepuracion;
 
@@ -70,4 +100,12 @@ public class EquipoEnrichment {
 
     @Column(name = "fecha_revision")
     private LocalDateTime fechaRevision;
+
+    @Column(name = "created_at", nullable = false)
+    private LocalDateTime createdAt;
+
+    @PrePersist
+    private void prePersist() {
+        if (createdAt == null) createdAt = LocalDateTime.now();
+    }
 }

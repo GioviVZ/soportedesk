@@ -17,6 +17,37 @@ export interface EquipoResumen {
   fechaCreacion: string | null;
   ultimaActualizacion: string | null;
   ultimoEncendido: string | null;
+  anydeskId: string | null;
+  rustdeskId: string | null;
+  codigoPatrimonial: string | null;
+  monCantidad: number;
+  monNombres: string | null;
+  monModelos: string | null;
+  monFabricantes: string | null;
+  monSeriales: string | null;
+  monitorFabricanteOverride: string | null;
+  monitorModeloOverride: string | null;
+  monitorNumeroSerieOverride: string | null;
+  monitorCodigoPatrimonial: string | null;
+  monitorCodigoInternoOverride: string | null;
+  monitor1Nombre: string | null;
+  monitor1Marca: string | null;
+  monitor1Modelo: string | null;
+  monitor1Serie: string | null;
+  monitor2Nombre: string | null;
+  monitor2Marca: string | null;
+  monitor2Modelo: string | null;
+  monitor2Serie: string | null;
+  monitor2FabricanteOverride: string | null;
+  monitor2ModeloOverride: string | null;
+  monitor2NumeroSerieOverride: string | null;
+  monitor2CodigoPatrimonial: string | null;
+  monitor2CodigoInternoOverride: string | null;
+  tecladoMarca: string | null;
+  tecladoModelo: string | null;
+  tecladoNumeroSerie: string | null;
+  tecladoCodigoInventario: string | null;
+  tecladoCodigoPatrimonial: string | null;
 }
 
 export interface EquipoDetalle extends EquipoResumen {
@@ -36,11 +67,6 @@ export interface EquipoDetalle extends EquipoResumen {
   diskTipos: string;
   diskInterfaces: string | null;
   diskModelos: string | null;
-  monCantidad: number;
-  monNombres: string | null;
-  monModelos: string | null;
-  monFabricantes: string | null;
-  monSeriales: string | null;
   fechaCreacion: string | null;
   ultimaActualizacion: string | null;
   ultimoEncendido: string | null;
@@ -60,6 +86,14 @@ export interface EquipoTeclado {
   nmerodeseriefield: string;
   cdigodeinventariofield: string;
   cdigopatrimonialfield: string;
+}
+
+export interface TecladoInput {
+  marca: string;
+  modelo: string;
+  numeroSerie: string;
+  codigoInventario: string | null;
+  codigoPatrimonial: string | null;
 }
 
 export interface EquipoOficina {
@@ -82,6 +116,16 @@ export interface EquipoEnrichmentDto {
   subdependenciaId: number | null;
   subdependenciaNombre: string | null;
   numeroSerieOverride: string | null;
+  monitorFabricanteOverride: string | null;
+  monitorModeloOverride: string | null;
+  monitorNumeroSerieOverride: string | null;
+  monitorCodigoPatrimonial: string | null;
+  monitorCodigoInternoOverride: string | null;
+  monitor2FabricanteOverride: string | null;
+  monitor2ModeloOverride: string | null;
+  monitor2NumeroSerieOverride: string | null;
+  monitor2CodigoPatrimonial: string | null;
+  monitor2CodigoInternoOverride: string | null;
   estadoDepuracion: string | null;
   observaciones: string | null;
   revisadoPor: string | null;
@@ -100,7 +144,11 @@ export interface EquipoSaludItem {
   computerID: number;
   nombreEquipo: string;
   sedeNombre: string | null;
+  dependenciaNombre: string | null;
+  subdependenciaNombre: string | null;
   tipoEquipo: string | null;
+  fabricanteEquipo: string | null;
+  modeloEquipo: string | null;
   usuarioContacto: string | null;
   fechaCreacion: string | null;
   sinEncendidoMeses: number;

@@ -1,0 +1,17 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "side-tab",
+        "value": "*",
+        "files": [
+          "soportedesk-frontend/src/app/features/equipos/equipos.shared.scss"
+        ],
+        "createdAt": "2026-08-17T03:07:52.850Z",
+        "reason": "Documented DESIGN.md pattern: 4px solid TOP accent bar (module color), not a side stripe. Pre-existing .kpi-card::before, not introduced this session."
+      }
+    ]
+  }
+}

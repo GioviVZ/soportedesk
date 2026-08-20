@@ -6,6 +6,11 @@ import com.inia.soportedesk.catalogo.TipoEquipoCatalogoRepository;
 import com.inia.soportedesk.equipos.enrichment.EquipoEnrichment;
 import com.inia.soportedesk.equipos.enrichment.EquipoEnrichmentRepository;
 import com.inia.soportedesk.glpi.GlpiComputerOficinaRepository;
+import com.inia.soportedesk.glpi.GlpiMonitorRepository;
+import com.inia.soportedesk.glpi.GlpiMonitorRow;
+import com.inia.soportedesk.glpi.GlpiRemoteManagement;
+import com.inia.soportedesk.glpi.GlpiRemoteManagementRepository;
+import com.inia.soportedesk.glpi.GlpiTeclado;
 import com.inia.soportedesk.glpi.GlpiTecladoRepository;
 import com.inia.soportedesk.glpi.VwInvComputerFull;
 import com.inia.soportedesk.glpi.VwInvComputerFullRepository;
@@ -31,6 +36,8 @@ class EquipoServiceTest {
     @Mock private GlpiComputerOficinaRepository oficinaRepository;
     @Mock private TipoEquipoCatalogoRepository catalogoRepository;
     @Mock private EquipoEnrichmentRepository enrichmentRepository;
+    @Mock private GlpiRemoteManagementRepository remoteManagementRepository;
+    @Mock private GlpiMonitorRepository monitorRepository;
 
     @InjectMocks
     private EquipoService service;
@@ -39,12 +46,171 @@ class EquipoServiceTest {
     void findAll_delegatesFiltersToRepository() {
         VwInvComputerFull equipo = new VwInvComputerFull();
         equipo.setComputerID(10L);
+        equipo.setFabricanteEquipo("Fabricante GLPI");
+        equipo.setModeloEquipo("Modelo GLPI");
+        EquipoEnrichment enrichment = new EquipoEnrichment();
+        enrichment.setComputerId(10L);
+        enrichment.setFabricanteOverride("Marca verificada");
+        enrichment.setModeloOverride("Modelo verificado");
         when(repository.findFiltered("ana", "SEDE CENTRAL", "Laptop", null, null, null)).thenReturn(List.of(equipo));
+        when(enrichmentRepository.findByComputerIdIn(List.of(10L))).thenReturn(List.of(enrichment));
 
         List<VwInvComputerFull> result = service.findAll("ana", "SEDE CENTRAL", "Laptop", null, null, null);
 
         assertThat(result).containsExactly(equipo);
+        assertThat(result.get(0).getFabricanteEquipo()).isEqualTo("Marca verificada");
+        assertThat(result.get(0).getModeloEquipo()).isEqualTo("Modelo verificado");
         verify(repository).findFiltered("ana", "SEDE CENTRAL", "Laptop", null, null, null);
+    }
+
+    @Test
+    void findAll_populatesAnydeskAndRustdeskIds() {
+        VwInvComputerFull equipo = new VwInvComputerFull();
+        equipo.setComputerID(10L);
+        GlpiRemoteManagement anydesk = remoto(10L, "anydesk", "1576892737");
+        GlpiRemoteManagement rustdesk = remoto(10L, "rustdesk", "183165540");
+        when(repository.findFiltered(null, null, null, null, null, null)).thenReturn(List.of(equipo));
+        when(enrichmentRepository.findByComputerIdIn(List.of(10L))).thenReturn(List.of());
+        when(remoteManagementRepository.findByItemsIdInAndItemtypeAndIsDeleted(List.of(10L), "Computer", 0))
+                .thenReturn(List.of(anydesk, rustdesk));
+
+        List<VwInvComputerFull> result = service.findAll(null, null, null, null, null, null);
+
+        assertThat(result.get(0).getAnydeskId()).isEqualTo("1576892737");
+        assertThat(result.get(0).getRustdeskId()).isEqualTo("183165540");
+    }
+
+    @Test
+    void findAll_populatesCodigoPatrimonialAndMonitorOverridesFromEnrichment() {
+        VwInvComputerFull equipo = new VwInvComputerFull();
+        equipo.setComputerID(12L);
+        EquipoEnrichment enrichment = new EquipoEnrichment();
+        enrichment.setComputerId(12L);
+        enrichment.setCodigoPatrimonial("74089500.0001");
+        enrichment.setMonitorFabricanteOverride("Samsung");
+        enrichment.setMonitorModeloOverride("S24F350");
+        enrichment.setMonitorNumeroSerieOverride("MON-SN-001");
+        enrichment.setMonitorCodigoPatrimonial("74089500.0002");
+        enrichment.setMonitorCodigoInternoOverride("202405999");
+        when(repository.findFiltered(null, null, null, null, null, null)).thenReturn(List.of(equipo));
+        when(enrichmentRepository.findByComputerIdIn(List.of(12L))).thenReturn(List.of(enrichment));
+        when(remoteManagementRepository.findByItemsIdInAndItemtypeAndIsDeleted(List.of(12L), "Computer", 0))
+                .thenReturn(List.of());
+        when(tecladoRepository.findByItemsIdIn(List.of(12L))).thenReturn(List.of());
+
+        List<VwInvComputerFull> result = service.findAll(null, null, null, null, null, null);
+
+        assertThat(result.get(0).getCodigoPatrimonial()).isEqualTo("74089500.0001");
+        assertThat(result.get(0).getMonitorFabricanteOverride()).isEqualTo("Samsung");
+        assertThat(result.get(0).getMonitorModeloOverride()).isEqualTo("S24F350");
+        assertThat(result.get(0).getMonitorNumeroSerieOverride()).isEqualTo("MON-SN-001");
+        assertThat(result.get(0).getMonitorCodigoPatrimonial()).isEqualTo("74089500.0002");
+        assertThat(result.get(0).getMonitorCodigoInternoOverride()).isEqualTo("202405999");
+    }
+
+    @Test
+    void findAll_populatesTecladoFieldsWhenRegistered() {
+        VwInvComputerFull equipo = new VwInvComputerFull();
+        equipo.setComputerID(13L);
+        GlpiTeclado teclado = new GlpiTeclado();
+        teclado.setItemsId(13L);
+        teclado.setMarcafield("HP");
+        teclado.setModelofield("KB-100");
+        teclado.setNmerodeseriefield("SN-TEC-001");
+        teclado.setCdigodeinventariofield("202405001");
+        teclado.setCdigopatrimonialfield("74089500.0003");
+        when(repository.findFiltered(null, null, null, null, null, null)).thenReturn(List.of(equipo));
+        when(enrichmentRepository.findByComputerIdIn(List.of(13L))).thenReturn(List.of());
+        when(remoteManagementRepository.findByItemsIdInAndItemtypeAndIsDeleted(List.of(13L), "Computer", 0))
+                .thenReturn(List.of());
+        when(tecladoRepository.findByItemsIdIn(List.of(13L))).thenReturn(List.of(teclado));
+
+        List<VwInvComputerFull> result = service.findAll(null, null, null, null, null, null);
+
+        assertThat(result.get(0).getTecladoMarca()).isEqualTo("HP");
+        assertThat(result.get(0).getTecladoModelo()).isEqualTo("KB-100");
+        assertThat(result.get(0).getTecladoNumeroSerie()).isEqualTo("SN-TEC-001");
+        assertThat(result.get(0).getTecladoCodigoInventario()).isEqualTo("202405001");
+        assertThat(result.get(0).getTecladoCodigoPatrimonial()).isEqualTo("74089500.0003");
+    }
+
+    @Test
+    void findAll_singleMonitor_populatesOnlyMonitor1() {
+        VwInvComputerFull equipo = new VwInvComputerFull();
+        equipo.setComputerID(14L);
+        when(repository.findFiltered(null, null, null, null, null, null)).thenReturn(List.of(equipo));
+        when(enrichmentRepository.findByComputerIdIn(List.of(14L))).thenReturn(List.of());
+        when(remoteManagementRepository.findByItemsIdInAndItemtypeAndIsDeleted(List.of(14L), "Computer", 0))
+                .thenReturn(List.of());
+        when(tecladoRepository.findByItemsIdIn(List.of(14L))).thenReturn(List.of());
+        when(monitorRepository.findByComputerIds(List.of(14L)))
+                .thenReturn(List.of(monitorRow(14L, "DELL E2417H", "T4KPW96Q1VRL", "Dell Inc.", "DELL E2417H")));
+
+        List<VwInvComputerFull> result = service.findAll(null, null, null, null, null, null);
+
+        assertThat(result.get(0).getMonitor1Marca()).isEqualTo("Dell Inc.");
+        assertThat(result.get(0).getMonitor1Modelo()).isEqualTo("DELL E2417H");
+        assertThat(result.get(0).getMonitor1Serie()).isEqualTo("T4KPW96Q1VRL");
+        assertThat(result.get(0).getMonitor2Marca()).isNull();
+        assertThat(result.get(0).getMonitor2Serie()).isNull();
+    }
+
+    @Test
+    void findAll_twoMonitors_populatesBothSeparately() {
+        VwInvComputerFull equipo = new VwInvComputerFull();
+        equipo.setComputerID(15L);
+        when(repository.findFiltered(null, null, null, null, null, null)).thenReturn(List.of(equipo));
+        when(enrichmentRepository.findByComputerIdIn(List.of(15L))).thenReturn(List.of());
+        when(remoteManagementRepository.findByItemsIdInAndItemtypeAndIsDeleted(List.of(15L), "Computer", 0))
+                .thenReturn(List.of());
+        when(tecladoRepository.findByItemsIdIn(List.of(15L))).thenReturn(List.of());
+        when(monitorRepository.findByComputerIds(List.of(15L))).thenReturn(List.of(
+                monitorRow(15L, "T32p-30", "V30BG6N0", "Lenovo Group Limited", "T32p-30"),
+                monitorRow(15L, "T27hv-30", "VTU36257", "Lenovo Group Limited", "T27hv-30")
+        ));
+
+        List<VwInvComputerFull> result = service.findAll(null, null, null, null, null, null);
+
+        assertThat(result.get(0).getMonitor1Serie()).isEqualTo("V30BG6N0");
+        assertThat(result.get(0).getMonitor2Serie()).isEqualTo("VTU36257");
+        assertThat(result.get(0).getMonitor1Modelo()).isEqualTo("T32p-30");
+        assertThat(result.get(0).getMonitor2Modelo()).isEqualTo("T27hv-30");
+    }
+
+    private GlpiMonitorRow monitorRow(Long computerId, String nombre, String serie, String fabricante, String modelo) {
+        return new GlpiMonitorRow() {
+            public Long getComputerId() { return computerId; }
+            public Long getMonitorId() { return null; }
+            public String getNombre() { return nombre; }
+            public String getSerie() { return serie; }
+            public String getFabricante() { return fabricante; }
+            public String getModelo() { return modelo; }
+        };
+    }
+
+    @Test
+    void findAll_noRemoteManagementRecords_leavesIdsNull() {
+        VwInvComputerFull equipo = new VwInvComputerFull();
+        equipo.setComputerID(11L);
+        when(repository.findFiltered(null, null, null, null, null, null)).thenReturn(List.of(equipo));
+        when(enrichmentRepository.findByComputerIdIn(List.of(11L))).thenReturn(List.of());
+        when(remoteManagementRepository.findByItemsIdInAndItemtypeAndIsDeleted(List.of(11L), "Computer", 0))
+                .thenReturn(List.of());
+
+        List<VwInvComputerFull> result = service.findAll(null, null, null, null, null, null);
+
+        assertThat(result.get(0).getAnydeskId()).isNull();
+        assertThat(result.get(0).getRustdeskId()).isNull();
+    }
+
+    private GlpiRemoteManagement remoto(Long computerId, String tipo, String remoteId) {
+        GlpiRemoteManagement r = new GlpiRemoteManagement();
+        r.setItemsId(computerId);
+        r.setItemtype("Computer");
+        r.setType(tipo);
+        r.setRemoteId(remoteId);
+        r.setIsDeleted(0);
+        return r;
     }
 
     @Test
@@ -134,6 +300,10 @@ class EquipoServiceTest {
         viejo.setComputerID(5L);
         viejo.setNombreEquipo("PC-VIEJA");
         viejo.setUsuarioContacto("juanito");
+        viejo.setOficinaId("Dirección de Tecnología");
+        viejo.setUnidadId("Oficina de Soporte");
+        viejo.setFabricanteEquipo("Dell");
+        viejo.setModeloEquipo("OptiPlex 7090");
         viejo.setUltimoEncendido(LocalDateTime.now().minusMonths(14));
         viejo.setUltimaActualizacion(LocalDateTime.now().minusMonths(1));
 
@@ -144,6 +314,11 @@ class EquipoServiceTest {
 
         assertThat(result).hasSize(1);
         assertThat(result.get(0).nivelAlerta()).isEqualTo("ROJO");
+        assertThat(result.get(0).sedeNombre()).isEqualTo("SEDE CENTRAL");
+        assertThat(result.get(0).dependenciaNombre()).isEqualTo("Dirección de Tecnología");
+        assertThat(result.get(0).subdependenciaNombre()).isEqualTo("Oficina de Soporte");
+        assertThat(result.get(0).fabricanteEquipo()).isEqualTo("Dell");
+        assertThat(result.get(0).modeloEquipo()).isEqualTo("OptiPlex 7090");
     }
 
     @Test

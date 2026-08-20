@@ -8,6 +8,11 @@ import com.inia.soportedesk.exception.ResourceNotFoundException;
 import com.inia.soportedesk.glpi.VwInvComputerFull;
 import com.inia.soportedesk.glpi.VwInvComputerFullRepository;
 import com.inia.soportedesk.glpi.GlpiComputerOficinaRepository;
+import com.inia.soportedesk.glpi.GlpiMonitorRepository;
+import com.inia.soportedesk.glpi.GlpiMonitorRow;
+import com.inia.soportedesk.glpi.GlpiRemoteManagement;
+import com.inia.soportedesk.glpi.GlpiRemoteManagementRepository;
+import com.inia.soportedesk.glpi.GlpiTeclado;
 import com.inia.soportedesk.glpi.GlpiTecladoRepository;
 import com.inia.soportedesk.glpi.SoftwareExportRow;
 import lombok.RequiredArgsConstructor;
@@ -15,6 +20,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -33,6 +39,8 @@ public class EquipoService {
     private final GlpiComputerOficinaRepository oficinaRepository;
     private final TipoEquipoCatalogoRepository catalogoRepository;
     private final EquipoEnrichmentRepository enrichmentRepository;
+    private final GlpiRemoteManagementRepository remoteManagementRepository;
+    private final GlpiMonitorRepository monitorRepository;
 
     public List<VwInvComputerFull> findAll(String search, String sede, String tipo,
                                             String dependencia, String subdependencia, String fabricante) {
@@ -40,6 +48,9 @@ public class EquipoService {
                 blankToNull(search), blankToNull(sede), blankToNull(tipo),
                 blankToNull(dependencia), blankToNull(subdependencia), blankToNull(fabricante));
         applyEnrichments(items);
+        applyRemoteIds(items);
+        applyTeclados(items);
+        applyMonitores(items);
         return items;
     }
 
@@ -76,6 +87,9 @@ public class EquipoService {
 
         EquipoEnrichment enrichment = enrichmentRepository.findByComputerId(id).orElse(null);
         applyEnrichment(equipo, enrichment);
+        applyRemoteIds(List.of(equipo));
+        applyTeclados(List.of(equipo));
+        applyMonitores(List.of(equipo));
         String tipoEfectivo = resolveTipo(equipo.getTipoEquipo(), enrichment);
 
         return new EquipoDetalleResponse(
@@ -145,8 +159,8 @@ public class EquipoService {
         String estadoDepuracion = enrichment != null ? enrichment.getEstadoDepuracion() : null;
 
         return new EquipoSaludDto(
-                e.getComputerID(), e.getNombreEquipo(), e.getSedeNombre(), e.getTipoEquipo(),
-                e.getUsuarioContacto(), e.getFechaCreacion(),
+                e.getComputerID(), e.getNombreEquipo(), e.getSedeNombre(), e.getOficinaId(), e.getUnidadId(), e.getTipoEquipo(),
+                e.getFabricanteEquipo(), e.getModeloEquipo(), e.getUsuarioContacto(), e.getFechaCreacion(),
                 calculo.sinEncendidoMeses(), calculo.sinActualizacionMeses(),
                 calculo.nivel(), calculo.sinPatrimonial(), calculo.sinUsuario(), calculo.sinSede(),
                 calculo.sinDependencia(), calculo.sinSubdependencia(), calculo.sinNumeroSerie(),
@@ -254,6 +268,29 @@ public class EquipoService {
                 || ALL_IN_ONE.equals(equipo.getTipoEquipo());
     }
 
+    private void applyRemoteIds(List<VwInvComputerFull> items) {
+        List<Long> ids = items.stream().map(VwInvComputerFull::getComputerID).toList();
+        if (ids.isEmpty()) return;
+        Map<Long, List<GlpiRemoteManagement>> byComputer = remoteManagementRepository
+                .findByItemsIdInAndItemtypeAndIsDeleted(ids, "Computer", 0)
+                .stream()
+                .collect(Collectors.groupingBy(GlpiRemoteManagement::getItemsId));
+        items.forEach(item -> {
+            List<GlpiRemoteManagement> remotos = byComputer.getOrDefault(item.getComputerID(), List.of());
+            item.setAnydeskId(findRemoteId(remotos, "anydesk"));
+            item.setRustdeskId(findRemoteId(remotos, "rustdesk"));
+        });
+    }
+
+    private String findRemoteId(List<GlpiRemoteManagement> remotos, String tipo) {
+        return remotos.stream()
+                .filter(r -> tipo.equalsIgnoreCase(r.getType()))
+                .map(GlpiRemoteManagement::getRemoteId)
+                .filter(id -> id != null && !id.isBlank())
+                .findFirst()
+                .orElse(null);
+    }
+
     private void applyEnrichments(List<VwInvComputerFull> items) {
         List<Long> ids = items.stream().map(VwInvComputerFull::getComputerID).toList();
         Map<Long, EquipoEnrichment> map = enrichmentRepository.findByComputerIdIn(ids).stream()
@@ -269,6 +306,8 @@ public class EquipoService {
     private void applyEnrichment(VwInvComputerFull item, EquipoEnrichment e) {
         if (e == null) return;
         if (!blank(e.getTipoOverride())) item.setTipoEquipo(e.getTipoOverride());
+        if (!blank(e.getFabricanteOverride())) item.setFabricanteEquipo(e.getFabricanteOverride());
+        if (!blank(e.getModeloOverride())) item.setModeloEquipo(e.getModeloOverride());
         if (!blank(e.getNombreAsignadoOverride())) item.setUsuarioTelefono(e.getNombreAsignadoOverride());
         if (!blank(e.getUsuarioAsignadoOverride())) item.setUsuarioContacto(e.getUsuarioAsignadoOverride());
         if (!blank(e.getCodigoInternoOverride())) item.setCodigoInterno(e.getCodigoInternoOverride());
@@ -276,6 +315,57 @@ public class EquipoService {
         if (e.getSede() != null) item.setSedeNombre(e.getSede().getNombre());
         if (e.getDependencia() != null) item.setOficinaId(e.getDependencia().getNombre());
         if (e.getSubdependencia() != null) item.setUnidadId(e.getSubdependencia().getNombre());
+        item.setCodigoPatrimonial(e.getCodigoPatrimonial());
+        item.setMonitorFabricanteOverride(e.getMonitorFabricanteOverride());
+        item.setMonitorModeloOverride(e.getMonitorModeloOverride());
+        item.setMonitorNumeroSerieOverride(e.getMonitorNumeroSerieOverride());
+        item.setMonitorCodigoPatrimonial(e.getMonitorCodigoPatrimonial());
+        item.setMonitorCodigoInternoOverride(e.getMonitorCodigoInternoOverride());
+        item.setMonitor2FabricanteOverride(e.getMonitor2FabricanteOverride());
+        item.setMonitor2ModeloOverride(e.getMonitor2ModeloOverride());
+        item.setMonitor2NumeroSerieOverride(e.getMonitor2NumeroSerieOverride());
+        item.setMonitor2CodigoPatrimonial(e.getMonitor2CodigoPatrimonial());
+        item.setMonitor2CodigoInternoOverride(e.getMonitor2CodigoInternoOverride());
+    }
+
+    private void applyMonitores(List<VwInvComputerFull> items) {
+        List<Long> ids = items.stream().map(VwInvComputerFull::getComputerID).toList();
+        if (ids.isEmpty()) return;
+        Map<Long, List<GlpiMonitorRow>> byComputer = monitorRepository.findByComputerIds(ids).stream()
+                .collect(Collectors.groupingBy(GlpiMonitorRow::getComputerId, LinkedHashMap::new, Collectors.toList()));
+        items.forEach(item -> {
+            List<GlpiMonitorRow> monitores = byComputer.getOrDefault(item.getComputerID(), List.of());
+            if (!monitores.isEmpty()) {
+                GlpiMonitorRow m1 = monitores.get(0);
+                item.setMonitor1Nombre(m1.getNombre());
+                item.setMonitor1Marca(m1.getFabricante());
+                item.setMonitor1Modelo(m1.getModelo());
+                item.setMonitor1Serie(m1.getSerie());
+            }
+            if (monitores.size() > 1) {
+                GlpiMonitorRow m2 = monitores.get(1);
+                item.setMonitor2Nombre(m2.getNombre());
+                item.setMonitor2Marca(m2.getFabricante());
+                item.setMonitor2Modelo(m2.getModelo());
+                item.setMonitor2Serie(m2.getSerie());
+            }
+        });
+    }
+
+    private void applyTeclados(List<VwInvComputerFull> items) {
+        List<Long> ids = items.stream().map(VwInvComputerFull::getComputerID).toList();
+        if (ids.isEmpty()) return;
+        Map<Long, GlpiTeclado> byComputer = tecladoRepository.findByItemsIdIn(ids).stream()
+                .collect(Collectors.toMap(GlpiTeclado::getItemsId, t -> t, (a, b) -> a));
+        items.forEach(item -> {
+            GlpiTeclado teclado = byComputer.get(item.getComputerID());
+            if (teclado == null) return;
+            item.setTecladoMarca(teclado.getMarcafield());
+            item.setTecladoModelo(teclado.getModelofield());
+            item.setTecladoNumeroSerie(teclado.getNmerodeseriefield());
+            item.setTecladoCodigoInventario(teclado.getCdigodeinventariofield());
+            item.setTecladoCodigoPatrimonial(teclado.getCdigopatrimonialfield());
+        });
     }
 
     private String blankToNull(String value) {

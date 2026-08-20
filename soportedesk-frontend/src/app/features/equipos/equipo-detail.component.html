@@ -26,6 +26,8 @@
         <div><span>Código interno</span><strong>{{ inventoryLabel(item.codigoInterno) }}</strong></div>
         <div><span>UUID</span><strong>{{ empty(item.uuidEquipo) }}</strong></div>
         <div><span>Dirección IP</span><strong>{{ empty(item.ipEquipo) }}</strong></div>
+        <div><span>AnyDesk ID</span><strong>{{ empty(item.anydeskId) }}</strong></div>
+        <div><span>RustDesk ID</span><strong>{{ empty(item.rustdeskId) }}</strong></div>
         <div><span>Estado en GLPI</span><strong>{{ item.eliminado === 1 ? 'Eliminado' : 'Activo' }}</strong></div>
       </div>
     </section>
@@ -130,54 +132,9 @@
     </button>
   }
 </section>
-<section class="section-band">
-  <div class="section-title"><span>10</span><div><h3>Evidencias <small>{{ evidencias().length }}</small></h3><p>Fotos del equipo guardadas en SoporteDesk.</p></div></div>
-  @if (canWrite) {
-    <div class="evidencia-upload">
-      <input type="text" placeholder="Descripción (opcional)" [(ngModel)]="descripcionEvidencia" [ngModelOptions]="{standalone: true}" />
-      <label class="btn btn-primary evidencia-upload-btn">
-        {{ subiendoEvidencia() ? 'Subiendo...' : 'Subir foto' }}
-        <input type="file" accept="image/jpeg,image/png,image/webp" (change)="onFileSelected($event)" [disabled]="subiendoEvidencia()" hidden />
-      </label>
-    </div>
-  }
-  @if (errorEvidencia()) {
-    <p class="evidencia-error">{{ errorEvidencia() }}</p>
-  }
-  @if (evidencias().length) {
-    <div class="evidencia-grid">
-      @for (ev of evidencias(); track ev) {
-        <div class="evidencia-card">
-          <button type="button" class="evidencia-thumb" (click)="verEvidencia(ev.previewUrl)" [disabled]="!ev.previewUrl">
-            @if (ev.previewUrl) {
-              <img [src]="ev.previewUrl" [alt]="ev.nombreOriginal" />
-            }
-            @if (!ev.previewUrl) {
-              <span class="evidencia-thumb-loading">Cargando…</span>
-            }
-          </button>
-          <div class="evidencia-meta">
-            <strong>{{ ev.descripcion || ev.nombreOriginal }}</strong>
-            <span>{{ ev.subidoPor }} · {{ formatDate(ev.fechaSubida) }}</span>
-          </div>
-          @if (canWrite) {
-            <button type="button" class="btn btn-icon evidencia-delete" (click)="eliminarEvidencia(ev)" aria-label="Eliminar evidencia">✕</button>
-          }
-        </div>
-      }
-    </div>
-  } @else {
-    <p class="empty-state">Sin evidencias registradas para este equipo.</p>
-  }
-</section>
+<app-equipo-evidencias [computerId]="item.computerID" sectionNumber="10" />
 <footer class="detail-footer">
   <button type="button" class="btn btn-ghost" (click)="back()">{{ embedded ? 'Cerrar' : '← Volver al inventario' }}</button>
 </footer>
 </div>
 }
-
-<app-modal title="Evidencia" [open]="visorUrl() !== null" (closed)="cerrarVisor()">
-  @if (visorUrl()) {
-    <img [src]="visorUrl()" class="evidencia-visor-img" alt="Evidencia ampliada" />
-  }
-</app-modal>

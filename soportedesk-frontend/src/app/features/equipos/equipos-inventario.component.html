@@ -153,6 +153,8 @@
               <div><dt>Marca / Modelo</dt><dd>{{ item.fabricanteModelo || '-' }}</dd></div>
               <div><dt>Serie</dt><dd>{{ item.numeroserie || '-' }}</dd></div>
               <div><dt>IP</dt><dd>{{ item.ipEquipo || '-' }}</dd></div>
+              @if (item.anydeskId) { <div><dt>AnyDesk ID</dt><dd>{{ item.anydeskId }}</dd></div> }
+              @if (item.rustdeskId) { <div><dt>RustDesk ID</dt><dd>{{ item.rustdeskId }}</dd></div> }
             </dl>
             <footer>
               <span>{{ item.fabricanteModelo || item.sedeNombre || 'Equipo registrado' }}</span>
