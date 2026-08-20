@@ -1,6 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { SidebarComponent } from './sidebar.component';
 import { AuthService } from '../../core/auth/auth.service';
+import { ICON_NAMES } from './animated-nav-icon/icon-name';
 
 describe('SidebarComponent', () => {
   let fixture: ComponentFixture<SidebarComponent>;
@@ -66,5 +67,31 @@ describe('SidebarComponent', () => {
     const dashboard = component.navItems.find((item) => item.path === '/dashboard')!;
 
     expect(component.canShow(dashboard)).toBe(true);
+  });
+
+  it('gives every nav item an icon name the animated icon component recognizes', () => {
+    for (const item of component.navItems) {
+      expect(ICON_NAMES).withContext(`unknown icon "${item.icon}" for ${item.path}`).toContain(item.icon);
+    }
+  });
+
+  it('treats the icon as active while the mouse is anywhere over its row, not just on the icon itself', () => {
+    const impresoras = component.navItems.find((item) => item.path === '/impresoras')!;
+
+    expect(component.iconActive(impresoras, false)).toBe(false);
+
+    component.hoveredPath = '/impresoras';
+    expect(component.iconActive(impresoras, false)).toBe(true);
+
+    component.hoveredPath = null;
+    expect(component.iconActive(impresoras, false)).toBe(false);
+  });
+
+  it('keeps the icon active for the current route even when the mouse is elsewhere', () => {
+    const impresoras = component.navItems.find((item) => item.path === '/impresoras')!;
+
+    component.hoveredPath = '/dashboard';
+
+    expect(component.iconActive(impresoras, true)).toBe(true);
   });
 });

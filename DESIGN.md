@@ -81,6 +81,26 @@ Tabler Icons es la fuente canónica. Los iconos usan trazo uniforme, tamaño óp
 de 18–22px y siempre incluyen etiqueta accesible cuando funcionan como acción.
 Evitar símbolos Unicode y mezclar familias de iconos dentro de un mismo bloque.
 
+### Excepción: iconos animados de navegación primaria
+
+La navegación principal (sidebar de módulos) admite un segundo origen de trazo
+—[itshover](https://github.com/itshover/itshover), licencia Apache-2.0— para los
+iconos de módulo que tienen un equivalente semántico claro (dashboard, usuarios
+de red, correos, VPN, WiFi, auditoría, aplicaciones, catálogos). Es la única
+excepción a "no mezclar familias de iconos": se admite porque cada icono se
+recolorea a monocromo (`stroke="currentColor"`, sin los colores originales de
+itshover) y usa el mismo tamaño óptico que Tabler, por lo que visualmente sigue
+leyéndose como una sola familia.
+
+Los módulos sin equivalente en itshover (equipos, impresoras, licencias,
+usuarios del sistema, candidatos a persona) conservan su trazo Tabler y reciben
+la misma clase de micro-animación en vez de forzar un icono ajeno al concepto.
+
+Presupuesto de movimiento para estos iconos: transiciones ≤350ms, easing
+`ease-out`/`ease-in-out`, sin rebote ni easing elástico — la misma regla que ya
+aplica al resto del sistema. Se respeta `prefers-reduced-motion` mediante el
+apagado global de animaciones ya definido en `styles.scss`.
+
 ## Componentes
 
 ### Navegación

@@ -22,12 +22,17 @@
         <a
           [routerLink]="item.path"
           routerLinkActive="active"
+          #rla="routerLinkActive"
           class="nav-item"
           [class.admin-item]="item.adminOnly"
           [title]="collapsed ? item.label : ''"
           (click)="layout.close()"
+          (mouseenter)="hoveredPath = item.path"
+          (mouseleave)="hoveredPath = null"
           >
-          <i [class]="'nav-icon ti ' + item.icon" aria-hidden="true"></i>
+          <span class="nav-icon">
+            <app-animated-nav-icon [name]="item.icon" [active]="iconActive(item, rla.isActive)" />
+          </span>
           @if (!collapsed) {
             <span class="nav-label">{{ item.label }}</span>
           }

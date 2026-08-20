@@ -1,0 +1,135 @@
+// Presupuesto de movimiento: transiciones ≤350ms, ease-out/ease-in-out, sin rebote
+// ni easing elástico (DESIGN.md · Iconografía). El apagado global de animaciones
+// bajo prefers-reduced-motion vive en styles.scss y aplica aquí sin código extra.
+//
+// Nota: las clases icon-<name> se asignan al host vía @HostBinding, así que las
+// reglas deben ir dentro de :host(.icon-x) — un selector de clase suelto como
+// ".icon-x" nunca matchea el host bajo view encapsulation emulada (el host lleva
+// el atributo _nghost-*, no _ngcontent-*, que es lo que Angular le agrega a un
+// selector de clase "plano").
+
+:host {
+  display: contents;
+}
+
+svg {
+  overflow: visible;
+}
+
+path,
+rect,
+circle,
+g {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+// --- Iconos con coreografía propia (origen itshover, Apache-2.0) ---
+
+:host(.icon-dashboard) {
+  rect { transition: transform 0.28s ease-out; }
+
+  &:hover, &.active {
+    .rect-1 { transform: translate(1.5px, 0); }
+    .rect-2 { transform: translate(-1px, 1.5px); }
+    .rect-3 { transform: translate(-1.5px, 0); }
+    .rect-4 { transform: translate(1px, -1.5px); }
+  }
+}
+
+:host(.icon-usuarios-red) {
+  g { transition: transform 0.25s ease-out; }
+
+  &:hover, &.active {
+    .user-center { transform: translateY(-1px) scale(1.04); }
+    .user-left { transform: translate(-1px, 0) scale(1.02); }
+    .user-right { transform: translate(1px, 0) scale(1.02); }
+  }
+}
+
+:host(.icon-correos) {
+  svg { perspective: 60px; }
+
+  .mail-open {
+    transform-origin: 50% 0%;
+    transition: transform 0.3s ease-out;
+  }
+
+  &:hover, &.active {
+    .mail-open { transform: rotateX(-28deg); }
+  }
+}
+
+:host(.icon-vpn) {
+  .shield-body { transition: transform 0.3s ease-out; }
+  .shield-check {
+    stroke-dasharray: 1;
+    stroke-dashoffset: 0;
+  }
+
+  &:hover, &.active {
+    .shield-body { transform: scale(1.04); }
+    .shield-check { animation: icon-redraw 0.35s ease-out; }
+  }
+}
+
+:host(.icon-wifi) {
+  path { transition: opacity 0.22s ease-out; }
+
+  &:hover, &.active {
+    .wave-1 { transition-delay: 0.16s; opacity: 0.35; }
+    .wave-2 { transition-delay: 0.08s; opacity: 0.35; }
+    .wave-3 { transition-delay: 0s; opacity: 0.35; }
+  }
+}
+
+:host(.icon-auditoria) {
+  path { transition: transform 0.25s ease-out; }
+
+  &:hover, &.active {
+    .history-circle,
+    .clock-hand { transform: rotate(-10deg); }
+  }
+}
+
+:host(.icon-herramientas) {
+  path { transition: transform 0.25s ease-out, opacity 0.25s ease-out; }
+
+  &:hover, &.active {
+    .layer-top { transform: translateY(-1.5px) scale(1.03); }
+    .layer-bottom { transform: translateY(1px); opacity: 0.75; }
+  }
+}
+
+:host(.icon-catalogos) {
+  g { transition: transform 0.45s ease-in-out; }
+  .gear-center,
+  .gear-body { transition: transform 0.3s ease-out; }
+
+  &:hover, &.active {
+    .gear-rotator { transform: rotate(75deg); }
+    .gear-center { transform: scale(1.08); }
+  }
+}
+
+// --- Iconos de respaldo (trazo Tabler ya usado en el resto del sistema) ---
+// Sin match semántico en itshover: en vez de forzar un icono ajeno, se
+// mantiene el trazo Tabler y se le aplica el mismo tipo de micro-animación
+// (un "redibujado" breve) para que la fila de navegación se sienta consistente.
+
+:host(.icon-fallback) {
+  path {
+    stroke-dasharray: 1;
+    stroke-dashoffset: 0;
+  }
+
+  &:hover path, &.active path {
+    animation: icon-redraw 0.4s ease-out;
+  }
+}
+
+@keyframes icon-redraw {
+  0% { stroke-dashoffset: 0; }
+  45% { stroke-dashoffset: 1; }
+  100% { stroke-dashoffset: 0; }
+}
