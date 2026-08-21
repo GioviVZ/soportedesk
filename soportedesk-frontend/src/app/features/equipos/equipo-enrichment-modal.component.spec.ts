@@ -25,6 +25,14 @@ describe('EquipoEnrichmentModalComponent', () => {
     oficinaId: 'Dirección de Tecnología',
     unidadId: 'Oficina de Soporte',
     usuarioTelefono: 'Juan Pérez',
+    monitor1Nombre: null,
+    monitor1Marca: null,
+    monitor1Modelo: null,
+    monitor1Serie: null,
+    monitor2Nombre: null,
+    monitor2Marca: null,
+    monitor2Modelo: null,
+    monitor2Serie: null,
   } as EquipoDetalle;
 
   const response = {
@@ -110,5 +118,63 @@ describe('EquipoEnrichmentModalComponent', () => {
 
     expect(component.form.fabricanteOverride).toBe('Lenovo');
     expect(component.form.modeloOverride).toBe('ThinkPad T14');
+  });
+
+  it('precarga marca/modelo/serie del monitor 1 desde GLPI cuando no hay corrección guardada', () => {
+    const detailConMonitor = {
+      ...detail,
+      monitor1Marca: 'Samsung',
+      monitor1Modelo: 'S24F350',
+      monitor1Serie: 'MON-SERIE-1',
+    } as EquipoDetalle;
+    service.getDetalle.and.returnValue(of({ ...response, equipo: detailConMonitor }));
+
+    component.ngOnChanges({ computerId: new SimpleChange(null, 1, false) });
+
+    expect(component.form.monitorFabricanteOverride).toBe('Samsung');
+    expect(component.form.monitorModeloOverride).toBe('S24F350');
+    expect(component.form.monitorNumeroSerieOverride).toBe('MON-SERIE-1');
+  });
+
+  it('precarga marca/modelo/serie del monitor 2 desde GLPI cuando no hay corrección guardada', () => {
+    const detailConMonitor2 = {
+      ...detail,
+      monitor2Nombre: 'Monitor secundario',
+      monitor2Marca: 'LG',
+      monitor2Modelo: '24MK430H',
+      monitor2Serie: 'MON-SERIE-2',
+    } as EquipoDetalle;
+    service.getDetalle.and.returnValue(of({ ...response, equipo: detailConMonitor2 }));
+
+    component.ngOnChanges({ computerId: new SimpleChange(null, 1, false) });
+
+    expect(component.form.monitor2FabricanteOverride).toBe('LG');
+    expect(component.form.monitor2ModeloOverride).toBe('24MK430H');
+    expect(component.form.monitor2NumeroSerieOverride).toBe('MON-SERIE-2');
+  });
+
+  it('no pisa una corrección de monitor ya guardada aunque GLPI tenga otro valor', () => {
+    const detailConMonitor = {
+      ...detail,
+      monitor1Marca: 'Samsung',
+      monitor1Modelo: 'S24F350',
+      monitor1Serie: 'MON-SERIE-1',
+    } as EquipoDetalle;
+    service.getDetalle.and.returnValue(of({ ...response, equipo: detailConMonitor }));
+    service.getEnrichment.and.returnValue(of({
+      monitorFabricanteOverride: 'Samsung (corregido)',
+    } as EquipoEnrichmentDto));
+
+    component.ngOnChanges({ computerId: new SimpleChange(null, 1, false) });
+
+    expect(component.form.monitorFabricanteOverride).toBe('Samsung (corregido)');
+  });
+
+  it('deja vacíos los campos de monitor cuando GLPI no tiene esos datos, para llenarlos a mano', () => {
+    component.ngOnChanges({ computerId: new SimpleChange(null, 1, false) });
+
+    expect(component.form.monitorFabricanteOverride).toBeNull();
+    expect(component.form.monitorModeloOverride).toBeNull();
+    expect(component.form.monitorNumeroSerieOverride).toBeNull();
   });
 });

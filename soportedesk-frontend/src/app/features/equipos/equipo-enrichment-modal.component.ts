@@ -161,6 +161,12 @@ export class EquipoEnrichmentModalComponent implements OnChanges {
         usuarioAsignadoOverride: this.form.usuarioAsignadoOverride || detail.equipo.usuarioContacto,
         codigoInternoOverride: this.form.codigoInternoOverride || detail.equipo.codigoInterno,
         numeroSerieOverride: this.form.numeroSerieOverride || detail.equipo.numeroserie,
+        monitorFabricanteOverride: this.form.monitorFabricanteOverride || detail.equipo.monitor1Marca,
+        monitorModeloOverride: this.form.monitorModeloOverride || detail.equipo.monitor1Modelo,
+        monitorNumeroSerieOverride: this.form.monitorNumeroSerieOverride || detail.equipo.monitor1Serie,
+        monitor2FabricanteOverride: this.form.monitor2FabricanteOverride || detail.equipo.monitor2Marca,
+        monitor2ModeloOverride: this.form.monitor2ModeloOverride || detail.equipo.monitor2Modelo,
+        monitor2NumeroSerieOverride: this.form.monitor2NumeroSerieOverride || detail.equipo.monitor2Serie,
       };
     });
     this.catalogos.getTiposEquipo().subscribe((items) => this.tiposEquipo.set(
