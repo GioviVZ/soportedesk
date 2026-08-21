@@ -92,6 +92,14 @@ describe('EquipoEnrichmentModalComponent', () => {
     expect(component.form.codigoPatrimonial).toBe('PAT-2026-001');
   });
 
+  it('convierte a mayúsculas los campos manuales para mantener un orden consistente', () => {
+    component.update('usuarioAsignadoOverride', 'jperez@inia-red');
+    component.update('monitorFabricanteOverride', 'samsung');
+
+    expect(component.form.usuarioAsignadoOverride).toBe('JPEREZ@INIA-RED');
+    expect(component.form.monitorFabricanteOverride).toBe('SAMSUNG');
+  });
+
   it('descarta una corrección sin guardar al desmarcar el check', () => {
     component.onBrandModelEditingChange(true);
     component.update('fabricanteOverride', 'HP');

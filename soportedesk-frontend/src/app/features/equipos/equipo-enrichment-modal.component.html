@@ -148,11 +148,11 @@
     } @else {
       <p class="section-subtitle">Marca, modelo y número de serie son obligatorios.</p>
       <div class="two-col">
-        <div class="field"><label>Marca</label><input type="text" [value]="tecladoMarca" (input)="tecladoMarca = $any($event.target).value" autocomplete="off" /></div>
-        <div class="field"><label>Modelo</label><input type="text" [value]="tecladoModelo" (input)="tecladoModelo = $any($event.target).value" autocomplete="off" /></div>
-        <div class="field"><label>Número de serie</label><input type="text" [value]="tecladoNumeroSerie" (input)="tecladoNumeroSerie = $any($event.target).value" autocomplete="off" /></div>
-        <div class="field"><label>Código de Inventario</label><input type="text" [value]="tecladoCodigoInventario" (input)="tecladoCodigoInventario = $any($event.target).value" autocomplete="off" /></div>
-        <div class="field"><label>Código patrimonial</label><input type="text" [value]="tecladoCodigoPatrimonial" (input)="tecladoCodigoPatrimonial = $any($event.target).value" autocomplete="off" /></div>
+        <div class="field"><label>Marca</label><input type="text" [value]="tecladoMarca" (input)="tecladoMarca = $any($event.target).value.toUpperCase()" autocomplete="off" /></div>
+        <div class="field"><label>Modelo</label><input type="text" [value]="tecladoModelo" (input)="tecladoModelo = $any($event.target).value.toUpperCase()" autocomplete="off" /></div>
+        <div class="field"><label>Número de serie</label><input type="text" [value]="tecladoNumeroSerie" (input)="tecladoNumeroSerie = $any($event.target).value.toUpperCase()" autocomplete="off" /></div>
+        <div class="field"><label>Código de Inventario</label><input type="text" [value]="tecladoCodigoInventario" (input)="tecladoCodigoInventario = $any($event.target).value.toUpperCase()" autocomplete="off" /></div>
+        <div class="field"><label>Código patrimonial</label><input type="text" [value]="tecladoCodigoPatrimonial" (input)="tecladoCodigoPatrimonial = $any($event.target).value.toUpperCase()" autocomplete="off" /></div>
       </div>
       @if (tecladoError()) {
         <div class="notice error">

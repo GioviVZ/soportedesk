@@ -51,7 +51,7 @@ export class EquipoEnrichmentModalComponent implements OnChanges {
   form: EquipoEnrichmentDto = this.emptyForm();
 
   ngOnChanges(changes: SimpleChanges): void { if ((changes['open'] || changes['computerId']) && this.open) this.load(); }
-  update(field: keyof EquipoEnrichmentDto, value: string): void { this.form = { ...this.form, [field]: value.trim() || null }; }
+  update(field: keyof EquipoEnrichmentDto, value: string): void { this.form = { ...this.form, [field]: value.trim().toUpperCase() || null }; }
   onSedeChange(id: number | null): void { this.form = { ...this.form, sedeId: id, dependenciaId: null, subdependenciaId: null }; }
   onDependenciaChange(id: number | null): void { this.form = { ...this.form, dependenciaId: id, subdependenciaId: null }; }
   onSubdependenciaChange(id: number | null): void { this.form = { ...this.form, subdependenciaId: id }; }
