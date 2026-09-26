@@ -13,8 +13,8 @@ soportedesk-frontend/node_modules/
 soportedesk-frontend/dist/
 soportedesk-frontend/.angular/
 
-# Backend build
-soportedesk-backend/target/
+# Backend build (matches every module's target/ in the multi-module reactor)
+soportedesk-backend/**/target/
 
 # Runtime uploads
 soportedesk-backend/uploads/
