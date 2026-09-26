@@ -81,4 +81,24 @@ class AuditoriaFilterTest {
                 org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any(),
                 org.mockito.ArgumentMatchers.any());
     }
+
+    @Test
+    void pingContinuo_noLlenaAuditoriaNiPublicaEventos() throws Exception {
+        AuditoriaFilter filter = new AuditoriaFilter(auditoriaService, realtimeEventService, new ObjectMapper());
+        MockHttpServletRequest request = new MockHttpServletRequest(
+                "POST", "/api/herramientas/ping/sample");
+        MockHttpServletResponse response = new MockHttpServletResponse();
+
+        filter.doFilter(request, response, (servletRequest, servletResponse) -> { });
+
+        verify(auditoriaService, never()).registrar(
+                org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any(),
+                org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any(),
+                org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any(),
+                org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any(),
+                org.mockito.ArgumentMatchers.any());
+        verify(realtimeEventService, never()).publish(
+                org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any(),
+                org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any());
+    }
 }

@@ -32,9 +32,6 @@ jwt:
 licencia:
   encryption-key: ${LICENCIA_ENCRYPTION_KEY}
 
-agente:
-  inventario-token: ${AGENTE_INVENTARIO_TOKEN}
-
 uploads:
   drivers-dir: uploads/drivers
   evidencias-dir: uploads/evidencias
@@ -45,12 +42,17 @@ equipos:
   # Por defecto todos los dias a las 3am. Cambiar solo si hace falta
   # correrlo con otra frecuencia.
   sync-glpi-cron: "0 0 3 * * *"
+  # Refresco del cache local de inventario GLPI (equipo_glpi_cache).
+  # Corre cada 5 min por defecto; fixedDelay evita solapes (espera a
+  # que termine la corrida anterior antes de contar el intervalo).
+  glpi-cache-sync-interval-ms: 300000
 
-identidad:
-  # Job que detecta cuentas AD nuevas sin persona y las deja en
-  # persona_candidato para revision -- nunca crea persona solo.
-  # Corre 30 minutos despues que el de equipos para no competir por I/O.
-  reconciliacion-cron: "0 30 3 * * *"
+monitoreo-ping:
+  despacho-ms: 1000
+  max-concurrentes: 10
+  retencion-detalle-dias: 7
+  retencion-resumen-dias: 365
+  retencion-cron: "0 15 2 * * *"
 
 ad:
   url: ${AD_URL:ldaps://SRV-DC02.inia.local:636}

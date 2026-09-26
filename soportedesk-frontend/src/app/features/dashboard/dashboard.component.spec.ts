@@ -6,6 +6,7 @@ import { provideCharts, withDefaultRegisterables } from 'ng2-charts';
 import { DashboardComponent } from './dashboard.component';
 import { DashboardCounts } from './dashboard-counts.model';
 import { provideHttpClient, withInterceptorsFromDi, withXhr } from '@angular/common/http';
+import { OrdenServicio } from '../herramientas/herramientas.model';
 
 describe('DashboardComponent', () => {
   let fixture: ComponentFixture<DashboardComponent>;
@@ -45,6 +46,8 @@ describe('DashboardComponent', () => {
         plazoDias: 30,
         fechaVencimiento: '2026-07-31',
         diasRestantes: 13,
+        diasTranscurridos: 17,
+        hitos: [],
         finalizada: false,
         registradoPor: 'admin',
         fechaRegistro: '2026-07-18T10:00:00',
@@ -103,6 +106,33 @@ describe('DashboardComponent', () => {
     expect(card.nativeElement.textContent).toContain('Faltan 13 días');
     expect(card.query(By.css('.service-order-tile'))).toBeTruthy();
     expect(card.query(By.css('.flip-clock__value')).nativeElement.textContent.trim()).toBe('13');
+  });
+
+  it('keeps an overdue phase alert while counting down to the next deliverable', () => {
+    const orden: OrdenServicio = {
+      id: 2385,
+      numeroOrden: 'OS-2385-2026',
+      descripcion: 'Servicio por entregables',
+      proveedor: null,
+      fechaInicio: '2026-07-17',
+      plazoDias: 90,
+      fechaVencimiento: '2026-10-15',
+      diasRestantes: 55,
+      diasTranscurridos: 35,
+      finalizada: false,
+      registradoPor: 'admin',
+      fechaRegistro: '2026-07-17T08:00:00',
+      hitos: [
+        { id: 1, nombre: 'Primer entregable', diaPlazo: 30, fechaVencimiento: '2026-08-16', diasRestantes: -5, completado: false, fechaCompletado: null },
+        { id: 2, nombre: 'Segundo entregable', diaPlazo: 60, fechaVencimiento: '2026-09-15', diasRestantes: 25, completado: false, fechaCompletado: null },
+        { id: 3, nombre: 'Tercer entregable', diaPlazo: 90, fechaVencimiento: '2026-10-15', diasRestantes: 55, completado: false, fechaCompletado: null },
+      ],
+    };
+
+    expect(fixture.componentInstance.ordenHitosVencidos(orden).length).toBe(1);
+    expect(fixture.componentInstance.ordenObjetivoNombre(orden)).toBe('Segundo entregable');
+    expect(fixture.componentInstance.ordenConteoValor(orden)).toBe(25);
+    expect(fixture.componentInstance.ordenEstadoClass(orden)).toBe('bad');
   });
 
   it('places the service-order countdown below the dashboard analysis', () => {

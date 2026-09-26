@@ -8,7 +8,7 @@ import { DashboardService } from './dashboard.service';
 import { DashboardCounts } from './dashboard-counts.model';
 import { UsuariosRedPorUbicacionChartComponent } from './usuarios-red-por-ubicacion-chart.component';
 import { LicenciasPorTipoChartComponent } from './licencias-por-tipo-chart.component';
-import { OrdenServicio } from '../herramientas/herramientas.model';
+import { OrdenServicio, OrdenServicioHito } from '../herramientas/herramientas.model';
 import { ModuloBreakdownItem, ModuloKey } from './modulo-breakdown-item.model';
 import { ClickOutsideDirective } from '../../shared/directives/click-outside.directive';
 
@@ -188,21 +188,24 @@ export class DashboardComponent implements OnInit {
   }
 
   ordenEstado(orden: OrdenServicio): string {
-    if (orden.diasRestantes > 1) return `Faltan ${orden.diasRestantes} días`;
-    if (orden.diasRestantes === 1) return 'Falta 1 día';
-    if (orden.diasRestantes === 0) return 'Vence hoy';
-    if (orden.diasRestantes === -1) return 'Venció ayer';
-    return `Vencida hace ${Math.abs(orden.diasRestantes)} días`;
+    const dias = this.ordenDiasObjetivo(orden);
+    if (dias > 1) return `Faltan ${dias} días`;
+    if (dias === 1) return 'Falta 1 día';
+    if (dias === 0) return 'Vence hoy';
+    if (dias === -1) return 'Venció ayer';
+    return `Vencida hace ${Math.abs(dias)} días`;
   }
 
   ordenEstadoClass(orden: OrdenServicio): 'ok' | 'warn' | 'bad' {
-    if (orden.diasRestantes < 0) return 'bad';
-    if (orden.diasRestantes <= 5) return 'warn';
+    if (this.ordenHitosVencidos(orden).length) return 'bad';
+    const dias = this.ordenDiasObjetivo(orden);
+    if (dias < 0) return 'bad';
+    if (dias <= 5) return 'warn';
     return 'ok';
   }
 
   ordenConteoValor(orden: OrdenServicio): number {
-    return Math.abs(orden.diasRestantes);
+    return Math.abs(this.ordenDiasObjetivo(orden));
   }
 
   ordenUnidadDias(orden: OrdenServicio): string {
@@ -210,10 +213,46 @@ export class DashboardComponent implements OnInit {
   }
 
   ordenSemaforo(orden: OrdenServicio): string {
+    const vencidos = this.ordenHitosVencidos(orden).length;
+    if (vencidos) return `${vencidos} ${vencidos === 1 ? 'entregable vencido' : 'entregables vencidos'}`;
     const estado = this.ordenEstadoClass(orden);
     if (estado === 'bad') return 'Vencida';
     if (estado === 'warn') return 'Por vencer';
     return 'En plazo';
+  }
+
+  ordenHitosVencidos(orden: OrdenServicio): OrdenServicioHito[] {
+    return (orden.hitos ?? []).filter((hito) => !hito.completado && hito.diasRestantes < 0);
+  }
+
+  ordenHitoObjetivo(orden: OrdenServicio): OrdenServicioHito | null {
+    const pendientes = (orden.hitos ?? [])
+      .filter((hito) => !hito.completado)
+      .sort((a, b) => a.diaPlazo - b.diaPlazo);
+    return pendientes.find((hito) => hito.diasRestantes >= 0)
+      ?? [...pendientes].reverse()[0]
+      ?? null;
+  }
+
+  ordenObjetivoNombre(orden: OrdenServicio): string {
+    return this.ordenHitoObjetivo(orden)?.nombre ?? 'Vencimiento total';
+  }
+
+  ordenObjetivoFecha(orden: OrdenServicio): string {
+    return this.ordenHitoObjetivo(orden)?.fechaVencimiento ?? orden.fechaVencimiento;
+  }
+
+  ordenProgresoPorcentaje(orden: OrdenServicio): number {
+    if (orden.plazoDias <= 0) return 100;
+    return Math.min(100, Math.max(0, Math.round(((orden.diasTranscurridos ?? 0) / orden.plazoDias) * 100)));
+  }
+
+  ordenProgresoTexto(orden: OrdenServicio): string {
+    return `Día ${Math.max(0, orden.diasTranscurridos ?? 0)} de ${orden.plazoDias}`;
+  }
+
+  private ordenDiasObjetivo(orden: OrdenServicio): number {
+    return this.ordenHitoObjetivo(orden)?.diasRestantes ?? orden.diasRestantes;
   }
 
   private loadOrdenesServicio(): void {

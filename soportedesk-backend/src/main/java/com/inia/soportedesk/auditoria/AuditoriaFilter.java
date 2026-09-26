@@ -110,6 +110,7 @@ public class AuditoriaFilter extends OncePerRequestFilter {
         String path = request.getRequestURI();
         return path.startsWith("/api/")
                 && !path.startsWith("/api/auditoria")
+                && !path.equals("/api/herramientas/ping/sample")
                 && (!path.startsWith("/api/active-directory")
                 || path.equals("/api/active-directory/sync/iniciar"))
                 && !path.equals("/api/auth/login")
@@ -120,6 +121,7 @@ public class AuditoriaFilter extends OncePerRequestFilter {
         String path = request.getRequestURI();
         return path.startsWith("/api/")
                 && !path.startsWith("/api/realtime")
+                && !path.equals("/api/herramientas/ping/sample")
                 && !path.equals("/api/auth/login")
                 && AUDITED_METHODS.contains(request.getMethod())
                 && response.getStatus() < 400;
@@ -168,6 +170,15 @@ public class AuditoriaFilter extends OncePerRequestFilter {
         if (path.endsWith("/ping") && "POST".equals(method)) {
             return "EJECUTAR_DIAGNOSTICO";
         }
+        if (path.endsWith("/pausar") && "PATCH".equals(method)) {
+            return "PAUSAR_MONITOREO";
+        }
+        if (path.endsWith("/reanudar") && "PATCH".equals(method)) {
+            return "REANUDAR_MONITOREO";
+        }
+        if (path.endsWith("/archivar") && "PATCH".equals(method)) {
+            return "ARCHIVAR_MONITOREO";
+        }
 
         return switch (method) {
             case "POST" -> "CREAR";
@@ -196,6 +207,9 @@ public class AuditoriaFilter extends OncePerRequestFilter {
             case "SUBIR_DRIVER" -> "Subió un controlador en " + label;
             case "SINCRONIZAR" -> "Inició la sincronización de " + label;
             case "EJECUTAR_DIAGNOSTICO" -> "Ejecutó un diagnóstico en " + label;
+            case "PAUSAR_MONITOREO" -> "Pausó un monitoreo en " + label;
+            case "REANUDAR_MONITOREO" -> "Reanudó un monitoreo en " + label;
+            case "ARCHIVAR_MONITOREO" -> "Archivó un monitoreo en " + label;
             default -> action + " en " + label;
         };
 

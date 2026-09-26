@@ -22,9 +22,6 @@ jwt:
 licencia:
   encryption-key: AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
 
-agente:
-  inventario-token: test-agent-token
-
 uploads:
   drivers-dir: build/test-uploads/drivers
   evidencias-dir: build/test-uploads/evidencias

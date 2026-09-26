@@ -283,7 +283,7 @@
         <div>
           <span class="eyebrow">Conteo de días</span>
           <h3>Órdenes de servicio</h3>
-          <p>Relojes activos ordenados por el vencimiento más próximo.</p>
+          <p>Avance total, próxima fase y alertas de entregables pendientes.</p>
         </div>
         <a routerLink="/herramientas" [queryParams]="{ tab: 'vencimientos' }">Gestionar órdenes</a>
       </div>
@@ -297,7 +297,7 @@
       }
       @if (!ordenesLoading && ordenesServicio.length) {
         <div class="service-orders-list">
-          @for (orden of ordenesServicio; track orden; let index = $index) {
+          @for (orden of ordenesServicio; track orden.id; let index = $index) {
             <article
               class="service-order-tile"
               [style.--tile-index]="index"
@@ -313,15 +313,29 @@
                   <strong class="flip-clock__value">{{ ordenConteoValor(orden) }}</strong>
                   <span>{{ ordenUnidadDias(orden) }}</span>
                 </div>
+                <small>{{ ordenObjetivoNombre(orden) }}</small>
               </div>
               <div class="service-order-main">
                 <strong>{{ orden.numeroOrden }}</strong>
                 <span>{{ orden.descripcion }}</span>
-                <small>{{ orden.proveedor || 'Sin proveedor' }}</small>
+                <small>{{ orden.proveedor || 'Sin proveedor' }} · {{ orden.plazoDias }} días totales</small>
               </div>
+              <div class="service-order-progress">
+                <div>
+                  <span>{{ ordenProgresoTexto(orden) }}</span>
+                  <strong>{{ ordenProgresoPorcentaje(orden) }}%</strong>
+                </div>
+                <i aria-hidden="true"><b [style.width.%]="ordenProgresoPorcentaje(orden)"></b></i>
+              </div>
+              @if (ordenHitosVencidos(orden).length) {
+                <div class="service-order-alert">
+                  Requiere atención: {{ ordenHitosVencidos(orden).length }}
+                  {{ ordenHitosVencidos(orden).length === 1 ? 'fase vencida' : 'fases vencidas' }}
+                </div>
+              }
               <footer class="service-order-footer">
                 <span>{{ ordenEstado(orden) }}</span>
-                <time [attr.datetime]="orden.fechaVencimiento">{{ orden.fechaVencimiento | date:'dd/MM/yyyy':'UTC' }}</time>
+                <time [attr.datetime]="ordenObjetivoFecha(orden)">{{ ordenObjetivoFecha(orden) | date:'dd/MM/yyyy':'UTC' }}</time>
               </footer>
             </article>
           }

@@ -148,7 +148,8 @@ class DashboardServiceTest {
     @Test
     void ordenesServicioProximas_returnsActiveOrdersFromService() {
         OrdenServicioResponse orden = new OrdenServicioResponse(
-                1L, "OS-2026-001", "Soporte", null, null, 10, null, 5, false, "admin", null);
+                1L, "OS-2026-001", "Soporte", null, null, 10, null, 5, 5, List.of(),
+                false);
         when(ordenServicioService.listarProximas()).thenReturn(List.of(orden));
 
         assertThat(service.ordenesServicioProximas()).containsExactly(orden);
