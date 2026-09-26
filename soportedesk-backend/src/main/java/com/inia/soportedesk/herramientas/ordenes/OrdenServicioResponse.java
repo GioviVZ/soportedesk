@@ -1,7 +1,7 @@
 package com.inia.soportedesk.herramientas.ordenes;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
+import java.util.List;
 
 public record OrdenServicioResponse(
         Long id,
@@ -12,8 +12,8 @@ public record OrdenServicioResponse(
         Integer plazoDias,
         LocalDate fechaVencimiento,
         long diasRestantes,
-        boolean finalizada,
-        String registradoPor,
-        LocalDateTime fechaRegistro
+        long diasTranscurridos,
+        List<OrdenServicioHitoResponse> hitos,
+        boolean finalizada
 ) {
 }

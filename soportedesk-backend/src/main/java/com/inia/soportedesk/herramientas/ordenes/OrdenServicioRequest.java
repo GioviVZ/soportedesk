@@ -1,5 +1,6 @@
 package com.inia.soportedesk.herramientas.ordenes;
 
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
@@ -9,6 +10,8 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 
 @Getter
 @Setter
@@ -32,4 +35,8 @@ public class OrdenServicioRequest {
     @Min(value = 0, message = "El plazo no puede ser negativo")
     @Max(value = 3650, message = "El plazo no puede superar 3650 días")
     private Integer plazoDias;
+
+    @Valid
+    @Size(max = 20, message = "Una orden no puede tener más de 20 entregables")
+    private List<OrdenServicioHitoRequest> hitos = new ArrayList<>();
 }

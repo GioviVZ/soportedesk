@@ -225,6 +225,11 @@ button:disabled {
     background: var(--color-danger-light);
     color: var(--color-danger);
   }
+
+  &.live {
+    background: var(--color-primary-light);
+    color: var(--color-primary);
+  }
 }
 
 .ping-box label,
@@ -287,9 +292,21 @@ button:disabled {
 
 .deadline-layout {
   display: grid;
-  grid-template-columns: minmax(320px, 430px) minmax(0, 1fr);
+  grid-template-columns: minmax(360px, 480px) minmax(0, 1fr);
   gap: 18px;
   align-items: start;
+}
+
+.deadline-editing-note {
+  display: grid;
+  gap: 3px;
+  padding: 11px 12px;
+  border-left: 3px solid var(--color-accent);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  background: var(--color-primary-light);
+
+  strong { color: var(--color-primary); }
+  span { color: var(--color-text-secondary); font-size: 12px; }
 }
 
 .deadline-form {
@@ -340,6 +357,81 @@ button:disabled {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 150px;
   gap: 12px;
+}
+
+.deadline-milestones-editor {
+  display: grid;
+  gap: 10px;
+  padding-top: 12px;
+  border-top: 1px solid var(--color-border);
+}
+
+.deadline-milestones-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+
+  > div:first-child {
+    display: grid;
+    gap: 3px;
+  }
+
+  strong { color: var(--color-heading); font-size: 13px; }
+  span { color: var(--color-text-secondary); font-size: 11px; line-height: 1.4; }
+}
+
+.deadline-milestones-buttons {
+  display: flex;
+  flex: 0 0 auto;
+  gap: 6px;
+}
+
+.deadline-milestones-empty {
+  margin: 0;
+  padding: 10px;
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-sm);
+  color: var(--color-text-secondary);
+  font-size: 11.5px;
+  line-height: 1.45;
+}
+
+.deadline-milestone-input {
+  display: grid;
+  grid-template-columns: minmax(140px, 1fr) 92px auto 36px;
+  align-items: end;
+  gap: 8px;
+  padding: 10px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+
+  label { font-size: 10.5px; }
+  input { min-width: 0; }
+}
+
+.deadline-milestone-date {
+  display: grid;
+  gap: 4px;
+  min-width: 78px;
+  padding-bottom: 8px;
+
+  span { color: var(--color-text-secondary); font-size: 10.5px; font-weight: 800; }
+  strong { color: var(--color-heading); font-size: 11px; font-variant-numeric: tabular-nums; }
+}
+
+.deadline-remove-hito {
+  width: 36px;
+  min-width: 36px;
+  min-height: 36px;
+  padding: 0;
+  border: 1px solid color-mix(in srgb, var(--color-danger) 35%, var(--color-border));
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-danger);
+  font-size: 20px;
+  line-height: 1;
 }
 
 .deadline-result {
@@ -398,7 +490,7 @@ button:disabled {
 
 .deadline-item {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 130px auto;
+  grid-template-columns: minmax(0, 1fr) 145px auto;
   align-items: center;
   gap: 12px;
   padding: 12px;
@@ -459,8 +551,109 @@ button:disabled {
 }
 
 .deadline-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+.deadline-progress,
+.deadline-alert,
+.deadline-timeline {
+  grid-column: 1 / -1;
+}
+
+.deadline-progress {
   display: grid;
   gap: 6px;
+  padding-top: 10px;
+  border-top: 1px solid color-mix(in srgb, var(--color-border) 76%, transparent);
+
+  > div {
+    display: grid;
+    grid-template-columns: 1fr auto auto;
+    align-items: center;
+    gap: 8px;
+  }
+
+  span,
+  small { color: var(--color-text-secondary); font-size: 10.5px; }
+  strong { color: var(--color-heading); font-size: 12px; }
+  > div > b { color: var(--color-accent); font-size: 11px; font-variant-numeric: tabular-nums; }
+  > small { margin: 0; }
+
+  > i {
+    display: block;
+    height: 7px;
+    overflow: hidden;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--color-border) 75%, transparent);
+
+    > b {
+      display: block;
+      height: 100%;
+      border-radius: inherit;
+      background: var(--color-accent);
+      transition: width var(--transition-md);
+    }
+  }
+}
+
+.deadline-alert {
+  display: grid;
+  gap: 2px;
+  padding: 9px 11px;
+  border: 1px solid color-mix(in srgb, var(--color-danger) 30%, var(--color-border));
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--color-danger-light) 76%, var(--color-surface));
+
+  strong { color: var(--color-danger); font-size: 12px; }
+  span { margin: 0; font-size: 10.5px; }
+}
+
+.deadline-timeline {
+  display: grid;
+  gap: 7px;
+}
+
+.deadline-phase {
+  --phase-color: var(--color-success);
+  display: grid;
+  grid-template-columns: 38px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 9px;
+  padding: 8px 9px;
+  border: 1px solid color-mix(in srgb, var(--phase-color) 24%, var(--color-border));
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--phase-color) 5%, var(--color-surface));
+
+  &.warn { --phase-color: var(--color-warning); }
+  &.bad { --phase-color: var(--color-danger); }
+  &.done { --phase-color: var(--color-text-muted); opacity: .78; }
+
+  > div {
+    min-width: 0;
+
+    strong,
+    span,
+    small { display: block; }
+    strong { overflow-wrap: anywhere; font-size: 12px; }
+    span { margin-top: 2px; font-size: 10.5px; }
+    small { margin-top: 2px; color: var(--phase-color); font-size: 10.5px; font-weight: 800; }
+  }
+}
+
+.deadline-phase-marker {
+  display: grid !important;
+  width: 34px;
+  height: 34px;
+  margin: 0 !important;
+  place-items: center;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--phase-color) 15%, var(--color-surface));
+  color: var(--phase-color) !important;
+  font-size: 11px !important;
+  font-weight: 900;
 }
 
 .danger-action {
@@ -771,6 +964,7 @@ button:disabled {
   .metric-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+
 }
 
 @media (max-width: 768px) {
@@ -812,6 +1006,42 @@ button:disabled {
 
   .deadline-count {
     text-align: left;
+  }
+
+  .deadline-milestones-head {
+    display: grid;
+  }
+
+  .deadline-milestones-buttons {
+    width: 100%;
+
+    button { flex: 1 1 0; }
+  }
+
+  .deadline-milestone-input {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+
+    label:first-child { grid-column: 1 / -1; }
+  }
+
+  .deadline-remove-hito {
+    width: 100%;
+    grid-column: 1 / -1;
+  }
+
+  .deadline-actions {
+    justify-content: stretch;
+
+    button { flex: 1 1 110px; }
+  }
+
+  .deadline-phase {
+    grid-template-columns: 38px minmax(0, 1fr);
+
+    button {
+      width: 100%;
+      grid-column: 2;
+    }
   }
 
   .equipo-layout,

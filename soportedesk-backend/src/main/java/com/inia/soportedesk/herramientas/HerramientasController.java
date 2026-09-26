@@ -30,6 +30,11 @@ public class HerramientasController {
         return service.ping(request.getHost());
     }
 
+    @PostMapping("/ping/sample")
+    public PingResult pingSample(@Valid @RequestBody PingRequest request) {
+        return service.ping(request.getHost(), 1);
+    }
+
     @GetMapping("/datos-equipo")
     public EquipoDatosResponse datosEquipo(@RequestParam(required = false) String referencia,
                                            HttpServletRequest request) {

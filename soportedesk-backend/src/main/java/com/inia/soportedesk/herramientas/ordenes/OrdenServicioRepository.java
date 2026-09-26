@@ -8,6 +8,8 @@ public interface OrdenServicioRepository extends JpaRepository<OrdenServicio, Lo
 
     boolean existsByNumeroOrdenIgnoreCase(String numeroOrden);
 
+    boolean existsByNumeroOrdenIgnoreCaseAndIdNot(String numeroOrden, Long id);
+
     List<OrdenServicio> findAllByOrderByFinalizadaAscFechaVencimientoAsc();
 
     List<OrdenServicio> findAllByFinalizadaFalseOrderByFechaVencimientoAsc();

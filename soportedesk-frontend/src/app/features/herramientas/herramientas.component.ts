@@ -12,16 +12,26 @@ import {
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Subscription } from 'rxjs';
 import * as THREE from 'three';
 import QRCode from 'qrcode';
 import SpeedTest, { Results as CloudflareSpeedResults } from '@cloudflare/speedtest';
 import { ActivatedRoute } from '@angular/router';
 import { AuthService } from '../../core/auth/auth.service';
-import { EquipoDatosResult, OrdenServicio, PingResult } from './herramientas.model';
+import {
+  EquipoDatosResult,
+  OrdenServicio,
+  OrdenServicioHito,
+  OrdenServicioHitoRequest,
+  OrdenServicioRequest,
+  PingResult,
+} from './herramientas.model';
 import { HerramientasService } from './herramientas.service';
+import { PingMonitoringComponent } from './ping-monitoring.component';
 
 type ToolTab = 'equipo' | 'ping' | 'velocidad' | 'qr' | 'vencimientos' | 'gpu' | 'ram' | 'teclado' | 'mouse' | 'pantalla' | 'tactil' | 'sonido' | 'microfono' | 'camara';
 type TestState = 'idle' | 'running' | 'done' | 'error';
+type PingMode = 'single' | 'continuous';
 type QrFormat = 'png' | 'jpg' | 'svg';
 type ScreenResult = '' | 'Sin defectos' | 'Pixel muerto' | 'Pixel atascado' | 'Pixel brillante' | 'Requiere revision';
 type TouchMode = 'multitouch' | 'zonas' | 'precision';
@@ -30,6 +40,14 @@ type OscillatorWave = OscillatorType;
 
 interface PixelPattern { label: string; color: string; textColor: string; }
 interface TouchPoint { id: number; x: number; y: number; pressure: number; color: string; }
+
+interface PingSample {
+  id: number;
+  capturedAt: Date;
+  reachable: boolean;
+  latencyMs: number | null;
+  status: string;
+}
 
 interface ToolTabItem {
   id: ToolTab;
@@ -142,7 +160,7 @@ const KEY_LABELS: Record<string, string> = {
 
 @Component({
     selector: 'app-herramientas',
-    imports: [CommonModule, FormsModule],
+    imports: [CommonModule, FormsModule, PingMonitoringComponent],
     templateUrl: './herramientas.component.html',
     changeDetection: ChangeDetectionStrategy.Eager,
     styleUrls: ['./herramientas.component.scss', './herramientas-tests.scss']
@@ -188,9 +206,18 @@ export class HerramientasComponent implements OnInit, AfterViewInit, OnDestroy {
   equipoDatos: EquipoDatosResult | null = null;
   equipoError = '';
   pingHost = '8.8.8.8';
+  pingMode: PingMode = 'single';
+  pingMonitorName = '';
+  pingMonitoring = false;
+  pingSamples: PingSample[] = [];
+  pingStartedAt: Date | null = null;
   pingState: TestState = 'idle';
   pingResult: PingResult | null = null;
   pingError = '';
+  readonly pingMaxSamples = 40;
+  private pingSampleSequence = 0;
+  private pingMonitorTimer?: ReturnType<typeof setTimeout>;
+  private pingRequestSubscription?: Subscription;
   speedStats: SpeedTestStats = {
     status: 'idle',
     phase: 'Lista para iniciar',
@@ -233,6 +260,8 @@ export class HerramientasComponent implements OnInit, AfterViewInit, OnDestroy {
   ordenProveedor = '';
   ordenFechaInicio = this.todayInputValue();
   ordenPlazoDias = 10;
+  ordenHitos: OrdenServicioHitoRequest[] = [];
+  ordenEditingId: number | null = null;
   ordenesServicio: OrdenServicio[] = [];
   ordenesLoading = false;
   ordenesLoadFailed = false;
@@ -392,6 +421,45 @@ export class HerramientasComponent implements OnInit, AfterViewInit, OnDestroy {
     return this.precisionErrors.length ? Math.round(this.average(this.precisionErrors)) : 0;
   }
 
+  get pingStatusLabel(): string {
+    if (this.pingMonitoring) return 'Monitoreando';
+    if (this.pingState === 'running') return 'Ejecutando';
+    return this.pingResult?.status || 'Listo';
+  }
+
+  get pingAverageLatency(): number | null {
+    const values = this.pingSamples
+      .map((sample) => sample.latencyMs)
+      .filter((value): value is number => value !== null);
+    if (!values.length) return null;
+    return Math.round((values.reduce((total, value) => total + value, 0) / values.length) * 10) / 10;
+  }
+
+  get pingMinimumLatency(): number | null {
+    const values = this.pingSamples
+      .map((sample) => sample.latencyMs)
+      .filter((value): value is number => value !== null);
+    return values.length ? Math.min(...values) : null;
+  }
+
+  get pingMaximumLatency(): number | null {
+    const values = this.pingSamples
+      .map((sample) => sample.latencyMs)
+      .filter((value): value is number => value !== null);
+    return values.length ? Math.max(...values) : null;
+  }
+
+  get pingLossPercentage(): number {
+    if (!this.pingSamples.length) return 0;
+    const lost = this.pingSamples.filter((sample) => !sample.reachable).length;
+    return Math.round((lost / this.pingSamples.length) * 100);
+  }
+
+  get pingChartMaximum(): number {
+    const maximum = this.pingMaximumLatency ?? 0;
+    return Math.max(50, Math.ceil(maximum / 25) * 25);
+  }
+
   ngOnInit(): void {
     const requestedTab = this.route.snapshot.queryParamMap.get('tab') as ToolTab | null;
     if (requestedTab && this.tabs.some((tab) => tab.id === requestedTab)) {
@@ -405,6 +473,7 @@ export class HerramientasComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
+    this.stopContinuousPing(false);
     this.activeSpeedTest?.pause();
     this.stopPixelTest();
     this.stopSoundTest();
@@ -666,6 +735,11 @@ export class HerramientasComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   runPing(): void {
+    if (this.pingMode === 'continuous') {
+      this.startContinuousPing();
+      return;
+    }
+
     const host = this.pingHost.trim();
     if (!host) {
       this.pingError = 'Ingresa una IP o dominio.';
@@ -684,6 +758,115 @@ export class HerramientasComponent implements OnInit, AfterViewInit, OnDestroy {
       error: (err) => {
         this.pingState = 'error';
         this.pingError = err?.error?.message ?? 'No se pudo ejecutar la prueba.';
+      },
+    });
+  }
+
+  setPingMode(mode: PingMode): void {
+    if (this.pingMonitoring || this.pingMode === mode) return;
+    this.pingMode = mode;
+    this.pingError = '';
+    this.pingResult = null;
+    this.pingSamples = [];
+    this.pingStartedAt = null;
+    this.pingState = 'idle';
+  }
+
+  startContinuousPing(): void {
+    if (this.pingMonitoring) return;
+
+    const host = this.pingHost.trim();
+    const name = this.pingMonitorName.trim();
+    if (!name) {
+      this.pingError = 'Asigna un nombre al monitoreo continuo.';
+      return;
+    }
+    if (!host) {
+      this.pingError = 'Ingresa una IP o dominio.';
+      return;
+    }
+
+    this.pingMonitorName = name;
+    this.pingHost = host;
+    this.pingMonitoring = true;
+    this.pingState = 'running';
+    this.pingError = '';
+    this.pingResult = null;
+    this.pingSamples = [];
+    this.pingStartedAt = new Date();
+    this.pingSampleSequence = 0;
+    this.runContinuousPingSample();
+  }
+
+  stopContinuousPing(recordReport = true): void {
+    const wasMonitoring = this.pingMonitoring;
+    this.pingMonitoring = false;
+    if (this.pingMonitorTimer) {
+      clearTimeout(this.pingMonitorTimer);
+      this.pingMonitorTimer = undefined;
+    }
+    this.pingRequestSubscription?.unsubscribe();
+    this.pingRequestSubscription = undefined;
+
+    if (!wasMonitoring) return;
+    this.pingState = this.pingResult ? 'done' : 'idle';
+    if (recordReport && this.pingSamples.length) {
+      const average = this.pingAverageLatency;
+      this.addReport(
+        `Ping continuo · ${this.pingMonitorName}`,
+        `${this.pingHost}: ${this.pingSamples.length} muestras, ${this.pingLossPercentage}% de perdida${average !== null ? `, promedio ${average} ms` : ''}`,
+      );
+    }
+  }
+
+  pingBarHeight(sample: PingSample): number {
+    if (!sample.reachable) return 100;
+    if (sample.latencyMs === null) return 8;
+    return Math.max(8, Math.min(100, (sample.latencyMs / this.pingChartMaximum) * 100));
+  }
+
+  pingBarClass(sample: PingSample): string {
+    if (!sample.reachable) return 'down';
+    if ((sample.latencyMs ?? 0) > 150) return 'slow';
+    if ((sample.latencyMs ?? 0) > 80) return 'warning';
+    return 'healthy';
+  }
+
+  pingSampleLabel(sample: PingSample): string {
+    const time = sample.capturedAt.toLocaleTimeString('es-PE', {
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false,
+    });
+    return sample.reachable
+      ? `${time}: ${sample.latencyMs ?? '-'} ms`
+      : `${time}: sin respuesta`;
+  }
+
+  private runContinuousPingSample(): void {
+    if (!this.pingMonitoring) return;
+
+    this.pingRequestSubscription = this.service.pingSample(this.pingHost).subscribe({
+      next: (result) => {
+        if (!this.pingMonitoring) return;
+        this.pingResult = result;
+        this.pingSamples = [
+          ...this.pingSamples,
+          {
+            id: ++this.pingSampleSequence,
+            capturedAt: new Date(),
+            reachable: result.reachable,
+            latencyMs: result.averageLatencyMs ?? null,
+            status: result.status,
+          },
+        ].slice(-this.pingMaxSamples);
+        this.pingMonitorTimer = setTimeout(() => this.runContinuousPingSample(), 1000);
+      },
+      error: (err) => {
+        this.pingMonitoring = false;
+        this.pingState = 'error';
+        this.pingError = err?.error?.message ?? 'Se interrumpio el monitoreo continuo.';
       },
     });
   }
@@ -841,17 +1024,69 @@ export class HerramientasComponent implements OnInit, AfterViewInit, OnDestroy {
     return this.calculateDeadlineDate(this.ordenFechaInicio, this.ordenPlazoDias);
   }
 
+  get ordenHitosOrdenados(): OrdenServicioHitoRequest[] {
+    return [...this.ordenHitos].sort((a, b) => Number(a.diaPlazo) - Number(b.diaPlazo));
+  }
+
   get ordenesOrdenadas(): OrdenServicio[] {
     return [...this.ordenesServicio].sort((a, b) => {
       if (a.finalizada !== b.finalizada) {
         return a.finalizada ? 1 : -1;
       }
-      return a.fechaVencimiento.localeCompare(b.fechaVencimiento);
+      return this.ordenDiasAlerta(a) - this.ordenDiasAlerta(b);
     });
   }
 
   calcularOrdenVencimiento(): void {
-    this.ordenError = this.ordenFechaVencimiento ? '' : 'Selecciona una fecha válida e ingresa un plazo en días.';
+    this.ordenError = this.ordenFechaVencimiento ? '' : 'Selecciona una fecha válida e ingresa la duración total en días.';
+  }
+
+  agregarOrdenHito(): void {
+    const total = Math.round(Number(this.ordenPlazoDias));
+    if (!Number.isFinite(total) || total < 1) {
+      this.ordenError = 'Ingresa una duración total mayor a cero antes de agregar entregables.';
+      return;
+    }
+    const diasUsados = this.ordenHitos.map((hito) => Number(hito.diaPlazo)).filter(Number.isFinite);
+    const ultimoDia = diasUsados.length ? Math.max(...diasUsados) : 0;
+    const diaSugerido = Math.min(ultimoDia ? ultimoDia + 30 : 30, total);
+    if (diasUsados.includes(diaSugerido)) {
+      this.ordenError = 'Ya se agregó el entregable final. Puedes editar los días de los hitos existentes.';
+      return;
+    }
+    this.ordenHitos = [
+      ...this.ordenHitos,
+      { nombre: `Entregable ${this.ordenHitos.length + 1}`, diaPlazo: diaSugerido },
+    ];
+    this.ordenError = '';
+  }
+
+  crearHitosCada30Dias(): void {
+    const total = Math.round(Number(this.ordenPlazoDias));
+    if (!Number.isFinite(total) || total < 1) {
+      this.ordenError = 'Ingresa una duración total mayor a cero antes de generar las fases.';
+      return;
+    }
+    const dias: number[] = [];
+    for (let dia = 30; dia < total; dia += 30) {
+      dias.push(dia);
+    }
+    dias.push(total);
+    const existentesPorDia = new Map(this.ordenHitos.map((hito) => [Number(hito.diaPlazo), hito]));
+    this.ordenHitos = dias.map((dia, index) => ({
+      ...(existentesPorDia.get(dia)?.id ? { id: existentesPorDia.get(dia)!.id } : {}),
+      nombre: `Entregable ${index + 1}`,
+      diaPlazo: dia,
+    }));
+    this.ordenError = '';
+  }
+
+  quitarOrdenHito(index: number): void {
+    this.ordenHitos = this.ordenHitos.filter((_, itemIndex) => itemIndex !== index);
+  }
+
+  ordenHitoFecha(hito: OrdenServicioHitoRequest): string {
+    return this.calculateDeadlineDate(this.ordenFechaInicio, Number(hito.diaPlazo));
   }
 
   loadOrdenesServicio(): void {
@@ -879,22 +1114,40 @@ export class HerramientasComponent implements OnInit, AfterViewInit, OnDestroy {
       return;
     }
     if (!this.ordenFechaVencimiento || !Number.isFinite(plazoDias) || plazoDias < 0) {
-      this.ordenError = 'Selecciona una fecha válida e ingresa un plazo en días.';
+      this.ordenError = 'Selecciona una fecha válida e ingresa la duración total en días.';
+      return;
+    }
+    if (!this.validarOrdenHitos(Math.round(plazoDias))) {
       return;
     }
 
     this.ordenSaving = true;
     this.ordenError = '';
-    this.service.createOrdenServicio({
+    const request: OrdenServicioRequest = {
       numeroOrden: this.ordenNumero.trim(),
       descripcion: this.ordenDescripcion.trim(),
       proveedor: this.ordenProveedor.trim(),
       fechaInicio: this.ordenFechaInicio,
       plazoDias: Math.round(plazoDias),
-    }).subscribe({
+      hitos: this.ordenHitosOrdenados.map((hito) => ({
+        ...(hito.id ? { id: hito.id } : {}),
+        nombre: hito.nombre.trim(),
+        diaPlazo: Math.round(Number(hito.diaPlazo)),
+      })),
+    };
+    const saving = this.ordenEditingId === null
+      ? this.service.createOrdenServicio(request)
+      : this.service.updateOrdenServicio(this.ordenEditingId, request);
+    const estabaEditando = this.ordenEditingId !== null;
+    saving.subscribe({
       next: (orden) => {
-        this.ordenesServicio = [orden, ...this.ordenesServicio];
-        this.addReport('Orden de servicio', `${orden.numeroOrden}: vence el ${this.formatDate(orden.fechaVencimiento)}`);
+        this.ordenesServicio = estabaEditando
+          ? this.ordenesServicio.map((item) => item.id === orden.id ? orden : item)
+          : [orden, ...this.ordenesServicio];
+        this.addReport(
+          'Orden de servicio',
+          `${orden.numeroOrden}: ${estabaEditando ? 'actualizada' : 'registrada'} con ${orden.hitos.length} entregables`,
+        );
         this.limpiarOrdenForm();
         this.ordenSaving = false;
       },
@@ -905,6 +1158,22 @@ export class HerramientasComponent implements OnInit, AfterViewInit, OnDestroy {
     });
   }
 
+  editarOrden(orden: OrdenServicio): void {
+    this.ordenEditingId = orden.id;
+    this.ordenNumero = orden.numeroOrden;
+    this.ordenDescripcion = orden.descripcion;
+    this.ordenProveedor = orden.proveedor ?? '';
+    this.ordenFechaInicio = orden.fechaInicio;
+    this.ordenPlazoDias = orden.plazoDias;
+    this.ordenHitos = (orden.hitos ?? []).map((hito) => ({
+      id: hito.id,
+      nombre: hito.nombre,
+      diaPlazo: hito.diaPlazo,
+    }));
+    this.ordenError = '';
+    requestAnimationFrame(() => document.querySelector('.deadline-form')?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
+  }
+
   cambiarEstadoOrden(orden: OrdenServicio): void {
     this.ordenError = '';
     this.service.setOrdenFinalizada(orden.id, !orden.finalizada).subscribe({
@@ -913,6 +1182,18 @@ export class HerramientasComponent implements OnInit, AfterViewInit, OnDestroy {
       },
       error: (err) => {
         this.ordenError = err?.error?.message ?? 'No se pudo actualizar la orden.';
+      },
+    });
+  }
+
+  cambiarEstadoHito(orden: OrdenServicio, hito: OrdenServicioHito): void {
+    this.ordenError = '';
+    this.service.setOrdenHitoCompletado(orden.id, hito.id, !hito.completado).subscribe({
+      next: (updated) => {
+        this.ordenesServicio = this.ordenesServicio.map((item) => item.id === updated.id ? updated : item);
+      },
+      error: (err) => {
+        this.ordenError = err?.error?.message ?? 'No se pudo actualizar el entregable.';
       },
     });
   }
@@ -938,6 +1219,8 @@ export class HerramientasComponent implements OnInit, AfterViewInit, OnDestroy {
     this.ordenProveedor = '';
     this.ordenFechaInicio = this.todayInputValue();
     this.ordenPlazoDias = 10;
+    this.ordenHitos = [];
+    this.ordenEditingId = null;
     this.ordenError = '';
   }
 
@@ -945,7 +1228,7 @@ export class HerramientasComponent implements OnInit, AfterViewInit, OnDestroy {
     if (orden.finalizada) {
       return 'Finalizada';
     }
-    const days = orden.diasRestantes;
+    const days = this.ordenDiasObjetivo(orden);
     if (days > 1) {
       return `Faltan ${days} días`;
     }
@@ -962,20 +1245,65 @@ export class HerramientasComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   ordenConteoValor(orden: OrdenServicio): number {
-    return Math.abs(orden.diasRestantes);
+    return Math.abs(this.ordenDiasObjetivo(orden));
   }
 
   ordenStatusClass(orden: OrdenServicio): 'ok' | 'warn' | 'bad' | 'done' {
     if (orden.finalizada) {
       return 'done';
     }
-    const days = orden.diasRestantes;
-    if (days < 0) {
-      return 'bad';
-    }
+    if (this.ordenHitosVencidos(orden).length) return 'bad';
+    const days = this.ordenDiasObjetivo(orden);
+    if (days < 0) return 'bad';
     if (days <= 5) {
       return 'warn';
     }
+    return 'ok';
+  }
+
+  ordenHitosVencidos(orden: OrdenServicio): OrdenServicioHito[] {
+    return (orden.hitos ?? []).filter((hito) => !hito.completado && hito.diasRestantes < 0);
+  }
+
+  ordenHitoObjetivo(orden: OrdenServicio): OrdenServicioHito | null {
+    const pendientes = (orden.hitos ?? [])
+      .filter((hito) => !hito.completado)
+      .sort((a, b) => a.diaPlazo - b.diaPlazo);
+    return pendientes.find((hito) => hito.diasRestantes >= 0)
+      ?? [...pendientes].reverse()[0]
+      ?? null;
+  }
+
+  ordenObjetivoNombre(orden: OrdenServicio): string {
+    return this.ordenHitoObjetivo(orden)?.nombre ?? 'Vencimiento total';
+  }
+
+  ordenObjetivoFecha(orden: OrdenServicio): string {
+    return this.ordenHitoObjetivo(orden)?.fechaVencimiento ?? orden.fechaVencimiento;
+  }
+
+  ordenProgresoPorcentaje(orden: OrdenServicio): number {
+    if (orden.plazoDias <= 0) return 100;
+    return Math.min(100, Math.max(0, Math.round((this.ordenDiasTranscurridos(orden) / orden.plazoDias) * 100)));
+  }
+
+  ordenProgresoTexto(orden: OrdenServicio): string {
+    return `Día ${this.ordenDiasTranscurridos(orden)} de ${orden.plazoDias}`;
+  }
+
+  hitoStatus(hito: OrdenServicioHito): string {
+    if (hito.completado) return 'Entregado';
+    if (hito.diasRestantes > 1) return `Faltan ${hito.diasRestantes} días`;
+    if (hito.diasRestantes === 1) return 'Falta 1 día';
+    if (hito.diasRestantes === 0) return 'Vence hoy';
+    if (hito.diasRestantes === -1) return 'Venció ayer';
+    return `Vencido hace ${Math.abs(hito.diasRestantes)} días`;
+  }
+
+  hitoStatusClass(hito: OrdenServicioHito): 'ok' | 'warn' | 'bad' | 'done' {
+    if (hito.completado) return 'done';
+    if (hito.diasRestantes < 0) return 'bad';
+    if (hito.diasRestantes <= 5) return 'warn';
     return 'ok';
   }
 
@@ -1475,6 +1803,45 @@ export class HerramientasComponent implements OnInit, AfterViewInit, OnDestroy {
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/^-+|-+$/g, '')
       .slice(0, 48) || 'link';
+  }
+
+  private validarOrdenHitos(plazoTotal: number): boolean {
+    const dias = new Set<number>();
+    for (const hito of this.ordenHitos) {
+      const dia = Number(hito.diaPlazo);
+      if (!hito.nombre.trim()) {
+        this.ordenError = 'Cada entregable debe tener un nombre.';
+        return false;
+      }
+      if (!Number.isInteger(dia) || dia < 1 || dia > plazoTotal) {
+        this.ordenError = `Cada entregable debe ubicarse entre el día 1 y el día ${plazoTotal}.`;
+        return false;
+      }
+      if (dias.has(dia)) {
+        this.ordenError = 'No puede haber dos entregables programados para el mismo día.';
+        return false;
+      }
+      dias.add(dia);
+    }
+    return true;
+  }
+
+  private ordenDiasObjetivo(orden: OrdenServicio): number {
+    return this.ordenHitoObjetivo(orden)?.diasRestantes ?? orden.diasRestantes;
+  }
+
+  private ordenDiasAlerta(orden: OrdenServicio): number {
+    const pendientes = (orden.hitos ?? []).filter((hito) => !hito.completado);
+    return pendientes.length
+      ? Math.min(...pendientes.map((hito) => hito.diasRestantes))
+      : orden.diasRestantes;
+  }
+
+  private ordenDiasTranscurridos(orden: OrdenServicio): number {
+    if (Number.isFinite(orden.diasTranscurridos)) return Math.max(0, orden.diasTranscurridos);
+    const inicio = this.parseInputDate(orden.fechaInicio);
+    if (!inicio) return 0;
+    return Math.max(0, Math.round((this.dateOnly(new Date()).getTime() - inicio.getTime()) / 86400000));
   }
 
   private calculateDeadlineDate(startDate: string, days: number): string {

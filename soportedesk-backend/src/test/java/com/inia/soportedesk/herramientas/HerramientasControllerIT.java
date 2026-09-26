@@ -12,6 +12,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import java.util.List;
 
 import static org.hamcrest.Matchers.is;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -59,6 +60,29 @@ class HerramientasControllerIT {
                         .contentType("application/json")
                         .content("{\"host\":\"127.0.0.1 & whoami\"}"))
                 .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @WithMockUser(authorities = {"ROLE_SOPORTE", "READ_herramientas"})
+    void ping_withOnePacket_usesLightweightContinuousSample() throws Exception {
+        when(service.ping("127.0.0.1", 1)).thenReturn(PingResult.builder()
+                .host("127.0.0.1")
+                .reachable(true)
+                .packetsSent(1)
+                .packetsReceived(1)
+                .averageLatencyMs(2.0)
+                .status("Responde")
+                .output(List.of("ok"))
+                .build());
+
+        mockMvc.perform(post("/api/herramientas/ping/sample")
+                        .contentType("application/json")
+                        .content("{\"host\":\"127.0.0.1\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.packetsSent", is(1)))
+                .andExpect(jsonPath("$.averageLatencyMs", is(2.0)));
+
+        verify(service).ping("127.0.0.1", 1);
     }
 
     @Test

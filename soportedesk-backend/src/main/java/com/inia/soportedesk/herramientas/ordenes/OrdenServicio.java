@@ -5,13 +5,16 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.OrderBy;
 import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "ordenes_servicio")
@@ -45,9 +48,7 @@ public class OrdenServicio {
     @Column(nullable = false)
     private Boolean finalizada = false;
 
-    @Column(name = "registrado_por", nullable = false, length = 80)
-    private String registradoPor;
-
-    @Column(name = "fecha_registro", nullable = false)
-    private LocalDateTime fechaRegistro;
+    @OneToMany(mappedBy = "ordenServicio", cascade = jakarta.persistence.CascadeType.ALL, orphanRemoval = true)
+    @OrderBy("diaPlazo ASC, id ASC")
+    private List<OrdenServicioHito> hitos = new ArrayList<>();
 }

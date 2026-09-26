@@ -34,11 +34,16 @@ public class HerramientasService {
     private final VwInvComputerFullRepository glpiRepository;
 
     public PingResult ping(String rawHost) {
+        return ping(rawHost, 4);
+    }
+
+    public PingResult ping(String rawHost, int requestedPackets) {
         String host = rawHost.trim();
+        int packets = Math.max(1, Math.min(requestedPackets, 4));
         boolean windows = isWindows();
         List<String> command = windows
-                ? List.of("ping", "-n", "4", "-w", "1200", host)
-                : List.of("ping", "-c", "4", "-W", "2", host);
+                ? List.of("ping", "-n", String.valueOf(packets), "-w", "1200", host)
+                : List.of("ping", "-c", String.valueOf(packets), "-W", "2", host);
 
         List<String> output = new ArrayList<>();
         int exitCode = -1;
@@ -54,7 +59,7 @@ public class HerramientasService {
                     }
                 }
             }
-            boolean completed = process.waitFor(8, TimeUnit.SECONDS);
+            boolean completed = process.waitFor(packets * 2L + 2L, TimeUnit.SECONDS);
             if (!completed) {
                 process.destroyForcibly();
                 return PingResult.builder()

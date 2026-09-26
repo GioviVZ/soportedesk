@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.PutMapping;
 
 import java.util.List;
 
@@ -35,6 +36,13 @@ public class OrdenServicioController {
         return ResponseEntity.status(HttpStatus.CREATED).body(service.crear(request));
     }
 
+    @PutMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN') || hasAuthority('WRITE_herramientas')")
+    public OrdenServicioResponse actualizar(@PathVariable Long id,
+                                             @Valid @RequestBody OrdenServicioRequest request) {
+        return service.actualizar(id, request);
+    }
+
     @PatchMapping("/{id}/finalizar")
     @PreAuthorize("hasRole('ADMIN') || hasAuthority('WRITE_herramientas')")
     public OrdenServicioResponse finalizar(@PathVariable Long id) {
@@ -45,6 +53,18 @@ public class OrdenServicioController {
     @PreAuthorize("hasRole('ADMIN') || hasAuthority('WRITE_herramientas')")
     public OrdenServicioResponse reactivar(@PathVariable Long id) {
         return service.cambiarFinalizada(id, false);
+    }
+
+    @PatchMapping("/{id}/hitos/{hitoId}/completar")
+    @PreAuthorize("hasRole('ADMIN') || hasAuthority('WRITE_herramientas')")
+    public OrdenServicioResponse completarHito(@PathVariable Long id, @PathVariable Long hitoId) {
+        return service.cambiarHitoCompletado(id, hitoId, true);
+    }
+
+    @PatchMapping("/{id}/hitos/{hitoId}/reabrir")
+    @PreAuthorize("hasRole('ADMIN') || hasAuthority('WRITE_herramientas')")
+    public OrdenServicioResponse reabrirHito(@PathVariable Long id, @PathVariable Long hitoId) {
+        return service.cambiarHitoCompletado(id, hitoId, false);
     }
 
     @DeleteMapping("/{id}")

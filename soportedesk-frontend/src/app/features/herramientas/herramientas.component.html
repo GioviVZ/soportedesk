@@ -96,54 +96,189 @@
     }
   </section>
 
-  <section class="tool-panel" [class.active]="activeTab === 'ping'">
+  <section class="tool-panel ping-panel" [class.active]="activeTab === 'ping'">
+    <app-ping-monitoring />
+    @if (false) {
     <div class="panel-heading">
       <div>
         <h3>Ping / Red</h3>
-        <p>Comprueba respuesta de una IP o dominio desde el servidor del sistema.</p>
+        <p>Ejecuta una prueba puntual o vigila continuamente la latencia desde el servidor del sistema.</p>
       </div>
-      <span class="status-pill" [class.ok]="pingResult?.reachable" [class.bad]="pingResult && !pingResult.reachable">
-        {{ pingState === 'running' ? 'Ejecutando' : (pingResult?.status || 'Listo') }}
+      <span
+        class="status-pill"
+        [class.live]="pingMonitoring"
+        [class.ok]="pingResult?.reachable && !pingMonitoring"
+        [class.bad]="pingResult && !pingResult?.reachable && !pingMonitoring"
+        >
+        {{ pingStatusLabel }}
       </span>
     </div>
 
-    <div class="ping-box">
+    <div class="ping-mode-switch" role="group" aria-label="Modo de prueba ping">
+      <button
+        type="button"
+        [class.active]="pingMode === 'single'"
+        [attr.aria-pressed]="pingMode === 'single'"
+        [disabled]="pingMonitoring"
+        (click)="setPingMode('single')"
+        >
+        <strong>Prueba puntual</strong>
+        <span>4 paquetes y resultado inmediato</span>
+      </button>
+      <button
+        type="button"
+        [class.active]="pingMode === 'continuous'"
+        [attr.aria-pressed]="pingMode === 'continuous'"
+        [disabled]="pingMonitoring"
+        (click)="setPingMode('continuous')"
+        >
+        <strong>Monitoreo continuo</strong>
+        <span>Gráfico en vivo hasta detenerlo</span>
+      </button>
+    </div>
+
+    <div class="ping-box ping-config">
+      @if (pingMode === 'continuous') {
+        <label>
+          Nombre del monitoreo
+          <input
+            type="text"
+            [(ngModel)]="pingMonitorName"
+            maxlength="80"
+            placeholder="Ej. Servidor AD principal"
+            [disabled]="pingMonitoring"
+            (keyup.enter)="runPing()"
+            />
+        </label>
+      }
       <label>
         IP o dominio
-        <input type="text" [(ngModel)]="pingHost" placeholder="192.168.1.1 o inia.gob.pe" (keyup.enter)="runPing()" />
+        <input
+          type="text"
+          [(ngModel)]="pingHost"
+          placeholder="192.168.1.1 o inia.gob.pe"
+          [disabled]="pingMonitoring"
+          (keyup.enter)="runPing()"
+          />
       </label>
-      <button type="button" class="primary-btn" (click)="runPing()" [disabled]="pingState === 'running'">
-        {{ pingState === 'running' ? 'Probando...' : 'Probar ping' }}
-      </button>
+      @if (pingMode === 'single') {
+        <button type="button" class="primary-btn" (click)="runPing()" [disabled]="pingState === 'running'">
+          {{ pingState === 'running' ? 'Probando...' : 'Probar ping' }}
+        </button>
+      } @else if (!pingMonitoring) {
+        <button type="button" class="primary-btn" (click)="startContinuousPing()">
+          Iniciar monitoreo
+        </button>
+      } @else {
+        <button type="button" class="monitor-stop-btn" (click)="stopContinuousPing()">
+          Detener monitoreo
+        </button>
+      }
     </div>
 
     @if (pingError) {
       <p class="error-text">{{ pingError }}</p>
     }
 
-    @if (pingResult) {
-      <div class="metric-grid">
-        <div class="metric">
-          <span>Estado</span>
-          <strong>{{ pingResult.status }}</strong>
-        </div>
-        <div class="metric">
-          <span>Promedio</span>
-          <strong>{{ pingResult.averageLatencyMs || '-' }} ms</strong>
-        </div>
-        <div class="metric">
-          <span>Recibidos</span>
-          <strong>{{ pingResult.packetsReceived ?? '-' }}</strong>
-        </div>
-        <div class="metric">
-          <span>Perdidos</span>
-          <strong>{{ pingResult.packetsLost ?? '-' }}</strong>
-        </div>
-      </div>
-    }
+    @if (pingMode === 'continuous') {
+      <section class="ping-monitor-card" [class.is-live]="pingMonitoring">
+        <header class="ping-monitor-heading">
+          <div>
+            <span class="ping-live-dot" aria-hidden="true"></span>
+            <div>
+              <strong>{{ pingMonitorName.trim() || 'Monitoreo sin iniciar' }}</strong>
+              <small>{{ pingHost.trim() || 'Configura una IP o dominio' }}</small>
+            </div>
+          </div>
+          <span>{{ pingSamples.length }} / {{ pingMaxSamples }} muestras visibles</span>
+        </header>
 
-    @if (pingResult?.output?.length) {
-      <pre class="terminal">{{ pingResult?.output?.join('\n') }}</pre>
+        <div class="ping-live-metrics">
+          <div>
+            <span>Última respuesta</span>
+            <strong>{{ pingResult?.reachable ? ((pingResult?.averageLatencyMs ?? 0) + ' ms') : (pingResult ? 'Sin respuesta' : '-') }}</strong>
+          </div>
+          <div>
+            <span>Promedio</span>
+            <strong>{{ pingAverageLatency !== null ? ((pingAverageLatency | number:'1.0-1') + ' ms') : '-' }}</strong>
+          </div>
+          <div>
+            <span>Mínimo / máximo</span>
+            <strong>{{ pingMinimumLatency ?? '-' }} / {{ pingMaximumLatency ?? '-' }} ms</strong>
+          </div>
+          <div [class.has-loss]="pingLossPercentage > 0">
+            <span>Pérdida</span>
+            <strong>{{ pingLossPercentage }}%</strong>
+          </div>
+        </div>
+
+        <div
+          class="ping-chart"
+          role="img"
+          [attr.aria-label]="'Gráfico de latencia de ' + (pingMonitorName || pingHost) + ' con ' + pingSamples.length + ' muestras'"
+          >
+          <div class="ping-chart-scale" aria-hidden="true">
+            <span>{{ pingChartMaximum }} ms</span>
+            <span>{{ pingChartMaximum / 2 }} ms</span>
+            <span>0 ms</span>
+          </div>
+          <div class="ping-chart-stage">
+            <div class="ping-chart-grid" aria-hidden="true"><i></i><i></i><i></i></div>
+            @if (pingSamples.length) {
+              <div class="ping-chart-bars">
+                @for (sample of pingSamples; track sample.id) {
+                  <span
+                    class="ping-bar"
+                    [class]="'ping-bar ' + pingBarClass(sample)"
+                    [style.height.%]="pingBarHeight(sample)"
+                    [title]="pingSampleLabel(sample)"
+                    [attr.aria-label]="pingSampleLabel(sample)"
+                    ></span>
+                }
+              </div>
+            } @else {
+              <div class="ping-chart-empty">
+                <i class="ti ti-chart-bar" aria-hidden="true"></i>
+                <strong>El gráfico aparecerá al iniciar</strong>
+                <span>Se conservarán las últimas {{ pingMaxSamples }} muestras.</span>
+              </div>
+            }
+          </div>
+        </div>
+
+        <div class="ping-chart-legend" aria-label="Leyenda del gráfico">
+          <span><i class="healthy"></i>Normal ≤ 80 ms</span>
+          <span><i class="warning"></i>Elevada 81–150 ms</span>
+          <span><i class="slow"></i>Crítica &gt; 150 ms</span>
+          <span><i class="down"></i>Sin respuesta</span>
+        </div>
+      </section>
+    } @else {
+      @if (pingResult) {
+        <div class="metric-grid">
+          <div class="metric">
+            <span>Estado</span>
+            <strong>{{ pingResult?.status }}</strong>
+          </div>
+          <div class="metric">
+            <span>Promedio</span>
+            <strong>{{ pingResult?.averageLatencyMs ?? '-' }} ms</strong>
+          </div>
+          <div class="metric">
+            <span>Recibidos</span>
+            <strong>{{ pingResult?.packetsReceived ?? '-' }}</strong>
+          </div>
+          <div class="metric">
+            <span>Perdidos</span>
+            <strong>{{ pingResult?.packetsLost ?? '-' }}</strong>
+          </div>
+        </div>
+      }
+
+      @if (pingResult?.output?.length) {
+        <pre class="terminal">{{ pingResult?.output?.join('\n') }}</pre>
+      }
+    }
     }
   </section>
 
@@ -257,7 +392,7 @@
     <div class="panel-heading">
       <div>
         <h3>Conteo de días · Órdenes de servicio</h3>
-        <p>Registra el plazo de cada orden y consulta su cuenta regresiva desde cualquier equipo.</p>
+        <p>Controla la duración total, los entregables intermedios y sus alertas desde cualquier equipo.</p>
       </div>
       <span class="status-pill" [class.ok]="ordenesActivasCount">
         {{ ordenesLoading ? 'Cargando' : ordenesActivasCount + ' activas' }}
@@ -267,6 +402,12 @@
     <div class="deadline-layout">
       @if (canManageOrders) {
         <div class="deadline-form">
+          @if (ordenEditingId !== null) {
+            <div class="deadline-editing-note">
+              <strong>Editando orden</strong>
+              <span>Los entregables ya atendidos conservarán su estado.</span>
+            </div>
+          }
           <label>
             Número de orden de servicio
             <input type="text" [(ngModel)]="ordenNumero" maxlength="100" placeholder="OS-001-2026" />
@@ -285,7 +426,7 @@
               <input type="date" [(ngModel)]="ordenFechaInicio" (ngModelChange)="calcularOrdenVencimiento()" />
             </label>
             <label>
-              Plazo en días
+              Duración total en días
               <input
                 type="number"
                 min="0"
@@ -297,11 +438,53 @@
                 />
             </label>
           </div>
+          <div class="deadline-milestones-editor">
+            <div class="deadline-milestones-head">
+              <div>
+                <strong>Entregables o fases</strong>
+                <span>Define en qué día del plazo debe alertar cada entrega.</span>
+              </div>
+              <div class="deadline-milestones-buttons">
+                <button type="button" class="ghost-btn compact" (click)="crearHitosCada30Dias()">
+                  Cada 30 días
+                </button>
+                <button type="button" class="ghost-btn compact" (click)="agregarOrdenHito()">
+                  + Agregar
+                </button>
+              </div>
+            </div>
+            @if (!ordenHitos.length) {
+              <p class="deadline-milestones-empty">Opcional. Por ejemplo, una orden de 90 días puede tener entregables en los días 30, 60 y 90.</p>
+            }
+            @for (hito of ordenHitos; track $index; let index = $index) {
+              <div class="deadline-milestone-input">
+                <label>
+                  Nombre
+                  <input type="text" [(ngModel)]="hito.nombre" maxlength="140" placeholder="Entregable {{ index + 1 }}" />
+                </label>
+                <label>
+                  Día del plazo
+                  <input type="number" min="1" [max]="ordenPlazoDias" step="1" [(ngModel)]="hito.diaPlazo" />
+                </label>
+                <div class="deadline-milestone-date">
+                  <span>Fecha</span>
+                  <strong>{{ ordenHitoFecha(hito) ? formatDate(ordenHitoFecha(hito)) : '-' }}</strong>
+                </div>
+                <button
+                  type="button"
+                  class="deadline-remove-hito"
+                  (click)="quitarOrdenHito(index)"
+                  [attr.aria-label]="'Quitar ' + (hito.nombre || 'entregable')"
+                  title="Quitar entregable"
+                  >×</button>
+              </div>
+            }
+          </div>
           <div class="deadline-result" [class.empty]="!ordenFechaVencimiento">
-            <span>Fecha de vencimiento</span>
+            <span>Vencimiento total de la orden</span>
             <strong>{{ ordenFechaVencimiento ? formatDate(ordenFechaVencimiento) : '-' }}</strong>
             @if (ordenFechaVencimiento) {
-              <small>La cuenta regresiva comenzará al guardar la orden.</small>
+              <small>{{ ordenPlazoDias }} días en total · {{ ordenHitos.length }} entregables configurados.</small>
             }
           </div>
           <div class="button-row">
@@ -312,7 +495,7 @@
               (click)="guardarOrdenServicio()"
               [disabled]="ordenSaving || !ordenFechaVencimiento || !ordenNumero.trim() || !ordenDescripcion.trim()"
               >
-              {{ ordenSaving ? 'Guardando...' : 'Guardar orden' }}
+              {{ ordenSaving ? 'Guardando...' : (ordenEditingId !== null ? 'Actualizar orden' : 'Guardar orden') }}
             </button>
           </div>
         </div>
@@ -339,7 +522,7 @@
           </div>
         }
 
-        @for (orden of ordenesOrdenadas; track orden) {
+        @for (orden of ordenesOrdenadas; track orden.id) {
           <article
             class="deadline-item"
             [class.warn]="ordenStatusClass(orden) === 'warn'"
@@ -350,7 +533,7 @@
               <strong>{{ orden.numeroOrden }}</strong>
               <span>{{ orden.descripcion }}</span>
               <small>
-                {{ orden.proveedor || 'Sin proveedor' }} · Inicio {{ formatDate(orden.fechaInicio) }} · {{ orden.plazoDias }} días
+                {{ orden.proveedor || 'Sin proveedor' }} · Inicio {{ formatDate(orden.fechaInicio) }} · {{ orden.plazoDias }} días totales
               </small>
             </div>
             <div class="deadline-count">
@@ -361,14 +544,55 @@
                 <b>✓</b>
               }
               <small>{{ ordenStatus(orden) }}</small>
-              <span>Vence {{ formatDate(orden.fechaVencimiento) }}</span>
+              <span>{{ ordenObjetivoNombre(orden) }}</span>
+              <span>{{ formatDate(ordenObjetivoFecha(orden)) }}</span>
             </div>
             @if (canManageOrders) {
               <div class="deadline-actions">
+                <button type="button" class="ghost-btn compact" (click)="editarOrden(orden)">Editar</button>
                 <button type="button" class="ghost-btn compact" (click)="cambiarEstadoOrden(orden)">
                   {{ orden.finalizada ? 'Reactivar' : 'Finalizar' }}
                 </button>
                 <button type="button" class="ghost-btn compact danger-action" (click)="eliminarOrden(orden)">Eliminar</button>
+              </div>
+            }
+            <div class="deadline-progress">
+              <div>
+                <span>Avance del plazo total</span>
+                <strong>{{ ordenProgresoTexto(orden) }}</strong>
+                <b>{{ ordenProgresoPorcentaje(orden) }}%</b>
+              </div>
+              <i aria-hidden="true"><b [style.width.%]="ordenProgresoPorcentaje(orden)"></b></i>
+              <small>Vencimiento final: {{ formatDate(orden.fechaVencimiento) }}</small>
+            </div>
+            @if (ordenHitosVencidos(orden).length && !orden.finalizada) {
+              <div class="deadline-alert" role="status">
+                <strong>{{ ordenHitosVencidos(orden).length }} {{ ordenHitosVencidos(orden).length === 1 ? 'entregable vencido' : 'entregables vencidos' }}</strong>
+                <span>Marca la fase como atendida cuando se haya presentado el entregable.</span>
+              </div>
+            }
+            @if (orden.hitos.length) {
+              <div class="deadline-timeline" aria-label="Entregables de la orden">
+                @for (hito of orden.hitos; track hito.id) {
+                  <div
+                    class="deadline-phase"
+                    [class.warn]="hitoStatusClass(hito) === 'warn'"
+                    [class.bad]="hitoStatusClass(hito) === 'bad'"
+                    [class.done]="hitoStatusClass(hito) === 'done'"
+                    >
+                    <span class="deadline-phase-marker" aria-hidden="true">{{ hito.completado ? '✓' : hito.diaPlazo }}</span>
+                    <div>
+                      <strong>{{ hito.nombre }}</strong>
+                      <span>Día {{ hito.diaPlazo }} · {{ formatDate(hito.fechaVencimiento) }}</span>
+                      <small>{{ hitoStatus(hito) }}</small>
+                    </div>
+                    @if (canManageOrders) {
+                      <button type="button" class="ghost-btn compact" (click)="cambiarEstadoHito(orden, hito)">
+                        {{ hito.completado ? 'Reabrir' : 'Marcar atendido' }}
+                      </button>
+                    }
+                  </div>
+                }
               </div>
             }
           </article>

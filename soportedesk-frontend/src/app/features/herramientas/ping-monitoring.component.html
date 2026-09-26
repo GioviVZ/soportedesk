@@ -1,0 +1,281 @@
+<div class="ping-workspace">
+  <header class="ping-workspace__heading">
+    <div>
+      <span class="eyebrow">Diagnóstico de red</span>
+      <h3>Ping y monitoreo</h3>
+      <p>Prueba un destino ahora o mantén varios monitores ejecutándose desde el servidor.</p>
+    </div>
+    @if (view === 'monitors') {
+      <div class="monitor-summary" aria-label="Resumen de monitores">
+        <span><strong>{{ activeCount }}</strong> activos</span>
+        <span [class.has-problems]="problemCount > 0"><strong>{{ problemCount }}</strong> con alertas</span>
+      </div>
+    }
+  </header>
+
+  <nav class="ping-view-switch" aria-label="Modo de ping">
+    <button type="button" [class.active]="view === 'monitors'" [attr.aria-pressed]="view === 'monitors'" (click)="setView('monitors')">
+      <i class="ti ti-activity-heartbeat" aria-hidden="true"></i>
+      <span><strong>Monitores</strong><small>Persistentes e históricos</small></span>
+    </button>
+    <button type="button" [class.active]="view === 'single'" [attr.aria-pressed]="view === 'single'" (click)="setView('single')">
+      <i class="ti ti-terminal-2" aria-hidden="true"></i>
+      <span><strong>Prueba puntual</strong><small>Resultado inmediato</small></span>
+    </button>
+  </nav>
+
+  @if (view === 'single') {
+    <section class="single-ping" aria-labelledby="single-ping-title">
+      <div class="section-heading">
+        <div>
+          <h4 id="single-ping-title">Prueba puntual</h4>
+          <p>Envía cuatro paquetes sin guardar un monitoreo.</p>
+        </div>
+        @if (singleResult) {
+          <span class="health-badge" [class.available]="singleResult.reachable" [class.down]="!singleResult.reachable">
+            {{ singleResult.status }}
+          </span>
+        }
+      </div>
+      <div class="single-ping__form">
+        <label>
+          IP o dominio
+          <input type="text" [(ngModel)]="singleHost" placeholder="192.168.1.1 o inia.gob.pe" (keyup.enter)="runSinglePing()" />
+        </label>
+        <button type="button" class="primary-action" [disabled]="singleLoading" (click)="runSinglePing()">
+          <i class="ti ti-player-play" aria-hidden="true"></i>
+          {{ singleLoading ? 'Probando…' : 'Ejecutar ping' }}
+        </button>
+      </div>
+      @if (singleError) {
+        <p class="message error" role="alert">{{ singleError }}</p>
+      }
+      @if (singleResult) {
+        <div class="single-ping__metrics">
+          <div><span>Promedio</span><strong>{{ singleResult.averageLatencyMs ?? '—' }} ms</strong></div>
+          <div><span>Enviados</span><strong>{{ singleResult.packetsSent ?? '—' }}</strong></div>
+          <div><span>Recibidos</span><strong>{{ singleResult.packetsReceived ?? '—' }}</strong></div>
+          <div><span>Perdidos</span><strong>{{ singleResult.packetsLost ?? '—' }}</strong></div>
+        </div>
+        @if (singleResult.output.length) {
+          <pre class="ping-terminal">{{ singleResult.output.join('\n') }}</pre>
+        }
+      }
+    </section>
+  } @else {
+    <section class="monitor-toolbar" aria-label="Administrar monitores">
+      <label class="monitor-search">
+        <i class="ti ti-search" aria-hidden="true"></i>
+        <span class="sr-only">Buscar monitores</span>
+        <input type="search" [(ngModel)]="search" placeholder="Buscar por nombre o host" />
+      </label>
+      <label class="monitor-filter">
+        <span class="sr-only">Filtrar monitores</span>
+        <select [(ngModel)]="filter">
+          <option value="TODOS">Todos</option>
+          <option value="ACTIVO">Activos</option>
+          <option value="PROBLEMAS">Con alertas</option>
+          <option value="PAUSADO">Pausados</option>
+          <option value="ARCHIVADO">Archivados</option>
+        </select>
+      </label>
+      @if (canManage) {
+        <button type="button" class="primary-action" (click)="openCreate()">
+          <i class="ti ti-plus" aria-hidden="true"></i>
+          Nuevo monitor
+        </button>
+      }
+    </section>
+
+    @if (feedback) {
+      <p class="message success" role="status">{{ feedback }}</p>
+    }
+    @if (monitorsError) {
+      <p class="message error" role="alert">{{ monitorsError }}</p>
+    }
+
+    @if (showForm) {
+      <form class="monitor-form" (ngSubmit)="saveMonitor()">
+        <div class="monitor-form__heading">
+          <div>
+            <span class="eyebrow">{{ editingId ? 'Editar configuración' : 'Nuevo monitoreo' }}</span>
+            <h4>{{ editingId ? 'Actualizar monitor' : 'Crear monitor persistente' }}</h4>
+          </div>
+          <button type="button" class="icon-action" aria-label="Cerrar formulario" [disabled]="saving" (click)="closeForm()">
+            <i class="ti ti-x" aria-hidden="true"></i>
+          </button>
+        </div>
+        <div class="monitor-form__fields">
+          <label>
+            Nombre
+            <input name="monitorName" type="text" [(ngModel)]="form.nombre" maxlength="80" placeholder="Ej. Servidor AD principal" required />
+          </label>
+          <label>
+            IP o dominio
+            <input name="monitorHost" type="text" [(ngModel)]="form.host" maxlength="255" placeholder="192.168.1.10 o servidor.inia.local" required />
+          </label>
+          <label>
+            Frecuencia
+            <select name="monitorInterval" [(ngModel)]="form.intervaloSegundos">
+              @for (interval of intervals; track interval) {
+                <option [ngValue]="interval">Cada {{ interval < 60 ? (interval + ' segundos') : ((interval / 60) + ' minutos') }}</option>
+              }
+            </select>
+          </label>
+        </div>
+        <p class="monitor-form__hint"><i class="ti ti-server" aria-hidden="true"></i> Continuará ejecutándose aunque cierres sesión.</p>
+        @if (formError) {
+          <p class="message error" role="alert">{{ formError }}</p>
+        }
+        <div class="monitor-form__actions">
+          <button type="button" class="secondary-action" [disabled]="saving" (click)="closeForm()">Cancelar</button>
+          <button type="submit" class="primary-action" [disabled]="saving">
+            {{ saving ? 'Guardando…' : (editingId ? 'Guardar cambios' : 'Crear e iniciar') }}
+          </button>
+        </div>
+      </form>
+    }
+
+    @if (monitorsLoading) {
+      <div class="monitor-loading" role="status"><span></span><span></span><span></span></div>
+    } @else if (!monitors.length) {
+      <div class="monitor-empty">
+        <i class="ti ti-heart-rate-monitor" aria-hidden="true"></i>
+        <h4>Aún no hay monitores</h4>
+        <p>Crea el primero para guardar disponibilidad y latencia desde el servidor.</p>
+        @if (canManage) {
+          <button type="button" class="primary-action" (click)="openCreate()">Crear primer monitor</button>
+        }
+      </div>
+    } @else {
+      <div class="monitor-grid" aria-label="Monitores configurados">
+        @for (monitor of filteredMonitors; track trackMonitor($index, monitor)) {
+          <article class="monitor-card" [class.selected]="selectedId === monitor.id">
+            <button type="button" class="monitor-card__main" (click)="selectMonitor(monitor.id)">
+              <span class="health-indicator" [class]="'health-indicator ' + statusClass(monitor.salud)" aria-hidden="true"></span>
+              <span class="monitor-card__identity">
+                <strong>{{ monitor.nombre }}</strong>
+                <small>{{ monitor.host }} · cada {{ monitor.intervaloSegundos }} s</small>
+              </span>
+              <span class="monitor-card__value">
+                <strong>{{ monitor.ultimaDisponible === false ? 'Sin respuesta' : (monitor.ultimaLatenciaMs !== null ? (monitor.ultimaLatenciaMs + ' ms') : 'Esperando') }}</strong>
+                <small>{{ statusLabel(monitor.salud) }}</small>
+              </span>
+            </button>
+            <div class="monitor-card__footer">
+              <span>{{ monitor.ultimaMedicion ? (monitor.ultimaMedicion | date:'dd/MM HH:mm:ss') : 'Sin muestras' }}</span>
+              @if (canManage) {
+                <div class="monitor-card__actions">
+                  <button type="button" class="text-action" [disabled]="operationId === monitor.id" (click)="openEdit(monitor)">Editar</button>
+                  @if (monitor.estado === 'ACTIVO') {
+                    <button type="button" class="text-action" [disabled]="operationId === monitor.id" (click)="changeState(monitor, 'pausar')">Pausar</button>
+                  } @else {
+                    <button type="button" class="text-action" [disabled]="operationId === monitor.id" (click)="changeState(monitor, 'reanudar')">Reanudar</button>
+                  }
+                  @if (isAdmin) {
+                    <button type="button" class="text-action text-action--danger" [disabled]="operationId === monitor.id" (click)="deleteMonitor(monitor)">Eliminar</button>
+                  }
+                </div>
+              }
+            </div>
+          </article>
+        } @empty {
+          <div class="monitor-no-results">
+            <strong>No encontramos monitores</strong>
+            <span>Cambia el texto de búsqueda o el filtro.</span>
+          </div>
+        }
+      </div>
+
+      @if (selectedMonitor; as monitor) {
+        <section class="monitor-detail" aria-labelledby="monitor-detail-title">
+          <header class="monitor-detail__heading">
+            <div class="monitor-detail__identity">
+              <span class="health-indicator" [class]="'health-indicator ' + statusClass(monitor.salud)" aria-hidden="true"></span>
+              <div>
+                <span class="eyebrow">Detalle del monitor</span>
+                <h4 id="monitor-detail-title">{{ monitor.nombre }}</h4>
+                <p>{{ monitor.host }} · iniciado por {{ monitor.creadoPor }}</p>
+              </div>
+            </div>
+            <div class="monitor-detail__actions">
+              @if (history?.puntos?.length) {
+                <button type="button" class="secondary-action" (click)="exportCsv()">
+                  <i class="ti ti-download" aria-hidden="true"></i> Exportar CSV
+                </button>
+              }
+              @if (canManage && monitor.estado !== 'ARCHIVADO') {
+                <button type="button" class="secondary-action danger-soft" [disabled]="operationId === monitor.id" (click)="changeState(monitor, 'archivar')">Archivar</button>
+              }
+              @if (isAdmin) {
+                <button type="button" class="secondary-action danger-soft" [disabled]="operationId === monitor.id" (click)="deleteMonitor(monitor)">Eliminar</button>
+              }
+            </div>
+          </header>
+
+          <div class="monitor-metrics">
+            <div>
+              <span>Estado actual</span>
+              <strong>{{ statusLabel(monitor.salud) }}</strong>
+              <small>{{ monitor.ultimaMedicion ? (monitor.ultimaMedicion | date:'dd/MM/yyyy HH:mm:ss') : 'Primera medición pendiente' }}</small>
+            </div>
+            <div>
+              <span>Promedio</span>
+              <strong>{{ history?.estadisticas?.latenciaPromedioMs ?? '—' }} ms</strong>
+              <small>En el rango seleccionado</small>
+            </div>
+            <div>
+              <span>Mínimo / máximo</span>
+              <strong>{{ history?.estadisticas?.latenciaMinimaMs ?? '—' }} / {{ history?.estadisticas?.latenciaMaximaMs ?? '—' }} ms</strong>
+              <small>{{ history?.estadisticas?.muestras ?? 0 }} muestras</small>
+            </div>
+            <div [class.metric-alert]="(history?.estadisticas?.perdidaPorcentaje ?? 0) > 0">
+              <span>Pérdida</span>
+              <strong>{{ history?.estadisticas?.perdidaPorcentaje ?? 0 }}%</strong>
+              <small>{{ history?.estadisticas?.disponibilidadPorcentaje ?? 0 }}% disponible</small>
+            </div>
+          </div>
+
+          <div class="chart-toolbar">
+            <div class="range-switch" aria-label="Rango del historial">
+              @for (range of ranges; track range.id) {
+                <button type="button" [class.active]="selectedRange === range.id" [attr.aria-pressed]="selectedRange === range.id" (click)="setRange(range.id)">{{ range.label }}</button>
+              }
+            </div>
+            <div class="chart-type-switch" aria-label="Tipo de gráfico">
+              <button type="button" [class.active]="chartType === 'line'" [attr.aria-pressed]="chartType === 'line'" (click)="setChartType('line')">
+                <i class="ti ti-chart-line" aria-hidden="true"></i> Líneas
+              </button>
+              <button type="button" [class.active]="chartType === 'bar'" [attr.aria-pressed]="chartType === 'bar'" (click)="setChartType('bar')">
+                <i class="ti ti-chart-bar" aria-hidden="true"></i> Barras
+              </button>
+            </div>
+          </div>
+
+          @if (historyError) {
+            <p class="message error" role="alert">{{ historyError }}</p>
+          }
+          <div class="monitor-chart" [class.loading]="historyLoading">
+            @if (historyLoading) {
+              <div class="chart-state" role="status"><i class="ti ti-loader-2" aria-hidden="true"></i> Cargando historial…</div>
+            } @else if (history?.puntos?.length) {
+              <canvas baseChart [data]="chartData" [options]="chartOptions" [type]="chartType"></canvas>
+            } @else {
+              <div class="chart-state">
+                <i class="ti ti-chart-dots" aria-hidden="true"></i>
+                <strong>Esperando mediciones</strong>
+                <span>El servidor agregará los primeros datos automáticamente.</span>
+              </div>
+            }
+          </div>
+          <div class="chart-legend" aria-label="Leyenda de estados">
+            <span><i class="normal"></i> Normal ≤ 80 ms</span>
+            <span><i class="warning"></i> Elevada 81–150 ms</span>
+            <span><i class="critical"></i> Crítica &gt; 150 ms</span>
+            <span><i class="down"></i> Sin respuesta</span>
+          </div>
+        </section>
+      }
+    }
+  }
+</div>
