@@ -84,9 +84,9 @@
     <div class="two-col">
       <div class="field">
         <label>Tipo de equipo</label>
-        <select [value]="form.tipoOverride || ''" (change)="update('tipoOverride', $any($event.target).value)">
+        <select [value]="form.tipoOverride || ''" (change)="updateTipo($any($event.target).value)">
           <option value="">Seleccione...</option>
-          @for (tipo of tiposEquipo(); track tipo) { <option [value]="tipo">{{ tipo }}</option> }
+          @for (tipo of opcionesTipoEquipo; track tipo) { <option [value]="tipo">{{ tipo }}</option> }
         </select>
       </div>
       <div class="field"><label>Nombre del usuario asignado</label><input type="text" [value]="form.nombreAsignadoOverride || ''" (input)="update('nombreAsignadoOverride', $any($event.target).value)" /></div>
@@ -132,20 +132,24 @@
       <rect x="2" y="6" width="20" height="12" rx="2" /><path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M6 14h12" />
     </svg>
     @if (teclado(); as tecladoActual) {
-      <p class="section-subtitle">Registrado en GLPI. Ya no se puede editar desde aquí.</p>
-      <dl class="equipment-main-grid">
-        <div><dt>Marca</dt><dd>{{ tecladoActual.marcafield || '-' }}</dd></div>
-        <div><dt>Modelo</dt><dd>{{ tecladoActual.modelofield || '-' }}</dd></div>
-        <div><dt>Número de serie</dt><dd>{{ tecladoActual.nmerodeseriefield || '-' }}</dd></div>
-        <div><dt>Código de Inventario</dt><dd>{{ tecladoActual.cdigodeinventariofield || 'Sin código' }}</dd></div>
-        <div><dt>Código patrimonial</dt><dd>{{ tecladoActual.cdigopatrimonialfield || 'Sin código' }}</dd></div>
-      </dl>
-    } @else if (!creandoTeclado()) {
-      <div class="danger-zone-row">
-        <div><strong>Este equipo no tiene teclado registrado en GLPI</strong><span>Si es un ingreso nuevo, complétalo aquí.</span></div>
-        <button type="button" class="ver-ficha-btn" (click)="creandoTeclado.set(true)">Registrar teclado</button>
+      <p class="section-subtitle">Registrado en GLPI. Corrige lo que sea necesario.</p>
+      <div class="two-col">
+        <div class="field"><label>Marca</label><input type="text" [value]="tecladoMarca" (input)="tecladoMarca = $any($event.target).value.toUpperCase()" autocomplete="off" /></div>
+        <div class="field"><label>Modelo</label><input type="text" [value]="tecladoModelo" (input)="tecladoModelo = $any($event.target).value.toUpperCase()" autocomplete="off" /></div>
+        <div class="field"><label>Número de serie</label><input type="text" [value]="tecladoNumeroSerie" (input)="tecladoNumeroSerie = $any($event.target).value.toUpperCase()" autocomplete="off" /></div>
+        <div class="field"><label>Código de Inventario</label><input type="text" [value]="tecladoCodigoInventario" (input)="tecladoCodigoInventario = $any($event.target).value.toUpperCase()" autocomplete="off" /></div>
+        <div class="field"><label>Código patrimonial</label><input type="text" [value]="tecladoCodigoPatrimonial" (input)="tecladoCodigoPatrimonial = $any($event.target).value.toUpperCase()" autocomplete="off" /></div>
       </div>
-    } @else {
+      @if (tecladoError()) {
+        <div class="notice error">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10" /><path d="M12 8v4" /><path d="M12 16h.01" /></svg>
+          {{ tecladoError() }}
+        </div>
+      }
+      <div class="danger-zone-actions">
+        <button type="button" class="save-btn" [disabled]="!tecladoValido() || tecladoGuardando()" (click)="guardarTeclado()">{{ tecladoGuardando() ? 'Guardando...' : 'Guardar cambios' }}</button>
+      </div>
+    } @else if (creandoTeclado()) {
       <p class="section-subtitle">Marca, modelo y número de serie son obligatorios.</p>
       <div class="two-col">
         <div class="field"><label>Marca</label><input type="text" [value]="tecladoMarca" (input)="tecladoMarca = $any($event.target).value.toUpperCase()" autocomplete="off" /></div>
@@ -162,7 +166,12 @@
       }
       <div class="danger-zone-actions">
         <button type="button" class="ver-ficha-btn" (click)="cancelarTeclado()">Cancelar</button>
-        <button type="button" class="save-btn" [disabled]="!tecladoValido() || tecladoGuardando()" (click)="crearTeclado()">{{ tecladoGuardando() ? 'Guardando...' : 'Registrar teclado' }}</button>
+        <button type="button" class="save-btn" [disabled]="!tecladoValido() || tecladoGuardando()" (click)="guardarTeclado()">{{ tecladoGuardando() ? 'Guardando...' : 'Registrar teclado' }}</button>
+      </div>
+    } @else {
+      <div class="danger-zone-row">
+        <div><strong>Este equipo no tiene teclado registrado en GLPI</strong><span>Si es un ingreso nuevo, complétalo aquí.</span></div>
+        <button type="button" class="ver-ficha-btn" (click)="creandoTeclado.set(true)">Registrar teclado</button>
       </div>
     }
   </app-section-card>

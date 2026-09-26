@@ -1,6 +1,6 @@
 package com.inia.soportedesk.equipos;
 
-import com.inia.soportedesk.glpi.VwInvComputerFull;
+import com.inia.soportedesk.equipos.glpicache.EquipoGlpiCache;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -30,8 +30,8 @@ class EquipoControllerIT {
     @Test
     @WithMockUser(authorities = {"ROLE_SOPORTE", "READ_equipos"})
     void findAll_withReadAuthority_allowsUser() throws Exception {
-        VwInvComputerFull equipo = new VwInvComputerFull();
-        equipo.setComputerID(1L);
+        EquipoGlpiCache equipo = new EquipoGlpiCache();
+        equipo.setComputerId(1L);
         equipo.setNombreEquipo("PC-GLPI-01");
         when(service.findAll(null, null, null, null, null, null)).thenReturn(List.of(equipo));
 

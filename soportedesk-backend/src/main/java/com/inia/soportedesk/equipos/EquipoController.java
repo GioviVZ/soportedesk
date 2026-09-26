@@ -1,6 +1,8 @@
 package com.inia.soportedesk.equipos;
 
-import com.inia.soportedesk.glpi.VwInvComputerFull;
+import com.inia.soportedesk.equipos.glpicache.EquipoGlpiCache;
+import com.inia.soportedesk.equipos.glpicache.GlpiSyncCoordinator;
+import com.inia.soportedesk.equipos.glpicache.dto.GlpiSyncStatus;
 import com.inia.soportedesk.glpi.SoftwareExportRow;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -14,10 +16,11 @@ import java.util.List;
 public class EquipoController {
 
     private final EquipoService service;
+    private final GlpiSyncCoordinator syncCoordinator;
 
     @GetMapping
     @PreAuthorize("hasRole('ADMIN') || hasAuthority('READ_equipos')")
-    public List<VwInvComputerFull> findAll(
+    public List<EquipoGlpiCache> findAll(
             @RequestParam(required = false) String search,
             @RequestParam(required = false) String sede,
             @RequestParam(required = false) String tipo,
@@ -81,6 +84,18 @@ public class EquipoController {
     @PreAuthorize("hasRole('ADMIN') || hasAuthority('WRITE_equipos')")
     public EquipoDashboardCompleto dashboardCompleto() {
         return service.getDashboardCompleto();
+    }
+
+    @PostMapping("/sync/iniciar")
+    @PreAuthorize("hasRole('ADMIN') || hasAuthority('WRITE_equipos')")
+    public GlpiSyncStatus iniciarSincronizacion() {
+        return syncCoordinator.iniciar();
+    }
+
+    @GetMapping("/sync/estado")
+    @PreAuthorize("hasRole('ADMIN') || hasAuthority('WRITE_equipos')")
+    public GlpiSyncStatus estadoSincronizacion() {
+        return syncCoordinator.estado();
     }
 
     @GetMapping("/{id}")

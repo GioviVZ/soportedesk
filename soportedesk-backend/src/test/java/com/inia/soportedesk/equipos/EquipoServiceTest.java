@@ -5,14 +5,11 @@ import com.inia.soportedesk.catalogo.TipoEquipoCatalogo;
 import com.inia.soportedesk.catalogo.TipoEquipoCatalogoRepository;
 import com.inia.soportedesk.equipos.enrichment.EquipoEnrichment;
 import com.inia.soportedesk.equipos.enrichment.EquipoEnrichmentRepository;
+import com.inia.soportedesk.equipos.glpicache.EquipoGlpiCache;
+import com.inia.soportedesk.equipos.glpicache.EquipoGlpiCacheRepository;
+import com.inia.soportedesk.equipos.glpicache.EquipoGlpiCacheSyncService;
 import com.inia.soportedesk.glpi.GlpiComputerOficinaRepository;
-import com.inia.soportedesk.glpi.GlpiMonitorRepository;
-import com.inia.soportedesk.glpi.GlpiMonitorRow;
-import com.inia.soportedesk.glpi.GlpiRemoteManagement;
-import com.inia.soportedesk.glpi.GlpiRemoteManagementRepository;
-import com.inia.soportedesk.glpi.GlpiTeclado;
 import com.inia.soportedesk.glpi.GlpiTecladoRepository;
-import com.inia.soportedesk.glpi.VwInvComputerFull;
 import com.inia.soportedesk.glpi.VwInvComputerFullRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -31,21 +28,21 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 class EquipoServiceTest {
 
-    @Mock private VwInvComputerFullRepository repository;
+    @Mock private VwInvComputerFullRepository glpiViewRepository;
+    @Mock private EquipoGlpiCacheRepository repository;
+    @Mock private EquipoGlpiCacheSyncService glpiCacheSyncService;
     @Mock private GlpiTecladoRepository tecladoRepository;
     @Mock private GlpiComputerOficinaRepository oficinaRepository;
     @Mock private TipoEquipoCatalogoRepository catalogoRepository;
     @Mock private EquipoEnrichmentRepository enrichmentRepository;
-    @Mock private GlpiRemoteManagementRepository remoteManagementRepository;
-    @Mock private GlpiMonitorRepository monitorRepository;
 
     @InjectMocks
     private EquipoService service;
 
     @Test
     void findAll_delegatesFiltersToRepository() {
-        VwInvComputerFull equipo = new VwInvComputerFull();
-        equipo.setComputerID(10L);
+        EquipoGlpiCache equipo = new EquipoGlpiCache();
+        equipo.setComputerId(10L);
         equipo.setFabricanteEquipo("Fabricante GLPI");
         equipo.setModeloEquipo("Modelo GLPI");
         EquipoEnrichment enrichment = new EquipoEnrichment();
@@ -55,7 +52,7 @@ class EquipoServiceTest {
         when(repository.findFiltered("ana", "SEDE CENTRAL", "Laptop", null, null, null)).thenReturn(List.of(equipo));
         when(enrichmentRepository.findByComputerIdIn(List.of(10L))).thenReturn(List.of(enrichment));
 
-        List<VwInvComputerFull> result = service.findAll("ana", "SEDE CENTRAL", "Laptop", null, null, null);
+        List<EquipoGlpiCache> result = service.findAll("ana", "SEDE CENTRAL", "Laptop", null, null, null);
 
         assertThat(result).containsExactly(equipo);
         assertThat(result.get(0).getFabricanteEquipo()).isEqualTo("Marca verificada");
@@ -65,16 +62,14 @@ class EquipoServiceTest {
 
     @Test
     void findAll_populatesAnydeskAndRustdeskIds() {
-        VwInvComputerFull equipo = new VwInvComputerFull();
-        equipo.setComputerID(10L);
-        GlpiRemoteManagement anydesk = remoto(10L, "anydesk", "1576892737");
-        GlpiRemoteManagement rustdesk = remoto(10L, "rustdesk", "183165540");
+        EquipoGlpiCache equipo = new EquipoGlpiCache();
+        equipo.setComputerId(10L);
+        equipo.setAnydeskId("1576892737");
+        equipo.setRustdeskId("183165540");
         when(repository.findFiltered(null, null, null, null, null, null)).thenReturn(List.of(equipo));
         when(enrichmentRepository.findByComputerIdIn(List.of(10L))).thenReturn(List.of());
-        when(remoteManagementRepository.findByItemsIdInAndItemtypeAndIsDeleted(List.of(10L), "Computer", 0))
-                .thenReturn(List.of(anydesk, rustdesk));
 
-        List<VwInvComputerFull> result = service.findAll(null, null, null, null, null, null);
+        List<EquipoGlpiCache> result = service.findAll(null, null, null, null, null, null);
 
         assertThat(result.get(0).getAnydeskId()).isEqualTo("1576892737");
         assertThat(result.get(0).getRustdeskId()).isEqualTo("183165540");
@@ -82,8 +77,8 @@ class EquipoServiceTest {
 
     @Test
     void findAll_populatesCodigoPatrimonialAndMonitorOverridesFromEnrichment() {
-        VwInvComputerFull equipo = new VwInvComputerFull();
-        equipo.setComputerID(12L);
+        EquipoGlpiCache equipo = new EquipoGlpiCache();
+        equipo.setComputerId(12L);
         EquipoEnrichment enrichment = new EquipoEnrichment();
         enrichment.setComputerId(12L);
         enrichment.setCodigoPatrimonial("74089500.0001");
@@ -94,11 +89,8 @@ class EquipoServiceTest {
         enrichment.setMonitorCodigoInternoOverride("202405999");
         when(repository.findFiltered(null, null, null, null, null, null)).thenReturn(List.of(equipo));
         when(enrichmentRepository.findByComputerIdIn(List.of(12L))).thenReturn(List.of(enrichment));
-        when(remoteManagementRepository.findByItemsIdInAndItemtypeAndIsDeleted(List.of(12L), "Computer", 0))
-                .thenReturn(List.of());
-        when(tecladoRepository.findByItemsIdIn(List.of(12L))).thenReturn(List.of());
 
-        List<VwInvComputerFull> result = service.findAll(null, null, null, null, null, null);
+        List<EquipoGlpiCache> result = service.findAll(null, null, null, null, null, null);
 
         assertThat(result.get(0).getCodigoPatrimonial()).isEqualTo("74089500.0001");
         assertThat(result.get(0).getMonitorFabricanteOverride()).isEqualTo("Samsung");
@@ -110,22 +102,17 @@ class EquipoServiceTest {
 
     @Test
     void findAll_populatesTecladoFieldsWhenRegistered() {
-        VwInvComputerFull equipo = new VwInvComputerFull();
-        equipo.setComputerID(13L);
-        GlpiTeclado teclado = new GlpiTeclado();
-        teclado.setItemsId(13L);
-        teclado.setMarcafield("HP");
-        teclado.setModelofield("KB-100");
-        teclado.setNmerodeseriefield("SN-TEC-001");
-        teclado.setCdigodeinventariofield("202405001");
-        teclado.setCdigopatrimonialfield("74089500.0003");
+        EquipoGlpiCache equipo = new EquipoGlpiCache();
+        equipo.setComputerId(13L);
+        equipo.setTecladoMarca("HP");
+        equipo.setTecladoModelo("KB-100");
+        equipo.setTecladoNumeroSerie("SN-TEC-001");
+        equipo.setTecladoCodigoInventario("202405001");
+        equipo.setTecladoCodigoPatrimonial("74089500.0003");
         when(repository.findFiltered(null, null, null, null, null, null)).thenReturn(List.of(equipo));
         when(enrichmentRepository.findByComputerIdIn(List.of(13L))).thenReturn(List.of());
-        when(remoteManagementRepository.findByItemsIdInAndItemtypeAndIsDeleted(List.of(13L), "Computer", 0))
-                .thenReturn(List.of());
-        when(tecladoRepository.findByItemsIdIn(List.of(13L))).thenReturn(List.of(teclado));
 
-        List<VwInvComputerFull> result = service.findAll(null, null, null, null, null, null);
+        List<EquipoGlpiCache> result = service.findAll(null, null, null, null, null, null);
 
         assertThat(result.get(0).getTecladoMarca()).isEqualTo("HP");
         assertThat(result.get(0).getTecladoModelo()).isEqualTo("KB-100");
@@ -136,17 +123,16 @@ class EquipoServiceTest {
 
     @Test
     void findAll_singleMonitor_populatesOnlyMonitor1() {
-        VwInvComputerFull equipo = new VwInvComputerFull();
-        equipo.setComputerID(14L);
+        EquipoGlpiCache equipo = new EquipoGlpiCache();
+        equipo.setComputerId(14L);
+        equipo.setMonitor1Nombre("DELL E2417H");
+        equipo.setMonitor1Serie("T4KPW96Q1VRL");
+        equipo.setMonitor1Marca("Dell Inc.");
+        equipo.setMonitor1Modelo("DELL E2417H");
         when(repository.findFiltered(null, null, null, null, null, null)).thenReturn(List.of(equipo));
         when(enrichmentRepository.findByComputerIdIn(List.of(14L))).thenReturn(List.of());
-        when(remoteManagementRepository.findByItemsIdInAndItemtypeAndIsDeleted(List.of(14L), "Computer", 0))
-                .thenReturn(List.of());
-        when(tecladoRepository.findByItemsIdIn(List.of(14L))).thenReturn(List.of());
-        when(monitorRepository.findByComputerIds(List.of(14L)))
-                .thenReturn(List.of(monitorRow(14L, "DELL E2417H", "T4KPW96Q1VRL", "Dell Inc.", "DELL E2417H")));
 
-        List<VwInvComputerFull> result = service.findAll(null, null, null, null, null, null);
+        List<EquipoGlpiCache> result = service.findAll(null, null, null, null, null, null);
 
         assertThat(result.get(0).getMonitor1Marca()).isEqualTo("Dell Inc.");
         assertThat(result.get(0).getMonitor1Modelo()).isEqualTo("DELL E2417H");
@@ -157,19 +143,20 @@ class EquipoServiceTest {
 
     @Test
     void findAll_twoMonitors_populatesBothSeparately() {
-        VwInvComputerFull equipo = new VwInvComputerFull();
-        equipo.setComputerID(15L);
+        EquipoGlpiCache equipo = new EquipoGlpiCache();
+        equipo.setComputerId(15L);
+        equipo.setMonitor1Nombre("T32p-30");
+        equipo.setMonitor1Serie("V30BG6N0");
+        equipo.setMonitor1Marca("Lenovo Group Limited");
+        equipo.setMonitor1Modelo("T32p-30");
+        equipo.setMonitor2Nombre("T27hv-30");
+        equipo.setMonitor2Serie("VTU36257");
+        equipo.setMonitor2Marca("Lenovo Group Limited");
+        equipo.setMonitor2Modelo("T27hv-30");
         when(repository.findFiltered(null, null, null, null, null, null)).thenReturn(List.of(equipo));
         when(enrichmentRepository.findByComputerIdIn(List.of(15L))).thenReturn(List.of());
-        when(remoteManagementRepository.findByItemsIdInAndItemtypeAndIsDeleted(List.of(15L), "Computer", 0))
-                .thenReturn(List.of());
-        when(tecladoRepository.findByItemsIdIn(List.of(15L))).thenReturn(List.of());
-        when(monitorRepository.findByComputerIds(List.of(15L))).thenReturn(List.of(
-                monitorRow(15L, "T32p-30", "V30BG6N0", "Lenovo Group Limited", "T32p-30"),
-                monitorRow(15L, "T27hv-30", "VTU36257", "Lenovo Group Limited", "T27hv-30")
-        ));
 
-        List<VwInvComputerFull> result = service.findAll(null, null, null, null, null, null);
+        List<EquipoGlpiCache> result = service.findAll(null, null, null, null, null, null);
 
         assertThat(result.get(0).getMonitor1Serie()).isEqualTo("V30BG6N0");
         assertThat(result.get(0).getMonitor2Serie()).isEqualTo("VTU36257");
@@ -177,48 +164,25 @@ class EquipoServiceTest {
         assertThat(result.get(0).getMonitor2Modelo()).isEqualTo("T27hv-30");
     }
 
-    private GlpiMonitorRow monitorRow(Long computerId, String nombre, String serie, String fabricante, String modelo) {
-        return new GlpiMonitorRow() {
-            public Long getComputerId() { return computerId; }
-            public Long getMonitorId() { return null; }
-            public String getNombre() { return nombre; }
-            public String getSerie() { return serie; }
-            public String getFabricante() { return fabricante; }
-            public String getModelo() { return modelo; }
-        };
-    }
-
     @Test
     void findAll_noRemoteManagementRecords_leavesIdsNull() {
-        VwInvComputerFull equipo = new VwInvComputerFull();
-        equipo.setComputerID(11L);
+        EquipoGlpiCache equipo = new EquipoGlpiCache();
+        equipo.setComputerId(11L);
         when(repository.findFiltered(null, null, null, null, null, null)).thenReturn(List.of(equipo));
         when(enrichmentRepository.findByComputerIdIn(List.of(11L))).thenReturn(List.of());
-        when(remoteManagementRepository.findByItemsIdInAndItemtypeAndIsDeleted(List.of(11L), "Computer", 0))
-                .thenReturn(List.of());
 
-        List<VwInvComputerFull> result = service.findAll(null, null, null, null, null, null);
+        List<EquipoGlpiCache> result = service.findAll(null, null, null, null, null, null);
 
         assertThat(result.get(0).getAnydeskId()).isNull();
         assertThat(result.get(0).getRustdeskId()).isNull();
     }
 
-    private GlpiRemoteManagement remoto(Long computerId, String tipo, String remoteId) {
-        GlpiRemoteManagement r = new GlpiRemoteManagement();
-        r.setItemsId(computerId);
-        r.setItemtype("Computer");
-        r.setType(tipo);
-        r.setRemoteId(remoteId);
-        r.setIsDeleted(0);
-        return r;
-    }
-
     @Test
     void getKpis_calculatesCountsByTypeAndSede() {
-        VwInvComputerFull desktopCentral = equipo("Computadora de Escritorio", "SEDE CENTRAL");
-        VwInvComputerFull laptopEea = equipo("Laptop", "EEA ANDENES");
-        VwInvComputerFull allInOneEea = equipo("Space-Saving", "EEA DONOSO");
-        VwInvComputerFull servidorFueraDelConteo = equipo("Servidor", "SEDE CENTRAL");
+        EquipoGlpiCache desktopCentral = equipo("Computadora de Escritorio", "SEDE CENTRAL");
+        EquipoGlpiCache laptopEea = equipo("Laptop", "EEA ANDENES");
+        EquipoGlpiCache allInOneEea = equipo("Space-Saving", "EEA DONOSO");
+        EquipoGlpiCache servidorFueraDelConteo = equipo("Servidor", "SEDE CENTRAL");
         TipoEquipoCatalogo allInOneCatalogo = new TipoEquipoCatalogo();
         allInOneCatalogo.setGlpiValor("Space-Saving");
         allInOneCatalogo.setTipoNormalizado("All in One");
@@ -238,17 +202,17 @@ class EquipoServiceTest {
 
     @Test
     void findById_tipoOverride_winsOverGlpiAndCatalog() {
-        VwInvComputerFull glpiEquipo = equipo("Laptop", "SEDE CENTRAL");
-        glpiEquipo.setComputerID(1L);
+        EquipoGlpiCache glpiEquipo = equipo("Laptop", "SEDE CENTRAL");
+        glpiEquipo.setComputerId(1L);
         glpiEquipo.setEliminado(0);
 
         EquipoEnrichment enrichment = new EquipoEnrichment();
         enrichment.setComputerId(1L);
         enrichment.setTipoOverride("Workstation");
 
-        when(repository.findById(1L)).thenReturn(Optional.of(glpiEquipo));
+        when(glpiCacheSyncService.resincronizarUno(1L)).thenReturn(Optional.of(glpiEquipo));
         when(enrichmentRepository.findByComputerId(1L)).thenReturn(Optional.of(enrichment));
-        when(repository.findSoftwareByComputerId(1L)).thenReturn(List.of());
+        when(glpiViewRepository.findSoftwareByComputerId(1L)).thenReturn(List.of());
         when(tecladoRepository.findByItemsId(1L)).thenReturn(Optional.empty());
 
         EquipoDetalleResponse result = service.findById(1L);
@@ -259,17 +223,17 @@ class EquipoServiceTest {
 
     @Test
     void findById_catalogMapping_appliedWhenNoOverride() {
-        VwInvComputerFull glpiEquipo = equipo("Laptop", "SEDE CENTRAL");
-        glpiEquipo.setComputerID(2L);
+        EquipoGlpiCache glpiEquipo = equipo("Laptop", "SEDE CENTRAL");
+        glpiEquipo.setComputerId(2L);
         glpiEquipo.setEliminado(0);
 
         TipoEquipoCatalogo catalogo = new TipoEquipoCatalogo();
         catalogo.setTipoNormalizado("Portátil");
 
-        when(repository.findById(2L)).thenReturn(Optional.of(glpiEquipo));
+        when(glpiCacheSyncService.resincronizarUno(2L)).thenReturn(Optional.of(glpiEquipo));
         when(enrichmentRepository.findByComputerId(2L)).thenReturn(Optional.empty());
         when(catalogoRepository.findByGlpiValorAndActivoTrue("Laptop")).thenReturn(Optional.of(catalogo));
-        when(repository.findSoftwareByComputerId(2L)).thenReturn(List.of());
+        when(glpiViewRepository.findSoftwareByComputerId(2L)).thenReturn(List.of());
         when(tecladoRepository.findByItemsId(2L)).thenReturn(Optional.empty());
 
         EquipoDetalleResponse result = service.findById(2L);
@@ -279,14 +243,14 @@ class EquipoServiceTest {
 
     @Test
     void findById_rawGlpiValue_whenNoCatalogMatch() {
-        VwInvComputerFull glpiEquipo = equipo("ServidorRaro", "EEA DONOSO");
-        glpiEquipo.setComputerID(3L);
+        EquipoGlpiCache glpiEquipo = equipo("ServidorRaro", "EEA DONOSO");
+        glpiEquipo.setComputerId(3L);
         glpiEquipo.setEliminado(0);
 
-        when(repository.findById(3L)).thenReturn(Optional.of(glpiEquipo));
+        when(glpiCacheSyncService.resincronizarUno(3L)).thenReturn(Optional.of(glpiEquipo));
         when(enrichmentRepository.findByComputerId(3L)).thenReturn(Optional.empty());
         when(catalogoRepository.findByGlpiValorAndActivoTrue("ServidorRaro")).thenReturn(Optional.empty());
-        when(repository.findSoftwareByComputerId(3L)).thenReturn(List.of());
+        when(glpiViewRepository.findSoftwareByComputerId(3L)).thenReturn(List.of());
         when(tecladoRepository.findByItemsId(3L)).thenReturn(Optional.empty());
 
         EquipoDetalleResponse result = service.findById(3L);
@@ -296,8 +260,8 @@ class EquipoServiceTest {
 
     @Test
     void getSalud_rojoWhenSinEncendidoMasDe12Meses() {
-        VwInvComputerFull viejo = equipo("Computadora de Escritorio", "SEDE CENTRAL");
-        viejo.setComputerID(5L);
+        EquipoGlpiCache viejo = equipo("Computadora de Escritorio", "SEDE CENTRAL");
+        viejo.setComputerId(5L);
         viejo.setNombreEquipo("PC-VIEJA");
         viejo.setUsuarioContacto("juanito");
         viejo.setOficinaId("Dirección de Tecnología");
@@ -322,9 +286,9 @@ class EquipoServiceTest {
     }
 
     @Test
-    void getSalud_okEquiposExcluded_unlessDataMissing() {
-        VwInvComputerFull bueno = equipo("Computadora de Escritorio", "SEDE CENTRAL");
-        bueno.setComputerID(6L);
+    void getSalud_okEquiposIncluded_conBanderasEnFalse() {
+        EquipoGlpiCache bueno = equipo("Computadora de Escritorio", "SEDE CENTRAL");
+        bueno.setComputerId(6L);
         bueno.setNombreEquipo("PC-BUENA");
         bueno.setUsuarioContacto("maria");
         bueno.setUltimoEncendido(LocalDateTime.now().minusMonths(1));
@@ -342,13 +306,19 @@ class EquipoServiceTest {
 
         List<EquipoSaludDto> result = service.getSalud();
 
-        assertThat(result).isEmpty();
+        assertThat(result).hasSize(1);
+        assertThat(result.get(0).nivelAlerta()).isEqualTo("OK");
+        assertThat(result.get(0).sinCodigoPatrimonial()).isFalse();
+        assertThat(result.get(0).sinUsuario()).isFalse();
+        assertThat(result.get(0).sinDependencia()).isFalse();
+        assertThat(result.get(0).sinSubdependencia()).isFalse();
+        assertThat(result.get(0).sinNumeroSerie()).isFalse();
     }
 
     @Test
     void getSalud_sinDependencia_trueWhenGlpiEmptyAndNoOverride() {
-        VwInvComputerFull equipo = equipo("Computadora de Escritorio", "SEDE CENTRAL");
-        equipo.setComputerID(40L);
+        EquipoGlpiCache equipo = equipo("Computadora de Escritorio", "SEDE CENTRAL");
+        equipo.setComputerId(40L);
         equipo.setUsuarioContacto("ana");
         equipo.setUnidadId("Soporte");
         equipo.setNumeroserie("SN-40");
@@ -371,8 +341,8 @@ class EquipoServiceTest {
 
     @Test
     void getSalud_sinDependencia_falseWhenOverridePresent() {
-        VwInvComputerFull equipo = equipo("Computadora de Escritorio", "SEDE CENTRAL");
-        equipo.setComputerID(41L);
+        EquipoGlpiCache equipo = equipo("Computadora de Escritorio", "SEDE CENTRAL");
+        equipo.setComputerId(41L);
         equipo.setUsuarioContacto("ana");
         equipo.setUnidadId("Soporte");
         equipo.setNumeroserie("SN-41");
@@ -393,13 +363,14 @@ class EquipoServiceTest {
 
         List<EquipoSaludDto> result = service.getSalud();
 
-        assertThat(result).isEmpty();
+        assertThat(result).hasSize(1);
+        assertThat(result.get(0).sinDependencia()).isFalse();
     }
 
     @Test
     void getSalud_sinDependencia_falseWhenGlpiHasData() {
-        VwInvComputerFull equipo = equipo("Computadora de Escritorio", "SEDE CENTRAL");
-        equipo.setComputerID(42L);
+        EquipoGlpiCache equipo = equipo("Computadora de Escritorio", "SEDE CENTRAL");
+        equipo.setComputerId(42L);
         equipo.setUsuarioContacto("ana");
         equipo.setOficinaId("UTI");
         equipo.setUnidadId("Soporte");
@@ -416,13 +387,14 @@ class EquipoServiceTest {
 
         List<EquipoSaludDto> result = service.getSalud();
 
-        assertThat(result).isEmpty();
+        assertThat(result).hasSize(1);
+        assertThat(result.get(0).sinDependencia()).isFalse();
     }
 
     @Test
     void getSalud_sinSubdependencia_trueWhenGlpiEmptyAndNoOverride() {
-        VwInvComputerFull equipo = equipo("Computadora de Escritorio", "SEDE CENTRAL");
-        equipo.setComputerID(43L);
+        EquipoGlpiCache equipo = equipo("Computadora de Escritorio", "SEDE CENTRAL");
+        equipo.setComputerId(43L);
         equipo.setUsuarioContacto("ana");
         equipo.setOficinaId("UTI");
         equipo.setNumeroserie("SN-43");
@@ -445,8 +417,8 @@ class EquipoServiceTest {
 
     @Test
     void getSalud_sinNumeroSerie_trueWhenGlpiEmptyAndNoOverride() {
-        VwInvComputerFull equipo = equipo("Computadora de Escritorio", "SEDE CENTRAL");
-        equipo.setComputerID(44L);
+        EquipoGlpiCache equipo = equipo("Computadora de Escritorio", "SEDE CENTRAL");
+        equipo.setComputerId(44L);
         equipo.setUsuarioContacto("ana");
         equipo.setOficinaId("UTI");
         equipo.setUnidadId("Soporte");
@@ -469,8 +441,8 @@ class EquipoServiceTest {
 
     @Test
     void getSalud_sinNumeroSerie_falseWhenOverridePresent() {
-        VwInvComputerFull equipo = equipo("Computadora de Escritorio", "SEDE CENTRAL");
-        equipo.setComputerID(45L);
+        EquipoGlpiCache equipo = equipo("Computadora de Escritorio", "SEDE CENTRAL");
+        equipo.setComputerId(45L);
         equipo.setUsuarioContacto("ana");
         equipo.setOficinaId("UTI");
         equipo.setUnidadId("Soporte");
@@ -488,13 +460,14 @@ class EquipoServiceTest {
 
         List<EquipoSaludDto> result = service.getSalud();
 
-        assertThat(result).isEmpty();
+        assertThat(result).hasSize(1);
+        assertThat(result.get(0).sinNumeroSerie()).isFalse();
     }
 
     @Test
     void getDashboardCompleto_aggregatesFabricanteDependenciaAndSaludCounts() {
-        VwInvComputerFull e1 = equipo("Computadora de Escritorio", "SEDE CENTRAL");
-        e1.setComputerID(1L);
+        EquipoGlpiCache e1 = equipo("Computadora de Escritorio", "SEDE CENTRAL");
+        e1.setComputerId(1L);
         e1.setFabricanteEquipo("Dell");
         e1.setOficinaId("UTI");
         e1.setUnidadId("Soporte");
@@ -502,8 +475,8 @@ class EquipoServiceTest {
         e1.setUltimoEncendido(LocalDateTime.now());
         e1.setUltimaActualizacion(LocalDateTime.now());
 
-        VwInvComputerFull e2 = equipo("Laptop", "EEA ANDENES");
-        e2.setComputerID(2L);
+        EquipoGlpiCache e2 = equipo("Laptop", "EEA ANDENES");
+        e2.setComputerId(2L);
         e2.setFabricanteEquipo("HP");
         e2.setOficinaId("UTI");
         e2.setUnidadId("Infraestructura");
@@ -511,8 +484,8 @@ class EquipoServiceTest {
         e2.setUltimoEncendido(LocalDateTime.now().minusMonths(14));
         e2.setUltimaActualizacion(LocalDateTime.now());
 
-        VwInvComputerFull e3 = equipo("All in One", null);
-        e3.setComputerID(3L);
+        EquipoGlpiCache e3 = equipo("All in One", null);
+        e3.setComputerId(3L);
         e3.setFabricanteEquipo("Dell");
         e3.setOficinaId("OGRH");
         e3.setUnidadId("Bienestar");
@@ -520,8 +493,8 @@ class EquipoServiceTest {
         e3.setUltimoEncendido(LocalDateTime.now().minusMonths(7));
         e3.setUltimaActualizacion(LocalDateTime.now());
 
-        VwInvComputerFull servidorFueraDelConteo = equipo("Servidor", "SEDE CENTRAL");
-        servidorFueraDelConteo.setComputerID(4L);
+        EquipoGlpiCache servidorFueraDelConteo = equipo("Servidor", "SEDE CENTRAL");
+        servidorFueraDelConteo.setComputerId(4L);
         servidorFueraDelConteo.setFabricanteEquipo("Lenovo");
         servidorFueraDelConteo.setOficinaId("UTI");
 
@@ -586,8 +559,8 @@ class EquipoServiceTest {
         assertThat(result.salud().rojos()).isEqualTo(0);
     }
 
-    private VwInvComputerFull equipo(String tipo, String sede) {
-        VwInvComputerFull equipo = new VwInvComputerFull();
+    private EquipoGlpiCache equipo(String tipo, String sede) {
+        EquipoGlpiCache equipo = new EquipoGlpiCache();
         equipo.setTipoEquipo(tipo);
         equipo.setSedeNombre(sede);
         return equipo;

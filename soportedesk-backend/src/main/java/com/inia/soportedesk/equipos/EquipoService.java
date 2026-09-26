@@ -4,15 +4,12 @@ import com.inia.soportedesk.catalogo.TipoEquipoCatalogo;
 import com.inia.soportedesk.catalogo.TipoEquipoCatalogoRepository;
 import com.inia.soportedesk.equipos.enrichment.EquipoEnrichment;
 import com.inia.soportedesk.equipos.enrichment.EquipoEnrichmentRepository;
+import com.inia.soportedesk.equipos.glpicache.EquipoGlpiCache;
+import com.inia.soportedesk.equipos.glpicache.EquipoGlpiCacheRepository;
+import com.inia.soportedesk.equipos.glpicache.EquipoGlpiCacheSyncService;
 import com.inia.soportedesk.exception.ResourceNotFoundException;
-import com.inia.soportedesk.glpi.VwInvComputerFull;
 import com.inia.soportedesk.glpi.VwInvComputerFullRepository;
 import com.inia.soportedesk.glpi.GlpiComputerOficinaRepository;
-import com.inia.soportedesk.glpi.GlpiMonitorRepository;
-import com.inia.soportedesk.glpi.GlpiMonitorRow;
-import com.inia.soportedesk.glpi.GlpiRemoteManagement;
-import com.inia.soportedesk.glpi.GlpiRemoteManagementRepository;
-import com.inia.soportedesk.glpi.GlpiTeclado;
 import com.inia.soportedesk.glpi.GlpiTecladoRepository;
 import com.inia.soportedesk.glpi.SoftwareExportRow;
 import lombok.RequiredArgsConstructor;
@@ -20,7 +17,6 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -34,30 +30,27 @@ public class EquipoService {
     private static final String ALL_IN_ONE = "All in One";
     private static final String SEDE_CENTRAL = "SEDE CENTRAL";
 
-    private final VwInvComputerFullRepository repository;
+    private final VwInvComputerFullRepository glpiViewRepository;
+    private final EquipoGlpiCacheRepository cacheRepository;
+    private final EquipoGlpiCacheSyncService glpiCacheSyncService;
     private final GlpiTecladoRepository tecladoRepository;
     private final GlpiComputerOficinaRepository oficinaRepository;
     private final TipoEquipoCatalogoRepository catalogoRepository;
     private final EquipoEnrichmentRepository enrichmentRepository;
-    private final GlpiRemoteManagementRepository remoteManagementRepository;
-    private final GlpiMonitorRepository monitorRepository;
 
-    public List<VwInvComputerFull> findAll(String search, String sede, String tipo,
-                                            String dependencia, String subdependencia, String fabricante) {
-        List<VwInvComputerFull> items = repository.findFiltered(
+    public List<EquipoGlpiCache> findAll(String search, String sede, String tipo,
+                                          String dependencia, String subdependencia, String fabricante) {
+        List<EquipoGlpiCache> items = cacheRepository.findFiltered(
                 blankToNull(search), blankToNull(sede), blankToNull(tipo),
                 blankToNull(dependencia), blankToNull(subdependencia), blankToNull(fabricante));
         applyEnrichments(items);
-        applyRemoteIds(items);
-        applyTeclados(items);
-        applyMonitores(items);
         return items;
     }
 
     public EquipoKpisDto getKpis() {
-        List<VwInvComputerFull> equipos = repository.findFiltered(null, null, null, null, null, null);
+        List<EquipoGlpiCache> equipos = cacheRepository.findFiltered(null, null, null, null, null, null);
         applyEnrichments(equipos);
-        List<VwInvComputerFull> equiposComputo = equipos.stream().filter(this::esEquipoComputoAcordado).toList();
+        List<EquipoGlpiCache> equiposComputo = equipos.stream().filter(this::esEquipoComputoAcordado).toList();
         long totalActivos = equiposComputo.size();
         long desktopCount = equiposComputo.stream().filter(e -> DESKTOP.equals(e.getTipoEquipo())).count();
         long laptopCount = equiposComputo.stream().filter(e -> LAPTOP.equals(e.getTipoEquipo())).count();
@@ -67,55 +60,44 @@ public class EquipoService {
         return new EquipoKpisDto(totalActivos, desktopCount, laptopCount, allInOneCount, sedeCentralCount, eeasCount);
     }
 
-    public List<String> findSedes() { return repository.findDistinctSedes(); }
-    public List<String> findTipos() { return repository.findDistinctTipos(); }
-    public List<String> findDependencias(String sede) { return repository.findDistinctDependencias(blankToNull(sede)); }
-    public List<String> findSubdependencias(String sede, String dep) { return repository.findDistinctSubdependencias(blankToNull(sede), blankToNull(dep)); }
-    public List<String> findFabricantes() { return repository.findDistinctFabricantes(); }
+    public List<String> findSedes() { return cacheRepository.findDistinctSedes(); }
+    public List<String> findTipos() { return cacheRepository.findDistinctTipos(); }
+    public List<String> findDependencias(String sede) { return cacheRepository.findDistinctDependencias(blankToNull(sede)); }
+    public List<String> findSubdependencias(String sede, String dep) { return cacheRepository.findDistinctSubdependencias(blankToNull(sede), blankToNull(dep)); }
+    public List<String> findFabricantes() { return cacheRepository.findDistinctFabricantes(); }
 
     public List<SoftwareExportRow> findSoftwareForExport(List<Long> computerIds) {
         if (computerIds == null || computerIds.isEmpty()) {
             return List.of();
         }
-        return repository.findSoftwareByComputerIds(computerIds.stream().distinct().toList());
+        return glpiViewRepository.findSoftwareByComputerIds(computerIds.stream().distinct().toList());
     }
 
     public EquipoDetalleResponse findById(Long id) {
-        VwInvComputerFull equipo = repository.findById(id)
-                .filter(e -> e.getEliminado() == null || e.getEliminado() == 0)
+        EquipoGlpiCache equipo = glpiCacheSyncService.resincronizarUno(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Equipo no encontrado: " + id));
 
         EquipoEnrichment enrichment = enrichmentRepository.findByComputerId(id).orElse(null);
         applyEnrichment(equipo, enrichment);
-        applyRemoteIds(List.of(equipo));
-        applyTeclados(List.of(equipo));
-        applyMonitores(List.of(equipo));
         String tipoEfectivo = resolveTipo(equipo.getTipoEquipo(), enrichment);
 
         return new EquipoDetalleResponse(
                 equipo,
-                repository.findSoftwareByComputerId(id),
+                glpiViewRepository.findSoftwareByComputerId(id),
                 tecladoRepository.findByItemsId(id).orElse(null),
                 oficinaRepository.findByItemsId(id).orElse(null),
                 tipoEfectivo);
     }
 
     public List<EquipoSaludDto> getSalud() {
-        List<VwInvComputerFull> all = repository.findFiltered(null, null, null, null, null, null);
+        List<EquipoGlpiCache> all = cacheRepository.findFiltered(null, null, null, null, null, null);
         applyEnrichments(all);
-        List<Long> ids = all.stream().map(VwInvComputerFull::getComputerID).toList();
+        List<Long> ids = all.stream().map(EquipoGlpiCache::getComputerId).toList();
         Map<Long, EquipoEnrichment> enrichmentMap = enrichmentRepository.findByComputerIdIn(ids).stream()
                 .collect(Collectors.toMap(EquipoEnrichment::getComputerId, e -> e));
         LocalDateTime now = LocalDateTime.now();
         return all.stream()
-                .map(e -> buildSaludDto(e, enrichmentMap.get(e.getComputerID()), now))
-                .filter(s -> !s.nivelAlerta().equals("OK")
-                          || s.sinCodigoPatrimonial()
-                          || s.sinUsuario()
-                          || s.sinSede()
-                          || s.sinDependencia()
-                          || s.sinSubdependencia()
-                          || s.sinNumeroSerie())
+                .map(e -> buildSaludDto(e, enrichmentMap.get(e.getComputerId()), now))
                 .toList();
     }
 
@@ -125,7 +107,7 @@ public class EquipoService {
             long sinEncendidoMeses, long sinActualizacionMeses) {
     }
 
-    private SaludCalculo calcularSalud(VwInvComputerFull e, EquipoEnrichment enrichment, LocalDateTime now) {
+    private SaludCalculo calcularSalud(EquipoGlpiCache e, EquipoEnrichment enrichment, LocalDateTime now) {
         long sinEncendido = e.getUltimoEncendido() == null ? Long.MAX_VALUE :
                 ChronoUnit.MONTHS.between(e.getUltimoEncendido(), now);
         long sinActualizacion = e.getUltimaActualizacion() == null ? Long.MAX_VALUE :
@@ -154,12 +136,12 @@ public class EquipoService {
         return value == null || value.isBlank();
     }
 
-    private EquipoSaludDto buildSaludDto(VwInvComputerFull e, EquipoEnrichment enrichment, LocalDateTime now) {
+    private EquipoSaludDto buildSaludDto(EquipoGlpiCache e, EquipoEnrichment enrichment, LocalDateTime now) {
         SaludCalculo calculo = calcularSalud(e, enrichment, now);
         String estadoDepuracion = enrichment != null ? enrichment.getEstadoDepuracion() : null;
 
         return new EquipoSaludDto(
-                e.getComputerID(), e.getNombreEquipo(), e.getSedeNombre(), e.getOficinaId(), e.getUnidadId(), e.getTipoEquipo(),
+                e.getComputerId(), e.getNombreEquipo(), e.getSedeNombre(), e.getOficinaId(), e.getUnidadId(), e.getTipoEquipo(),
                 e.getFabricanteEquipo(), e.getModeloEquipo(), e.getUsuarioContacto(), e.getFechaCreacion(),
                 calculo.sinEncendidoMeses(), calculo.sinActualizacionMeses(),
                 calculo.nivel(), calculo.sinPatrimonial(), calculo.sinUsuario(), calculo.sinSede(),
@@ -169,7 +151,7 @@ public class EquipoService {
 
     public EquipoDashboardCompleto getDashboardCompleto() {
         try {
-            List<VwInvComputerFull> equipos = repository.findFiltered(null, null, null, null, null, null);
+            List<EquipoGlpiCache> equipos = cacheRepository.findFiltered(null, null, null, null, null, null);
             applyEnrichments(equipos);
             equipos = equipos.stream().filter(this::esEquipoComputoAcordado).toList();
 
@@ -220,14 +202,14 @@ public class EquipoService {
                     .map(entry -> new EquipoSubdependenciaCount(entry.getKey(), entry.getValue()))
                     .toList();
 
-            List<Long> ids = equipos.stream().map(VwInvComputerFull::getComputerID).toList();
+            List<Long> ids = equipos.stream().map(EquipoGlpiCache::getComputerId).toList();
             Map<Long, EquipoEnrichment> enrichmentMap = enrichmentRepository.findByComputerIdIn(ids).stream()
                     .collect(Collectors.toMap(EquipoEnrichment::getComputerId, e -> e));
             LocalDateTime now = LocalDateTime.now();
 
             long rojos = 0, amarillos = 0, ok = 0, sinPatrimonial = 0, sinUsuario = 0, sinSede = 0;
-            for (VwInvComputerFull e : equipos) {
-                SaludCalculo calculo = calcularSalud(e, enrichmentMap.get(e.getComputerID()), now);
+            for (EquipoGlpiCache e : equipos) {
+                SaludCalculo calculo = calcularSalud(e, enrichmentMap.get(e.getComputerId()), now);
                 switch (calculo.nivel()) {
                     case "ROJO" -> rojos++;
                     case "AMARILLO" -> amarillos++;
@@ -262,48 +244,25 @@ public class EquipoService {
         return glpiTipo;
     }
 
-    private boolean esEquipoComputoAcordado(VwInvComputerFull equipo) {
+    private boolean esEquipoComputoAcordado(EquipoGlpiCache equipo) {
         return DESKTOP.equals(equipo.getTipoEquipo())
                 || LAPTOP.equals(equipo.getTipoEquipo())
                 || ALL_IN_ONE.equals(equipo.getTipoEquipo());
     }
 
-    private void applyRemoteIds(List<VwInvComputerFull> items) {
-        List<Long> ids = items.stream().map(VwInvComputerFull::getComputerID).toList();
-        if (ids.isEmpty()) return;
-        Map<Long, List<GlpiRemoteManagement>> byComputer = remoteManagementRepository
-                .findByItemsIdInAndItemtypeAndIsDeleted(ids, "Computer", 0)
-                .stream()
-                .collect(Collectors.groupingBy(GlpiRemoteManagement::getItemsId));
-        items.forEach(item -> {
-            List<GlpiRemoteManagement> remotos = byComputer.getOrDefault(item.getComputerID(), List.of());
-            item.setAnydeskId(findRemoteId(remotos, "anydesk"));
-            item.setRustdeskId(findRemoteId(remotos, "rustdesk"));
-        });
-    }
-
-    private String findRemoteId(List<GlpiRemoteManagement> remotos, String tipo) {
-        return remotos.stream()
-                .filter(r -> tipo.equalsIgnoreCase(r.getType()))
-                .map(GlpiRemoteManagement::getRemoteId)
-                .filter(id -> id != null && !id.isBlank())
-                .findFirst()
-                .orElse(null);
-    }
-
-    private void applyEnrichments(List<VwInvComputerFull> items) {
-        List<Long> ids = items.stream().map(VwInvComputerFull::getComputerID).toList();
+    private void applyEnrichments(List<EquipoGlpiCache> items) {
+        List<Long> ids = items.stream().map(EquipoGlpiCache::getComputerId).toList();
         Map<Long, EquipoEnrichment> map = enrichmentRepository.findByComputerIdIn(ids).stream()
                 .collect(Collectors.toMap(EquipoEnrichment::getComputerId, e -> e));
         Map<String, String> tipos = catalogoRepository.findByActivoTrue().stream()
                 .collect(Collectors.toMap(TipoEquipoCatalogo::getGlpiValor, TipoEquipoCatalogo::getTipoNormalizado, (a, b) -> a));
         items.forEach(item -> {
             item.setTipoEquipo(tipos.getOrDefault(item.getTipoEquipo(), item.getTipoEquipo()));
-            applyEnrichment(item, map.get(item.getComputerID()));
+            applyEnrichment(item, map.get(item.getComputerId()));
         });
     }
 
-    private void applyEnrichment(VwInvComputerFull item, EquipoEnrichment e) {
+    private void applyEnrichment(EquipoGlpiCache item, EquipoEnrichment e) {
         if (e == null) return;
         if (!blank(e.getTipoOverride())) item.setTipoEquipo(e.getTipoOverride());
         if (!blank(e.getFabricanteOverride())) item.setFabricanteEquipo(e.getFabricanteOverride());
@@ -326,46 +285,6 @@ public class EquipoService {
         item.setMonitor2NumeroSerieOverride(e.getMonitor2NumeroSerieOverride());
         item.setMonitor2CodigoPatrimonial(e.getMonitor2CodigoPatrimonial());
         item.setMonitor2CodigoInternoOverride(e.getMonitor2CodigoInternoOverride());
-    }
-
-    private void applyMonitores(List<VwInvComputerFull> items) {
-        List<Long> ids = items.stream().map(VwInvComputerFull::getComputerID).toList();
-        if (ids.isEmpty()) return;
-        Map<Long, List<GlpiMonitorRow>> byComputer = monitorRepository.findByComputerIds(ids).stream()
-                .collect(Collectors.groupingBy(GlpiMonitorRow::getComputerId, LinkedHashMap::new, Collectors.toList()));
-        items.forEach(item -> {
-            List<GlpiMonitorRow> monitores = byComputer.getOrDefault(item.getComputerID(), List.of());
-            if (!monitores.isEmpty()) {
-                GlpiMonitorRow m1 = monitores.get(0);
-                item.setMonitor1Nombre(m1.getNombre());
-                item.setMonitor1Marca(m1.getFabricante());
-                item.setMonitor1Modelo(m1.getModelo());
-                item.setMonitor1Serie(m1.getSerie());
-            }
-            if (monitores.size() > 1) {
-                GlpiMonitorRow m2 = monitores.get(1);
-                item.setMonitor2Nombre(m2.getNombre());
-                item.setMonitor2Marca(m2.getFabricante());
-                item.setMonitor2Modelo(m2.getModelo());
-                item.setMonitor2Serie(m2.getSerie());
-            }
-        });
-    }
-
-    private void applyTeclados(List<VwInvComputerFull> items) {
-        List<Long> ids = items.stream().map(VwInvComputerFull::getComputerID).toList();
-        if (ids.isEmpty()) return;
-        Map<Long, GlpiTeclado> byComputer = tecladoRepository.findByItemsIdIn(ids).stream()
-                .collect(Collectors.toMap(GlpiTeclado::getItemsId, t -> t, (a, b) -> a));
-        items.forEach(item -> {
-            GlpiTeclado teclado = byComputer.get(item.getComputerID());
-            if (teclado == null) return;
-            item.setTecladoMarca(teclado.getMarcafield());
-            item.setTecladoModelo(teclado.getModelofield());
-            item.setTecladoNumeroSerie(teclado.getNmerodeseriefield());
-            item.setTecladoCodigoInventario(teclado.getCdigodeinventariofield());
-            item.setTecladoCodigoPatrimonial(teclado.getCdigopatrimonialfield());
-        });
     }
 
     private String blankToNull(String value) {

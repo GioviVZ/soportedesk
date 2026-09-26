@@ -50,8 +50,18 @@ export class EquipoEnrichmentModalComponent implements OnChanges {
   tecladoCodigoPatrimonial = '';
   form: EquipoEnrichmentDto = this.emptyForm();
 
+  get opcionesTipoEquipo(): string[] {
+    const catalogo = this.tiposEquipo();
+    const actual = this.form.tipoOverride;
+    if (actual && !catalogo.includes(actual)) {
+      return [actual, ...catalogo];
+    }
+    return catalogo;
+  }
+
   ngOnChanges(changes: SimpleChanges): void { if ((changes['open'] || changes['computerId']) && this.open) this.load(); }
   update(field: keyof EquipoEnrichmentDto, value: string): void { this.form = { ...this.form, [field]: value.trim().toUpperCase() || null }; }
+  updateTipo(value: string): void { this.form = { ...this.form, tipoOverride: value || null }; }
   onSedeChange(id: number | null): void { this.form = { ...this.form, sedeId: id, dependenciaId: null, subdependenciaId: null }; }
   onDependenciaChange(id: number | null): void { this.form = { ...this.form, dependenciaId: id, subdependenciaId: null }; }
   onSubdependenciaChange(id: number | null): void { this.form = { ...this.form, subdependenciaId: id }; }
@@ -109,14 +119,22 @@ export class EquipoEnrichmentModalComponent implements OnChanges {
     this.tecladoCodigoPatrimonial = '';
     this.tecladoError.set('');
   }
+  private prefillTeclado(actual: EquipoTeclado): void {
+    this.tecladoMarca = actual.marcafield ?? '';
+    this.tecladoModelo = actual.modelofield ?? '';
+    this.tecladoNumeroSerie = actual.nmerodeseriefield ?? '';
+    this.tecladoCodigoInventario = actual.cdigodeinventariofield ?? '';
+    this.tecladoCodigoPatrimonial = actual.cdigopatrimonialfield ?? '';
+    this.tecladoError.set('');
+  }
   tecladoValido(): boolean {
     return this.tecladoMarca.trim().length > 0 && this.tecladoModelo.trim().length > 0 && this.tecladoNumeroSerie.trim().length > 0;
   }
-  crearTeclado(): void {
+  guardarTeclado(): void {
     if (!this.tecladoValido() || this.tecladoGuardando()) return;
     this.tecladoGuardando.set(true);
     this.tecladoError.set('');
-    this.service.crearTeclado(this.computerId, {
+    this.service.guardarTeclado(this.computerId, {
       marca: this.tecladoMarca.trim(),
       modelo: this.tecladoModelo.trim(),
       numeroSerie: this.tecladoNumeroSerie.trim(),
@@ -125,14 +143,19 @@ export class EquipoEnrichmentModalComponent implements OnChanges {
     }).subscribe({
       next: () => {
         this.tecladoGuardando.set(false);
-        this.cancelarTeclado();
+        this.creandoTeclado.set(false);
         this.reloadTeclado();
       },
-      error: (err) => { this.tecladoGuardando.set(false); this.tecladoError.set(err?.error?.message || 'No se pudo registrar el teclado.'); },
+      error: (err) => { this.tecladoGuardando.set(false); this.tecladoError.set(err?.error?.message || 'No se pudo guardar el teclado.'); },
     });
   }
   private reloadTeclado(): void {
-    this.service.getDetalle(this.computerId).subscribe((detail) => this.teclado.set(detail.teclado));
+    this.service.getDetalle(this.computerId).subscribe((detail) => {
+      this.teclado.set(detail.teclado);
+      if (detail.teclado) {
+        this.prefillTeclado(detail.teclado);
+      }
+    });
   }
   private load(): void {
     this.form = this.emptyForm();
@@ -150,6 +173,9 @@ export class EquipoEnrichmentModalComponent implements OnChanges {
       this.originalModeloOverride = this.form.modeloOverride;
       this.detail.set(detail.equipo);
       this.teclado.set(detail.teclado);
+      if (detail.teclado) {
+        this.prefillTeclado(detail.teclado);
+      }
       this.effectiveType.set(detail.tipoEfectivo || detail.equipo.tipoEquipo);
       this.mostrarMonitor2.set(Boolean(
         detail.equipo.monitor2Nombre || this.form.monitor2FabricanteOverride ||

@@ -7,6 +7,8 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.util.Optional;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
@@ -19,11 +21,11 @@ class GlpiTecladoServiceTest {
     @InjectMocks private GlpiTecladoService service;
 
     @Test
-    void crear_savesTecladoWithFixedContainerAndEntity() {
-        when(repository.existsByItemsIdAndItemtype(42L, "Computer")).thenReturn(false);
+    void guardar_sinTecladoPrevio_creaUnoNuevo() {
+        when(repository.findFirstByItemsIdAndItemtype(42L, "Computer")).thenReturn(Optional.empty());
         when(repository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
-        service.crear(42L, " HP ", " KB-100 ", " SN-001 ", " 202405000 ", " 74089500.0001 ");
+        service.guardar(42L, " HP ", " KB-100 ", " SN-001 ", " 202405000 ", " 74089500.0001 ");
 
         ArgumentCaptor<GlpiComputerTeclado> captor = ArgumentCaptor.forClass(GlpiComputerTeclado.class);
         verify(repository).save(captor.capture());
@@ -40,31 +42,42 @@ class GlpiTecladoServiceTest {
     }
 
     @Test
-    void crear_yaExiste_throws() {
-        when(repository.existsByItemsIdAndItemtype(42L, "Computer")).thenReturn(true);
+    void guardar_conTecladoExistente_loActualizaEnVezDeFallar() {
+        GlpiComputerTeclado existente = new GlpiComputerTeclado();
+        existente.setId(9L);
+        existente.setItemsId(42L);
+        existente.setMarca("HP-VIEJA");
+        existente.setModelo("KB-OLD");
+        existente.setNumeroSerie("SN-OLD");
+        when(repository.findFirstByItemsIdAndItemtype(42L, "Computer")).thenReturn(Optional.of(existente));
+        when(repository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
-        assertThatThrownBy(() -> service.crear(42L, "HP", "KB-100", "SN-001", null, null))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("Este equipo ya tiene un teclado registrado.");
-        verify(repository, never()).save(any());
+        service.guardar(42L, "Logitech", "K120", "SN-NEW", null, null);
+
+        ArgumentCaptor<GlpiComputerTeclado> captor = ArgumentCaptor.forClass(GlpiComputerTeclado.class);
+        verify(repository).save(captor.capture());
+        GlpiComputerTeclado saved = captor.getValue();
+        assertThat(saved.getId()).isEqualTo(9L);
+        assertThat(saved.getMarca()).isEqualTo("Logitech");
+        assertThat(saved.getModelo()).isEqualTo("K120");
+        assertThat(saved.getNumeroSerie()).isEqualTo("SN-NEW");
     }
 
     @Test
-    void crear_faltaCampoObligatorio_throws() {
-        when(repository.existsByItemsIdAndItemtype(42L, "Computer")).thenReturn(false);
-
-        assertThatThrownBy(() -> service.crear(42L, "HP", "  ", "SN-001", null, null))
+    void guardar_faltaCampoObligatorio_throws() {
+        assertThatThrownBy(() -> service.guardar(42L, "HP", "  ", "SN-001", null, null))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("Marca, modelo y número de serie del teclado son obligatorios.");
         verify(repository, never()).save(any());
+        verify(repository, never()).findFirstByItemsIdAndItemtype(any(), any());
     }
 
     @Test
-    void crear_codigosOpcionalesEnBlanco_seGuardanComoNull() {
-        when(repository.existsByItemsIdAndItemtype(7L, "Computer")).thenReturn(false);
+    void guardar_codigosOpcionalesEnBlanco_seGuardanComoNull() {
+        when(repository.findFirstByItemsIdAndItemtype(7L, "Computer")).thenReturn(Optional.empty());
         when(repository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
-        service.crear(7L, "HP", "KB-100", "SN-002", "  ", null);
+        service.guardar(7L, "HP", "KB-100", "SN-002", "  ", null);
 
         ArgumentCaptor<GlpiComputerTeclado> captor = ArgumentCaptor.forClass(GlpiComputerTeclado.class);
         verify(repository).save(captor.capture());

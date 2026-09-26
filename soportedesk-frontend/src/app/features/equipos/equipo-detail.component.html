@@ -10,6 +10,9 @@
         <p>ID GLPI {{ item.computerID }} · {{ empty(item.fabricanteEquipo) }} {{ empty(item.modeloEquipo) }}</p>
       </div>
       <div class="header-badges">
+        @if (canEdit) {
+          <button type="button" class="back-btn edit-record-btn" (click)="requestEdit()">Editar equipo</button>
+        }
         <span class="type-badge">{{ tipoEfectivo() || item.tipoEquipo || 'Sin tipo' }}</span>
         <span class="state-badge" [class.deleted]="item.eliminado === 1">{{ item.eliminado === 1 ? 'Eliminado' : 'Activo' }}</span>
       </div>

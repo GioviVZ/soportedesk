@@ -230,3 +230,19 @@ export interface EquipoEvidencia {
   subidoPor: string;
   fechaSubida: string;
 }
+
+export interface GlpiSyncResponse {
+  totalSincronizados: number;
+  eliminadosDeCache: number;
+  sincronizadoEn: string;
+}
+
+export interface GlpiSyncStatus {
+  running: boolean;
+  procesados: number;
+  total: number;
+  iniciadoEn: string | null;
+  finalizadoEn: string | null;
+  ultimoResultado: GlpiSyncResponse | null;
+  error: string | null;
+}

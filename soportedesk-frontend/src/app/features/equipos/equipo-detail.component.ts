@@ -27,7 +27,9 @@ export class EquipoDetailComponent implements OnInit {
 
   @Input() id: number | null = null;
   @Input() embedded = false;
+  @Input() canEdit = false;
   @Output() closeRequested = new EventEmitter<void>();
+  @Output() editRequested = new EventEmitter<number>();
 
   equipo = signal<EquipoDetalle | null>(null);
   software = signal<EquipoSoftware[]>([]);
@@ -70,6 +72,13 @@ export class EquipoDetailComponent implements OnInit {
       return;
     }
     this.router.navigate(['/equipos']);
+  }
+
+  requestEdit(): void {
+    const item = this.equipo();
+    if (item) {
+      this.editRequested.emit(item.computerID);
+    }
   }
 
   toggleSoftwareExpanded(): void {

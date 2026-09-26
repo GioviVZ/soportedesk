@@ -61,7 +61,7 @@ public class EquipoAsignacionSyncService {
     }
 
     public void sync(EquipoEnrichment enrichment) {
-        Long personaId = findPersonaId(enrichment.getUsuarioAsignadoOverride());
+        Long personaId = null;
         Long sedeId = enrichment.getSede() == null ? null : enrichment.getSede().getId();
         Long dependenciaId = enrichment.getDependencia() == null
                 ? null : enrichment.getDependencia().getId();
@@ -95,18 +95,6 @@ public class EquipoAsignacionSyncService {
                     subdependenciaId, blankToNull(enrichment.getCodigoPatrimonial()),
                     blankToNull(enrichment.getCodigoInternoOverride()), estado);
         }
-    }
-
-    private Long findPersonaId(String accountName) {
-        String normalized = normalizeAccountName(accountName);
-        if (normalized == null) {
-            return null;
-        }
-        return jdbc.query(
-                "SELECT TOP 1 persona_id FROM dbo.persona "
-                        + "WHERE LOWER(sam_account_name) = LOWER(?)",
-                rs -> rs.next() ? rs.getLong(1) : null,
-                normalized);
     }
 
     private String normalizeAccountName(String value) {

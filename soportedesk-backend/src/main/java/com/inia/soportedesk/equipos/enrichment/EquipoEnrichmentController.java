@@ -52,7 +52,7 @@ public class EquipoEnrichmentController {
     @PostMapping("/{id}/teclado")
     @PreAuthorize("hasRole('ADMIN') || hasAuthority('WRITE_equipos')")
     public void crearTeclado(@PathVariable Long id, @RequestBody TecladoRequest request) {
-        glpiTecladoService.crear(id, request.marca(), request.modelo(), request.numeroSerie(),
+        glpiTecladoService.guardar(id, request.marca(), request.modelo(), request.numeroSerie(),
                 request.codigoInventario(), request.codigoPatrimonial());
     }
 

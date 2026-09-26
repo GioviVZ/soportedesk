@@ -2,7 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { EquipoDashboardCompleto, EquipoDetalleResponse, EquipoEnrichmentDto, EquipoEvidencia, EquipoKpis, EquipoResumen, EquipoSaludItem, EquipoSoftwareExport, HistorialItem, TecladoInput } from './equipo.model';
+import { EquipoDashboardCompleto, EquipoDetalleResponse, EquipoEnrichmentDto, EquipoEvidencia, EquipoKpis, EquipoResumen, EquipoSaludItem, EquipoSoftwareExport, GlpiSyncStatus, HistorialItem, TecladoInput } from './equipo.model';
 
 @Injectable({ providedIn: 'root' })
 export class EquipoService {
@@ -29,6 +29,14 @@ getAll(filters: {
 
   getKpis(): Observable<EquipoKpis> {
     return this.http.get<EquipoKpis>(`${this.apiUrl}/kpis`);
+  }
+
+  startSync(): Observable<GlpiSyncStatus> {
+    return this.http.post<GlpiSyncStatus>(`${this.apiUrl}/sync/iniciar`, {});
+  }
+
+  getSyncStatus(): Observable<GlpiSyncStatus> {
+    return this.http.get<GlpiSyncStatus>(`${this.apiUrl}/sync/estado`);
   }
 
   getSedes(): Observable<string[]> {
@@ -76,7 +84,7 @@ getAll(filters: {
     return this.http.post<EquipoEnrichmentDto>(`${this.apiUrl}/${id}/baja`, { motivo });
   }
 
-  crearTeclado(id: number, teclado: TecladoInput): Observable<void> {
+  guardarTeclado(id: number, teclado: TecladoInput): Observable<void> {
     return this.http.post<void>(`${this.apiUrl}/${id}/teclado`, teclado);
   }
 
