@@ -26,6 +26,9 @@
   </properties>
 
   <modules>
+    <module>soportedesk-common</module>
+    <module>soportedesk-gestiontiinia</module>
+    <module>soportedesk-realtime</module>
     <module>soportedesk-app</module>
   </modules>
 
