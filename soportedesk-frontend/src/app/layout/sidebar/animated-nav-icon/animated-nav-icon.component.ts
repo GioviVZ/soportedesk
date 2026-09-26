@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, HostBinding, Input } from '@angular/core';
 import { IconName } from './icon-name';
 
-const FALLBACK_ICONS = new Set<IconName>(['equipos', 'impresoras', 'licencias', 'usuarios-sistema', 'candidatos-persona']);
+const FALLBACK_ICONS = new Set<IconName>(['equipos', 'impresoras', 'licencias', 'usuarios-sistema']);
 
 @Component({
   selector: 'app-animated-nav-icon',

@@ -247,7 +247,15 @@
 }
 
 @media (max-width: 860px) {
-  .login-page { flex-direction: column; }
+  .login-page {
+    height: 100dvh;
+    min-height: 0;
+    flex-direction: column;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+  }
 
   .login-brand {
     flex: none;
@@ -283,6 +291,8 @@
 }
 
 @media (max-width: 420px) {
+  .login-brand { min-height: 190px; }
+  .login-form-panel { padding: 18px 12px max(18px, env(safe-area-inset-bottom)); }
   .login-card { padding: 22px; border-radius: 20px; }
   .brand-content { border-radius: 20px; }
 }

@@ -35,15 +35,15 @@
       @for (row of data; track row) {
         <tr>
           @for (col of columns; track col) {
-            <td>{{ getValue(row, col.key) }}</td>
+            <td [attr.data-label]="col.label">{{ getValue(row, col.key) }}</td>
           }
           @if (extraColumnLabel) {
-            <td>
+            <td [attr.data-label]="extraColumnLabel">
               <ng-container *ngTemplateOutlet="extraCellTemplate ?? null; context: { $implicit: row }" />
             </td>
           }
           @if (canView || canEdit) {
-            <td class="actions">
+            <td class="actions" data-label="Acciones">
               @if (canView) {
                 <button type="button" class="btn-view-record" (click)="view.emit(row)" aria-label="Ver registro" title="Ver registro">
                   <i class="ti ti-eye" aria-hidden="true"></i><span>Ver</span>

@@ -2,7 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { AnimatedNavIconComponent } from './animated-nav-icon.component';
 import { ICON_NAMES, IconName } from './icon-name';
 
-const FALLBACK_ICONS: IconName[] = ['equipos', 'impresoras', 'licencias', 'usuarios-sistema', 'candidatos-persona'];
+const FALLBACK_ICONS: IconName[] = ['equipos', 'impresoras', 'licencias', 'usuarios-sistema'];
 const BESPOKE_ICONS: IconName[] = ICON_NAMES.filter((name) => !FALLBACK_ICONS.includes(name));
 
 describe('AnimatedNavIconComponent', () => {

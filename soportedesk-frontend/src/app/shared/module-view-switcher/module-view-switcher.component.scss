@@ -2,7 +2,7 @@
   display: block;
   width: fit-content;
   max-width: 100%;
-  margin: 6px 0 20px;
+  margin: 0;
 }
 
 .view-switcher {
@@ -108,7 +108,7 @@ a.is-active .view-switcher__icon {
 }
 
 @media (max-width: 600px) {
-  :host { width: 100%; margin-bottom: 16px; }
+  :host { width: 100%; }
   .view-switcher { width: 100%; }
   a { flex: 1 0 auto; padding-inline: 12px; }
 }

@@ -31,6 +31,14 @@ describe('GenericTableComponent', () => {
     expect(rows[1].textContent).toContain('Cusco');
   });
 
+  it('exposes column labels in every cell for the mobile card layout', () => {
+    fixture.detectChanges();
+    const cells: NodeListOf<HTMLTableCellElement> =
+      fixture.nativeElement.querySelectorAll('tbody tr:first-child td');
+    expect(cells[0].dataset['label']).toBe('Nombre');
+    expect(cells[1].dataset['label']).toBe('Sede');
+  });
+
   it('emits delete with the row when the Eliminar button is clicked', () => {
     component.canEdit = true;
     fixture.detectChanges();

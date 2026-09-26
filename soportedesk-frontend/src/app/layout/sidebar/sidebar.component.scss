@@ -208,6 +208,8 @@ nav {
     width: min(var(--sidebar-width), 88vw) !important;
     transform: translateX(-100%);
     box-shadow: var(--shadow-lg);
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
 
     &.mobile-open { transform: translateX(0); }
   }

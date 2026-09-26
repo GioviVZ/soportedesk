@@ -92,6 +92,12 @@
   --sidebar-collapsed: 84px;
   --header-height: 72px;
 
+  /* Escala de layout compartida: mantiene proporciones constantes entre modulos. */
+  --content-max: 1320px;
+  --page-gutter: clamp(18px, 2vw, 24px);
+  --section-gap: clamp(14px, 1.5vw, 18px);
+  --card-padding: clamp(14px, 1.5vw, 18px);
+
   /* Alias históricos utilizados por módulos existentes. */
   --color-green: #0b2f6b;
   --color-green-dark: #071f49;

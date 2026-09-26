@@ -270,9 +270,13 @@
 
 @media (max-width: 760px) {
   .header {
-    margin: 8px 10px 0;
+    margin:
+      max(8px, env(safe-area-inset-top))
+      max(10px, env(safe-area-inset-right))
+      0
+      max(10px, env(safe-area-inset-left));
     padding-inline: 10px;
-    top: 8px;
+    top: max(8px, env(safe-area-inset-top));
   }
 
   .system-name,

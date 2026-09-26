@@ -93,6 +93,36 @@ form {
   font-family: Consolas, 'Courier New', monospace;
 }
 
+.input-group {
+  position: relative;
+}
+
+.input-group input {
+  padding-right: 40px;
+}
+
+.eye-btn {
+  position: absolute;
+  right: 4px;
+  top: 50%;
+  width: 30px;
+  min-height: 30px;
+  padding: 0;
+  transform: translateY(-50%);
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+}
+
+.eye-btn:hover {
+  background: var(--color-muted);
+  color: var(--color-text);
+}
+
 .field small {
   color: var(--color-danger);
   font-size: 11.5px;

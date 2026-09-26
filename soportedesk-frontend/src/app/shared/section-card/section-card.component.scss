@@ -1,4 +1,5 @@
 .section-card {
+  min-width: 0;
   background: var(--section-card-bg, var(--color-surface));
   border: 1px solid var(--section-card-border-color, transparent);
   border-radius: var(--radius-md);
@@ -34,5 +35,11 @@ h4 {
 }
 
 .section-body {
+  min-width: 0;
   padding: 14px;
+}
+
+@media (max-width: 600px) {
+  .section-header { padding: 11px 12px; }
+  .section-body { padding: 12px; }
 }

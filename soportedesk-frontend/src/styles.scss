@@ -226,6 +226,13 @@ input, select, textarea {
 
 table { width: 100%; border-collapse: collapse; }
 
+img,
+svg,
+video,
+canvas {
+  max-width: 100%;
+}
+
 th {
   padding: 11px 14px;
   text-align: left;
@@ -254,6 +261,14 @@ h1,h2 { color: var(--color-heading); }
 h3,h4,h5,h6 { color: var(--color-text); }
 h1,h2,h3,h4,h5,h6 { font-weight: 750; line-height: 1.2; letter-spacing: -.025em; margin: 0 0 16px; }
 
+/* Los componentes activados por el router deben poder encogerse dentro de grids. */
+router-outlet + * {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+}
+
 ::-webkit-scrollbar { width: 5px; height: 5px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--color-border-strong); border-radius: 3px; }
@@ -262,7 +277,7 @@ h1,h2,h3,h4,h5,h6 { font-weight: 750; line-height: 1.2; letter-spacing: -.025em;
 /* Utility: page wrapper */
 .page,
 .module-page {
-  width: min(100%, 1320px);
+  width: min(100%, var(--content-max));
   max-width: 100%;
   min-width: 0;
   margin: 0 auto;
@@ -274,7 +289,7 @@ h1,h2,h3,h4,h5,h6 { font-weight: 750; line-height: 1.2; letter-spacing: -.025em;
 
 .module-page {
   display: grid;
-  gap: 18px;
+  gap: var(--section-gap);
 }
 
 .page-header,
@@ -284,6 +299,9 @@ h1,h2,h3,h4,h5,h6 { font-weight: 750; line-height: 1.2; letter-spacing: -.025em;
   justify-content: space-between;
   gap: 18px;
   margin-bottom: 18px;
+  min-width: 0;
+
+  > * { min-width: 0; }
 
   h2 { margin: 0; font-size: 22px; letter-spacing: 0; }
   p {
@@ -298,8 +316,7 @@ h1,h2,h3,h4,h5,h6 { font-weight: 750; line-height: 1.2; letter-spacing: -.025em;
   top: 0;
   z-index: 10;
   background: var(--color-bg);
-  padding-top: clamp(16px, 2vw, 24px);
-  padding-bottom: 16px;
+  padding: clamp(16px, 2vw, 22px);
   margin-bottom: 0;
   box-shadow: 0 1px 0 var(--color-border), 0 8px 18px -16px rgba(42, 53, 71, .28);
 }
@@ -333,6 +350,9 @@ h1,h2,h3,h4,h5,h6 { font-weight: 750; line-height: 1.2; letter-spacing: -.025em;
   background: var(--color-surface);
   box-shadow: var(--shadow-sm);
   overflow: hidden;
+
+  strong,
+  span { overflow-wrap: anywhere; }
 
   &::before {
     content: '';
@@ -911,7 +931,7 @@ app-equipos-dashboard { --dash-module-color: var(--color-equipos); }
 
 .module-dash-card {
   min-width: 0;
-  padding: 18px;
+  padding: var(--card-padding);
   border: 1px solid transparent;
   border-radius: var(--radius-md);
   background: var(--color-surface);
@@ -1134,9 +1154,23 @@ app-equipos-dashboard { --dash-module-color: var(--color-equipos); }
     flex-direction: column;
   }
 
+  .module-header {
+    position: static;
+    padding: 14px;
+    border-radius: var(--radius-lg);
+  }
+
   .module-stats {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .stat-pill {
+    min-width: 0;
+    padding: 11px 12px;
+
+    strong { font-size: 22px; }
+    span { font-size: 10px; }
   }
 
   .module-dash-toolbar {
@@ -1226,8 +1260,7 @@ app-equipos-dashboard { --dash-module-color: var(--color-equipos); }
     width: 100%;
   }
 
-  :is(.filter-actions, .results-actions, .report-actions, .button-row, .modal-actions, .form-actions, [modal-footer]) > button,
-  :is(.filter-actions, .results-actions, .report-actions, .button-row, .modal-actions, .form-actions, [modal-footer]) > .btn {
+  :is(.filter-actions, .results-actions, .report-actions, .button-row, .modal-actions, .form-actions, [modal-footer]) > :is(button, a, .btn) {
     width: 100%;
     justify-content: center;
   }
@@ -1461,11 +1494,26 @@ html body :is(
   .module-dash-highlight,
   .filter-card,
   .filters-card,
+  .filters,
+  .filtros-bar,
+  .license-filter-panel,
+  .printer-filter-panel,
+  .vpn-filter-panel,
+  .equipment-filter-panel,
   .results-card,
   .table-card,
   .form-card,
   .search-panel,
   .detail-card,
+  .section-card,
+  .access-toolbar,
+  .user-card,
+  .account-card,
+  .equipment-card,
+  .vpn-mobile-card,
+  .printer-card,
+  .tool-group,
+  .tool-panel,
   .dashboard .service-orders-card,
   .dashboard .service-order-tile
 ) {
@@ -1593,15 +1641,21 @@ html body :is(.dropdown-menu, .user-menu, .module-card__menu-list, .modal-contai
   .page-header,
   .module-header {
     gap: 12px;
-    margin-bottom: 14px;
 
     h2 {
       font-size: 20px;
     }
   }
 
+  .page-header { margin-bottom: 14px; }
+  .module-header { margin-bottom: 0; }
+
   .module-stats {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .module-stats > :last-child:nth-child(odd) {
+    grid-column: 1 / -1;
   }
 
   .module-dash-stats {
@@ -1739,7 +1793,10 @@ input[type="number"], input[type="date"], select, textarea {
 }
 
 @media (max-width: 768px) {
-  .module-header { padding-top: 14px; }
+  .module-header {
+    padding-top: 14px;
+    border-radius: var(--radius-lg);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -1785,7 +1842,7 @@ input[type="number"], input[type="date"], select, textarea {
 
 .dashboard .service-orders-list {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 205px), 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 245px), 1fr));
   align-content: start;
   gap: 12px;
   max-height: min(64dvh, 540px);
@@ -1798,11 +1855,10 @@ input[type="number"], input[type="date"], select, textarea {
 .dashboard .service-order-tile {
   --order-state: var(--color-success);
   display: grid;
-  grid-template-rows: auto minmax(82px, 1fr) auto auto;
+  grid-template-rows: auto auto auto auto auto;
   gap: 10px;
-  aspect-ratio: 1 / 1;
   min-width: 0;
-  min-height: 218px;
+  min-height: 292px;
   padding: 13px;
   border-radius: var(--radius-md);
   background: var(--glass-bg);
@@ -1842,7 +1898,18 @@ input[type="number"], input[type="date"], select, textarea {
 .dashboard .flip-clock {
   display: grid;
   place-items: center;
+  gap: 6px;
   perspective: 500px;
+}
+
+.dashboard .flip-clock > small {
+  max-width: 100%;
+  overflow: hidden;
+  color: var(--color-text-secondary);
+  font-size: 10px;
+  font-weight: 800;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .dashboard .flip-clock__face {
@@ -1898,6 +1965,51 @@ input[type="number"], input[type="date"], select, textarea {
 .dashboard .service-order-main strong { margin-bottom: 3px; overflow: hidden; color: var(--color-heading); font-size: 13px; text-overflow: ellipsis; white-space: nowrap; }
 .dashboard .service-order-main span { display: -webkit-box; overflow: hidden; color: var(--color-text); font-size: 11.5px; line-height: 1.35; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
 .dashboard .service-order-main small { margin-top: 4px; overflow: hidden; color: var(--color-text-secondary); font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
+
+.dashboard .service-order-progress {
+  display: grid;
+  gap: 5px;
+}
+
+.dashboard .service-order-progress > div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  color: var(--color-text-secondary);
+  font-size: 10px;
+}
+
+.dashboard .service-order-progress strong {
+  color: var(--order-state);
+  font-variant-numeric: tabular-nums;
+}
+
+.dashboard .service-order-progress > i {
+  display: block;
+  height: 6px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--color-border) 78%, transparent);
+}
+
+.dashboard .service-order-progress > i > b {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--order-state);
+}
+
+.dashboard .service-order-alert {
+  padding: 7px 8px;
+  border: 1px solid color-mix(in srgb, var(--color-danger) 28%, var(--color-border));
+  border-radius: 7px;
+  background: color-mix(in srgb, var(--color-danger-light) 70%, var(--color-surface));
+  color: var(--color-danger);
+  font-size: 9.5px;
+  font-weight: 800;
+  line-height: 1.35;
+}
 
 .dashboard .service-order-footer {
   display: flex;
@@ -1964,15 +2076,14 @@ input[type="number"], input[type="date"], select, textarea {
 @media (max-width: 520px) {
   .dashboard .service-orders-heading { display: grid; }
   .dashboard .service-orders-heading a { width: max-content; }
-  .dashboard .service-orders-list { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; max-height: min(68dvh, 560px); padding-right: 5px; }
-  .dashboard .service-order-tile { min-height: 190px; padding: 11px; }
-  .dashboard .flip-clock__face { width: min(100%, 104px); min-height: 70px; }
-  .dashboard .service-order-footer { display: grid; gap: 2px; }
+  .dashboard .service-orders-heading a { width: 100%; justify-content: center; }
+  .dashboard .service-orders-list { grid-template-columns: 1fr; gap: 9px; max-height: min(72dvh, 620px); padding-right: 5px; }
+  .dashboard .service-order-tile { min-height: 284px; padding: 12px; }
+  .dashboard .flip-clock__face { width: min(100%, 116px); min-height: 76px; }
 }
 
 @media (max-width: 370px) {
-  .dashboard .service-orders-list { grid-template-columns: 1fr; }
-  .dashboard .service-order-tile { aspect-ratio: auto; min-height: 210px; }
+  .dashboard .service-order-tile { min-height: 284px; }
 }
 
 /* Garantía final de interacción táctil. Se ubica al cierre para prevalecer

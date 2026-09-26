@@ -182,12 +182,102 @@
   }
 
   .table-wrap {
-    border-radius: var(--radius-sm);
-    max-height: min(66dvh, 560px);
+    max-height: none;
+    overflow: visible;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+    scrollbar-gutter: auto;
   }
 
-  .table-wrap table {
-    min-width: 760px;
+  .table-wrap table,
+  .table-wrap tbody,
+  .table-wrap tr,
+  .table-wrap td {
+    display: block;
+    width: 100%;
+  }
+
+  .table-wrap table { min-width: 0; }
+
+  .table-wrap thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  .table-wrap tbody {
+    display: grid;
+    gap: 12px;
+  }
+
+  .table-wrap tbody tr {
+    display: grid;
+    overflow: hidden;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-surface);
+    box-shadow: var(--shadow-sm);
+  }
+
+  .table-wrap tbody td {
+    display: grid;
+    grid-template-columns: minmax(88px, .4fr) minmax(0, 1fr);
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+    padding: 11px 12px;
+    overflow-wrap: anywhere;
+  }
+
+  .table-wrap tbody td::before {
+    content: attr(data-label);
+    color: var(--color-text-secondary);
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: .045em;
+    text-transform: uppercase;
+  }
+
+  .table-wrap .actions {
+    position: static;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(76px, 1fr));
+    gap: 8px;
+    min-width: 0;
+    background: var(--color-muted);
+    box-shadow: none;
+  }
+
+  .table-wrap .actions::before { grid-column: 1 / -1; }
+
+  .table-wrap .actions button {
+    width: 100%;
+    min-width: 0;
+    justify-content: center;
+  }
+
+  .table-wrap .empty {
+    display: block;
+    padding: 36px 14px;
+  }
+
+  .table-wrap .empty::before {
+    content: '';
+    width: 40px;
+    height: 40px;
+    margin: 0 auto 12px;
+  }
+}
+
+@media (max-width: 400px) {
+  .table-wrap tbody td:not(.actions) {
+    grid-template-columns: 1fr;
+    gap: 4px;
   }
 }
 

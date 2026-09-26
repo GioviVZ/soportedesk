@@ -270,3 +270,22 @@
   background: color-mix(in srgb, var(--danger, #dc2626) 10%, transparent);
   font-size: 0.875rem;
 }
+
+@media (max-width: 640px) {
+  .radio-group,
+  .ad-preview-row {
+    flex-wrap: wrap;
+  }
+
+  .ad-label { min-width: 0; }
+
+  .actions {
+    display: grid;
+    grid-template-columns: 1fr;
+
+    button {
+      width: 100%;
+      min-height: 44px;
+    }
+  }
+}

@@ -24,9 +24,9 @@ main {
   overflow-x: hidden;
   overflow-y: auto;
   padding:
-    clamp(18px, 2vw, 24px) max(clamp(18px, 2vw, 24px), env(safe-area-inset-right))
-    max(clamp(18px, 2vw, 24px), env(safe-area-inset-bottom))
-    max(clamp(18px, 2vw, 24px), env(safe-area-inset-left));
+    var(--page-gutter) max(var(--page-gutter), env(safe-area-inset-right))
+    max(var(--page-gutter), env(safe-area-inset-bottom))
+    max(var(--page-gutter), env(safe-area-inset-left));
   background: var(--color-bg);
   overscroll-behavior: contain;
   -webkit-overflow-scrolling: touch;
@@ -56,6 +56,8 @@ main {
 }
 
 @media (max-width: 760px) {
+  :host { --page-gutter: 12px; }
+
   main {
     padding:
       12px max(12px, env(safe-area-inset-right))

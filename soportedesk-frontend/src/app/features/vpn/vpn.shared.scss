@@ -75,6 +75,31 @@
   small { display: block; color: var(--color-text-muted); font-weight: 500; }
 }
 
+.credencial-value {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.eye-btn {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-sm, 6px);
+  background: transparent;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  transition: background .15s ease, color .15s ease;
+}
+
+.eye-btn:hover {
+  background: var(--color-surface-hover, rgba(0, 0, 0, .05));
+  color: var(--color-text);
+}
+
 .muted {
   color: var(--color-text-secondary);
   font-size: 12.5px;

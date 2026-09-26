@@ -10,7 +10,6 @@ export const ICON_NAMES = [
   'auditoria',
   'herramientas',
   'usuarios-sistema',
-  'candidatos-persona',
   'catalogos',
 ] as const;
 

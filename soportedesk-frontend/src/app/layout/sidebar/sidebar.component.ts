@@ -39,7 +39,6 @@ export class SidebarComponent {
     { path: '/auditoria', label: 'Movimientos', icon: 'auditoria', permission: 'auditoria' },
     { path: '/herramientas', label: 'Aplicaciones', icon: 'herramientas', permission: 'herramientas' },
     { path: '/usuarios-sistema', label: 'Usuarios del Sistema', icon: 'usuarios-sistema', adminOnly: true },
-    { path: '/candidatos-persona', label: 'Candidatos a Persona', icon: 'candidatos-persona', adminOnly: true },
     { path: '/catalogos', label: 'Configuración', icon: 'catalogos', permission: 'catalogos' },
   ];
 

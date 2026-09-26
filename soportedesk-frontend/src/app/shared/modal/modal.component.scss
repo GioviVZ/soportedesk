@@ -147,6 +147,20 @@ header {
     border-radius: var(--radius-lg) var(--radius-lg) var(--radius-sm) var(--radius-sm);
   }
 
+  header {
+    padding: 12px;
+
+    h2 {
+      min-width: 0;
+      font-size: 16px;
+      overflow-wrap: anywhere;
+    }
+  }
+
+  .body { padding: 14px 12px; }
+
+  .modal-footer { padding: 10px 12px; }
+
   .footer-close {
     width: 100%;
   }
