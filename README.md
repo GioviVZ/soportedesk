@@ -23,8 +23,7 @@ SistemadeSoporteTecnicoINIA/
 ├── deploy/                 # configuración reproducible de Nginx
 ├── docs/                   # arquitectura y decisiones técnicas
 ├── soportedesk-backend/    # API REST
-├── soportedesk-frontend/   # SPA Angular
-└── tools/                  # agente de inventario
+└── soportedesk-frontend/   # SPA Angular
 ```
 
 ## Configuración segura del backend
@@ -41,7 +40,6 @@ GLPI_DB_USERNAME
 GLPI_DB_PASSWORD
 JWT_SECRET
 LICENCIA_ENCRYPTION_KEY
-AGENTE_INVENTARIO_TOKEN
 ```
 
 `LICENCIA_ENCRYPTION_KEY` no debe rotarse sin migrar previamente las

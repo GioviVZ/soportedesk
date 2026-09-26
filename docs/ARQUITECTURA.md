@@ -20,8 +20,8 @@ mayormente stateless salvo el canal de eventos en vivo) respaldada por SQL
 Server como base propia, más dos integraciones de solo lectura contra sistemas
 externos: **Active Directory** (LDAPS, en vivo) y **GLPI** (MySQL, inventario
 de hardware). Sin colas ni microservicios — un monolito backend y un monolito
-frontend — pero sí dos jobs `@Scheduled` (sincronización de equipos desde GLPI
-y reconciliación de identidad) y un canal SSE para push de cambios al
+frontend — pero sí un job `@Scheduled` (sincronización de equipos desde GLPI)
+y un canal SSE para push de cambios al
 frontend.
 
 ```
@@ -55,7 +55,7 @@ frontend.
 | Integración GLPI | MySQL, datasource **secundario** de solo lectura (`GlpiDataSourceConfig`) | entidades `@Immutable`; fuente de verdad del inventario de hardware |
 | Integración Google Workspace | Vista `GestionTI_INIA.dbo.vw_GW_Dashboard` (misma instancia SQL Server, otra BD) | solo lectura, usada para validar correos institucionales |
 | Tiempo real | SSE nativo (`SseEmitter`, sin librería extra) | `/api/realtime/events`, emisores en memoria, sin persistencia |
-| Jobs programados | `@Scheduled` (`@EnableScheduling`) | sync GLPI→`equipo_asignacion` (diario 3am) y reconciliación de identidad (diario 3:30am) |
+| Jobs programados | `@Scheduled` (`@EnableScheduling`) | sync GLPI→`equipo_asignacion` (diario 3am) |
 | Cifrado de credenciales | AES/GCM (`LicenciaCredentialConverter`) | aplica a claves de licencias |
 | Frontend | Angular 17.3 · TypeScript 5.4 · SCSS | standalone components, sin NgModules |
 | Gráficos | Chart.js (vía `ng2-charts` o uso directo) | dashboard |
@@ -84,12 +84,11 @@ SistemadeSoporteTecnicoINIA/
 │       ├── config/           # PrimaryDataSourceConfig (datasource SQL Server explícito como @Primary)
 │       ├── correos/          # Cuentas de correo institucional (reporting, solo lectura — ver §6)
 │       ├── dashboard/        # Agregaciones para KPIs y gráficos de todos los módulos
-│       ├── equipos/          # Computadoras y equipos de cómputo (+ enrichment/, evidencia/)
+│       ├── equipos/          # Computadoras y equipos de cómputo (+ enrichment/, evidencia/, glpicache/ = cache local del inventario GLPI)
 │       ├── exception/        # GlobalExceptionHandler
 │       ├── gestiontiinia/    # vista de solo lectura sobre GestionTI_INIA (Google Workspace)
 │       ├── glpi/             # datasource secundario MySQL, entidades @Immutable de inventario GLPI
 │       ├── herramientas/     # Ping, inventario de red local (+ ordenes/ de servicio a proveedores)
-│       ├── identidad/        # reconciliación AD↔persona, candidatos pendientes de revisión
 │       ├── impresoras/       # Impresoras (driver, consumibles) (+ intervencion/ = bitácora de reparaciones)
 │       ├── licencias/        # Licencias de software + activaciones múltiples + cifrado
 │       ├── realtime/         # hub SSE para push de cambios en vivo al frontend
@@ -99,7 +98,7 @@ SistemadeSoporteTecnicoINIA/
 │       └── wifi/             # Redes WiFi
 │   └── src/main/resources/
 │       ├── schema.sql                # esquema base v1.0 (idempotente) — YA NO es la única fuente de verdad, ver §5
-│       ├── migration_*.sql           # 19 scripts sueltos del "Plan de Normalización" en curso, no fusionados en schema.sql
+│       ├── migration_*.sql           # 26 scripts sueltos del "Plan de Normalización" en curso, no fusionados en schema.sql
 │       ├── data.sql                  # usuarios admin/soporte por defecto
 │       ├── data_catalogos.sql        # catálogos iniciales (sedes, dependencias, etc.)
 │       └── application.yml           # configuración (perfil `dev`; todas las credenciales vía variables de entorno)
@@ -107,7 +106,7 @@ SistemadeSoporteTecnicoINIA/
 └── soportedesk-frontend/                   # SPA Angular 17
     └── src/app/
         ├── core/           # AuthService, guards (authGuard/adminGuard/moduloGuard/vpnAdminGuard), interceptor JWT, CatalogoService
-        ├── features/       # un folder por módulo de negocio (ver tabla de rutas más abajo), incluye candidatos-persona/
+        ├── features/       # un folder por módulo de negocio (ver tabla de rutas más abajo)
         ├── layout/         # shell, header, sidebar
         └── shared/         # GenericTable, UbicacionSelect, SectionCard, StatusBadge, VencimientoBadge, ModuleViewSwitcher, etc.
 ```
@@ -123,8 +122,7 @@ SistemadeSoporteTecnicoINIA/
 | Correos | Cuentas de correo institucional | **solo lectura/reporting** — se nutre de la vista de Google Workspace (`gestiontiinia`), sin altas/bajas manuales desde este sistema |
 | Usuarios de Red | Cuentas AD (caché local + integración en vivo) | `usuariosred` mantiene la caché (`ad_usuarios_cache`) y `usuariosred/contrato` el historial de contratos; `activedirectory` habla LDAPS en vivo para alta/baja/reset/mover OU |
 | Active Directory (en vivo) | Búsqueda, alta, baja, desbloqueo, reset de password, mover OU, grupos, sincronización | valida contra `gestiontiinia` que el correo elegido exista y no esté ya vinculado a otra cuenta AD |
-| Identidad | Reconciliación AD↔persona | job diario detecta cuentas AD sin `persona` asociada y las drops en `persona_candidato` para revisión manual (ADMIN); nunca crea `persona` sin confirmación humana |
-| VPN | Credenciales de acceso remoto + antivirus | **workflow de dos etapas**: solicitud (permiso `solicitar-vpn`) → aprobación/rechazo/observación (permiso `aprobar-vpn`); generador de contraseñas integrado en el formulario |
+| VPN | Credenciales de acceso remoto + antivirus | **workflow de dos etapas**: solicitud (permiso `solicitar-vpn`) → aprobación/rechazo/observación (permiso `aprobar-vpn`); generador de contraseñas integrado en el formulario; sede/dependencia/subdependencia del titular se resuelven contra el catálogo real (`sedes`/`dependencias`/`subdependencias`) desde 2026-09-24, ya no quedan sin vincular |
 | WiFi | Redes y claves WiFi | catálogo independiente, sin FKs |
 | Licencias | Licencias de software | activaciones múltiples (cuenta+clave por activación) y serial multivalor; credenciales cifradas (AES/GCM) |
 | Herramientas | Ping a host + inventario de red local + `herramientas/ordenes` (órdenes de servicio a proveedores) | utilidades de diagnóstico para mesa de soporte |
@@ -142,14 +140,14 @@ SistemadeSoporteTecnicoINIA/
 > **Deuda técnica a tener presente:** `schema.sql` sigue siendo el esquema
 > base v1.0 (idempotente, seguro de re-ejecutar) pero **ya no describe el
 > esquema real**. El "Plan de Normalización" (`docs/plan-normalizacion-base-datos.docx`)
-> se aplicó vía **19 scripts `migration_*.sql` sueltos** en
+> se aplicó vía **26 scripts `migration_*.sql` sueltos** en
 > `soportedesk-backend/src/main/resources/`, ejecutados manualmente y no
 > fusionados en `schema.sql`. Además, algunas tablas usadas por entidades JPA
 > activas (`equipos_enrichment`, `equipos_enrichment_historial`,
 > `equipos_evidencias`, `impresoras_intervenciones`,
 > `impresoras_intervenciones_adjuntos`) **no aparecen creadas en ningún
 > script versionado** — se crearon manualmente en SSMS. Para reconstruir el
-> esquema real desde cero hoy hace falta `schema.sql` + los 19
+> esquema real desde cero hoy hace falta `schema.sql` + los 26
 > `migration_*.sql` en orden + esas tablas manuales.
 
 ### Tablas del esquema base (`schema.sql`, ya no exhaustivo)
@@ -170,14 +168,11 @@ SistemadeSoporteTecnicoINIA/
 
 | Tabla | Notas |
 |-------|-------|
-| `dbo.persona` | PK explícita **sin IDENTITY** (preserva IDs legados); FK `tipo_cuenta_id → core.TiposCuentaDirectorio` (schema legado externo); UNIQUE `sam_account_name` |
 | `dbo.persona_asignacion` | FK `persona_id → persona`, `subdependencia_id → subdependencias` |
 | `dbo.persona_contrato` | FK `persona_id → persona`, `tipo_contrato_id → tipos_contrato` |
 | `dbo.ad_cuenta` | sucesora de `ad_usuarios_cache`, FK `persona_id → persona` — **coexiste en paralelo a propósito** durante la migración |
-| `dbo.persona_candidato` | FK `persona_id → persona` (nullable hasta confirmar); alimentada por el job de reconciliación de identidad |
-| `dbo.equipo_asignacion` | UNIQUE `glpi_computer_id`; FK `persona_id → persona`, `sede_id`, `dependencia_id`, `subdependencia_id` — sucesora normalizada de `equipos_enrichment`, mantenida por el job diario de sincronización GLPI |
-| `dbo.ubigeo`, `dbo.tipo_unidad`, `dbo.anexo` | catálogos de fases posteriores del plan de normalización |
-| `dbo.vpn_solicitud`, `dbo.vpn_solicitud_snapshot` | soportan el workflow de solicitud/aprobación de VPN |
+| `dbo.equipo_asignacion` | UNIQUE `glpi_computer_id`; FK `sede_id`, `dependencia_id`, `subdependencia_id` — sucesora normalizada de `equipos_enrichment`, mantenida por el job diario de sincronización GLPI; columna `persona_id` huérfana (sin FK, sin código que la use) |
+| `dbo.ubigeo`, `dbo.tipo_unidad` | catálogos de fases posteriores del plan de normalización |
 
 ### Tablas creadas manualmente (no versionadas)
 
@@ -186,6 +181,29 @@ SistemadeSoporteTecnicoINIA/
 activamente por sus entidades JPA pero sin script de creación en el repo.
 Pendiente: escribir el `migration_*.sql` correspondiente para cerrar el gap.
 
+### Cache local de inventario GLPI (`dbo.equipo_glpi_cache`, desde 2026-09-24)
+
+Las consultas de equipos (grilla, KPIs, salud, dashboard, filtros) dejaron de
+golpear en vivo el MySQL de GLPI en cada request. Ahora leen de
+`dbo.equipo_glpi_cache` (SQL Server, paquete `equipos.glpicache`), una tabla
+plana que espeja los mismos campos de la vista `vw_inv_computers_full` de
+GLPI mas los datos de teclado/monitor/AnyDesk-RustDesk que antes se armaban
+con 3 queries adicionales por request. Se mantiene fresca con:
+
+- Resync completo cada 5 min (`equipos.glpi-cache-sync-interval-ms`,
+  `@Scheduled(fixedDelayString=...)`), mismo patron de coordinador/estado
+  que ya usa la sincronizacion de Active Directory (`GlpiSyncCoordinator`
+  espeja a `AdSyncCoordinator`).
+- Refresco puntual forzado cada vez que se abre el detalle de un equipo
+  especifico (`GET /equipos/{id}`), y tras guardar un teclado o dar de baja
+  un equipo (las 2 unicas escrituras que este sistema hace hacia GLPI).
+- Boton manual "Actualizar inventario GLPI" en la pantalla de equipos,
+  `POST /equipos/sync/iniciar` + `GET /equipos/sync/estado`.
+
+GLPI sigue siendo de solo lectura como fuente de verdad; las correcciones
+manuales del admin siguen viviendo aparte en `equipos_enrichment`, fusionadas
+en memoria igual que antes -- el cache nunca guarda esos campos `*_override`.
+
 ### Diagrama de relaciones (FK, simplificado)
 
 ```
@@ -193,9 +211,8 @@ sedes ──< dependencias ──< subdependencias
             │                    │
             └────────────────────┴─── usuarios_red / persona ──< equipos ──< vpn
                                        │                  │
-                                       ├─── correos (RO)   └─── equipo_asignacion (persona_id, ubicación)
+                                       ├─── correos (RO)   └─── equipo_asignacion (ubicación)
                                        │
-persona ──< persona_asignacion, persona_contrato, persona_candidato, ad_cuenta
 tipos_contrato ──< usuarios_red, correos, usuarios_red_contratos, persona_contrato
 tipos_impresora ──< impresoras          impresoras ──< impresoras_intervenciones ──< …adjuntos
 tipos_licencia / tipos_bien ──< licencias ──< licencia_activaciones  (cascade delete)
@@ -253,7 +270,7 @@ GET (lista con `search`, y por id) para cualquier autenticado; POST/PUT/DELETE
 
 | Módulo | Ruta base | Extra |
 |--------|-----------|-------|
-| Equipos | `/equipos` | `GET /equipos/con-red` (solo con usuario de red asignado) · `GET/PUT /equipos/{id}/enrichment` · `GET /equipos/{id}/historial` · `/equipos/{id}/evidencias/**` |
+| Equipos | `/equipos` | `GET /equipos/con-red` (solo con usuario de red asignado) · `GET/PUT /equipos/{id}/enrichment` · `GET /equipos/{id}/historial` · `/equipos/{id}/evidencias/**` · `POST /equipos/sync/iniciar` + `GET /equipos/sync/estado` (sync manual del cache GLPI) |
 | Impresoras | `/impresoras` | `POST/GET /impresoras/{id}/driver` (multipart) · `/impresoras/{impresoraId}/intervenciones/**` |
 | Usuarios de Red | `/usuarios-red` | `/usuarios-red/contratos/**` (historial de contratos) |
 | Licencias | `/licencias` | `activaciones[]` viaja embebida en el body de POST/PUT |
@@ -274,9 +291,35 @@ Búsqueda, alta, baja, desbloqueo, reset de password, mover OU, grupos,
 dashboard y sincronización — todo `READ_usuarios-red` (lecturas) o
 `WRITE_usuarios-red` (escrituras/sync).
 
-### Identidad — `/personas/candidatos`
-Listar, `detectar-ahora` (dispara el job manualmente), `confirmar` (crea
-`dbo.persona`), `descartar` — **todo ADMIN-only**.
+> **Nota (2026-09-24):** la feature de identidad/reconciliación de personas
+> (tablas `dbo.persona` y `dbo.persona_candidato`, endpoints
+> `/personas/candidatos`, pantalla "Candidatos a Persona") fue decomisionada
+> por completo — código backend y frontend eliminados. La resolución de
+> "a quién pertenece" una cuenta de red no nominal ahora vive en
+> `usuarios_red_contratos` (`personal_nombre`/`personal_apellidos`) cruzado
+> con `ad_usuarios_cache`, ver módulo Usuarios de Red. Las tablas
+> `dbo.persona`/`dbo.persona_candidato` se eliminan de la base de datos vía
+> `migration_drop_identidad_2026-09-24.sql` (ejecución manual, separada). Como
+> efecto colateral se eliminó también `VpnNormalizedSyncService`; las tablas
+> `dbo.vpn_solicitud`/`dbo.vpn_solicitud_snapshot` quedan congeladas (ya eran
+> un espejo inerte de `dbo.vpn`, sin lectores).
+
+> **Nota (2026-09-24, segunda limpieza):** se eliminaron ademas estas tablas
+> huerfanas (cero codigo Java/Angular que las usara, confirmado por auditoria
+> completa): `dbo.anexo`, el subsistema completo de "agente de inventario
+> remoto" (`dbo.inventario_equipos`, `inventario_discos`, `inventario_programas`,
+> `inventario_redes`, `inventario_red_ips` — un piloto abandonado desde julio
+> 2026, sin controller ni entidad vigente), `dbo.vpn_solicitud` /
+> `vpn_solicitud_snapshot` / `vpn.EstadosSolicitud` (el espejo normalizado de
+> VPN, huerfano tras borrar `VpnNormalizedSyncService`), y `core.TiposCuentaDirectorio`
+> (solo la usaban `dbo.persona`/`PersonaReconciliacionService`, ambos ya
+> eliminados). Tambien se eliminaron 3 columnas muertas de `dbo.vpn`
+> (`usuario_red_id`, `equipo_id`, `ip_asignada`, sin FK y sin codigo que las
+> usara) y la herramienta cliente `tools/soportedesk-agent/` (PowerShell del
+> agente de inventario abandonado) junto con la propiedad de configuracion
+> `agente.inventario-token`. Todas las tablas eliminadas fueron respaldadas
+> antes del borrado (ver migraciones `migration_drop_tablas_huerfanas_2026-09-24.sql`
+> y backups CSV fuera del repositorio).
 
 ### Herramientas — `/herramientas`
 | Método | Ruta | Descripción |
@@ -310,8 +353,8 @@ solo de frontend, vía el permiso `herramientas`.)
 | `correos`, `equipos`, `impresoras`, `licencias`, `usuarios-red`, `vpn`, `wifi`, `herramientas`, `auditoria` | lectura (`READ_<modulo>`) | acceso de solo lectura a ese módulo/sección |
 
 ADMIN siempre tiene acceso total — los permisos de la tabla `permisos` solo
-aplican a SOPORTE. `candidatos-persona` y `usuarios-sistema` son **ADMIN-only**,
-sin permiso intermedio posible.
+aplican a SOPORTE. `usuarios-sistema` es **ADMIN-only**, sin permiso
+intermedio posible.
 
 ---
 
@@ -337,7 +380,6 @@ Cada módulo de negocio se sirve bajo un *shell* propio con sub-rutas por modo
 | `/usuarios-red` | `consultas` · `administracion` · `dashboard` | moduloGuard(`usuarios-red`[, write]) | ídem |
 | `/vpn` | `registros` · `administracion` · `dashboard` | vpnAdminGuard (administracion/dashboard) | ídem |
 | `/usuarios-sistema` | — | adminGuard | solo ADMIN |
-| `/candidatos-persona` | — | adminGuard | solo ADMIN |
 | `/auditoria` | — | moduloGuard(`auditoria`) | ADMIN o con permiso |
 | `/herramientas` | — | moduloGuard(`herramientas`) | ADMIN o con permiso |
 | `/catalogos` | — | moduloGuard(`catalogos`) | ADMIN (permiso `WRITE_catalogos`) |
@@ -416,15 +458,13 @@ variables de entorno (sin defaults hardcodeados salvo la URL de AD):
 |----------|-----|
 | `JWT_SECRET` | clave HMAC para firmar los JWT (base64, 32+ bytes) |
 | `LICENCIA_ENCRYPTION_KEY` | clave AES para cifrar credenciales de licencias |
-| `AGENTE_INVENTARIO_TOKEN` | token del agente de inventario de red (`herramientas/inventario`) |
 | `SSTI_DB_URL` / `SSTI_DB_USERNAME` / `SSTI_DB_PASSWORD` | SQL Server, base `ssti` (datasource primario) |
 | `GLPI_DB_URL` / `GLPI_DB_USERNAME` / `GLPI_DB_PASSWORD` | MySQL de GLPI (datasource secundario, solo lectura) |
 | `AD_URL` (default `ldaps://SRV-DC02.inia.local:636`) / `AD_BASE_DN` / `AD_BIND_USER` / `AD_BIND_PASSWORD` / `AD_REFERRAL` | conexión LDAPS al Active Directory institucional |
 
 Otras claves de `application.yml` sin variable de entorno (no son secretos):
 `uploads.drivers-dir`/`evidencias-dir`/`intervenciones-dir` (rutas de disco),
-`equipos.sync-glpi-cron`, `identidad.reconciliacion-cron` (expresiones cron de
-los jobs `@Scheduled`).
+`equipos.sync-glpi-cron` (expresión cron del job `@Scheduled`).
 
 Ejecutar como servicio:
 - **Windows:** registrar con NSSM o una tarea programada que lance
