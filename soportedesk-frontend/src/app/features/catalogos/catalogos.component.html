@@ -105,9 +105,9 @@
     <tbody>
       @for (item of sedes; track item) {
         <tr>
-          <td>{{ item.nombre }}</td>
+          <td data-label="Nombre">{{ item.nombre }}</td>
           @if (canWrite) {
-            <td>
+            <td data-label="Acciones" class="catalog-row-actions">
               <button type="button" (click)="startEdit(item.id, item.nombre)">Editar</button>
               <button type="button" class="danger" (click)="requestDelete('sedes', item.id, item.nombre)">Eliminar</button>
             </td>
@@ -142,12 +142,14 @@
     <tbody>
       @for (item of dependencias; track item) {
         <tr>
-          <td>{{ item.nombre }}</td>
-          <td>{{ item.sede.nombre }}</td>
-          <td>
-            <button type="button" (click)="startEdit(item.id, item.nombre, item.sede.id)">Editar</button>
-            <button type="button" class="danger" (click)="requestDelete('dependencias', item.id, item.nombre, item.sede.nombre)">Eliminar</button>
-          </td>
+          <td data-label="Nombre">{{ item.nombre }}</td>
+          <td data-label="Sede">{{ item.sede.nombre }}</td>
+          @if (canWrite) {
+            <td data-label="Acciones" class="catalog-row-actions">
+              <button type="button" (click)="startEdit(item.id, item.nombre, item.sede.id)">Editar</button>
+              <button type="button" class="danger" (click)="requestDelete('dependencias', item.id, item.nombre, item.sede.nombre)">Eliminar</button>
+            </td>
+          }
         </tr>
       }
     </tbody>
@@ -184,10 +186,10 @@
     <tbody>
       @for (item of subdependencias; track item) {
         <tr>
-          <td>{{ item.nombre }}</td>
-          <td>{{ item.dependencia.nombre }}</td>
+          <td data-label="Nombre">{{ item.nombre }}</td>
+          <td data-label="Dependencia">{{ item.dependencia.nombre }}</td>
           @if (canWrite) {
-            <td>
+            <td data-label="Acciones" class="catalog-row-actions">
               <button type="button" (click)="startEdit(item.id, item.nombre, item.dependencia.id)">Editar</button>
               <button type="button" class="danger" (click)="requestDelete('subdependencias', item.id, item.nombre, item.dependencia.nombre)">Eliminar</button>
             </td>
@@ -227,9 +229,9 @@
     <tbody>
       @for (item of tiposContrato; track item) {
         <tr>
-          <td>{{ item.nombre }}</td>
+          <td data-label="Nombre">{{ item.nombre }}</td>
           @if (canWrite) {
-            <td>
+            <td data-label="Acciones" class="catalog-row-actions">
               <button type="button" (click)="startEdit(item.id, item.nombre)">Editar</button>
               <button type="button" class="danger" (click)="requestDelete('tiposContrato', item.id, item.nombre)">Eliminar</button>
             </td>
@@ -263,9 +265,9 @@
     <tbody>
       @for (item of tiposLicencia; track item) {
         <tr>
-          <td>{{ item.nombre }}</td>
+          <td data-label="Nombre">{{ item.nombre }}</td>
           @if (canWrite) {
-            <td>
+            <td data-label="Acciones" class="catalog-row-actions">
               <button type="button" (click)="startEdit(item.id, item.nombre)">Editar</button>
               <button type="button" class="danger" (click)="requestDelete('tiposLicencia', item.id, item.nombre)">Eliminar</button>
             </td>
@@ -299,9 +301,9 @@
     <tbody>
       @for (item of tiposBien; track item) {
         <tr>
-          <td>{{ item.nombre }}</td>
+          <td data-label="Nombre">{{ item.nombre }}</td>
           @if (canWrite) {
-            <td>
+            <td data-label="Acciones" class="catalog-row-actions">
               <button type="button" (click)="startEdit(item.id, item.nombre)">Editar</button>
               <button type="button" class="danger" (click)="requestDelete('tiposBien', item.id, item.nombre)">Eliminar</button>
             </td>
@@ -335,9 +337,9 @@
     <tbody>
       @for (item of tiposImpresora; track item) {
         <tr>
-          <td>{{ item.nombre }}</td>
+          <td data-label="Nombre">{{ item.nombre }}</td>
           @if (canWrite) {
-            <td>
+            <td data-label="Acciones" class="catalog-row-actions">
               <button type="button" (click)="startEdit(item.id, item.nombre)">Editar</button>
               <button type="button" class="danger" (click)="requestDelete('tiposImpresora', item.id, item.nombre)">Eliminar</button>
             </td>
@@ -371,9 +373,9 @@
     <tbody>
       @for (item of marcasImpresora; track item) {
         <tr>
-          <td>{{ item.nombre }}</td>
+          <td data-label="Nombre">{{ item.nombre }}</td>
           @if (canWrite) {
-            <td>
+            <td data-label="Acciones" class="catalog-row-actions">
               <button type="button" (click)="startEdit(item.id, item.nombre)">Editar</button>
               <button type="button" class="danger" (click)="requestDelete('marcasImpresora', item.id, item.nombre)">Eliminar</button>
             </td>
@@ -410,18 +412,16 @@
     <tbody>
       @for (item of modelosImpresora; track item) {
         <tr>
-          <td>{{ item.marca.nombre }}</td>
-          <td>{{ item.nombre }}</td>
+          <td data-label="Marca">{{ item.marca.nombre }}</td>
+          <td data-label="Modelo">{{ item.nombre }}</td>
+          <td data-label="Tóner">
+            @for (toner of item.toners; track toner) {
+              <div>{{ toner.color }} · {{ toner.variante }} — {{ toner.codigo }}</div>
+            }
+          </td>
+          <td data-label="Driver">{{ item.driverNombre || '—' }}</td>
           @if (canWrite) {
-            <td>
-              @for (toner of item.toners; track toner) {
-                <div>{{ toner.color }} · {{ toner.variante }} — {{ toner.codigo }}</div>
-              }
-            </td>
-          }
-          <td>{{ item.driverNombre || '—' }}</td>
-          @if (canWrite) {
-            <td>
+            <td data-label="Acciones" class="catalog-row-actions">
               <button type="button" (click)="onEditModeloImpresora(item)">Editar</button>
               <button type="button" class="danger" (click)="requestDeleteModelo(item)">Eliminar</button>
             </td>
@@ -448,11 +448,11 @@
     <tbody>
       @for (item of tiposEquipo; track item) {
         <tr>
-          <td>{{ item.glpiValor }}</td>
-          <td>{{ item.tipoNormalizado }}</td>
-          <td>{{ item.activo ? 'Sí' : 'No' }}</td>
+          <td data-label="Valor GLPI">{{ item.glpiValor }}</td>
+          <td data-label="Tipo normalizado">{{ item.tipoNormalizado }}</td>
+          <td data-label="Activo">{{ item.activo ? 'Sí' : 'No' }}</td>
           @if (canWrite) {
-            <td>
+            <td data-label="Acciones" class="catalog-row-actions">
               <button type="button" (click)="startEditTipoEquipo(item)">Editar</button>
               <button type="button" class="danger" (click)="requestDelete('tiposEquipo', item.id, item.glpiValor, item.tipoNormalizado)">Eliminar</button>
             </td>
@@ -525,7 +525,7 @@
           Tipo estándar del inventario
           <select [(ngModel)]="tipoNormalizadoForm">
             <option value="">Seleccione...</option>
-            @for (tipo of tiposComputoEstandar; track tipo) {
+            @for (tipo of opcionesTipoNormalizado; track tipo) {
               <option [value]="tipo">{{ tipo }}</option>
             }
           </select>

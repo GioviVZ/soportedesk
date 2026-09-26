@@ -44,6 +44,15 @@ export class ModeloImpresoraFormComponent implements OnChanges {
     return this.form.controls.toners;
   }
 
+  opcionesColorToner(index: number): string[] {
+    const grupo = this.tonersArray.at(index);
+    const actual = grupo?.get('color')?.value;
+    if (actual && !TONER_COLORES.includes(actual)) {
+      return [actual, ...TONER_COLORES];
+    }
+    return TONER_COLORES;
+  }
+
   ngOnChanges(): void {
     if (this.modelo) {
       this.marcaId = this.modelo.marca?.id ?? null;

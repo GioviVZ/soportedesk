@@ -100,6 +100,15 @@ export class CatalogosComponent implements OnInit {
   vpnConfigVencimiento: string | null = null;
   pendingDelete: PendingDelete | null = null;
 
+  get opcionesTipoNormalizado(): string[] {
+    const base = this.tiposComputoEstandar;
+    const actual = this.tipoNormalizadoForm;
+    if (actual && !base.includes(actual)) {
+      return [actual, ...base];
+    }
+    return base;
+  }
+
   readonly navGroups: CatalogoNavGroup[] = [
     {
       title: 'Ubicacion institucional',

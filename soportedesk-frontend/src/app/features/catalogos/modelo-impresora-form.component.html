@@ -35,7 +35,7 @@
             <label>Color</label>
             <select formControlName="color">
               <option value="">Seleccione...</option>
-              @for (c of tonerColores; track c) {
+              @for (c of opcionesColorToner(i); track c) {
                 <option [value]="c">{{ c }}</option>
               }
             </select>
