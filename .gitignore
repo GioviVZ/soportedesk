@@ -1,14 +1,12 @@
 # Local/editor folders
 .claude/
 .codex-screens/
+.codex-tmp/
 .vscode/
 
 # Logs
 *.log
 *.err.log
-
-# Local agent configuration with real token
-tools/soportedesk-agent/soportedesk-agent.config.json
 
 # Frontend build/cache/dependencies
 soportedesk-frontend/node_modules/

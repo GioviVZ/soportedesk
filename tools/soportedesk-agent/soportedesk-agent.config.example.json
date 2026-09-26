@@ -1,6 +1,0 @@
-{
-  "ApiUrl": "https://soportedesk.inia.gob.pe/api/agente/inventario",
-  "AgentToken": "CAMBIAR-POR-TOKEN-SEGURO",
-  "TimeoutSeconds": 30,
-  "MaxPrograms": 500
-}
