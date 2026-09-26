@@ -4,12 +4,19 @@ import com.inia.soportedesk.activedirectory.ActiveDirectoryService;
 import com.inia.soportedesk.activedirectory.AdUsuarioCache;
 import com.inia.soportedesk.activedirectory.AdUsuarioCacheRepository;
 import com.inia.soportedesk.auth.UsuarioRepository;
+import com.inia.soportedesk.catalogo.Dependencia;
+import com.inia.soportedesk.catalogo.DependenciaRepository;
+import com.inia.soportedesk.catalogo.Sede;
+import com.inia.soportedesk.catalogo.SedeRepository;
+import com.inia.soportedesk.catalogo.Subdependencia;
+import com.inia.soportedesk.catalogo.SubdependenciaRepository;
 import com.inia.soportedesk.exception.ResourceNotFoundException;
 import com.inia.soportedesk.glpi.VwInvComputerFull;
 import com.inia.soportedesk.glpi.VwInvComputerFullRepository;
 import com.inia.soportedesk.usuariosred.contrato.UsuarioRedContratoRepository;
 import com.inia.soportedesk.usuariosred.contrato.UsuarioRedContrato;
 import com.inia.soportedesk.catalogo.TipoContrato;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -35,8 +42,21 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class VpnServiceTest {
 
+    private static final Long TITULAR_SEDE_ID = 10L;
+    private static final Long TITULAR_DEPENDENCIA_ID = 20L;
+    private static final Long TITULAR_SUBDEPENDENCIA_ID = 30L;
+
     @Mock
     private VpnRepository repository;
+
+    @Mock
+    private SedeRepository sedeRepository;
+
+    @Mock
+    private DependenciaRepository dependenciaRepository;
+
+    @Mock
+    private SubdependenciaRepository subdependenciaRepository;
 
     @Mock
     private AdUsuarioCacheRepository adUsuarioCacheRepository;
@@ -51,9 +71,6 @@ class VpnServiceTest {
     private VpnConfigInstitucionalService configInstitucionalService;
 
     @Mock
-    private VpnNormalizedSyncService normalizedSyncService;
-
-    @Mock
     private ActiveDirectoryService activeDirectoryService;
 
     @Mock
@@ -61,6 +78,21 @@ class VpnServiceTest {
 
     @InjectMocks
     private VpnService service;
+
+    @BeforeEach
+    void setUpCatalogosTitular() {
+        Sede sede = new Sede(TITULAR_SEDE_ID, "Sede Central");
+        Dependencia dependencia = new Dependencia(TITULAR_DEPENDENCIA_ID, "OTI", sede);
+        Subdependencia subdependencia = new Subdependencia(
+                TITULAR_SUBDEPENDENCIA_ID, "Soporte", dependencia);
+
+        org.mockito.Mockito.lenient().when(sedeRepository.findById(TITULAR_SEDE_ID))
+                .thenReturn(Optional.of(sede));
+        org.mockito.Mockito.lenient().when(dependenciaRepository.findById(TITULAR_DEPENDENCIA_ID))
+                .thenReturn(Optional.of(dependencia));
+        org.mockito.Mockito.lenient().when(subdependenciaRepository.findById(TITULAR_SUBDEPENDENCIA_ID))
+                .thenReturn(Optional.of(subdependencia));
+    }
 
     private VpnRequest sampleRequest() {
         VpnRequest request = new VpnRequest();
@@ -72,6 +104,9 @@ class VpnServiceTest {
         request.setForticlientInstalado(true);
         request.setVencimientoAntivirus(LocalDate.of(2027, 1, 15));
         request.setTitularCargo("Profesional");
+        request.setTitularSedeId(TITULAR_SEDE_ID);
+        request.setTitularDependenciaId(TITULAR_DEPENDENCIA_ID);
+        request.setTitularSubdependenciaId(TITULAR_SUBDEPENDENCIA_ID);
         request.setNumeroTicket("TICKET-001");
         return request;
     }
@@ -97,6 +132,9 @@ class VpnServiceTest {
         request.setNumeroTicket("TICKET-EXT-001");
         request.setTitularMotivo("Soporte temporal");
         request.setTitularCargo("Especialista");
+        request.setTitularSedeId(TITULAR_SEDE_ID);
+        request.setTitularDependenciaId(TITULAR_DEPENDENCIA_ID);
+        request.setTitularSubdependenciaId(TITULAR_SUBDEPENDENCIA_ID);
         request.setTipoEquipo("PERSONAL");
         request.setAntivirusVerificado(true);
         request.setAnalisisAntivirusRealizado(true);
@@ -430,6 +468,9 @@ class VpnServiceTest {
         request.setTitularEmpresa("ACME SAC");
         request.setTitularMotivo("Consultoria - Proyecto X");
         request.setTitularCargo("Gerente");
+        request.setTitularSedeId(TITULAR_SEDE_ID);
+        request.setTitularDependenciaId(TITULAR_DEPENDENCIA_ID);
+        request.setTitularSubdependenciaId(TITULAR_SUBDEPENDENCIA_ID);
         request.setNumeroTicket("TICKET-EXT-002");
         request.setTipoEquipo("PERSONAL");
         request.setAntivirusVerificado(true);
@@ -456,6 +497,8 @@ class VpnServiceTest {
         request.setTitularCorreo("juan@externo.com");
         request.setTitularEmpresa("ACME SAC");
         request.setTitularCargo("Gerente");
+        request.setTitularSedeId(TITULAR_SEDE_ID);
+        request.setTitularDependenciaId(TITULAR_DEPENDENCIA_ID);
         request.setTipoEquipo("PERSONAL");
 
         assertThatThrownBy(() -> service.crearSolicitud(request, authAs("jasistente")))
@@ -467,6 +510,8 @@ class VpnServiceTest {
         VpnRequest request = new VpnRequest();
         request.setTipoEquipo("PERSONAL");
         request.setTitularCargo("Profesional");
+        request.setTitularSedeId(TITULAR_SEDE_ID);
+        request.setTitularDependenciaId(TITULAR_DEPENDENCIA_ID);
 
         assertThatThrownBy(() -> service.crearSolicitud(request, authAs("jasistente")))
                 .isInstanceOf(IllegalArgumentException.class);

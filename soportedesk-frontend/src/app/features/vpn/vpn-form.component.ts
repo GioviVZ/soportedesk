@@ -5,12 +5,13 @@ import { CARGOS_VPN, CARGOS_VPN_EXTERNO, Vpn, VpnUsuarioRedOption } from './vpn.
 import { VpnService } from './vpn.service';
 import { EquipoService } from '../equipos/equipo.service';
 import { EquipoResumen } from '../equipos/equipo.model';
+import { UbicacionSelectComponent } from '../../shared/ubicacion-select/ubicacion-select.component';
 
 type TitularModo = 'buscando' | 'ad-seleccionado' | 'externo';
 
 @Component({
     selector: 'app-vpn-form',
-    imports: [ReactiveFormsModule, FormsModule],
+    imports: [ReactiveFormsModule, FormsModule, UbicacionSelectComponent],
     templateUrl: './vpn-form.component.html',
     changeDetection: ChangeDetectionStrategy.Eager,
     styleUrl: './vpn-form.component.scss'
@@ -39,6 +40,9 @@ export class VpnFormComponent implements OnChanges {
 
   selectedAdSamAccountName: string | null = null;
   adUserSelected: VpnUsuarioRedOption | null = null;
+  titularSedeId: number | null = null;
+  titularDependenciaId: number | null = null;
+  titularSubdependenciaId: number | null = null;
 
   equipoResults: EquipoResumen[] = [];
   equipoSeleccionado: EquipoResumen | null = null;
@@ -99,6 +103,9 @@ export class VpnFormComponent implements OnChanges {
   ngOnChanges(): void {
     this.saveError = '';
     this.saving = false;
+    this.titularSedeId = this.vpn?.titularSedeId ?? null;
+    this.titularDependenciaId = this.vpn?.titularDependenciaId ?? null;
+    this.titularSubdependenciaId = this.vpn?.titularSubdependenciaId ?? null;
     if (this.vpn) {
       this.form.patchValue({
         tipoEquipo: (this.vpn.tipoEquipo ?? 'PERSONAL') as 'INIA' | 'PERSONAL',
@@ -248,6 +255,21 @@ export class VpnFormComponent implements OnChanges {
     this.applyTitularValidators();
   }
 
+  onSedeChange(id: number | null): void {
+    this.titularSedeId = id;
+    this.titularDependenciaId = null;
+    this.titularSubdependenciaId = null;
+  }
+
+  onDependenciaChange(id: number | null): void {
+    this.titularDependenciaId = id;
+    this.titularSubdependenciaId = null;
+  }
+
+  onSubdependenciaChange(id: number | null): void {
+    this.titularSubdependenciaId = id;
+  }
+
   onTipoEquipoChange(): void {
     if (this.esInia) {
       this.form.patchValue({ vencimientoAntivirus: null });
@@ -310,6 +332,9 @@ export class VpnFormComponent implements OnChanges {
       titularEmpresa: esExterno ? raw.titularEmpresa : null,
       titularMotivo: esExterno ? raw.titularMotivo : null,
       titularCargo: raw.titularCargo,
+      titularSedeId: this.titularSedeId,
+      titularDependenciaId: this.titularDependenciaId,
+      titularSubdependenciaId: this.titularSubdependenciaId,
       numeroTicket: raw.numeroTicket,
       tipoEquipo: raw.tipoEquipo,
       glpiComputerId: raw.tieneGlpi ? raw.glpiComputerId : null,

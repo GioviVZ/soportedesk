@@ -99,6 +99,15 @@
     >
       Recientes <strong>{{ recientes().length }}</strong>
     </button>
+    <button
+      type="button"
+      class="equipment-admin-recent"
+      [class.active]="soloPendientes()"
+      [attr.aria-pressed]="soloPendientes()"
+      (click)="soloPendientes.set(!soloPendientes())"
+    >
+      Solo pendientes <strong>{{ pendientes().length }}</strong>
+    </button>
   </div>
 
   <small class="equipment-admin-filter-help">Los filtros seleccionados se aplican al mismo tiempo.</small>

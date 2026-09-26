@@ -2,6 +2,8 @@ import { CommonModule } from '@angular/common';
 import { Component, OnInit, inject, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../core/auth/auth.service';
+import { CatalogoService } from '../../core/catalogos/catalogo.service';
+import { Dependencia, Sede, Subdependencia } from '../../core/models/catalogo.model';
 import { ModalComponent } from '../../shared/modal/modal.component';
 import { StatusBadgeComponent } from '../../shared/status-badge/status-badge.component';
 import { VencimientoBadgeComponent } from '../../shared/vencimiento-badge/vencimiento-badge.component';
@@ -10,13 +12,12 @@ import { VpnDetailComponent } from './vpn-detail.component';
 import { Vpn } from './vpn.model';
 import { VpnService } from './vpn.service';
 import {
+  PENDIENTE,
   VpnListFilters,
   cargoOptions,
   defaultVpnFilters,
-  dependenciaOptions,
   filterAndSortVpns,
   hasActiveVpnFilters,
-  subdependenciaOptions,
 } from './vpn-list-filters';
 
 const EDITABLE_STATES = new Set(['PENDIENTE', 'OBSERVADO']);
@@ -38,21 +39,36 @@ const EDITABLE_STATES = new Set(['PENDIENTE', 'OBSERVADO']);
     
         <div class="vpn-filter-grid">
           <label class="field">
-            <span>Dependencia</span>
-            <select [(ngModel)]="filters.dependencia">
+            <span>Sede</span>
+            <select [(ngModel)]="filters.sedeId" (ngModelChange)="onSedeFilterChange()">
               <option value="">Todas</option>
-              @for (option of dependencias; track option) {
-                <option [value]="option">{{ option }}</option>
+              <option [value]="PENDIENTE">⚠ Pendiente de clasificar</option>
+              @for (sede of catalogoSedes; track sede.id) {
+                <option [value]="sede.id.toString()">{{ sede.nombre }}</option>
+              }
+            </select>
+          </label>
+
+          <label class="field">
+            <span>Dependencia</span>
+            <select [(ngModel)]="filters.dependenciaId" (ngModelChange)="onDependenciaFilterChange()"
+              [disabled]="!filters.sedeId || filters.sedeId === PENDIENTE">
+              <option value="">Todas</option>
+              <option [value]="PENDIENTE">⚠ Pendiente de clasificar</option>
+              @for (dep of dependenciasDisponibles; track dep.id) {
+                <option [value]="dep.id.toString()">{{ dep.nombre }}</option>
               }
             </select>
           </label>
     
           <label class="field">
             <span>Subdependencia / oficina</span>
-            <select [(ngModel)]="filters.subdependencia">
+            <select [(ngModel)]="filters.subdependenciaId"
+              [disabled]="!filters.dependenciaId || filters.dependenciaId === PENDIENTE">
               <option value="">Todas</option>
-              @for (option of subdependencias; track option) {
-                <option [value]="option">{{ option }}</option>
+              <option [value]="PENDIENTE">⚠ Pendiente de clasificar</option>
+              @for (sub of subdependenciasDisponibles; track sub.id) {
+                <option [value]="sub.id.toString()">{{ sub.nombre }}</option>
               }
             </select>
           </label>
@@ -221,9 +237,14 @@ const EDITABLE_STATES = new Set(['PENDIENTE', 'OBSERVADO']);
 export class VpnRegistrosComponent implements OnInit {
   private service = inject(VpnService);
   private authService = inject(AuthService);
+  private catalogoService = inject(CatalogoService);
 
   items: Vpn[] = [];
   filters: VpnListFilters = defaultVpnFilters();
+  catalogoSedes: Sede[] = [];
+  catalogoDependencias: Dependencia[] = [];
+  catalogoSubdependencias: Subdependencia[] = [];
+  readonly PENDIENTE = PENDIENTE;
   viewing: Vpn | null = null;
   editing: Vpn | null = null;
   formOpen = false;
@@ -236,12 +257,14 @@ export class VpnRegistrosComponent implements OnInit {
     return filterAndSortVpns(this.items, this.filters);
   }
 
-  get dependencias(): string[] {
-    return dependenciaOptions(this.items);
+  get dependenciasDisponibles(): Dependencia[] {
+    if (!this.filters.sedeId || this.filters.sedeId === PENDIENTE) return [];
+    return this.catalogoDependencias.filter((d) => String(d.sede.id) === this.filters.sedeId);
   }
 
-  get subdependencias(): string[] {
-    return subdependenciaOptions(this.items);
+  get subdependenciasDisponibles(): Subdependencia[] {
+    if (!this.filters.dependenciaId || this.filters.dependenciaId === PENDIENTE) return [];
+    return this.catalogoSubdependencias.filter((s) => String(s.dependencia.id) === this.filters.dependenciaId);
   }
 
   get cargos(): string[] {
@@ -253,7 +276,19 @@ export class VpnRegistrosComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    this.catalogoService.getSedes().subscribe((data) => (this.catalogoSedes = data));
+    this.catalogoService.getDependencias().subscribe((data) => (this.catalogoDependencias = data));
+    this.catalogoService.getSubdependencias().subscribe((data) => (this.catalogoSubdependencias = data));
     this.load();
+  }
+
+  onSedeFilterChange(): void {
+    this.filters.dependenciaId = '';
+    this.filters.subdependenciaId = '';
+  }
+
+  onDependenciaFilterChange(): void {
+    this.filters.subdependenciaId = '';
   }
 
   load(): void {

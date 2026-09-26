@@ -152,6 +152,16 @@
     </div>
   }
 
+  <app-ubicacion-select
+    [showTipoContrato]="false"
+    [sedeId]="titularSedeId"
+    [dependenciaId]="titularDependenciaId"
+    [subdependenciaId]="titularSubdependenciaId"
+    (sedeIdChange)="onSedeChange($event)"
+    (dependenciaIdChange)="onDependenciaChange($event)"
+    (subdependenciaIdChange)="onSubdependenciaChange($event)"
+  />
+
   <div class="field">
     <label>Número de ticket *</label>
     <input type="text" formControlName="numeroTicket" placeholder="Ej. MESA-2026-0431" />

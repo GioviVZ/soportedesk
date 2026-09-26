@@ -19,6 +19,7 @@ export class EquiposMantenimientoComponent implements OnInit {
   items = signal<EquipoSaludItem[]>([]);
   query = signal('');
   onlyRecent = signal(false);
+  soloPendientes = signal(false);
   selectedUbicacion = signal('');
   selectedDireccion = signal('');
   selectedOficina = signal('');
@@ -28,6 +29,7 @@ export class EquiposMantenimientoComponent implements OnInit {
   exporting = signal(false);
 
   recientes = computed(() => this.items().filter((item) => this.isRecent(item)));
+  pendientes = computed(() => this.items().filter((item) => this.tienePendientes(item)));
   ubicaciones = computed(() => this.unique(this.items().map((item) => item.sedeNombre)));
   direcciones = computed(() => this.unique(
     this.items()
@@ -44,6 +46,7 @@ export class EquiposMantenimientoComponent implements OnInit {
   activeFilterCount = computed(() => [
     this.query(),
     this.onlyRecent(),
+    this.soloPendientes(),
     this.selectedUbicacion(),
     this.selectedDireccion(),
     this.selectedOficina(),
@@ -54,6 +57,7 @@ export class EquiposMantenimientoComponent implements OnInit {
     const term = this.normalize(this.query());
     const items = this.items().filter((item) => {
       if (this.onlyRecent() && !this.isRecent(item)) return false;
+      if (this.soloPendientes() && !this.tienePendientes(item)) return false;
       if (!this.matchesFilter(item.sedeNombre, this.selectedUbicacion())) return false;
       if (!this.matchesFilter(item.dependenciaNombre, this.selectedDireccion())) return false;
       if (!this.matchesFilter(item.subdependenciaNombre, this.selectedOficina())) return false;
@@ -155,6 +159,7 @@ export class EquiposMantenimientoComponent implements OnInit {
   clearFilters(): void {
     this.query.set('');
     this.onlyRecent.set(false);
+    this.soloPendientes.set(false);
     this.selectedUbicacion.set('');
     this.selectedDireccion.set('');
     this.selectedOficina.set('');
@@ -166,6 +171,17 @@ export class EquiposMantenimientoComponent implements OnInit {
     const age = Date.now() - new Date(item.fechaCreacion).getTime();
     return age >= 0 && age <= 30 * 86400000;
   }
+
+  private tienePendientes(item: EquipoSaludItem): boolean {
+    return item.nivelAlerta !== 'OK'
+      || item.sinCodigoPatrimonial
+      || item.sinUsuario
+      || item.sinSede
+      || item.sinDependencia
+      || item.sinSubdependencia
+      || item.sinNumeroSerie;
+  }
+
   private normalize(value: string): string {
     return value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
   }

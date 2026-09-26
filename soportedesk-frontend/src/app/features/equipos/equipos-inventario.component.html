@@ -17,19 +17,37 @@
     <app-equipo-detail
       [id]="id"
       [embedded]="true"
+      [canEdit]="canEdit"
       (closeRequested)="closeDetail()"
+      (editRequested)="onEditFromDetail($event)"
       />
   }
 </app-modal>
+
+@if (editingId(); as editId) {
+  <app-equipo-enrichment-modal
+    [open]="true"
+    [computerId]="editId"
+    [nombreEquipo]="editingName()"
+    (closed)="closeEdit()"
+    (saved)="onSaved()"
+    />
+}
 
 <section class="equipment-filter-panel">
   <div class="filter-header">
     <div>
       <span>Filtros</span>
       <strong>{{ filteredItems().length }} de {{ items().length }} equipos</strong>
+      @if (sinSedeCount() > 0) {
+        <span class="tag-warn">{{ sinSedeCount() }} sin sede asignada</span>
+      }
     </div>
     <div class="filter-actions">
       <button type="button" class="ghost-action" (click)="clearFilters()" [disabled]="!hasActiveFilters()">Limpiar</button>
+      <button type="button" class="ghost-action" (click)="startGlpiSync()" [disabled]="syncStatus()?.running">
+        {{ syncStatus()?.running ? 'Sincronizando...' : 'Actualizar inventario GLPI' }}
+      </button>
       <button type="button" class="primary-action excel-export-btn" (click)="exportExcel()" [disabled]="filteredItems().length === 0 || exporting()">
         <svg class="excel-export-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
           <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" />
@@ -39,6 +57,18 @@
       </button>
     </div>
   </div>
+
+  @if (syncStatus()?.running) {
+    <div class="module-dash-progress">
+      <div class="module-dash-progress-row">
+        <span>{{ syncProgressLabel() }}</span>
+        <strong>{{ syncPercent() }}%</strong>
+        <div class="module-dash-track" [class.indeterminate]="!syncStatus()!.total">
+          <i [style.width.%]="syncPercent()"></i>
+        </div>
+      </div>
+    </div>
+  }
 
   <label class="inventory-search">
     <span>Buscar equipo</span>
@@ -56,18 +86,21 @@
         Sede
         <select [ngModel]="selectedSede()" (ngModelChange)="onSedeChange($event)">
           <option value="">Todas</option>
-          @for (sede of sedes(); track sede) {
-            <option [value]="sede">{{ sede }}</option>
+          <option [value]="PENDIENTE">⚠ Pendiente de clasificar</option>
+          @for (sede of catalogoSedes(); track sede.id) {
+            <option [value]="sede.id.toString()">{{ sede.nombre }}</option>
           }
         </select>
       </label>
 
       <label>
         Dependencia
-        <select [ngModel]="selectedDependencia()" (ngModelChange)="onDependenciaChange($event)">
+        <select [ngModel]="selectedDependencia()" (ngModelChange)="onDependenciaChange($event)"
+          [disabled]="!selectedSede() || selectedSede() === PENDIENTE">
           <option value="">Todas</option>
-          @for (dep of dependencias(); track dep) {
-            <option [value]="dep">{{ dep }}</option>
+          <option [value]="PENDIENTE">⚠ Pendiente de clasificar</option>
+          @for (dep of dependenciasDisponibles(); track dep.id) {
+            <option [value]="dep.id.toString()">{{ dep.nombre }}</option>
           }
         </select>
       </label>
@@ -75,10 +108,11 @@
       <label>
         Subdependencia
         <select [ngModel]="selectedSubdependencia()" (ngModelChange)="onSubdependenciaChange($event)"
-          [disabled]="!selectedDependencia()">
+          [disabled]="!selectedDependencia() || selectedDependencia() === PENDIENTE">
           <option value="">Todas</option>
-          @for (sub of subdependencias(); track sub) {
-            <option [value]="sub">{{ sub }}</option>
+          <option [value]="PENDIENTE">⚠ Pendiente de clasificar</option>
+          @for (sub of subdependenciasDisponibles(); track sub.id) {
+            <option [value]="sub.id.toString()">{{ sub.nombre }}</option>
           }
         </select>
       </label>
@@ -128,18 +162,19 @@
     <div class="desktop-table-shell">
       <app-generic-table
         [columns]="columns"
-        [data]="filteredItems()"
-        [canEdit]="false"
+        [data]="sortedItems()"
+        [canEdit]="canEdit"
         [canView]="true"
         [initialSearch]="searchTerm()"
         [showSearch]="false"
         emptyMessage="Sin equipos activos registrados"
         (view)="onView($event)"
+        (edit)="onEdit($event)"
         />
       </div>
 
       <section class="mobile-equipment-list" aria-label="Equipos">
-        @for (item of filteredItems(); track item) {
+        @for (item of sortedItems(); track item) {
           <article class="equipment-card">
             <div class="card-head">
               <div>
@@ -149,7 +184,7 @@
               <em>{{ item.tipoEquipo || 'Equipo' }}</em>
             </div>
             <dl>
-              <div><dt>Ubicación</dt><dd>{{ item.sedeNombre || item.oficinaId || '-' }}</dd></div>
+              <div><dt>Ubicación</dt><dd>{{ item.sedeNombre || item.oficinaId || 'Pendiente de clasificar' }}</dd></div>
               <div><dt>Marca / Modelo</dt><dd>{{ item.fabricanteModelo || '-' }}</dd></div>
               <div><dt>Serie</dt><dd>{{ item.numeroserie || '-' }}</dd></div>
               <div><dt>IP</dt><dd>{{ item.ipEquipo || '-' }}</dd></div>
@@ -161,6 +196,11 @@
               <button class="btn-view-record" type="button" (click)="onView(item)" aria-label="Ver detalle del equipo">
                 <i class="ti ti-eye" aria-hidden="true"></i><span>Ver</span>
               </button>
+              @if (canEdit) {
+                <button class="btn-view-record" type="button" (click)="onEdit(item)" aria-label="Editar equipo">
+                  <i class="ti ti-pencil" aria-hidden="true"></i><span>Editar</span>
+                </button>
+              }
             </footer>
           </article>
         }

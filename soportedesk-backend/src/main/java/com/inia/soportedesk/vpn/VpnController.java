@@ -66,6 +66,12 @@ public class VpnController {
         return service.aprobar(id, request, auth);
     }
 
+    @PatchMapping("/{id}/credenciales")
+    @PreAuthorize("hasRole('ADMIN') || hasAuthority('WRITE_aprobar-vpn')")
+    public Vpn actualizarCredenciales(@PathVariable Long id, @Valid @RequestBody VpnAprobarRequest request, Authentication auth) {
+        return service.actualizarCredenciales(id, request, auth);
+    }
+
     @PatchMapping("/{id}/rechazar")
     @PreAuthorize("hasRole('ADMIN') || hasAuthority('WRITE_aprobar-vpn')")
     public Vpn rechazar(@PathVariable Long id, @Valid @RequestBody VpnResolucionRequest request, Authentication auth) {

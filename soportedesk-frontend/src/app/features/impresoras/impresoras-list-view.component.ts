@@ -1,11 +1,15 @@
-import { Component, EventEmitter, Input, Output, ChangeDetectionStrategy } from '@angular/core';
+import { ChangeDetectionStrategy, Component, EventEmitter, inject, Input, OnInit, Output } from '@angular/core';
 
 import { FormsModule } from '@angular/forms';
+import { CatalogoService } from '../../core/catalogos/catalogo.service';
+import { Dependencia, Sede, Subdependencia } from '../../core/models/catalogo.model';
 import { GenericTableComponent, TableColumn } from '../../shared/generic-table/generic-table.component';
 import { StatusBadgeComponent } from '../../shared/status-badge/status-badge.component';
 import { ImpresoraResumenComponent } from './impresora-resumen.component';
 import { Impresora, impresoraEstadoTone } from './impresora.model';
 import * as XLSX from 'xlsx';
+
+const PENDIENTE = '__PENDIENTE__';
 
 @Component({
     selector: 'app-impresoras-list-view',
@@ -14,7 +18,9 @@ import * as XLSX from 'xlsx';
     changeDetection: ChangeDetectionStrategy.Eager,
     styleUrl: './impresoras.shared.scss'
 })
-export class ImpresorasListViewComponent {
+export class ImpresorasListViewComponent implements OnInit {
+  private catalogoService = inject(CatalogoService);
+
   @Input({ required: true }) items: Impresora[] = [];
   @Input() canManage = false;
 
@@ -32,18 +38,29 @@ export class ImpresorasListViewComponent {
     { key: 'dependencia.nombre', label: 'Dependencia' },
   ];
   readonly impresoraEstadoTone = impresoraEstadoTone;
+  readonly PENDIENTE = PENDIENTE;
+
+  catalogoSedes: Sede[] = [];
+  catalogoDependencias: Dependencia[] = [];
+  catalogoSubdependencias: Subdependencia[] = [];
 
   showConsumibles = false;
   searchTerm = '';
   mobileSearchTerm = '';
   filters = {
-    sede: '',
-    dependencia: '',
-    subdependencia: '',
+    sedeId: '',
+    dependenciaId: '',
+    subdependenciaId: '',
     ip: '',
     marca: '',
     modelo: '',
   };
+
+  ngOnInit(): void {
+    this.catalogoService.getSedes().subscribe((data) => (this.catalogoSedes = data));
+    this.catalogoService.getDependencias().subscribe((data) => (this.catalogoDependencias = data));
+    this.catalogoService.getSubdependencias().subscribe((data) => (this.catalogoSubdependencias = data));
+  }
 
   onSearch(term: string): void {
     this.searchTerm = term;
@@ -58,12 +75,22 @@ export class ImpresorasListViewComponent {
   get filteredItems(): Impresora[] {
     const search = this.normalize(this.searchTerm);
     const ip = this.normalize(this.filters.ip);
+    const sedeId = this.filters.sedeId;
+    const dependenciaId = this.filters.dependenciaId;
+    const subdependenciaId = this.filters.subdependenciaId;
 
     return this.items.filter((item) => {
+      const sedeOk = !sedeId || (sedeId === PENDIENTE ? !item.sede : String(item.sede?.id ?? '') === sedeId);
+      const dependenciaOk = !dependenciaId || (dependenciaId === PENDIENTE
+        ? !item.dependencia
+        : String(item.dependencia?.id ?? '') === dependenciaId);
+      const subdependenciaOk = !subdependenciaId || (subdependenciaId === PENDIENTE
+        ? !item.subdependencia
+        : String(item.subdependencia?.id ?? '') === subdependenciaId);
       const exactFilters =
-        (!this.filters.sede || item.sede?.nombre === this.filters.sede) &&
-        (!this.filters.dependencia || item.dependencia?.nombre === this.filters.dependencia) &&
-        (!this.filters.subdependencia || item.subdependencia?.nombre === this.filters.subdependencia) &&
+        sedeOk &&
+        dependenciaOk &&
+        subdependenciaOk &&
         (!this.filters.marca || item.modeloImpresora.marca.nombre === this.filters.marca) &&
         (!this.filters.modelo || item.modeloImpresora.nombre === this.filters.modelo);
 
@@ -93,23 +120,31 @@ export class ImpresorasListViewComponent {
         item.subdependencia?.nombre,
         item.estado,
       ].filter(Boolean).join(' ')).includes(search);
-    });
+    }).sort((a, b) =>
+      this.compareConNullsAlFinal(a.sede?.nombre, b.sede?.nombre) ||
+      this.compareConNullsAlFinal(a.dependencia?.nombre, b.dependencia?.nombre) ||
+      this.compareConNullsAlFinal(a.subdependencia?.nombre, b.subdependencia?.nombre) ||
+      this.compareConNullsAlFinal(a.modeloImpresora?.marca?.nombre, b.modeloImpresora?.marca?.nombre) ||
+      this.compareConNullsAlFinal(a.modeloImpresora?.nombre, b.modeloImpresora?.nombre)
+    );
   }
 
-  get sedes(): string[] {
-    return this.unique(this.items.map((item) => item.sede?.nombre));
+  get dependenciasDisponibles(): Dependencia[] {
+    if (!this.filters.sedeId || this.filters.sedeId === PENDIENTE) {
+      return [];
+    }
+    return this.catalogoDependencias.filter((dependencia) =>
+      String(dependencia.sede.id) === this.filters.sedeId
+    );
   }
 
-  get dependencias(): string[] {
-    return this.unique(this.items
-      .filter((item) => !this.filters.sede || item.sede?.nombre === this.filters.sede)
-      .map((item) => item.dependencia?.nombre));
-  }
-
-  get subdependencias(): string[] {
-    return this.unique(this.items
-      .filter((item) => !this.filters.dependencia || item.dependencia?.nombre === this.filters.dependencia)
-      .map((item) => item.subdependencia?.nombre));
+  get subdependenciasDisponibles(): Subdependencia[] {
+    if (!this.filters.dependenciaId || this.filters.dependenciaId === PENDIENTE) {
+      return [];
+    }
+    return this.catalogoSubdependencias.filter((subdependencia) =>
+      String(subdependencia.dependencia.id) === this.filters.dependenciaId
+    );
   }
 
   get marcas(): string[] {
@@ -125,9 +160,9 @@ export class ImpresorasListViewComponent {
   get hasActiveFilters(): boolean {
     return Boolean(
       this.searchTerm ||
-      this.filters.sede ||
-      this.filters.dependencia ||
-      this.filters.subdependencia ||
+      this.filters.sedeId ||
+      this.filters.dependenciaId ||
+      this.filters.subdependenciaId ||
       this.filters.ip ||
       this.filters.marca ||
       this.filters.modelo
@@ -135,12 +170,12 @@ export class ImpresorasListViewComponent {
   }
 
   onSedeFilterChange(): void {
-    this.filters.dependencia = '';
-    this.filters.subdependencia = '';
+    this.filters.dependenciaId = '';
+    this.filters.subdependenciaId = '';
   }
 
   onDependenciaFilterChange(): void {
-    this.filters.subdependencia = '';
+    this.filters.subdependenciaId = '';
   }
 
   onMarcaFilterChange(): void {
@@ -151,9 +186,9 @@ export class ImpresorasListViewComponent {
     this.searchTerm = '';
     this.mobileSearchTerm = '';
     this.filters = {
-      sede: '',
-      dependencia: '',
-      subdependencia: '',
+      sedeId: '',
+      dependenciaId: '',
+      subdependenciaId: '',
       ip: '',
       marca: '',
       modelo: '',
@@ -196,7 +231,7 @@ export class ImpresorasListViewComponent {
     return [
       item.dependencia?.nombre,
       item.subdependencia?.nombre,
-    ].filter(Boolean).join(' / ') || item.sede?.nombre || 'Sin ubicacion';
+    ].filter(Boolean).join(' / ') || item.sede?.nombre || 'Pendiente de clasificar';
   }
 
   printerIdentifier(item: Impresora): string {
@@ -210,6 +245,15 @@ export class ImpresorasListViewComponent {
   private unique(values: Array<string | null | undefined>): string[] {
     return [...new Set(values.filter((value): value is string => Boolean(value)))]
       .sort((a, b) => a.localeCompare(b));
+  }
+
+  private compareConNullsAlFinal(a: string | null | undefined, b: string | null | undefined): number {
+    const aVacio = !a;
+    const bVacio = !b;
+    if (aVacio && bVacio) return 0;
+    if (aVacio) return 1;
+    if (bVacio) return -1;
+    return a!.localeCompare(b!, 'es', { sensitivity: 'base' });
   }
 
   private normalize(value: string | null | undefined): string {

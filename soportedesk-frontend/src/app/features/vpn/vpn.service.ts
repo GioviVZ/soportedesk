@@ -58,6 +58,10 @@ export class VpnService {
     return this.http.patch<Vpn>(`${this.apiUrl}/${id}/aprobar`, request);
   }
 
+  actualizarCredenciales(id: number, request: VpnAprobarRequest): Observable<Vpn> {
+    return this.http.patch<Vpn>(`${this.apiUrl}/${id}/credenciales`, request);
+  }
+
   rechazar(id: number, request: VpnResolucionRequest): Observable<Vpn> {
     return this.http.patch<Vpn>(`${this.apiUrl}/${id}/rechazar`, request);
   }

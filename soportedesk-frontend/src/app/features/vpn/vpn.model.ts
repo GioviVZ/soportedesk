@@ -46,6 +46,12 @@ export interface Vpn {
   titularEmpresa: string | null;
   titularMotivo: string | null;
   titularCargo: string;
+  titularSedeId: number | null;
+  titularSedeNombre: string | null;
+  titularDependenciaId: number | null;
+  titularDependenciaNombre: string | null;
+  titularSubdependenciaId: number | null;
+  titularSubdependenciaNombre: string | null;
   numeroTicket: string | null;
   titularNombreCompleto: string;
   titularOrigenLabel: string;
@@ -77,6 +83,9 @@ export interface VpnSolicitudRequest {
   titularEmpresa: string | null;
   titularMotivo: string | null;
   titularCargo: string;
+  titularSedeId: number | null;
+  titularDependenciaId: number | null;
+  titularSubdependenciaId: number | null;
   numeroTicket: string;
   tipoEquipo: 'INIA' | 'PERSONAL';
   glpiComputerId: number | null;

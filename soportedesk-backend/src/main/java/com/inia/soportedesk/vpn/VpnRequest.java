@@ -1,6 +1,7 @@
 package com.inia.soportedesk.vpn;
 
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Positive;
@@ -34,6 +35,14 @@ public class VpnRequest {
     @NotBlank
     @Size(max = 255)
     private String titularCargo;
+
+    @NotNull(message = "Selecciona la sede del titular")
+    private Long titularSedeId;
+
+    @NotNull(message = "Selecciona la dependencia del titular")
+    private Long titularDependenciaId;
+
+    private Long titularSubdependenciaId;
 
     @NotBlank(message = "El número de ticket es obligatorio")
     @Size(max = 50)

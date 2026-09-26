@@ -5,6 +5,12 @@ import com.inia.soportedesk.activedirectory.AdUsuarioCacheRepository;
 import com.inia.soportedesk.activedirectory.ActiveDirectoryService;
 import com.inia.soportedesk.auth.Usuario;
 import com.inia.soportedesk.auth.UsuarioRepository;
+import com.inia.soportedesk.catalogo.Dependencia;
+import com.inia.soportedesk.catalogo.DependenciaRepository;
+import com.inia.soportedesk.catalogo.Sede;
+import com.inia.soportedesk.catalogo.SedeRepository;
+import com.inia.soportedesk.catalogo.Subdependencia;
+import com.inia.soportedesk.catalogo.SubdependenciaRepository;
 import com.inia.soportedesk.exception.ResourceNotFoundException;
 import com.inia.soportedesk.glpi.VwInvComputerFull;
 import com.inia.soportedesk.glpi.VwInvComputerFullRepository;
@@ -32,13 +38,15 @@ public class VpnService {
     private static final List<String> ESTADOS_QUE_BLOQUEAN_DUPLICADO = List.of("PENDIENTE", "OBSERVADO", "APROBADO");
 
     private final VpnRepository repository;
+    private final SedeRepository sedeRepository;
+    private final DependenciaRepository dependenciaRepository;
+    private final SubdependenciaRepository subdependenciaRepository;
     private final AdUsuarioCacheRepository adUsuarioCacheRepository;
     private final ActiveDirectoryService activeDirectoryService;
     private final UsuarioRedContratoRepository contratoRepository;
     private final VwInvComputerFullRepository glpiRepository;
     private final UsuarioRepository usuarioRepository;
     private final VpnConfigInstitucionalService configInstitucionalService;
-    private final VpnNormalizedSyncService normalizedSyncService;
 
     public List<Vpn> findAll(String search) {
         List<Vpn> result = search == null || search.isBlank()
@@ -224,6 +232,22 @@ public class VpnService {
         return saveAndApplyVence(vpn);
     }
 
+    @Transactional(isolation = Isolation.SERIALIZABLE)
+    public Vpn actualizarCredenciales(Long id, VpnAprobarRequest request, Authentication auth) {
+        Vpn vpn = findById(id);
+        if (!"APROBADO".equals(vpn.getEstadoSolicitud())) {
+            throw new IllegalArgumentException("Solo se pueden actualizar credenciales de un acceso aprobado");
+        }
+        String usuarioVpn = request.getUsuarioVpn().trim();
+        if (repository.countApprovedByUsuarioVpn(usuarioVpn, vpn.getId()) > 0) {
+            throw new IllegalArgumentException("El usuario VPN " + usuarioVpn + " ya esta asignado a otro acceso aprobado.");
+        }
+        vpn.setUsuarioVpn(usuarioVpn);
+        vpn.setCredencialVpn(request.getCredencialVpn());
+        vpn.setEstado(request.getEstado());
+        return saveAndApplyVence(vpn);
+    }
+
     @Transactional
     public Vpn rechazar(Long id, VpnResolucionRequest request, Authentication auth) {
         return resolver(id, request, auth, "RECHAZADO");
@@ -245,7 +269,6 @@ public class VpnService {
     @Transactional
     public void delete(Long id) {
         Vpn vpn = findById(id);
-        normalizedSyncService.deleteMirror(id);
         repository.delete(vpn);
     }
 
@@ -290,6 +313,16 @@ public class VpnService {
         vpn.setVencimientoAntivirus(request.getVencimientoAntivirus());
         vpn.setTitularCargo(request.getTitularCargo());
         vpn.setNumeroTicket(isBlank(request.getNumeroTicket()) ? null : request.getNumeroTicket().trim());
+
+        Sede titularSede = sedeRepository.findById(request.getTitularSedeId())
+                .orElseThrow(() -> new ResourceNotFoundException("Sede no encontrada: " + request.getTitularSedeId()));
+        Dependencia titularDependencia = dependenciaRepository.findById(request.getTitularDependenciaId())
+                .orElseThrow(() -> new ResourceNotFoundException("Dependencia no encontrada: " + request.getTitularDependenciaId()));
+        Subdependencia titularSubdependencia = request.getTitularSubdependenciaId() != null
+                ? subdependenciaRepository.findById(request.getTitularSubdependenciaId()).orElse(null) : null;
+        vpn.setTitularSede(titularSede);
+        vpn.setTitularDependencia(titularDependencia);
+        vpn.setTitularSubdependencia(titularSubdependencia);
 
         if (!isBlank(request.getUsuarioRedSamAccountName())) {
             String samAccountName = normalizeAccountSearchTerm(request.getUsuarioRedSamAccountName());
@@ -437,7 +470,6 @@ public class VpnService {
         Vpn saved = repository.save(vpn);
         repository.flush();
         aplicarVence(saved);
-        normalizedSyncService.sync(saved);
         return saved;
     }
 

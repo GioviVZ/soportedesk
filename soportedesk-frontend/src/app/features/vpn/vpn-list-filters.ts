@@ -5,12 +5,15 @@ type VpnOrdenFiltro = 'nuevas' | 'recientes' | 'rechazados' | 'observados';
 
 export interface VpnListFilters {
   query: string;
-  dependencia: string;
-  subdependencia: string;
+  sedeId: string;
+  dependenciaId: string;
+  subdependenciaId: string;
   cargo: string;
   estado: VpnEstadoFiltro;
   orden: VpnOrdenFiltro;
 }
+
+export const PENDIENTE = '__PENDIENTE__';
 
 const ESTADO_PRIORITY: Record<Vpn['estadoSolicitud'], number> = {
   PENDIENTE: 0,
@@ -19,15 +22,14 @@ const ESTADO_PRIORITY: Record<Vpn['estadoSolicitud'], number> = {
   APROBADO: 3,
 };
 
-const EMPTY_DEPENDENCIA = 'Sin dependencia';
-const EMPTY_SUBDEPENDENCIA = 'Sin subdependencia';
 const EMPTY_CARGO = 'Sin cargo';
 
 export function defaultVpnFilters(): VpnListFilters {
   return {
     query: '',
-    dependencia: '',
-    subdependencia: '',
+    sedeId: '',
+    dependenciaId: '',
+    subdependenciaId: '',
     cargo: '',
     estado: 'TODOS',
     orden: 'nuevas',
@@ -36,15 +38,32 @@ export function defaultVpnFilters(): VpnListFilters {
 
 export function filterAndSortVpns(items: Vpn[], filters: VpnListFilters): Vpn[] {
   const query = normalize(filters.query);
-  const dependencia = normalize(filters.dependencia);
-  const subdependencia = normalize(filters.subdependencia);
   const cargo = normalize(filters.cargo);
 
   return items
     .filter((item) => {
       if (filters.estado !== 'TODOS' && item.estadoSolicitud !== filters.estado) return false;
-      if (dependencia && normalize(dependenciaLabel(item)) !== dependencia) return false;
-      if (subdependencia && normalize(subdependenciaLabel(item)) !== subdependencia) return false;
+      if (filters.sedeId) {
+        if (filters.sedeId === PENDIENTE) {
+          if (item.titularSedeId != null) return false;
+        } else if (String(item.titularSedeId ?? '') !== filters.sedeId) {
+          return false;
+        }
+      }
+      if (filters.dependenciaId) {
+        if (filters.dependenciaId === PENDIENTE) {
+          if (item.titularDependenciaId != null) return false;
+        } else if (String(item.titularDependenciaId ?? '') !== filters.dependenciaId) {
+          return false;
+        }
+      }
+      if (filters.subdependenciaId) {
+        if (filters.subdependenciaId === PENDIENTE) {
+          if (item.titularSubdependenciaId != null) return false;
+        } else if (String(item.titularSubdependenciaId ?? '') !== filters.subdependenciaId) {
+          return false;
+        }
+      }
       if (cargo && normalize(cargoLabel(item)) !== cargo) return false;
       if (!query) return true;
       return searchableText(item).includes(query);
@@ -52,24 +71,8 @@ export function filterAndSortVpns(items: Vpn[], filters: VpnListFilters): Vpn[] 
     .sort((a, b) => compareVpns(a, b, filters.orden));
 }
 
-export function dependenciaOptions(items: Vpn[]): string[] {
-  return uniqueSorted(items.map(dependenciaLabel));
-}
-
-export function subdependenciaOptions(items: Vpn[]): string[] {
-  return uniqueSorted(items.map(subdependenciaLabel));
-}
-
 export function cargoOptions(items: Vpn[]): string[] {
   return uniqueSorted(items.map(cargoLabel));
-}
-
-function dependenciaLabel(item: Vpn): string {
-  return clean(item.adOrganizationalUnit) || clean(item.titularEmpresa) || EMPTY_DEPENDENCIA;
-}
-
-function subdependenciaLabel(item: Vpn): string {
-  return clean(item.adOffice) || EMPTY_SUBDEPENDENCIA;
 }
 
 function cargoLabel(item: Vpn): string {
@@ -79,8 +82,9 @@ function cargoLabel(item: Vpn): string {
 export function hasActiveVpnFilters(filters: VpnListFilters): boolean {
   return Boolean(
     filters.query.trim() ||
-      filters.dependencia ||
-      filters.subdependencia ||
+      filters.sedeId ||
+      filters.dependenciaId ||
+      filters.subdependenciaId ||
       filters.cargo ||
       filters.estado !== 'TODOS' ||
       filters.orden !== 'nuevas'
@@ -89,15 +93,36 @@ export function hasActiveVpnFilters(filters: VpnListFilters): boolean {
 
 function compareVpns(a: Vpn, b: Vpn, orden: VpnOrdenFiltro): number {
   if (orden === 'rechazados') {
-    return stateFirst(a, b, 'RECHAZADO') || byFechaSolicitudDesc(a, b);
+    return stateFirst(a, b, 'RECHAZADO')
+      || byFechaSolicitudDesc(a, b)
+      || compareUbicacion(a, b);
   }
   if (orden === 'observados') {
-    return stateFirst(a, b, 'OBSERVADO') || byFechaSolicitudDesc(a, b);
+    return stateFirst(a, b, 'OBSERVADO')
+      || byFechaSolicitudDesc(a, b)
+      || compareUbicacion(a, b);
   }
   if (orden === 'recientes') {
-    return byFechaSolicitudDesc(a, b);
+    return byFechaSolicitudDesc(a, b) || compareUbicacion(a, b);
   }
-  return estadoPriority(a) - estadoPriority(b) || byFechaSolicitudDesc(a, b);
+  return estadoPriority(a) - estadoPriority(b)
+    || byFechaSolicitudDesc(a, b)
+    || compareUbicacion(a, b);
+}
+
+function compareUbicacion(a: Vpn, b: Vpn): number {
+  return compareConNullsAlFinal(a.titularSedeNombre, b.titularSedeNombre)
+    || compareConNullsAlFinal(a.titularDependenciaNombre, b.titularDependenciaNombre)
+    || compareConNullsAlFinal(a.titularSubdependenciaNombre, b.titularSubdependenciaNombre);
+}
+
+function compareConNullsAlFinal(a: string | null | undefined, b: string | null | undefined): number {
+  const aVacio = !a;
+  const bVacio = !b;
+  if (aVacio && bVacio) return 0;
+  if (aVacio) return 1;
+  if (bVacio) return -1;
+  return a!.localeCompare(b!, 'es', { sensitivity: 'base' });
 }
 
 function estadoPriority(item: Vpn): number {

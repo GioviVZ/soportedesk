@@ -23,6 +23,7 @@ export class VpnAprobarFormComponent implements OnChanges {
   @Output() cancelled = new EventEmitter<void>();
   saving = false;
   errorMessage = '';
+  mostrarCredencial = false;
 
   form = this.fb.nonNullable.group({
     usuarioVpn: ['', Validators.required],
@@ -33,6 +34,7 @@ export class VpnAprobarFormComponent implements OnChanges {
   ngOnChanges(): void {
     this.errorMessage = '';
     this.saving = false;
+    this.mostrarCredencial = false;
     this.form.reset({
       usuarioVpn: this.vpn?.usuarioVpn || this.vpn?.adSamAccountName || '',
       credencialVpn: '',
@@ -44,6 +46,10 @@ export class VpnAprobarFormComponent implements OnChanges {
     return this.authService.isAdmin();
   }
 
+  get esActualizacionCredenciales(): boolean {
+    return this.vpn?.estadoSolicitud === 'APROBADO';
+  }
+
   useGeneratedPassword(password: string): void {
     this.form.patchValue({ credencialVpn: password });
   }
@@ -53,18 +59,24 @@ export class VpnAprobarFormComponent implements OnChanges {
     this.errorMessage = '';
     this.saving = true;
     const raw = this.form.getRawValue();
-    this.service.aprobar(this.vpn.id, {
+    const payload = {
       usuarioVpn: raw.usuarioVpn,
       credencialVpn: raw.credencialVpn,
       estado: raw.estado,
-    }).subscribe({
+    };
+    const request$ = this.esActualizacionCredenciales
+      ? this.service.actualizarCredenciales(this.vpn.id, payload)
+      : this.service.aprobar(this.vpn.id, payload);
+    request$.subscribe({
       next: () => {
         this.saving = false;
         this.saved.emit();
       },
       error: (err) => {
         this.saving = false;
-        this.errorMessage = err?.error?.message || 'No se pudo aprobar la solicitud VPN.';
+        this.errorMessage = err?.error?.message || (this.esActualizacionCredenciales
+          ? 'No se pudieron actualizar las credenciales VPN.'
+          : 'No se pudo aprobar la solicitud VPN.');
       },
     });
   }

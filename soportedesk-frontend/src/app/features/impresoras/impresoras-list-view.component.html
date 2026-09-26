@@ -19,30 +19,40 @@
   <div class="filter-grid">
     <label>
       Sede
-      <select [(ngModel)]="filters.sede" (ngModelChange)="onSedeFilterChange()">
+      <select [(ngModel)]="filters.sedeId" (ngModelChange)="onSedeFilterChange()">
         <option value="">Todas</option>
-        @for (value of sedes; track value) {
-          <option [value]="value">{{ value }}</option>
+        <option [value]="PENDIENTE">⚠ Pendiente de clasificar</option>
+        @for (sede of catalogoSedes; track sede.id) {
+          <option [value]="sede.id.toString()">{{ sede.nombre }}</option>
         }
       </select>
     </label>
 
     <label>
       Dependencia
-      <select [(ngModel)]="filters.dependencia" (ngModelChange)="onDependenciaFilterChange()">
+      <select
+        [(ngModel)]="filters.dependenciaId"
+        (ngModelChange)="onDependenciaFilterChange()"
+        [disabled]="!filters.sedeId || filters.sedeId === PENDIENTE"
+        >
         <option value="">Todas</option>
-        @for (value of dependencias; track value) {
-          <option [value]="value">{{ value }}</option>
+        <option [value]="PENDIENTE">⚠ Pendiente de clasificar</option>
+        @for (dep of dependenciasDisponibles; track dep.id) {
+          <option [value]="dep.id.toString()">{{ dep.nombre }}</option>
         }
       </select>
     </label>
 
     <label>
       Subdependencia
-      <select [(ngModel)]="filters.subdependencia">
+      <select
+        [(ngModel)]="filters.subdependenciaId"
+        [disabled]="!filters.dependenciaId || filters.dependenciaId === PENDIENTE"
+        >
         <option value="">Todas</option>
-        @for (value of subdependencias; track value) {
-          <option [value]="value">{{ value }}</option>
+        <option [value]="PENDIENTE">⚠ Pendiente de clasificar</option>
+        @for (sub of subdependenciasDisponibles; track sub.id) {
+          <option [value]="sub.id.toString()">{{ sub.nombre }}</option>
         }
       </select>
     </label>

@@ -1,5 +1,9 @@
 package com.inia.soportedesk.vpn;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.inia.soportedesk.catalogo.Dependencia;
+import com.inia.soportedesk.catalogo.Sede;
+import com.inia.soportedesk.catalogo.Subdependencia;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -166,6 +170,21 @@ public class Vpn {
     @Column(name = "ad_organizational_unit")
     private String adOrganizationalUnit;
 
+    @ManyToOne
+    @JoinColumn(name = "titular_sede_id")
+    @JsonIgnore
+    private Sede titularSede;
+
+    @ManyToOne
+    @JoinColumn(name = "titular_dependencia_id")
+    @JsonIgnore
+    private Dependencia titularDependencia;
+
+    @ManyToOne
+    @JoinColumn(name = "titular_subdependencia_id")
+    @JsonIgnore
+    private Subdependencia titularSubdependencia;
+
     @Transient
     public String getTitularNombreCompleto() {
         if ("AD".equals(titularTipo)) {
@@ -180,5 +199,35 @@ public class Vpn {
     public String getTitularOrigenLabel() {
         if (terceroOrdenServicio) return "Tercero / OS";
         return "EXTERNO".equals(titularTipo) ? "Externo" : "AD";
+    }
+
+    @Transient
+    public Long getTitularSedeId() {
+        return titularSede == null ? null : titularSede.getId();
+    }
+
+    @Transient
+    public String getTitularSedeNombre() {
+        return titularSede == null ? null : titularSede.getNombre();
+    }
+
+    @Transient
+    public Long getTitularDependenciaId() {
+        return titularDependencia == null ? null : titularDependencia.getId();
+    }
+
+    @Transient
+    public String getTitularDependenciaNombre() {
+        return titularDependencia == null ? null : titularDependencia.getNombre();
+    }
+
+    @Transient
+    public Long getTitularSubdependenciaId() {
+        return titularSubdependencia == null ? null : titularSubdependencia.getId();
+    }
+
+    @Transient
+    public String getTitularSubdependenciaNombre() {
+        return titularSubdependencia == null ? null : titularSubdependencia.getNombre();
     }
 }

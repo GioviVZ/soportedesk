@@ -12,6 +12,13 @@
       <div class="approval-state">{{ form.controls.estado.value }}</div>
     </section>
     <section class="review-grid">
+      <div class="review-item">
+        <span>Ubicación</span>
+        <strong>{{ vpn.titularSedeNombre || 'No registrado' }}</strong>
+        @if (vpn.titularDependenciaNombre) {
+          <small>{{ vpn.titularDependenciaNombre }}@if (vpn.titularSubdependenciaNombre) { · {{ vpn.titularSubdependenciaNombre }} }</small>
+        }
+      </div>
       @if (vpn.glpiNombreEquipo) {
         <div class="review-item">
           <span>Equipo GLPI</span>
@@ -47,12 +54,21 @@
       </label>
       <label class="field">
         Credencial / Contraseña VPN *
-        <input
-          type="text"
-          formControlName="credencialVpn"
-          [placeholder]="canEditCredencialManualmente ? 'Genera una credencial o ingrésala manualmente' : 'Genera una credencial segura'"
-          [readonly]="!canEditCredencialManualmente"
-        />
+        <div class="input-group">
+          <input
+            [type]="mostrarCredencial ? 'text' : 'password'"
+            formControlName="credencialVpn"
+            [placeholder]="canEditCredencialManualmente ? 'Genera una credencial o ingrésala manualmente' : 'Genera una credencial segura'"
+            [readonly]="!canEditCredencialManualmente"
+          />
+          <button type="button" class="eye-btn" (click)="mostrarCredencial = !mostrarCredencial" [attr.aria-label]="mostrarCredencial ? 'Ocultar credencial' : 'Mostrar credencial'">
+            @if (mostrarCredencial) {
+              <i class="ti ti-eye-off" aria-hidden="true"></i>
+            } @else {
+              <i class="ti ti-eye" aria-hidden="true"></i>
+            }
+          </button>
+        </div>
         @if (form.controls.credencialVpn.hasError('minlength')) {
           <small>La credencial debe tener al menos 17 caracteres.</small>
         }
@@ -66,7 +82,11 @@
   <div modal-footer class="actions">
     <button type="button" class="secondary" (click)="cancelled.emit()">Cancelar</button>
     <button type="submit" form="vpn-aprobar-edit-form" [disabled]="form.invalid || saving">
-      {{ saving ? 'Aprobando...' : 'Aprobar' }}
+      @if (esActualizacionCredenciales) {
+        {{ saving ? 'Actualizando...' : 'Actualizar credenciales' }}
+      } @else {
+        {{ saving ? 'Aprobando...' : 'Aprobar' }}
+      }
     </button>
   </div>
 }

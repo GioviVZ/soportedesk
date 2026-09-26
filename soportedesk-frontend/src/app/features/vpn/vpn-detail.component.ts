@@ -70,6 +70,11 @@ import { Vpn } from './vpn.model';
           }</span></div>
         }
         <div class="detail-field"><span class="detail-label">Tipo de equipo</span><span class="detail-value">{{ vpn.tipoEquipo === 'INIA' ? 'Equipo de INIA' : 'Equipo personal' }}</span></div>
+        <div class="detail-field"><span class="detail-label">Sede</span><span class="detail-value">{{ vpn.titularSedeNombre || 'No registrado' }}</span></div>
+        <div class="detail-field"><span class="detail-label">Dependencia</span><span class="detail-value">{{ vpn.titularDependenciaNombre || 'No registrado' }}</span></div>
+        @if (vpn.titularSubdependenciaNombre) {
+          <div class="detail-field"><span class="detail-label">Subdependencia</span><span class="detail-value">{{ vpn.titularSubdependenciaNombre }}</span></div>
+        }
       </div>
     </app-section-card>
     
@@ -123,8 +128,27 @@ import { Vpn } from './vpn.model';
         </svg>
         <div class="detail-grid">
           <div class="detail-field"><span class="detail-label">Usuario VPN</span><span class="detail-value">{{ vpn.usuarioVpn || 'No asignado' }}</span></div>
-          <div class="detail-field"><span class="detail-label">Credencial VPN</span><span class="detail-value">{{ vpn.credencialVpn || 'No asignada' }}</span></div>
+          <div class="detail-field">
+            <span class="detail-label">Credencial VPN</span>
+            <span class="detail-value credencial-value">
+              {{ mostrarCredencial ? (vpn.credencialVpn || 'No asignada') : credencialOculta(vpn.credencialVpn) }}
+              @if (vpn.credencialVpn) {
+                <button type="button" class="eye-btn" (click)="mostrarCredencial = !mostrarCredencial" [attr.aria-label]="mostrarCredencial ? 'Ocultar credencial' : 'Mostrar credencial'">
+                  @if (mostrarCredencial) {
+                    <i class="ti ti-eye-off" aria-hidden="true"></i>
+                  } @else {
+                    <i class="ti ti-eye" aria-hidden="true"></i>
+                  }
+                </button>
+              }
+            </span>
+          </div>
         </div>
+        @if (canManageCredenciales && vpn.estadoSolicitud === 'APROBADO') {
+          <div class="modal-actions">
+            <button type="button" class="btn btn-ghost" (click)="aprobarRequested.emit(vpn)">Actualizar credenciales</button>
+          </div>
+        }
       </app-section-card>
     }
     </div>
@@ -147,12 +171,20 @@ export class VpnDetailComponent {
   @Input() canDeleteSolicitud = false;
   @Input() showDecisionPanel = false;
   @Input() canViewCredenciales = false;
+  @Input() canManageCredenciales = false;
 
   @Output() editRequested = new EventEmitter<Vpn>();
   @Output() deleteRequested = new EventEmitter<Vpn>();
   @Output() closeRequested = new EventEmitter<void>();
   @Output() aprobarRequested = new EventEmitter<Vpn>();
   @Output() resolucionRequested = new EventEmitter<{ vpn: Vpn; modo: 'RECHAZAR' | 'OBSERVAR' }>();
+
+  mostrarCredencial = false;
+
+  credencialOculta(credencial: string | null | undefined): string {
+    if (!credencial) return 'No asignada';
+    return '•'.repeat(Math.min(credencial.length, 20));
+  }
 
   estadoTone(estado: string): 'success' | 'warning' | 'danger' | 'neutral' {
     if (estado === 'APROBADO') return 'success';

@@ -1,12 +1,20 @@
-import { Component, OnInit, computed, inject, signal, ChangeDetectionStrategy } from '@angular/core';
+import { Component, OnDestroy, OnInit, computed, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 
 import { FormsModule } from '@angular/forms';
+import { Subscription, interval } from 'rxjs';
+import { switchMap, takeWhile } from 'rxjs/operators';
 import { GenericTableComponent, TableColumn } from '../../shared/generic-table/generic-table.component';
-import { EquipoKpis, EquipoResumen, EquipoSoftwareExport } from './equipo.model';
+import { EquipoKpis, EquipoResumen, EquipoSoftwareExport, GlpiSyncStatus } from './equipo.model';
 import { EquipoService } from './equipo.service';
 import { EquipoDetailComponent } from './equipo-detail.component';
 import { ModalComponent } from '../../shared/modal/modal.component';
+import { AuthService } from '../../core/auth/auth.service';
+import { CatalogoService } from '../../core/catalogos/catalogo.service';
+import { Dependencia, Sede, Subdependencia } from '../../core/models/catalogo.model';
+import { EquipoEnrichmentModalComponent } from './equipo-enrichment-modal.component';
 import * as XLSX from 'xlsx';
+
+const PENDIENTE = '__PENDIENTE__';
 
 interface EquipoTableRow extends EquipoResumen {
   usuarioLimpio: string;
@@ -18,20 +26,24 @@ interface EquipoTableRow extends EquipoResumen {
 
 @Component({
     selector: 'app-equipos-inventario',
-    imports: [FormsModule, GenericTableComponent, ModalComponent, EquipoDetailComponent],
+    imports: [FormsModule, GenericTableComponent, ModalComponent, EquipoDetailComponent, EquipoEnrichmentModalComponent],
     templateUrl: './equipos-inventario.component.html',
     changeDetection: ChangeDetectionStrategy.Eager,
     styleUrl: './equipos.shared.scss'
 })
-export class EquiposInventarioComponent implements OnInit {
+export class EquiposInventarioComponent implements OnInit, OnDestroy {
   private service = inject(EquipoService);
+  private authService = inject(AuthService);
+  private catalogo = inject(CatalogoService);
+  readonly canEdit = this.authService.canWrite('equipos');
+  readonly PENDIENTE = PENDIENTE;
 
   items = signal<EquipoTableRow[]>([]);
   kpis = signal<EquipoKpis | null>(null);
-  sedes = signal<string[]>([]);
+  catalogoSedes = signal<Sede[]>([]);
+  catalogoDependencias = signal<Dependencia[]>([]);
+  catalogoSubdependencias = signal<Subdependencia[]>([]);
   tipos = signal<string[]>([]);
-  dependencias = signal<string[]>([]);
-  subdependencias = signal<string[]>([]);
   fabricantes = signal<string[]>([]);
   selectedSede = signal('');
   selectedTipo = signal('');
@@ -43,7 +55,11 @@ export class EquiposInventarioComponent implements OnInit {
   searchTerm = signal('');
   viewingId = signal<number | null>(null);
   viewingName = signal('');
+  editingId = signal<number | null>(null);
+  editingName = signal('');
   exporting = signal(false);
+  syncStatus = signal<GlpiSyncStatus | null>(null);
+  private syncPollSub?: Subscription;
 
   kpiCards = computed(() => {
     const k = this.kpis();
@@ -69,6 +85,67 @@ export class EquiposInventarioComponent implements OnInit {
     { key: 'rustdeskId', label: 'RustDesk ID' },
   ];
 
+  private sedePorNombre = computed(() => {
+    const map = new Map<string, Sede>();
+    for (const sede of this.catalogoSedes()) {
+      map.set(this.normalizar(sede.nombre), sede);
+    }
+    return map;
+  });
+
+  private dependenciaPorSedeYNombre = computed(() => {
+    const map = new Map<string, Dependencia>();
+    for (const dependencia of this.catalogoDependencias()) {
+      map.set(`${dependencia.sede.id}|${this.normalizar(dependencia.nombre)}`, dependencia);
+    }
+    return map;
+  });
+
+  private subdependenciaPorDependenciaYNombre = computed(() => {
+    const map = new Map<string, Subdependencia>();
+    for (const subdependencia of this.catalogoSubdependencias()) {
+      map.set(`${subdependencia.dependencia.id}|${this.normalizar(subdependencia.nombre)}`, subdependencia);
+    }
+    return map;
+  });
+
+  private clasificacion = computed(() => {
+    const sedePorNombre = this.sedePorNombre();
+    const dependenciaPorSedeYNombre = this.dependenciaPorSedeYNombre();
+    const subdependenciaPorDependenciaYNombre = this.subdependenciaPorDependenciaYNombre();
+    const map = new Map<EquipoTableRow, {
+      sede: Sede | null;
+      dependencia: Dependencia | null;
+      subdependencia: Subdependencia | null;
+    }>();
+
+    for (const item of this.items()) {
+      const sede = sedePorNombre.get(this.normalizar(item.sedeNombre)) ?? null;
+      const dependencia = sede
+        ? dependenciaPorSedeYNombre.get(`${sede.id}|${this.normalizar(item.oficinaId)}`) ?? null
+        : null;
+      const subdependencia = dependencia
+        ? subdependenciaPorDependenciaYNombre.get(`${dependencia.id}|${this.normalizar(item.unidadId)}`) ?? null
+        : null;
+      map.set(item, { sede, dependencia, subdependencia });
+    }
+
+    return map;
+  });
+
+  dependenciasDisponibles = computed(() => {
+    const sedeId = this.selectedSede();
+    if (!sedeId || sedeId === PENDIENTE) return [];
+    return this.catalogoDependencias().filter((dependencia) => String(dependencia.sede.id) === sedeId);
+  });
+
+  subdependenciasDisponibles = computed(() => {
+    const dependenciaId = this.selectedDependencia();
+    if (!dependenciaId || dependenciaId === PENDIENTE) return [];
+    return this.catalogoSubdependencias()
+      .filter((subdependencia) => String(subdependencia.dependencia.id) === dependenciaId);
+  });
+
   filteredItems = computed(() => {
     const search = this.normalize(this.searchTerm());
     const ip = this.normalize(this.ipFilter());
@@ -78,12 +155,23 @@ export class EquiposInventarioComponent implements OnInit {
     const subdependencia = this.selectedSubdependencia();
     const fabricante = this.selectedFabricante();
     const modelo = this.selectedModelo();
+    const clasificacion = this.clasificacion();
 
     return this.items().filter((item) => {
-      if (sede && item.sedeNombre !== sede) return false;
+      const clase = clasificacion.get(item);
+      if (sede) {
+        if (sede === PENDIENTE) { if (clase?.sede) return false; }
+        else if (String(clase?.sede?.id ?? '') !== sede) return false;
+      }
       if (tipo && item.tipoEquipo !== tipo) return false;
-      if (dependencia && item.oficinaId !== dependencia) return false;
-      if (subdependencia && item.unidadId !== subdependencia) return false;
+      if (dependencia) {
+        if (dependencia === PENDIENTE) { if (clase?.dependencia) return false; }
+        else if (String(clase?.dependencia?.id ?? '') !== dependencia) return false;
+      }
+      if (subdependencia) {
+        if (subdependencia === PENDIENTE) { if (clase?.subdependencia) return false; }
+        else if (String(clase?.subdependencia?.id ?? '') !== subdependencia) return false;
+      }
       if (fabricante && item.fabricanteEquipo !== fabricante) return false;
       if (modelo && item.modeloEquipo !== modelo) return false;
       if (ip && !this.normalize(item.ipEquipo).includes(ip)) return false;
@@ -110,6 +198,23 @@ export class EquiposInventarioComponent implements OnInit {
     });
   });
 
+  sortedItems = computed(() => {
+    const clasificacion = this.clasificacion();
+    return [...this.filteredItems()].sort((a, b) => {
+      const claseA = clasificacion.get(a);
+      const claseB = clasificacion.get(b);
+      return this.compareConNullsAlFinal(claseA?.sede?.nombre, claseB?.sede?.nombre) ||
+        this.compareConNullsAlFinal(claseA?.dependencia?.nombre, claseB?.dependencia?.nombre) ||
+        this.compareConNullsAlFinal(claseA?.subdependencia?.nombre, claseB?.subdependencia?.nombre) ||
+        this.compareConNullsAlFinal(a.nombreEquipo, b.nombreEquipo);
+    });
+  });
+
+  sinSedeCount = computed(() => {
+    const clasificacion = this.clasificacion();
+    return this.items().filter((item) => !clasificacion.get(item)?.sede).length;
+  });
+
   modelos = computed(() => this.unique(
     this.items()
       .filter((item) => !this.selectedFabricante() || item.fabricanteEquipo === this.selectedFabricante())
@@ -128,16 +233,81 @@ export class EquiposInventarioComponent implements OnInit {
   ));
 
   ngOnInit(): void {
+    this.service.getSyncStatus().subscribe({
+      next: (status) => {
+        this.syncStatus.set(status);
+        if (status.running) {
+          this.pollSyncStatus();
+        }
+      },
+      error: () => {},
+    });
     this.loadKpis();
-    this.loadSedes();
+    this.catalogo.getSedes().subscribe((data) => this.catalogoSedes.set(data));
+    this.catalogo.getDependencias().subscribe((data) => this.catalogoDependencias.set(data));
+    this.catalogo.getSubdependencias().subscribe((data) => this.catalogoSubdependencias.set(data));
     this.loadTipos();
-    this.loadDependencias();
     this.loadFabricantes();
     this.load();
   }
 
+  ngOnDestroy(): void {
+    this.syncPollSub?.unsubscribe();
+  }
+
   load(): void {
     this.service.getAll().subscribe((data) => this.items.set(data.map((item) => this.toTableRow(item))));
+  }
+
+  startGlpiSync(): void {
+    this.service.startSync().subscribe({
+      next: (status) => {
+        this.syncStatus.set(status);
+        this.pollSyncStatus();
+      },
+      error: () => {},
+    });
+  }
+
+  syncPercent(): number {
+    const status = this.syncStatus();
+    const total = status?.total ?? 0;
+    const procesados = status?.procesados ?? 0;
+    return total > 0 ? Math.min(100, Math.round((procesados / total) * 100)) : 0;
+  }
+
+  syncProgressLabel(): string {
+    const status = this.syncStatus();
+    const total = status?.total ?? 0;
+    const procesados = status?.procesados ?? 0;
+    return total > 0 ? `${procesados} de ${total} equipos` : 'Calculando el total de equipos...';
+  }
+
+  private pollSyncStatus(): void {
+    this.syncPollSub?.unsubscribe();
+    this.syncPollSub = interval(1500)
+      .pipe(
+        switchMap(() => this.service.getSyncStatus()),
+        takeWhile((status) => status.running, true),
+      )
+      .subscribe({
+        next: (status) => {
+          this.syncStatus.set(status);
+          if (!status.running) {
+            this.load();
+          }
+        },
+        error: () => {},
+      });
+  }
+
+  private compareConNullsAlFinal(a: string | null | undefined, b: string | null | undefined): number {
+    const aVacio = !a;
+    const bVacio = !b;
+    if (aVacio && bVacio) return 0;
+    if (aVacio) return 1;
+    if (bVacio) return -1;
+    return a!.localeCompare(b!, 'es', { sensitivity: 'base' });
   }
 
   onSearch(term: string): void {
@@ -148,8 +318,6 @@ export class EquiposInventarioComponent implements OnInit {
     this.selectedSede.set(value);
     this.selectedDependencia.set('');
     this.selectedSubdependencia.set('');
-    this.subdependencias.set([]);
-    this.loadDependencias();
   }
 
   onTipoChange(value: string): void {
@@ -159,7 +327,6 @@ export class EquiposInventarioComponent implements OnInit {
   onDependenciaChange(value: string): void {
     this.selectedDependencia.set(value);
     this.selectedSubdependencia.set('');
-    this.loadSubdependencias();
   }
 
   onSubdependenciaChange(value: string): void {
@@ -188,8 +355,6 @@ export class EquiposInventarioComponent implements OnInit {
     this.selectedFabricante.set('');
     this.selectedModelo.set('');
     this.ipFilter.set('');
-    this.loadDependencias();
-    this.subdependencias.set([]);
   }
 
   onView(item: EquipoTableRow): void {
@@ -200,6 +365,27 @@ export class EquiposInventarioComponent implements OnInit {
   closeDetail(): void {
     this.viewingId.set(null);
     this.viewingName.set('');
+  }
+
+  onEdit(item: EquipoTableRow): void {
+    this.editingName.set(item.nombreEquipo || 'Equipo');
+    this.editingId.set(item.computerID);
+  }
+
+  onEditFromDetail(id: number): void {
+    this.editingName.set(this.viewingName() || 'Equipo');
+    this.editingId.set(id);
+    this.closeDetail();
+  }
+
+  closeEdit(): void {
+    this.editingId.set(null);
+    this.editingName.set('');
+  }
+
+  onSaved(): void {
+    this.closeEdit();
+    this.load();
   }
 
   exportExcel(): void {
@@ -329,24 +515,8 @@ export class EquiposInventarioComponent implements OnInit {
     this.service.getKpis().subscribe((data) => this.kpis.set(data));
   }
 
-  private loadSedes(): void {
-    this.service.getSedes().subscribe((data) => this.sedes.set(data));
-  }
-
   private loadTipos(): void {
     this.service.getTipos().subscribe((data) => this.tipos.set(data));
-  }
-
-  private loadDependencias(): void {
-    this.service.getDependencias(this.selectedSede() || undefined)
-      .subscribe((data) => this.dependencias.set(data));
-  }
-
-  private loadSubdependencias(): void {
-    this.service.getSubdependencias(
-      this.selectedSede() || undefined,
-      this.selectedDependencia() || undefined
-    ).subscribe((data) => this.subdependencias.set(data));
   }
 
   private loadFabricantes(): void {
@@ -388,6 +558,15 @@ export class EquiposInventarioComponent implements OnInit {
       .replace(/[\u0300-\u036f]/g, '')
       .toLowerCase()
       .trim();
+  }
+
+  private normalizar(valor: string | null | undefined): string {
+    if (!valor) return '';
+    return valor
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .trim()
+      .toUpperCase();
   }
 
   private exportDate(): string {
