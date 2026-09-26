@@ -8,7 +8,6 @@ import {
   ActiveDirectoryGroup,
   ActiveDirectoryOu,
   ActiveDirectoryResponse,
-  AdFilterOption,
   AdSyncStatus,
   AdUserSearchResult,
   AdUser,
@@ -38,7 +37,7 @@ export class ActiveDirectoryService {
     return this.http.get<AdSyncStatus>(`${this.apiUrl}/sync/estado`);
   }
 
-  searchUsers(filters: { q?: string; usuario?: string; nombre?: string; oficina?: string; ou?: string; estado?: string }): Observable<AdUserSearchResult> {
+  searchUsers(filters: { q?: string; usuario?: string; nombre?: string; oficina?: string; ou?: string; estado?: string; sedeId?: number | null; dependenciaId?: number | null; subdependenciaId?: number | null }): Observable<AdUserSearchResult> {
     let params = new HttpParams();
     if (filters.q?.trim()) params = params.set('q', filters.q.trim());
     if (filters.usuario?.trim()) params = params.set('usuario', filters.usuario.trim());
@@ -46,15 +45,10 @@ export class ActiveDirectoryService {
     if (filters.oficina?.trim()) params = params.set('oficina', filters.oficina.trim());
     if (filters.ou?.trim()) params = params.set('ou', filters.ou.trim());
     if (filters.estado?.trim() && filters.estado !== 'all') params = params.set('estado', filters.estado.trim());
+    if (filters.sedeId != null) params = params.set('sedeId', String(filters.sedeId));
+    if (filters.dependenciaId != null) params = params.set('dependenciaId', String(filters.dependenciaId));
+    if (filters.subdependenciaId != null) params = params.set('subdependenciaId', String(filters.subdependenciaId));
     return this.http.get<AdUserSearchResult>(`${this.apiUrl}/usuarios/buscar`, { params });
-  }
-
-  getOrganizationalUnitFilters(): Observable<AdFilterOption[]> {
-    return this.http.get<AdFilterOption[]>(`${this.apiUrl}/usuarios/filtros/ous`);
-  }
-
-  getOfficeFilters(): Observable<AdFilterOption[]> {
-    return this.http.get<AdFilterOption[]>(`${this.apiUrl}/usuarios/filtros/oficinas`);
   }
 
   getUser(samAccountName: string): Observable<ActiveDirectoryResponse<AdUser>> {

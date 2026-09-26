@@ -1,12 +1,15 @@
 
-import { Component, EventEmitter, OnDestroy, OnInit, Output, inject, ChangeDetectionStrategy } from '@angular/core';
+import { Component, EventEmitter, Input, OnDestroy, OnInit, Output, inject, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Subject, debounceTime, distinctUntilChanged, forkJoin, takeUntil } from 'rxjs';
+import { Subject, debounceTime, distinctUntilChanged, forkJoin, interval, takeUntil } from 'rxjs';
+import { CatalogoService } from '../../core/catalogos/catalogo.service';
+import { Dependencia, Sede, Subdependencia } from '../../core/models/catalogo.model';
 import { StatusBadgeComponent } from '../../shared/status-badge/status-badge.component';
 import { ActiveDirectoryService } from './active-directory.service';
-import { AdFilterOption, AdUserSummary } from './active-directory.model';
+import { AdUserSummary } from './active-directory.model';
 
 type EstadoFiltro = 'all' | 'enabled' | 'locked' | 'disabled';
+const PENDIENTE_SEDE = -1;
 
 @Component({
     selector: 'app-ad-user-search',
@@ -56,25 +59,32 @@ type EstadoFiltro = 'all' | 'enabled' | 'locked' | 'disabled';
     
         <div class="catalog-filters">
           <label class="field catalog-field">
-            <span>Unidad organizativa</span>
-            <select name="ouSelect" [(ngModel)]="ou" (ngModelChange)="queueSearch()">
-              <option value="">Todas las OU</option>
-              @for (option of organizationalUnits; track option) {
-                <option [value]="option.value">
-                  {{ option.value }} ({{ option.total }})
-                </option>
+            <span>Sede</span>
+            <select name="sedeSelect" [ngModel]="sedeId" (change)="onSedeFilterChange($any($event.target).value)">
+              <option value="">Todas las sedes</option>
+              <option [value]="PENDIENTE_SEDE">⚠ Pendiente de clasificar</option>
+              @for (sede of sedes; track sede.id) {
+                <option [value]="sede.id">{{ sede.nombre }}</option>
               }
             </select>
           </label>
-    
+
           <label class="field catalog-field">
-            <span>Oficina</span>
-            <select name="officeSelect" [(ngModel)]="oficina" (ngModelChange)="queueSearch()">
-              <option value="">Todas las oficinas</option>
-              @for (option of offices; track option) {
-                <option [value]="option.value">
-                  {{ option.value }} ({{ option.total }})
-                </option>
+            <span>Dependencia</span>
+            <select name="dependenciaSelect" [ngModel]="dependenciaId" (change)="onDependenciaFilterChange($any($event.target).value)" [disabled]="!sedeId || sedeId === PENDIENTE_SEDE">
+              <option value="">Todas las dependencias</option>
+              @for (dependencia of dependenciasDisponibles; track dependencia.id) {
+                <option [value]="dependencia.id">{{ dependencia.nombre }}</option>
+              }
+            </select>
+          </label>
+
+          <label class="field catalog-field">
+            <span>Subdependencia</span>
+            <select name="subdependenciaSelect" [ngModel]="subdependenciaId" (change)="onSubdependenciaFilterChange($any($event.target).value)" [disabled]="!dependenciaId">
+              <option value="">Todas las subdependencias</option>
+              @for (subdependencia of subdependencias; track subdependencia) {
+                <option [value]="subdependencia.id">{{ subdependencia.nombre }}</option>
               }
             </select>
           </label>
@@ -123,6 +133,7 @@ type EstadoFiltro = 'all' | 'enabled' | 'locked' | 'disabled';
           @for (user of results; track trackBySam($index, user)) {
             <article
               class="ad-result-card"
+              [class.selected]="isSelected(user)"
               tabindex="0"
               role="button"
               [attr.aria-label]="'Ver detalle de ' + (user.displayName || user.samAccountName)"
@@ -173,21 +184,26 @@ type EstadoFiltro = 'all' | 'enabled' | 'locked' | 'disabled';
 })
 export class AdUserSearchComponent implements OnInit, OnDestroy {
   private adService = inject(ActiveDirectoryService);
+  private catalogoService = inject(CatalogoService);
   private searchQueue = new Subject<string>();
   private destroy$ = new Subject<void>();
 
+  @Input() selectedSam: string | null = null;
   @Output() selected = new EventEmitter<AdUserSummary>();
 
   q = '';
   usuario = '';
   nombre = '';
-  oficina = '';
-  ou = '';
+  readonly PENDIENTE_SEDE = PENDIENTE_SEDE;
+  sedeId: number | null = null;
+  dependenciaId: number | null = null;
+  subdependenciaId: number | null = null;
+  sedes: Sede[] = [];
+  dependencias: Dependencia[] = [];
+  subdependencias: Subdependencia[] = [];
   estado: EstadoFiltro = 'all';
   showAdvanced = false;
   results: AdUserSummary[] = [];
-  organizationalUnits: AdFilterOption[] = [];
-  offices: AdFilterOption[] = [];
   searched = false;
   loading = false;
   message = '';
@@ -206,26 +222,43 @@ export class AdUserSearchComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     forkJoin({
-      organizationalUnits: this.adService.getOrganizationalUnitFilters(),
-      offices: this.adService.getOfficeFilters(),
+      sedes: this.catalogoService.getSedes(),
+      dependencias: this.catalogoService.getDependencias(),
     }).pipe(takeUntil(this.destroy$)).subscribe({
-      next: ({ organizationalUnits, offices }) => {
-        this.organizationalUnits = organizationalUnits;
-        this.offices = offices;
+      next: ({ sedes, dependencias }) => {
+        this.sedes = sedes;
+        this.dependencias = dependencias;
       },
       error: () => {
-        this.organizationalUnits = [];
-        this.offices = [];
+        this.sedes = [];
+        this.dependencias = [];
       },
     });
+
+    interval(60000)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(() => this.silentRefresh());
+  }
+
+  get dependenciasDisponibles(): Dependencia[] {
+    if (!this.sedeId || this.sedeId === PENDIENTE_SEDE) return [];
+    return this.dependencias.filter((d) => d.sede.id === this.sedeId);
   }
 
   get canSearch(): boolean {
-    return [this.q, this.usuario, this.nombre, this.oficina, this.ou].some((value) => value.trim().length >= 2) || this.estado !== 'all';
+    return [this.q, this.usuario, this.nombre].some((value) => value.trim().length >= 2)
+      || this.estado !== 'all'
+      || this.sedeId != null
+      || this.dependenciaId != null
+      || this.subdependenciaId != null;
   }
 
   get hasAnyFilter(): boolean {
-    return [this.q, this.usuario, this.nombre, this.oficina, this.ou].some((value) => value.trim().length > 0) || this.estado !== 'all';
+    return [this.q, this.usuario, this.nombre].some((value) => value.trim().length > 0)
+      || this.estado !== 'all'
+      || this.sedeId != null
+      || this.dependenciaId != null
+      || this.subdependenciaId != null;
   }
 
   get activeDescription(): string {
@@ -233,9 +266,20 @@ export class AdUserSearchComponent implements OnInit, OnDestroy {
     if (this.q.trim()) filters.push(`"${this.q.trim()}"`);
     if (this.usuario.trim()) filters.push(`usuario: ${this.usuario.trim()}`);
     if (this.nombre.trim()) filters.push(`nombre/correo: ${this.nombre.trim()}`);
-    if (this.oficina.trim()) filters.push(`oficina: ${this.oficina.trim()}`);
-    if (this.ou.trim()) filters.push(`OU: ${this.ou.trim()}`);
     if (this.estado !== 'all') filters.push(this.estadoLabel(this.estado).toLowerCase());
+    if (this.sedeId === PENDIENTE_SEDE) filters.push('pendiente de clasificar');
+    else if (this.sedeId != null) {
+      const nombre = this.sedes.find((s) => s.id === this.sedeId)?.nombre;
+      if (nombre) filters.push(`sede: ${nombre}`);
+    }
+    if (this.dependenciaId != null) {
+      const nombre = this.dependencias.find((d) => d.id === this.dependenciaId)?.nombre;
+      if (nombre) filters.push(`dependencia: ${nombre}`);
+    }
+    if (this.subdependenciaId != null) {
+      const nombre = this.subdependencias.find((s) => s.id === this.subdependenciaId)?.nombre;
+      if (nombre) filters.push(`subdependencia: ${nombre}`);
+    }
     return filters.length ? `para ${filters.join(', ')}` : '';
   }
 
@@ -248,13 +292,42 @@ export class AdUserSearchComponent implements OnInit, OnDestroy {
     this.queueSearch();
   }
 
+  onSedeFilterChange(value: string): void {
+    this.sedeId = value ? Number(value) : null;
+    this.dependenciaId = null;
+    this.subdependenciaId = null;
+    this.subdependencias = [];
+    this.queueSearch();
+  }
+
+  onDependenciaFilterChange(value: string): void {
+    const dependenciaId = value ? Number(value) : null;
+    this.dependenciaId = dependenciaId;
+    this.subdependenciaId = null;
+    this.subdependencias = [];
+    if (dependenciaId) {
+      this.catalogoService.getSubdependencias(dependenciaId).subscribe({
+        next: (subdependencias) => (this.subdependencias = subdependencias),
+        error: () => (this.subdependencias = []),
+      });
+    }
+    this.queueSearch();
+  }
+
+  onSubdependenciaFilterChange(value: string): void {
+    this.subdependenciaId = value ? Number(value) : null;
+    this.queueSearch();
+  }
+
   clearFilters(): void {
     this.searchToken++;
     this.q = '';
     this.usuario = '';
     this.nombre = '';
-    this.oficina = '';
-    this.ou = '';
+    this.sedeId = null;
+    this.dependenciaId = null;
+    this.subdependenciaId = null;
+    this.subdependencias = [];
     this.estado = 'all';
     this.resetSearchState();
   }
@@ -270,7 +343,7 @@ export class AdUserSearchComponent implements OnInit, OnDestroy {
     this.loading = true;
     this.message = '';
     const token = ++this.searchToken;
-    this.adService.searchUsers({ q: this.q, usuario: this.usuario, nombre: this.nombre, oficina: this.oficina, ou: this.ou, estado: this.estado }).subscribe({
+    this.adService.searchUsers({ q: this.q, usuario: this.usuario, nombre: this.nombre, estado: this.estado, sedeId: this.sedeId, dependenciaId: this.dependenciaId, subdependenciaId: this.subdependenciaId }).subscribe({
       next: (result) => {
         if (token !== this.searchToken) return;
         this.loading = false;
@@ -304,8 +377,20 @@ export class AdUserSearchComponent implements OnInit, OnDestroy {
     return user.samAccountName;
   }
 
+  isSelected(user: AdUserSummary): boolean {
+    return !!this.selectedSam && user.samAccountName.toLowerCase() === this.selectedSam.toLowerCase();
+  }
+
   removeResult(samAccountName: string): void {
     this.results = this.results.filter((user) => user.samAccountName.toLowerCase() !== samAccountName.toLowerCase());
+  }
+
+  updateResult(user: AdUserSummary): void {
+    const idx = this.results.findIndex(
+      (r) => r.samAccountName.toLowerCase() === user.samAccountName.toLowerCase(),
+    );
+    if (idx === -1) return;
+    this.results = [...this.results.slice(0, idx), user, ...this.results.slice(idx + 1)];
   }
 
   ngOnDestroy(): void {
@@ -321,8 +406,27 @@ export class AdUserSearchComponent implements OnInit, OnDestroy {
     this.message = '';
   }
 
+  private silentRefresh(): void {
+    if (!this.searched || !this.canSearch || this.loading) return;
+    const token = ++this.searchToken;
+    this.adService
+      .searchUsers({ q: this.q, usuario: this.usuario, nombre: this.nombre, estado: this.estado, sedeId: this.sedeId, dependenciaId: this.dependenciaId, subdependenciaId: this.subdependenciaId })
+      .subscribe({
+        next: (result) => {
+          if (token !== this.searchToken) return;
+          this.results = result.items;
+          this.message = result.truncated ? 'Mostrando los primeros resultados. Afina la consulta para ubicar la cuenta exacta.' : '';
+          this.messageTone = 'info';
+        },
+        error: () => {},
+      });
+  }
+
   private searchSignature(): string {
-    return [this.q, this.usuario, this.nombre, this.oficina, this.ou, this.estado].map((value) => value.trim()).join('|');
+    const textPart = [this.q, this.usuario, this.nombre, this.estado]
+      .map((value) => value.trim())
+      .join('|');
+    return `${textPart}|${this.sedeId ?? ''}|${this.dependenciaId ?? ''}|${this.subdependenciaId ?? ''}`;
   }
 
   private estadoLabel(estado: EstadoFiltro): string {

@@ -240,8 +240,7 @@ class UsuarioRedContratoServiceTest {
         contrato.setPersonalApellidos("Perez Gomez");
         AdUsuarioCache usuario = sampleAdUsuario("jperez", "Cuenta JPerez", "Informatica");
 
-        when(repository.searchAllFields(org.mockito.ArgumentMatchers.eq("Juan Carlos Perez Gomez"), any()))
-                .thenReturn(List.of(contrato));
+        when(repository.findAll()).thenReturn(List.of(contrato));
         when(activeDirectoryService.buscarUsuarioCacheadoORefrescar("jperez"))
                 .thenReturn(Optional.of(usuario));
         when(repository.findByUsuarioIgnoreCaseOrderByFechaInicioDesc("jperez"))

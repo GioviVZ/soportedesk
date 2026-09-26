@@ -6,6 +6,8 @@ public record AdUserSummary(
         String mail,
         String office,
         String organizationalUnit,
+        String department,
+        String company,
         boolean enabled,
         boolean locked
 ) {

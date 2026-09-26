@@ -5,6 +5,8 @@ import { Router } from '@angular/router';
 import { Subject, debounceTime, distinctUntilChanged, finalize, takeUntil } from 'rxjs';
 import * as XLSX from 'xlsx';
 import { AuthService } from '../../core/auth/auth.service';
+import { CatalogoService } from '../../core/catalogos/catalogo.service';
+import { Dependencia, Sede, Subdependencia } from '../../core/models/catalogo.model';
 import { ModalComponent } from '../../shared/modal/modal.component';
 import { SectionCardComponent } from '../../shared/section-card/section-card.component';
 import { VencimientoBadgeComponent } from '../../shared/vencimiento-badge/vencimiento-badge.component';
@@ -17,6 +19,7 @@ import { UsuarioRedContratoService } from './usuario-red-contrato.service';
 type EstadoFiltro = '' | 'HABILITADO' | 'DESHABILITADO' | 'BLOQUEADO' | 'SIN_FICHA_AD';
 type VencimientoFiltro = '' | 'VIGENTE' | 'POR_VENCER' | 'VENCIDO' | 'SIN_FECHA';
 type OrdenCampo = 'nombre' | 'oficina' | 'vencimiento';
+const PENDIENTE = '__PENDIENTE__';
 
 @Component({
     selector: 'app-usuarios-red-consultas',
@@ -82,11 +85,34 @@ type OrdenCampo = 'nombre' | 'oficina' | 'vencimiento';
             </div>
             <div class="filter-grid">
               <label>
-                Oficina
-                <select [(ngModel)]="filters.oficina">
+                Sede
+                <select [ngModel]="filters.sedeId" (ngModelChange)="onSedeFilterChange($event)">
                   <option value="">Todas</option>
-                  @for (oficina of oficinas; track oficina) {
-                    <option [value]="oficina">{{ oficina }}</option>
+                  <option [value]="PENDIENTE">⚠ Pendiente de clasificar</option>
+                  @for (sede of sedes; track sede.id) {
+                    <option [value]="sede.id.toString()">{{ sede.nombre }}</option>
+                  }
+                </select>
+              </label>
+              <label>
+                Dependencia
+                <select [ngModel]="filters.dependenciaId" (ngModelChange)="onDependenciaFilterChange($event)"
+                  [disabled]="!filters.sedeId || filters.sedeId === PENDIENTE">
+                  <option value="">Todas</option>
+                  <option [value]="PENDIENTE">⚠ Pendiente de clasificar</option>
+                  @for (dep of dependenciasDisponibles; track dep.id) {
+                    <option [value]="dep.id.toString()">{{ dep.nombre }}</option>
+                  }
+                </select>
+              </label>
+              <label>
+                Subdependencia
+                <select [(ngModel)]="filters.subdependenciaId"
+                  [disabled]="!filters.dependenciaId || filters.dependenciaId === PENDIENTE">
+                  <option value="">Todas</option>
+                  <option [value]="PENDIENTE">⚠ Pendiente de clasificar</option>
+                  @for (sub of subdependenciasDisponibles; track sub.id) {
+                    <option [value]="sub.id.toString()">{{ sub.nombre }}</option>
                   }
                 </select>
               </label>
@@ -399,6 +425,7 @@ type OrdenCampo = 'nombre' | 'oficina' | 'vencimiento';
 export class UsuariosRedConsultasComponent implements OnInit, OnDestroy {
   private adService = inject(ActiveDirectoryService);
   private contratoService = inject(UsuarioRedContratoService);
+  private catalogoService = inject(CatalogoService);
   private authService = inject(AuthService);
   private router = inject(Router);
   private readonly searchQueue = new Subject<string>();
@@ -422,8 +449,15 @@ export class UsuariosRedConsultasComponent implements OnInit, OnDestroy {
   directorioLoaded = false;
   directorioError = '';
 
-  filters: { oficina: string; estado: EstadoFiltro; vencimiento: VencimientoFiltro } = {
-    oficina: '',
+  readonly PENDIENTE = PENDIENTE;
+  sedes: Sede[] = [];
+  private dependenciasCatalogo: Dependencia[] = [];
+  private subdependenciasCatalogo: Subdependencia[] = [];
+
+  filters: { sedeId: string; dependenciaId: string; subdependenciaId: string; estado: EstadoFiltro; vencimiento: VencimientoFiltro } = {
+    sedeId: '',
+    dependenciaId: '',
+    subdependenciaId: '',
     estado: '',
     vencimiento: '',
   };
@@ -441,13 +475,21 @@ export class UsuariosRedConsultasComponent implements OnInit, OnDestroy {
     return this.termino.trim().length >= 2;
   }
 
-  get oficinas(): string[] {
-    return this.unique(this.directorio.map((item) => item.office || 'Sin oficina'));
+  get dependenciasDisponibles(): Dependencia[] {
+    const sedeId = this.filters.sedeId;
+    if (!sedeId || sedeId === PENDIENTE) return [];
+    return this.dependenciasDeSede(Number(sedeId));
+  }
+
+  get subdependenciasDisponibles(): Subdependencia[] {
+    const dependenciaId = this.filters.dependenciaId;
+    if (!dependenciaId || dependenciaId === PENDIENTE) return [];
+    return this.subdependenciasCatalogo.filter((s) => s.dependencia.id === Number(dependenciaId));
   }
 
   get directorioFiltrado(): UsuarioRedConsultaResultado[] {
     return this.directorio
-      .filter((item) => !this.filters.oficina || (item.office || 'Sin oficina') === this.filters.oficina)
+      .filter((item) => this.matchesUbicacion(item))
       .filter((item) => !this.filters.estado || this.matchesEstado(item, this.filters.estado))
       .filter((item) => !this.filters.vencimiento || item.estadoVencimientoUsuarioRed === this.filters.vencimiento)
       .sort(this.comparadorPara(this.ordenarPor));
@@ -458,7 +500,13 @@ export class UsuariosRedConsultasComponent implements OnInit, OnDestroy {
   }
 
   get hasActiveFilters(): boolean {
-    return Boolean(this.filters.oficina || this.filters.estado || this.filters.vencimiento);
+    return Boolean(
+      this.filters.sedeId
+      || this.filters.dependenciaId
+      || this.filters.subdependenciaId
+      || this.filters.estado
+      || this.filters.vencimiento
+    );
   }
 
   ngOnInit(): void {
@@ -468,6 +516,15 @@ export class UsuariosRedConsultasComponent implements OnInit, OnDestroy {
       takeUntil(this.destroy$),
     ).subscribe(() => this.buscar());
     this.cargarDirectorio();
+    this.catalogoService.getSedes()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((data) => (this.sedes = data));
+    this.catalogoService.getDependencias()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((data) => (this.dependenciasCatalogo = data));
+    this.catalogoService.getSubdependencias()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((data) => (this.subdependenciasCatalogo = data));
   }
 
   ngOnDestroy(): void {
@@ -506,7 +563,77 @@ export class UsuariosRedConsultasComponent implements OnInit, OnDestroy {
   }
 
   clearFilters(): void {
-    this.filters = { oficina: '', estado: '', vencimiento: '' };
+    this.filters = { sedeId: '', dependenciaId: '', subdependenciaId: '', estado: '', vencimiento: '' };
+  }
+
+  onSedeFilterChange(value: string): void {
+    this.filters.sedeId = value;
+    this.filters.dependenciaId = '';
+    this.filters.subdependenciaId = '';
+  }
+
+  onDependenciaFilterChange(value: string): void {
+    this.filters.dependenciaId = value;
+    this.filters.subdependenciaId = '';
+  }
+
+  private dependenciasDeSede(sedeId: number): Dependencia[] {
+    return this.dependenciasCatalogo.filter((d) => d.sede.id === sedeId);
+  }
+
+  private normalizarNombreOrganizacional(value: string | null | undefined): string {
+    if (!value) return '';
+    return value
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toUpperCase()
+      .replace(/[^A-Z0-9]/g, '');
+  }
+
+  private matcheaDependencia(item: UsuarioRedConsultaResultado, nombreDependenciaNormalizado: string): boolean {
+    if (!nombreDependenciaNormalizado) return false;
+    return this.normalizarNombreOrganizacional(item.company) === nombreDependenciaNormalizado
+      || this.normalizarNombreOrganizacional(item.department) === nombreDependenciaNormalizado;
+  }
+
+  private matcheaSubdependencia(item: UsuarioRedConsultaResultado, nombreSubdependenciaNormalizado: string): boolean {
+    if (!nombreSubdependenciaNormalizado) return false;
+    return this.normalizarNombreOrganizacional(item.department) === nombreSubdependenciaNormalizado;
+  }
+
+  private matchesUbicacion(item: UsuarioRedConsultaResultado): boolean {
+    const { sedeId, dependenciaId, subdependenciaId } = this.filters;
+    if (subdependenciaId) {
+      if (subdependenciaId === PENDIENTE) {
+        const nombresDependencia = this.dependenciasCatalogo.map((d) => this.normalizarNombreOrganizacional(d.nombre)).filter(Boolean);
+        const nombresSubdependencia = this.subdependenciasCatalogo.map((s) => this.normalizarNombreOrganizacional(s.nombre)).filter(Boolean);
+        return !nombresDependencia.some((n) => this.matcheaDependencia(item, n))
+          && !nombresSubdependencia.some((n) => this.matcheaSubdependencia(item, n));
+      }
+      const sub = this.subdependenciasCatalogo.find((s) => s.id === Number(subdependenciaId));
+      return !!sub && this.matcheaSubdependencia(item, this.normalizarNombreOrganizacional(sub.nombre));
+    }
+    if (dependenciaId) {
+      if (dependenciaId === PENDIENTE) {
+        const nombresDependencia = this.dependenciasCatalogo.map((d) => this.normalizarNombreOrganizacional(d.nombre)).filter(Boolean);
+        const nombresSubdependencia = this.subdependenciasCatalogo.map((s) => this.normalizarNombreOrganizacional(s.nombre)).filter(Boolean);
+        return !nombresDependencia.some((n) => this.matcheaDependencia(item, n))
+          && !nombresSubdependencia.some((n) => this.matcheaSubdependencia(item, n));
+      }
+      const dep = this.dependenciasCatalogo.find((d) => d.id === Number(dependenciaId));
+      return !!dep && this.matcheaDependencia(item, this.normalizarNombreOrganizacional(dep.nombre));
+    }
+    if (sedeId) {
+      if (sedeId === PENDIENTE) {
+        const nombresDependencia = this.dependenciasCatalogo.map((d) => this.normalizarNombreOrganizacional(d.nombre)).filter(Boolean);
+        const nombresSubdependencia = this.subdependenciasCatalogo.map((s) => this.normalizarNombreOrganizacional(s.nombre)).filter(Boolean);
+        return !nombresDependencia.some((n) => this.matcheaDependencia(item, n))
+          && !nombresSubdependencia.some((n) => this.matcheaSubdependencia(item, n));
+      }
+      const nombresDeSede = this.dependenciasDeSede(Number(sedeId)).map((d) => this.normalizarNombreOrganizacional(d.nombre)).filter(Boolean);
+      return nombresDeSede.some((n) => this.matcheaDependencia(item, n));
+    }
+    return true;
   }
 
   private matchesEstado(item: UsuarioRedConsultaResultado, estado: EstadoFiltro): boolean {
@@ -536,10 +663,6 @@ export class UsuariosRedConsultasComponent implements OnInit, OnDestroy {
       const valorB = campo === 'oficina' ? (b.office || 'Sin oficina') : (b.displayName || b.usuario || '');
       return valorA.localeCompare(valorB, 'es');
     };
-  }
-
-  private unique(values: string[]): string[] {
-    return [...new Set(values)].sort((a, b) => a.localeCompare(b, 'es'));
   }
 
   buscar(): void {

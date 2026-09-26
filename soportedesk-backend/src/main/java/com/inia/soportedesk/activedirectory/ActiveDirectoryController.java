@@ -50,8 +50,11 @@ public class ActiveDirectoryController {
                                              @RequestParam(required = false) String nombre,
                                              @RequestParam(required = false) String oficina,
                                              @RequestParam(required = false) String ou,
-                                             @RequestParam(required = false) String estado) {
-        return service.buscarUsuarios(q, usuario, nombre, oficina, ou, estado);
+                                             @RequestParam(required = false) String estado,
+                                             @RequestParam(required = false) Long sedeId,
+                                             @RequestParam(required = false) Long dependenciaId,
+                                             @RequestParam(required = false) Long subdependenciaId) {
+        return service.buscarUsuarios(q, usuario, nombre, oficina, ou, estado, sedeId, dependenciaId, subdependenciaId);
     }
 
     @GetMapping("/usuarios/filtros/ous")

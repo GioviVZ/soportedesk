@@ -443,18 +443,18 @@
 
   .admin-primary-actions {
     display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .action-card {
     width: 100%;
     min-width: 0;
     height: auto;
-    aspect-ratio: 1;
-    min-height: 64px;
-    padding: 6px 4px;
+    aspect-ratio: auto;
+    min-height: 84px;
+    padding: 8px 6px;
 
-    strong { font-size: 10px; }
+    strong { font-size: 11px; }
   }
 }
 

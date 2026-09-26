@@ -55,7 +55,7 @@ class ActiveDirectoryContractSearchTest {
                 .thenReturn(Optional.of(usuario));
 
         AdUserSearchResult result = service.buscarUsuarios(
-                "Maria Elena Rojas", null, null, null, null, "all");
+                "Maria Elena Rojas", null, null, null, null, "all", null, null, null);
 
         assertThat(result.items()).singleElement()
                 .extracting(item -> item.samAccountName())
@@ -83,7 +83,7 @@ class ActiveDirectoryContractSearchTest {
                 .thenReturn(Optional.of(usuario));
 
         AdUserSearchResult result = service.buscarUsuarios(
-                "Maria Rojas", null, null, null, null, "all");
+                "Maria Rojas", null, null, null, null, "all", null, null, null);
 
         assertThat(result.items()).extracting(item -> item.samAccountName())
                 .containsExactly("mrojas");

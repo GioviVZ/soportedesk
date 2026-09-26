@@ -147,7 +147,7 @@ type Panel = 'create' | 'password' | 'groups' | 'ou' | 'info' | 'delete' | null;
     
       <div class="admin-workspace">
         <div class="admin-workspace-list">
-          <app-ad-user-search (selected)="selectUser($event)" />
+          <app-ad-user-search [selectedSam]="user?.samAccountName ?? null" (selected)="selectUser($event)" />
         </div>
     
         <div class="admin-workspace-detail">
@@ -342,6 +342,7 @@ export class UsuariosRedAdministracionComponent implements OnInit, OnDestroy {
 
   onPanelSaved(result: AdPanelResult): void {
     this.user = result.user;
+    this.userSearch?.updateResult(this.toSummary(this.user));
     this.loadDashboard();
     this.closePanel();
     this.flash(result.notice.tone, result.notice.text);
@@ -349,6 +350,7 @@ export class UsuariosRedAdministracionComponent implements OnInit, OnDestroy {
 
   onPanelChanged(result: AdPanelResult): void {
     this.user = result.user;
+    this.userSearch?.updateResult(this.toSummary(this.user));
     this.loadDashboard();
     this.flash(result.notice.tone, result.notice.text);
   }
@@ -400,6 +402,7 @@ export class UsuariosRedAdministracionComponent implements OnInit, OnDestroy {
           return;
         }
         this.user = response.data;
+        this.userSearch?.updateResult(this.toSummary(this.user));
         if (openEdit) this.openPanel('info');
         this.flash('success', response.message);
       },
@@ -418,6 +421,7 @@ export class UsuariosRedAdministracionComponent implements OnInit, OnDestroy {
         if (response.success) {
           if (response.data) {
             this.user = response.data;
+            this.userSearch?.updateResult(this.toSummary(this.user));
           } else if (this.user) {
             this.loadUser(this.user.samAccountName);
           }
@@ -436,5 +440,17 @@ export class UsuariosRedAdministracionComponent implements OnInit, OnDestroy {
 
   private flash(tone: 'success' | 'error' | 'info', text: string): void {
     this.notice = { tone, text };
+  }
+
+  private toSummary(user: AdUser): AdUserSummary {
+    return {
+      samAccountName: user.samAccountName,
+      displayName: user.displayName,
+      mail: user.mail,
+      office: user.office,
+      organizationalUnit: user.organizationalUnit,
+      enabled: user.enabled,
+      locked: user.locked,
+    };
   }
 }

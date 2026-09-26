@@ -29,6 +29,8 @@ export interface UsuarioRedConsultaResultado {
   displayName: string | null;
   mail: string | null;
   office: string | null;
+  department: string | null;
+  company: string | null;
   organizationalUnit: string | null;
   enabled: boolean | null;
   locked: boolean | null;

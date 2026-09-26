@@ -29,7 +29,6 @@ import java.util.stream.Collectors;
 public class UsuarioRedContratoService {
 
     private static final int CONSULTA_LIMIT = 1000;
-    private static final int CANDIDATE_LIMIT = 1000;
     private static final Set<String> ACRONYM_STOPWORDS = Set.of("de", "del", "la", "las", "los", "el", "y", "e", "en");
 
     private final UsuarioRedContratoRepository repository;
@@ -58,10 +57,12 @@ public class UsuarioRedContratoService {
             return listarTodos();
         }
 
+        List<UsuarioRedContrato> contratos = repository.findAll();
+        Map<String, UsuarioRedContrato> contratosPorUsuario = latestContratoPorUsuario(contratos);
         Map<String, ScoredConsulta> resultsByUser = new LinkedHashMap<>();
         if (isNamelessQuery(normalizedTerm)) {
             adUsuarioCacheRepository.findNameless(PageRequest.of(0, CONSULTA_LIMIT))
-                    .forEach(user -> mergeUsuario(resultsByUser, user, normalizedTerm));
+                    .forEach(user -> mergeUsuario(resultsByUser, user, normalizedTerm, contratosPorUsuario));
             return enrichHosts(resultsByUser.values().stream()
                     .sorted(Comparator
                             .comparing((ScoredConsulta item) -> blankToLast(item.dto().getUsuario()))
@@ -71,17 +72,49 @@ public class UsuarioRedContratoService {
                     .toList());
         }
 
-        List<String> terms = expandedTerms(normalizedTerm);
-        for (String queryTerm : terms) {
-            String accountTerm = normalizeAccountSearchTerm(queryTerm);
-            adUsuarioCacheRepository.search(queryTerm, accountTerm, null, null, null, null, null, PageRequest.of(0, CANDIDATE_LIMIT))
-                    .forEach(user -> mergeUsuario(resultsByUser, user, normalizedTerm));
-            adUsuarioCacheRepository.consultaSearch(queryTerm, accountTerm, PageRequest.of(0, CANDIDATE_LIMIT))
-                    .forEach(user -> mergeUsuario(resultsByUser, user, normalizedTerm));
-            repository.searchAllFields(queryTerm, PageRequest.of(0, CANDIDATE_LIMIT))
-                    .forEach(contrato -> mergeContrato(resultsByUser, contrato, normalizedTerm));
-        }
-        mergeAcronymMatches(resultsByUser, normalizedTerm);
+        adUsuarioCacheRepository.findAll().forEach(user -> {
+            boolean coincideTodas = coincideTodasLasPalabras(normalizedTerm,
+                    user.getSamAccountName(), user.getUserPrincipalName(),
+                    user.getDisplayName(), user.getGivenName(), user.getSurname(),
+                    user.getMail(), user.getDepartment(), user.getCompany(), user.getTitle(),
+                    user.getTelephoneNumber(), user.getMobile(), user.getOffice(), user.getDescription(),
+                    user.getDistinguishedName(), user.getOrganizationalUnit(), user.getWhenCreated(),
+                    user.getWhenChanged(), user.getPwdLastSet(), user.getLastLogonTimestamp(),
+                    user.getAccountExpires(), user.getBadPwdCount());
+            if (!coincideTodas) {
+                return;
+            }
+            int score = scoreAccount(normalizedTerm, user.getSamAccountName(), user.getUserPrincipalName())
+                    + scoreFields(normalizedTerm, user.getDisplayName(), user.getGivenName(), user.getSurname(),
+                    user.getMail(), user.getDepartment(), user.getCompany(), user.getTitle(),
+                    user.getTelephoneNumber(), user.getMobile(), user.getOffice(), user.getDescription(),
+                    user.getDistinguishedName(), user.getOrganizationalUnit(), user.getWhenCreated(),
+                    user.getWhenChanged(), user.getPwdLastSet(), user.getLastLogonTimestamp(),
+                    user.getAccountExpires(), user.getBadPwdCount());
+            if (score > 0) {
+                mergeUsuario(resultsByUser, user, normalizedTerm, contratosPorUsuario);
+            }
+        });
+
+        contratos.forEach(contrato -> {
+            boolean coincideTodas = coincideTodasLasPalabras(normalizedTerm,
+                    contrato.getUsuario(), contrato.getPersonalNombre(), contrato.getPersonalApellidos(),
+                    joinName(contrato.getPersonalNombre(), contrato.getPersonalApellidos()), contrato.getNumeroContrato(),
+                    contrato.getTipoContrato() == null ? null : contrato.getTipoContrato().getNombre(),
+                    contrato.getRegistradoPor(), contrato.getActualizadoPor());
+            if (!coincideTodas) {
+                return;
+            }
+            int score = scoreAccount(normalizedTerm, contrato.getUsuario())
+                    + scoreFields(normalizedTerm, contrato.getPersonalNombre(), contrato.getPersonalApellidos(),
+                    joinName(contrato.getPersonalNombre(), contrato.getPersonalApellidos()), contrato.getNumeroContrato(),
+                    contrato.getTipoContrato() == null ? null : contrato.getTipoContrato().getNombre(),
+                    contrato.getRegistradoPor(), contrato.getActualizadoPor());
+            if (score > 0) {
+                mergeContrato(resultsByUser, contrato, normalizedTerm, contratosPorUsuario);
+            }
+        });
+        mergeAcronymMatches(resultsByUser, normalizedTerm, contratosPorUsuario);
 
         return enrichHosts(resultsByUser.values().stream()
                 .sorted(Comparator
@@ -95,12 +128,15 @@ public class UsuarioRedContratoService {
     }
 
     private List<UsuarioRedConsultaDto> listarTodos() {
+        List<UsuarioRedContrato> contratos = repository.findAll();
+        Map<String, UsuarioRedContrato> contratosPorUsuario = latestContratoPorUsuario(contratos);
         Map<String, UsuarioRedConsultaDto> resultados = new LinkedHashMap<>();
 
         adUsuarioCacheRepository.findAll().forEach(user ->
-                resultados.putIfAbsent(resultKey(user.getSamAccountName(), "ad-" + user.getSamAccountName()), toConsultaDto(user)));
+                resultados.putIfAbsent(resultKey(user.getSamAccountName(), "ad-" + user.getSamAccountName()),
+                        toConsultaDto(user, contratosPorUsuario)));
 
-        repository.findAll().forEach(contrato -> {
+        contratos.forEach(contrato -> {
             String key = resultKey(contrato.getUsuario(), "contrato-" + contrato.getId());
             resultados.computeIfAbsent(key, k -> toConsultaDto(contrato));
         });
@@ -111,6 +147,22 @@ public class UsuarioRedContratoService {
                         .comparing((UsuarioRedConsultaDto dto) -> blankToLast(dto.getDisplayName()))
                         .thenComparing(dto -> blankToLast(dto.getUsuario())))
                 .toList());
+    }
+
+    private Map<String, UsuarioRedContrato> latestContratoPorUsuario(List<UsuarioRedContrato> contratos) {
+        Map<String, UsuarioRedContrato> result = new LinkedHashMap<>();
+        for (UsuarioRedContrato contrato : contratos) {
+            String key = normalizeAccountSearchTerm(contrato.getUsuario());
+            if (key == null) {
+                continue;
+            }
+            UsuarioRedContrato existing = result.get(key);
+            if (existing == null || (contrato.getFechaInicio() != null
+                    && (existing.getFechaInicio() == null || contrato.getFechaInicio().isAfter(existing.getFechaInicio())))) {
+                result.put(key, contrato);
+            }
+        }
+        return result;
     }
 
     private List<UsuarioRedConsultaDto> enrichHosts(List<UsuarioRedConsultaDto> consultas) {
@@ -192,11 +244,13 @@ public class UsuarioRedContratoService {
         return dto;
     }
 
-    private void mergeUsuario(Map<String, ScoredConsulta> resultsByUser, AdUsuarioCache user, String term) {
-        mergeUsuario(resultsByUser, user, term, 0);
+    private void mergeUsuario(Map<String, ScoredConsulta> resultsByUser, AdUsuarioCache user, String term,
+                              Map<String, UsuarioRedContrato> contratosPorUsuario) {
+        mergeUsuario(resultsByUser, user, term, 0, contratosPorUsuario);
     }
 
-    private void mergeUsuario(Map<String, ScoredConsulta> resultsByUser, AdUsuarioCache user, String term, int bonus) {
+    private void mergeUsuario(Map<String, ScoredConsulta> resultsByUser, AdUsuarioCache user, String term, int bonus,
+                              Map<String, UsuarioRedContrato> contratosPorUsuario) {
         String key = resultKey(user.getSamAccountName(), "ad-" + user.getSamAccountName());
         ScoredConsulta result = resultsByUser.get(key);
         int score = scoreAccount(term, user.getSamAccountName(), user.getUserPrincipalName())
@@ -206,13 +260,14 @@ public class UsuarioRedContratoService {
                 user.getDistinguishedName(), user.getOrganizationalUnit(), user.getWhenCreated(), user.getWhenChanged(),
                 user.getPwdLastSet(), user.getLastLogonTimestamp(), user.getAccountExpires(), user.getBadPwdCount()) + bonus;
         if (result == null) {
-            resultsByUser.put(key, new ScoredConsulta(toConsultaDto(user), score));
+            resultsByUser.put(key, new ScoredConsulta(toConsultaDto(user, contratosPorUsuario), score));
             return;
         }
         result.addScore(score);
     }
 
-    private void mergeContrato(Map<String, ScoredConsulta> resultsByUser, UsuarioRedContrato contrato, String term) {
+    private void mergeContrato(Map<String, ScoredConsulta> resultsByUser, UsuarioRedContrato contrato, String term,
+            Map<String, UsuarioRedContrato> contratosPorUsuario) {
         String key = normalizeAccountSearchTerm(contrato.getUsuario());
         if (key == null) {
             key = "contrato-" + contrato.getId();
@@ -220,7 +275,7 @@ public class UsuarioRedContratoService {
         ScoredConsulta result = resultsByUser.get(key);
         if (result == null) {
             UsuarioRedConsultaDto consulta = activeDirectoryService.buscarUsuarioCacheadoORefrescar(key)
-                    .map(this::toConsultaDto)
+                    .map(adUser -> toConsultaDto(adUser, contratosPorUsuario))
                     .orElseGet(() -> toConsultaDto(contrato));
             result = new ScoredConsulta(consulta, 0);
             resultsByUser.put(key, result);
@@ -236,15 +291,25 @@ public class UsuarioRedContratoService {
                 contrato.getRegistradoPor(), contrato.getActualizadoPor()));
     }
 
-    private UsuarioRedConsultaDto toConsultaDto(AdUsuarioCache user) {
+    private UsuarioRedConsultaDto toConsultaDto(AdUsuarioCache user,
+                                                 Map<String, UsuarioRedContrato> contratosPorUsuario) {
         UsuarioRedConsultaDto dto = new UsuarioRedConsultaDto();
         dto.setUsuario(user.getSamAccountName());
         dto.setDisplayName(user.getDisplayName());
         dto.setMail(user.getMail());
         dto.setOffice(user.getOffice());
         dto.setOrganizationalUnit(user.getOrganizationalUnit());
+        dto.setDepartment(user.getDepartment());
+        dto.setCompany(user.getCompany());
         dto.setEnabled(user.isEnabled());
         dto.setLocked(user.isLocked());
+        UsuarioRedContrato contrato = contratosPorUsuario.get(normalizeAccountSearchTerm(user.getSamAccountName()));
+        if (contrato != null) {
+            String nombreContrato = joinName(contrato.getPersonalNombre(), contrato.getPersonalApellidos());
+            if (nombreContrato != null && !nombreContrato.isBlank()) {
+                dto.setDisplayName(nombreContrato);
+            }
+        }
         return dto;
     }
 
@@ -352,120 +417,8 @@ public class UsuarioRedContratoService {
         return key == null ? fallback.toLowerCase() : key;
     }
 
-    private List<String> expandedTerms(String term) {
-        List<String> terms = new ArrayList<>();
-        terms.add(term);
-        tokenize(term).stream()
-                .filter(token -> token.length() >= 2)
-                .filter(token -> terms.stream().noneMatch(existing -> existing.equalsIgnoreCase(token)))
-                .forEach(terms::add);
-        aliasesFor(term).stream()
-                .filter(alias -> terms.stream().noneMatch(existing -> existing.equalsIgnoreCase(alias)))
-                .forEach(terms::add);
-        String accountTerm = normalizeAccountSearchTerm(term);
-        if (accountTerm != null && accountTerm.length() >= 2 && terms.stream().noneMatch(existing -> existing.equalsIgnoreCase(accountTerm))) {
-            terms.add(accountTerm);
-        }
-        return terms;
-    }
-
-    private List<String> aliasesFor(String term) {
-        String normalized = normalizeForScore(term);
-        return switch (normalized) {
-            case "informatica", "informatico", "uti", "ti" -> List.of(
-                    "unidad de tecnologia de la informacion",
-                    "tecnologia de la informacion",
-                    "unidad de informatica",
-                    "uti"
-            );
-            case "ddta", "didet" -> List.of(
-                    "direccion de desarrollo tecnologico agrario",
-                    "desarrollo tecnologico agrario",
-                    "didet"
-            );
-            case "drgb" -> List.of(
-                    "direccion de recursos geneticos y biotecnologia",
-                    "recursos geneticos y biotecnologia",
-                    "sub direccion de biotecnologia",
-                    "subdireccion de biotecnologia",
-                    "sub direccion de recursos geneticos",
-                    "subdireccion de recursos geneticos",
-                    "drgb"
-            );
-            case "sdrg" -> List.of(
-                    "sub direccion de recursos geneticos",
-                    "subdireccion de recursos geneticos",
-                    "recursos geneticos",
-                    "sdrg"
-            );
-            case "sdb" -> List.of(
-                    "sub direccion de biotecnologia",
-                    "subdireccion de biotecnologia",
-                    "biotecnologia",
-                    "sdb"
-            );
-            case "dgia" -> List.of(
-                    "direccion de gestion de la innovacion agraria",
-                    "gestion de la innovacion agraria",
-                    "subdireccion de normatividad de la innovacion agraria",
-                    "sub direccion de normatividad de la innovacion agraria",
-                    "subdireccion de promocion de la innovacion agraria",
-                    "sub direccion de promocion de la innovacion agraria",
-                    "dgia"
-            );
-            case "oaj" -> List.of(
-                    "oficina de asesoria juridica",
-                    "asesoria juridica",
-                    "oaj"
-            );
-            case "uii" -> List.of(
-                    "unidad de imagen institucional",
-                    "imagen institucional",
-                    "unidad de comunicaciones e imagen institucional",
-                    "comunicaciones e imagen institucional",
-                    "uii",
-                    "ucoim"
-            );
-            case "dsme" -> List.of(
-                    "direccion de supervision y monitoreo en las eea",
-                    "supervision y monitoreo",
-                    "subdireccion de supervision y monitoreo",
-                    "sub direccion de supervision y monitoreo",
-                    "dsme"
-            );
-            case "dsea" -> List.of(
-                    "direccion de servicios estrategicos agrarios",
-                    "servicios estrategicos agrarios",
-                    "direccion de supervision y monitoreo en las eea",
-                    "supervision y monitoreo",
-                    "subdireccion de extension agropecuaria",
-                    "sub direccion de extension agropecuaria",
-                    "dsea"
-            );
-            case "sdpa" -> List.of(
-                    "sub direccion de productos agrarios",
-                    "subdireccion de productos agrarios",
-                    "productos agrarios",
-                    "sdpa"
-            );
-            case "sdiee" -> List.of(
-                    "subdireccion de investigacion y liberacion de tecnologias",
-                    "sub direccion de investigacion y liberacion de tecnologias",
-                    "investigacion y liberacion de tecnologias",
-                    "sdiee"
-            );
-            case "sdpia" -> List.of(
-                    "subdireccion de promocion de la innovacion agraria",
-                    "sub direccion de promocion de la innovacion agraria",
-                    "promocion de la innovacion agraria",
-                    "sdpia"
-            );
-            case "ua" -> List.of("unidad de abastecimiento", "abastecimiento", "ua");
-            default -> List.of();
-        };
-    }
-
-    private void mergeAcronymMatches(Map<String, ScoredConsulta> resultsByUser, String term) {
+    private void mergeAcronymMatches(Map<String, ScoredConsulta> resultsByUser, String term,
+                                     Map<String, UsuarioRedContrato> contratosPorUsuario) {
         String normalized = normalizeForScore(term);
         if (normalized.length() < 2 || normalized.length() > 8 || normalized.contains(" ")) {
             return;
@@ -473,7 +426,7 @@ public class UsuarioRedContratoService {
         adUsuarioCacheRepository.findAll().stream()
                 .filter(user -> acronymMatches(normalized, user.getDepartment(), user.getCompany(), user.getTitle(),
                         user.getOffice(), user.getDescription(), user.getOrganizationalUnit()))
-                .forEach(user -> mergeUsuario(resultsByUser, user, term, 12000));
+                .forEach(user -> mergeUsuario(resultsByUser, user, term, 12000, contratosPorUsuario));
     }
 
     private int scoreFields(String term, String... values) {
@@ -564,6 +517,14 @@ public class UsuarioRedContratoService {
             }
         }
         return false;
+    }
+
+    private boolean coincideTodasLasPalabras(String term, String... values) {
+        List<String> tokens = tokenize(term);
+        if (tokens.isEmpty()) {
+            return true;
+        }
+        return tokens.stream().allMatch(token -> fieldContainsToken(token, values));
     }
 
     private List<String> tokenize(String value) {

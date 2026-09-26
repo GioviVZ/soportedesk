@@ -16,6 +16,8 @@ public class UsuarioRedConsultaDto {
     private String mail;
     private String office;
     private String organizationalUnit;
+    private String department;
+    private String company;
     private Boolean enabled;
     private Boolean locked;
     private LocalDate vencimientoUsuarioRed;

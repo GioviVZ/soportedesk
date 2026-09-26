@@ -7,12 +7,14 @@ export interface Dependencia {
   id: number;
   nombre: string;
   sede: Sede;
+  orgUnitPath: string | null;
 }
 
 export interface Subdependencia {
   id: number;
   nombre: string;
   dependencia: Dependencia;
+  orgUnitPath: string | null;
 }
 
 export interface TipoContrato {

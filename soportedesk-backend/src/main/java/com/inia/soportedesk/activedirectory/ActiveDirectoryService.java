@@ -22,6 +22,10 @@ import com.inia.soportedesk.activedirectory.dto.UpdateUserInfoRequest;
 import com.inia.soportedesk.auditoria.AdAuditoriaRegistro;
 import com.inia.soportedesk.auditoria.AdAuditoriaService;
 import com.inia.soportedesk.auditoria.MovimientoAuditoriaService;
+import com.inia.soportedesk.catalogo.Dependencia;
+import com.inia.soportedesk.catalogo.DependenciaRepository;
+import com.inia.soportedesk.catalogo.Subdependencia;
+import com.inia.soportedesk.catalogo.SubdependenciaRepository;
 import com.inia.soportedesk.usuariosred.contrato.UsuarioRedContrato;
 import com.inia.soportedesk.usuariosred.contrato.UsuarioRedContratoRepository;
 import jakarta.servlet.http.HttpServletRequest;
@@ -73,7 +77,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
-@RequiredArgsConstructor
+@RequiredArgsConstructor(onConstructor_ = @org.springframework.beans.factory.annotation.Autowired)
 public class ActiveDirectoryService {
     private static final Logger log = LoggerFactory.getLogger(ActiveDirectoryService.class);
     private static final int NORMAL_ACCOUNT = 0x0200;
@@ -82,6 +86,7 @@ public class ActiveDirectoryService {
     private static final int INACTIVE_ACCOUNT_DAYS = 60;
     private static final int LDAP_PAGE_SIZE = 1000;
     private static final int LDAP_MAX_PREFIX_DEPTH = 3;
+    private static final long PENDIENTE_SEDE_ID = -1L;
     private static final String LDAP_MATCHING_RULE_BIT_AND = "1.2.840.113556.1.4.803";
     private static final String USER_SYNC_FILTER = "(&(objectCategory=person)(objectClass=user)(sAMAccountName=*))";
     private static final String LDAP_BUCKET_CHARS = "abcdefghijklmnopqrstuvwxyz0123456789._-$";
@@ -100,28 +105,62 @@ public class ActiveDirectoryService {
     private final AdSyncJobStatus jobStatus;
     private final ApplicationEventPublisher eventPublisher;
     private final UsuarioRedContratoRepository contratoRepository;
+    private final DependenciaRepository dependenciaRepository;
+    private final SubdependenciaRepository subdependenciaRepository;
     private final AdAuditoriaService adAuditoriaService;
 
-    public AdUserSearchResult buscarUsuarios(String q, String usuario, String nombre, String oficina, String ou, String estado) {
+    ActiveDirectoryService(LdapContextFactory contextFactory,
+                           MovimientoAuditoriaService auditoriaService,
+                           HttpServletRequest request,
+                           AdUsuarioCacheRepository cacheRepository,
+                           AdCacheMetadataRepository metadataRepository,
+                           AdSyncJobStatus jobStatus,
+                           ApplicationEventPublisher eventPublisher,
+                           UsuarioRedContratoRepository contratoRepository,
+                           AdAuditoriaService adAuditoriaService) {
+        this(contextFactory, auditoriaService, request, cacheRepository, metadataRepository, jobStatus,
+                eventPublisher, contratoRepository, null, null, adAuditoriaService);
+    }
+
+    public AdUserSearchResult buscarUsuarios(String q, String usuario, String nombre, String oficina, String ou, String estado,
+                                             Long sedeId, Long dependenciaId, Long subdependenciaId) {
         SearchStateFilter state = SearchStateFilter.from(estado);
-        if (!hasSearchTerm(q) && !hasSearchTerm(usuario) && !hasSearchTerm(nombre) && !hasSearchTerm(oficina) && !hasSearchTerm(ou) && state.isAll()) {
+        if (!hasSearchTerm(q) && !hasSearchTerm(usuario) && !hasSearchTerm(nombre) && !hasSearchTerm(oficina) && !hasSearchTerm(ou)
+                && state.isAll() && sedeId == null && dependenciaId == null && subdependenciaId == null) {
             return new AdUserSearchResult(List.of(), false);
         }
+
+        boolean filtroOrganizacional = sedeId != null || dependenciaId != null || subdependenciaId != null;
+        FiltroUbicacion filtroUbicacion = filtroOrganizacional
+                ? resolverFiltroUbicacion(sedeId, dependenciaId, subdependenciaId)
+                : null;
+        if (filtroOrganizacional && filtroUbicacion != null
+                && filtroUbicacion.nombresDependencia().isEmpty()
+                && filtroUbicacion.nombresSubdependencia().isEmpty()
+                && !filtroUbicacion.pendientes()) {
+            return new AdUserSearchResult(List.of(), false);
+        }
+
         String normalizedQuery = normalizeSearchTerm(q);
         String normalizedUsuario = normalizeAccountSearchTerm(usuario);
         String normalizedNombre = normalizeSearchTerm(nombre);
         String normalizedOficina = normalizeSearchTerm(oficina);
         String normalizedOu = normalizeSearchTerm(ou);
+        int candidatePageSize = 5000;
+        List<String> palabrasQ = tokenizarBusqueda(q);
+        List<String> palabrasNombre = tokenizarBusqueda(nombre);
         List<AdUserSummary> directUsers = cacheRepository.search(
-                        normalizedQuery,
+                        null,
                         normalizedUsuario,
-                        normalizedNombre,
+                        null,
                         normalizedOficina,
                         normalizedOu,
                         state.enabled(),
                         state.locked(),
-                        PageRequest.of(0, 75)
+                        PageRequest.of(0, candidatePageSize)
                 ).stream()
+                .filter(user -> coincideConTodasLasPalabras(user, palabrasQ))
+                .filter(user -> coincideEnNombre(user, palabrasNombre))
                 .map(this::toUserSummary)
                 .toList();
         Map<String, AdUserSummary> usersBySam = new LinkedHashMap<>();
@@ -131,7 +170,7 @@ public class ActiveDirectoryService {
         if (normalizedQuery != null || normalizedNombre != null) {
             contractUsers = findContractUsers(normalizedQuery, normalizedNombre);
             for (String contractUser : contractUsers) {
-                if (usersBySam.size() >= 75) {
+                if (usersBySam.size() >= candidatePageSize) {
                     break;
                 }
                 cacheRepository.findFirstBySamAccountNameIgnoreCase(contractUser)
@@ -142,14 +181,138 @@ public class ActiveDirectoryService {
             }
         }
         List<AdUserSummary> users = new ArrayList<>(usersBySam.values());
-        String directLookup = directLookupTerm(q, usuario, nombre, oficina, ou, state);
-        if (users.isEmpty() && directLookup != null) {
-            AdUser refreshed = refreshCachedUserFromAd(directLookup);
-            if (refreshed != null) {
-                users = List.of(toUserSummary(refreshed));
+
+        if (filtroOrganizacional) {
+            List<String> nombresDependencia = filtroUbicacion.nombresDependencia();
+            List<String> nombresSubdependencia = filtroUbicacion.nombresSubdependencia();
+            boolean pendientes = filtroUbicacion.pendientes();
+            users = users.stream()
+                    .filter(user -> {
+                        boolean matchesAny = nombresDependencia.stream().anyMatch(n -> usuarioMatcheaDependencia(user, n))
+                                || nombresSubdependencia.stream().anyMatch(n -> usuarioMatcheaSubdependencia(user, n));
+                        return pendientes != matchesAny;
+                    })
+                    .toList();
+        } else {
+            String directLookup = directLookupTerm(q, usuario, nombre, oficina, ou, state);
+            if (users.isEmpty() && directLookup != null) {
+                AdUser refreshed = refreshCachedUserFromAd(directLookup);
+                if (refreshed != null) {
+                    users = List.of(toUserSummary(refreshed));
+                }
             }
         }
-        return new AdUserSearchResult(users, users.size() >= 75 || contractUsers.size() >= 75);
+
+        boolean truncated = users.size() > 75 || contractUsers.size() >= 75;
+        if (users.size() > 75) {
+            users = users.subList(0, 75);
+        }
+        return new AdUserSearchResult(users, truncated);
+    }
+
+    private record FiltroUbicacion(List<String> nombresDependencia, List<String> nombresSubdependencia,
+                                   boolean pendientes) {}
+
+    private FiltroUbicacion resolverFiltroUbicacion(Long sedeId, Long dependenciaId, Long subdependenciaId) {
+        if (subdependenciaId != null) {
+            String nombre = subdependenciaRepository.findById(subdependenciaId)
+                    .map(Subdependencia::getNombre)
+                    .map(ActiveDirectoryService::normalizarNombreOrganizacional)
+                    .filter(n -> !n.isEmpty())
+                    .orElse(null);
+            return new FiltroUbicacion(List.of(), nombre != null ? List.of(nombre) : List.of(), false);
+        }
+        if (dependenciaId != null) {
+            String nombre = dependenciaRepository.findById(dependenciaId)
+                    .map(Dependencia::getNombre)
+                    .map(ActiveDirectoryService::normalizarNombreOrganizacional)
+                    .filter(n -> !n.isEmpty())
+                    .orElse(null);
+            return new FiltroUbicacion(nombre != null ? List.of(nombre) : List.of(), List.of(), false);
+        }
+        if (sedeId != null && sedeId == PENDIENTE_SEDE_ID) {
+            List<String> todasLasDependencias = dependenciaRepository.findAll().stream()
+                    .map(Dependencia::getNombre)
+                    .map(ActiveDirectoryService::normalizarNombreOrganizacional)
+                    .filter(n -> !n.isEmpty())
+                    .toList();
+            List<String> todasLasSubdependencias = subdependenciaRepository.findAll().stream()
+                    .map(Subdependencia::getNombre)
+                    .map(ActiveDirectoryService::normalizarNombreOrganizacional)
+                    .filter(n -> !n.isEmpty())
+                    .toList();
+            return new FiltroUbicacion(todasLasDependencias, todasLasSubdependencias, true);
+        }
+        if (sedeId != null) {
+            List<String> nombres = dependenciaRepository.findBySedeId(sedeId).stream()
+                    .map(Dependencia::getNombre)
+                    .map(ActiveDirectoryService::normalizarNombreOrganizacional)
+                    .filter(n -> !n.isEmpty())
+                    .toList();
+            return new FiltroUbicacion(nombres, List.of(), false);
+        }
+        return null;
+    }
+
+    private static String normalizarNombreOrganizacional(String value) {
+        if (value == null) return "";
+        String sinAcentos = java.text.Normalizer.normalize(value, java.text.Normalizer.Form.NFD)
+                .replaceAll("\\p{M}", "");
+        return sinAcentos.toUpperCase(java.util.Locale.ROOT).replaceAll("[^A-Z0-9]", "");
+    }
+
+    private static String normalizarBusqueda(String value) {
+        if (value == null) return "";
+        String sinAcentos = java.text.Normalizer.normalize(value.trim().toLowerCase(java.util.Locale.ROOT), java.text.Normalizer.Form.NFD)
+                .replaceAll("\\p{M}", "");
+        return sinAcentos.replace('\u00f1', 'n');
+    }
+
+    private static List<String> tokenizarBusqueda(String value) {
+        String normalizado = normalizarBusqueda(value);
+        if (normalizado.isBlank()) return List.of();
+        return java.util.Arrays.stream(normalizado.split("\\s+"))
+                .filter(token -> !token.isBlank())
+                .toList();
+    }
+
+    private static boolean campoContiene(String campo, String terminoNormalizado) {
+        return campo != null && normalizarBusqueda(campo).contains(terminoNormalizado);
+    }
+
+    private static boolean coincideConTodasLasPalabras(AdUsuarioCache user, List<String> palabras) {
+        if (palabras.isEmpty()) return true;
+        return palabras.stream().allMatch(palabra ->
+                campoContiene(user.getSamAccountName(), palabra) ||
+                campoContiene(user.getDisplayName(), palabra) ||
+                campoContiene(user.getGivenName(), palabra) ||
+                campoContiene(user.getSurname(), palabra) ||
+                campoContiene(user.getMail(), palabra) ||
+                campoContiene(user.getUserPrincipalName(), palabra) ||
+                campoContiene(user.getOffice(), palabra) ||
+                campoContiene(user.getDepartment(), palabra) ||
+                campoContiene(user.getTitle(), palabra) ||
+                campoContiene(user.getOrganizationalUnit(), palabra));
+    }
+
+    private static boolean coincideEnNombre(AdUsuarioCache user, List<String> palabras) {
+        if (palabras.isEmpty()) return true;
+        return palabras.stream().allMatch(palabra ->
+                campoContiene(user.getDisplayName(), palabra) ||
+                campoContiene(user.getGivenName(), palabra) ||
+                campoContiene(user.getSurname(), palabra) ||
+                campoContiene(user.getMail(), palabra));
+    }
+
+    private boolean usuarioMatcheaDependencia(AdUserSummary user, String nombreDependenciaNormalizado) {
+        if (nombreDependenciaNormalizado.isEmpty()) return false;
+        return normalizarNombreOrganizacional(user.company()).equals(nombreDependenciaNormalizado)
+                || normalizarNombreOrganizacional(user.department()).equals(nombreDependenciaNormalizado);
+    }
+
+    private boolean usuarioMatcheaSubdependencia(AdUserSummary user, String nombreSubdependenciaNormalizado) {
+        if (nombreSubdependenciaNormalizado.isEmpty()) return false;
+        return normalizarNombreOrganizacional(user.department()).equals(nombreSubdependenciaNormalizado);
     }
 
     private boolean matchesDirectoryFilters(AdUsuarioCache user,
@@ -228,7 +391,7 @@ public class ActiveDirectoryService {
 
     private boolean containsIgnoreCase(String value, String term) {
         return value != null && term != null
-                && value.toLowerCase(java.util.Locale.ROOT).contains(term.toLowerCase(java.util.Locale.ROOT));
+                && normalizarBusqueda(value).contains(normalizarBusqueda(term));
     }
 
     public ActiveDirectoryResponse<AdUser> buscarUsuarioPorSam(String samAccountName) {
@@ -594,7 +757,9 @@ public class ActiveDirectoryService {
                     safeInt(totalInactive),
                     blocked.stream()
                             .limit(10)
-                            .map(row -> new AdUserAlerta(row.getSamAccountName(), row.getDisplayName(), lockoutDetail(row.getLockoutTime())))
+                            .map(row -> new AdUserAlerta(row.getSamAccountName(),
+                                    nombreVisible(row.getSamAccountName(), row.getDisplayName()),
+                                    lockoutDetail(row.getLockoutTime())))
                             .toList(),
                     locked,
                     contratoAlerts(contratosPorVencer, hoy),
@@ -1082,6 +1247,8 @@ public class ActiveDirectoryService {
                 user.getMail(),
                 user.getOffice(),
                 user.getOrganizationalUnit(),
+                user.getDepartment(),
+                user.getCompany(),
                 user.isEnabled(),
                 user.isLocked()
         );
@@ -1162,6 +1329,8 @@ public class ActiveDirectoryService {
                 user.mail(),
                 user.office(),
                 user.organizationalUnit(),
+                user.department(),
+                user.company(),
                 user.enabled(),
                 user.locked()
         );
@@ -1170,8 +1339,23 @@ public class ActiveDirectoryService {
     private List<AdUserAlerta> topAlerts(List<AdUsuarioCache> rows, String suffix, AlertDaysExtractor extractor) {
         return rows.stream()
                 .limit(10)
-                .map(row -> new AdUserAlerta(row.getSamAccountName(), row.getDisplayName(), extractor.days(row) + " " + suffix))
+                .map(row -> new AdUserAlerta(row.getSamAccountName(),
+                        nombreVisible(row.getSamAccountName(), row.getDisplayName()),
+                        extractor.days(row) + " " + suffix))
                 .toList();
+    }
+
+    private String nombreVisible(String samAccountName, String displayNameAd) {
+        if (samAccountName == null || samAccountName.isBlank()) {
+            return displayNameAd;
+        }
+        return contratoRepository.findByUsuarioIgnoreCaseOrderByFechaInicioDesc(samAccountName).stream()
+                .findFirst()
+                .map(contrato -> ((contrato.getPersonalNombre() == null ? "" : contrato.getPersonalNombre().trim())
+                        + " "
+                        + (contrato.getPersonalApellidos() == null ? "" : contrato.getPersonalApellidos().trim())).trim())
+                .filter(nombre -> !nombre.isBlank())
+                .orElse(displayNameAd);
     }
 
     private List<AdUserAlerta> contratoAlerts(List<UsuarioRedContrato> contratos, LocalDate hoy) {
