@@ -230,6 +230,20 @@ class ImpresoraServiceTest {
     }
 
     @Test
+    void create_withoutConnection_forcesIpNull() {
+        when(modeloImpresoraRepository.findById(1L)).thenReturn(Optional.of(modeloImpresora()));
+        ImpresoraRequest request = sampleRequest();
+        request.setTipoConexion("Sin conexión");
+        request.setIp("10.0.0.50");
+        when(repository.save(any(Impresora.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        Impresora result = service.create(request);
+
+        assertThat(result.getTipoConexion()).isEqualTo("Sin conexión");
+        assertThat(result.getIp()).isNull();
+    }
+
+    @Test
     void create_withTipoConexionIp_preservesIp() {
         when(modeloImpresoraRepository.findById(1L)).thenReturn(Optional.of(modeloImpresora()));
         when(repository.save(any(Impresora.class))).thenAnswer(inv -> inv.getArgument(0));
@@ -307,45 +321,51 @@ class ImpresoraServiceTest {
         deBaja.setSede(central);
         deBaja.setEstado("De baja");
 
-        when(repository.findAll()).thenReturn(List.of(activa1, activa2, mantenimiento, deBaja));
+        Impresora inoperativa = sampleImpresora(5L);
+        inoperativa.setModeloImpresora(modeloHp);
+        inoperativa.setSede(central);
+        inoperativa.setEstado("Inoperativo");
+
+        when(repository.findAll()).thenReturn(List.of(activa1, activa2, mantenimiento, deBaja, inoperativa));
 
         ImpresoraDashboardCompleto result = service.getDashboardCompleto();
 
-        assertThat(result.total()).isEqualTo(4);
+        assertThat(result.total()).isEqualTo(5);
         assertThat(result.activas()).isEqualTo(2);
         assertThat(result.enMantenimiento()).isEqualTo(1);
         assertThat(result.deBaja()).isEqualTo(1);
+        assertThat(result.inoperativas()).isEqualTo(1);
 
         assertThat(result.distribucionPorMarca())
                 .extracting(ImpresoraMarcaCount::marca, ImpresoraMarcaCount::total)
                 .containsExactlyInAnyOrder(
-                        org.assertj.core.groups.Tuple.tuple("HP", 3L),
+                        org.assertj.core.groups.Tuple.tuple("HP", 4L),
                         org.assertj.core.groups.Tuple.tuple("Canon", 1L)
                 );
 
         assertThat(result.distribucionPorDependencia())
                 .extracting(ImpresoraDependenciaCount::dependencia, ImpresoraDependenciaCount::total)
                 .containsExactly(
-                        org.assertj.core.groups.Tuple.tuple("OTI", 2L),
-                        org.assertj.core.groups.Tuple.tuple("Sin dependencia", 2L)
+                        org.assertj.core.groups.Tuple.tuple("Sin dependencia", 3L),
+                        org.assertj.core.groups.Tuple.tuple("OTI", 2L)
                 );
         assertThat(result.distribucionPorSubdependencia())
                 .extracting(ImpresoraSubdependenciaCount::subdependencia, ImpresoraSubdependenciaCount::total)
                 .containsExactly(
-                        org.assertj.core.groups.Tuple.tuple("Sin subdependencia", 2L),
+                        org.assertj.core.groups.Tuple.tuple("Sin subdependencia", 3L),
                         org.assertj.core.groups.Tuple.tuple("Soporte", 2L)
                 );
 
         assertThat(result.distribucionPorSede())
                 .extracting(ImpresoraSedeCount::sede, ImpresoraSedeCount::total)
                 .containsExactlyInAnyOrder(
-                        org.assertj.core.groups.Tuple.tuple("Sede Central", 3L),
+                        org.assertj.core.groups.Tuple.tuple("Sede Central", 4L),
                         org.assertj.core.groups.Tuple.tuple("Sin sede", 1L)
                 );
 
         assertThat(result.totalConsumiblesDistintos()).isEqualTo(1);
         assertThat(result.topConsumibles()).hasSize(1);
-        assertThat(result.topConsumibles().get(0).cantidad()).isEqualTo(4);
+        assertThat(result.topConsumibles().get(0).cantidad()).isEqualTo(5);
         assertThat(result.topConsumibles().get(0).codigo()).isEqualTo("TN-2380");
     }
 

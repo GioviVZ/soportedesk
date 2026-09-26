@@ -29,7 +29,7 @@ public class ImpresoraRequest {
     private String referencia;
 
     @NotBlank
-    @Pattern(regexp = "(?i)USB|IP", message = "El tipo de conexion debe ser USB o IP")
+    @Pattern(regexp = "(?i)USB|IP|Sin conexión", message = "El tipo de conexion debe ser USB, IP o Sin conexión")
     private String tipoConexion;
 
     @Size(max = 45)
@@ -40,6 +40,6 @@ public class ImpresoraRequest {
 
     @NotBlank
     @Size(max = 100)
-    @Pattern(regexp = "Activa|En mantenimiento|De baja", message = "El estado de la impresora no es valido")
+    @Pattern(regexp = "Activa|En mantenimiento|De baja|Inoperativo", message = "El estado de la impresora no es valido")
     private String estado;
 }

@@ -84,10 +84,12 @@
 
     <div class="two-col">
       <div class="field">
-        <label>Conexión</label>
-        <select formControlName="tipoConexion">
+        <label for="tipoConexion">Conexión *</label>
+        <select id="tipoConexion" formControlName="tipoConexion" required>
+          <option value="">Seleccione...</option>
           <option value="USB">USB</option>
           <option value="IP">IP</option>
+          <option value="Sin conexión">Sin conexión</option>
         </select>
       </div>
       @if (form.value.tipoConexion === 'IP') {

@@ -97,10 +97,10 @@
       </svg>
       @if (tonersPorColor.length) {
         <div class="consumibles-grid">
-          @for (grupo of tonersPorColor; track grupo) {
+          @for (grupo of tonersPorColor; track grupo.color) {
             <div class="consumible-card">
               <span>{{ grupo.color }}</span>
-              @for (variante of grupo.variantes; track variante) {
+              @for (variante of grupo.variantes; track variante.codigo) {
                 <div class="toner-variante">
                   <strong>{{ variante.variante }}</strong> — {{ variante.codigo }}
                 </div>

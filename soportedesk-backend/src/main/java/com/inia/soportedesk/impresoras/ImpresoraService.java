@@ -55,6 +55,7 @@ public class ImpresoraService {
             long activas = all.stream().filter(i -> "Activa".equals(i.getEstado())).count();
             long enMantenimiento = all.stream().filter(i -> "En mantenimiento".equals(i.getEstado())).count();
             long deBaja = all.stream().filter(i -> "De baja".equals(i.getEstado())).count();
+            long inoperativas = all.stream().filter(i -> "Inoperativo".equals(i.getEstado())).count();
 
             List<ImpresoraMarcaCount> distribucionPorMarca = all.stream()
                     .collect(java.util.stream.Collectors.groupingBy(
@@ -117,14 +118,14 @@ public class ImpresoraService {
                     .toList();
 
             return new ImpresoraDashboardCompleto(
-                    all.size(), activas, enMantenimiento, deBaja,
+                    all.size(), activas, enMantenimiento, deBaja, inoperativas,
                     distribucionPorMarca, distribucionPorSede,
                     distribucionPorDependencia, distribucionPorSubdependencia,
                     topConsumibles, consumibleCounts.size()
             );
         } catch (Exception e) {
             log.error("No se pudo construir el dashboard de impresoras", e);
-            return new ImpresoraDashboardCompleto(0, 0, 0, 0, List.of(), List.of(), List.of(), List.of(), List.of(), 0);
+            return new ImpresoraDashboardCompleto(0, 0, 0, 0, 0, List.of(), List.of(), List.of(), List.of(), List.of(), 0);
         }
     }
 
@@ -189,7 +190,9 @@ public class ImpresoraService {
         impresora.setCodigoInventario(emptyToNull(request.getCodigoInventario()));
         impresora.setCodigoPatrimonial(emptyToNull(request.getCodigoPatrimonial()));
         impresora.setReferencia(emptyToNull(request.getReferencia()));
-        impresora.setTipoConexion(request.getTipoConexion().trim().toUpperCase());
+        String tipoConexion = request.getTipoConexion().trim();
+        impresora.setTipoConexion("Sin conexión".equalsIgnoreCase(tipoConexion)
+                ? "Sin conexión" : tipoConexion.toUpperCase(java.util.Locale.ROOT));
         impresora.setIp("IP".equalsIgnoreCase(request.getTipoConexion()) ? emptyToNull(request.getIp()) : null);
     }
 

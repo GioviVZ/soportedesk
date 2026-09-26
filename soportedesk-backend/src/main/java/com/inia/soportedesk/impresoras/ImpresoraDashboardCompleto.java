@@ -7,6 +7,7 @@ public record ImpresoraDashboardCompleto(
         long activas,
         long enMantenimiento,
         long deBaja,
+        long inoperativas,
         List<ImpresoraMarcaCount> distribucionPorMarca,
         List<ImpresoraSedeCount> distribucionPorSede,
         List<ImpresoraDependenciaCount> distribucionPorDependencia,

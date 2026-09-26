@@ -29,6 +29,35 @@ describe('ImpresoraFormComponent', () => {
     httpMock.verify();
   });
 
+  it('requires an explicit connection selection', () => {
+    component.form.patchValue({ modeloImpresoraId: 1 });
+    fixture.detectChanges();
+
+    const select: HTMLSelectElement = fixture.nativeElement.querySelector('select[formControlName="tipoConexion"]');
+    const saveButton: HTMLButtonElement = fixture.nativeElement.querySelector('button[type="submit"]');
+    expect(select.value).toBe('');
+    expect(select.required).toBeTrue();
+    expect(saveButton.disabled).toBeTrue();
+
+    component.form.patchValue({ tipoConexion: 'Sin conexión' });
+    fixture.detectChanges();
+
+    expect(component.form.valid).toBeTrue();
+    expect(saveButton.disabled).toBeFalse();
+    expect(Array.from(select.options).map((option) => option.text)).toContain('Sin conexión');
+  });
+
+  it('allows selecting Inoperativo as the printer state', () => {
+    const badge = Array.from(fixture.nativeElement.querySelectorAll('app-status-badge'))
+      .find((element) => (element as HTMLElement).textContent?.trim() === 'Inoperativo') as HTMLElement | undefined;
+
+    expect(badge).toBeDefined();
+    badge!.querySelector('.status-badge')!.dispatchEvent(new Event('click'));
+    fixture.detectChanges();
+
+    expect(component.form.value.estado).toBe('Inoperativo');
+  });
+
   it('hides the ip field when tipoConexion is USB', () => {
     component.form.patchValue({ tipoConexion: 'USB' });
     fixture.detectChanges();
@@ -58,5 +87,15 @@ describe('ImpresoraFormComponent', () => {
     component.form.patchValue({ tipoConexion: 'USB' });
 
     expect(component.form.getRawValue().ip).toBe('');
+  });
+
+  it('clears ip when switching tipoConexion to Sin conexión', () => {
+    component.form.patchValue({ tipoConexion: 'IP', ip: '10.0.0.5' });
+
+    component.form.patchValue({ tipoConexion: 'Sin conexión' });
+
+    expect(component.form.getRawValue().ip).toBe('');
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('input[formControlName="ip"]')).toBeNull();
   });
 });

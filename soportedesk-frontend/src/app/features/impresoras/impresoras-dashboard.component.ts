@@ -23,6 +23,7 @@ import { ImpresoraService } from './impresora.service';
           <div class="module-dash-stat"><span>Total</span><strong>{{ d.total }}</strong><small>Flota registrada</small></div>
           <div class="module-dash-stat tone-success"><span>Activas</span><strong>{{ d.activas }}</strong><small>En operación</small></div>
           <div class="module-dash-stat tone-warning"><span>Mantenimiento</span><strong>{{ d.enMantenimiento }}</strong><small>Requieren atención</small></div>
+          <div class="module-dash-stat tone-info"><span>Inoperativas</span><strong>{{ d.inoperativas }}</strong><small>No funcionan</small></div>
           <div class="module-dash-stat tone-danger"><span>De baja</span><strong>{{ d.deBaja }}</strong><small>Fuera de servicio</small></div>
         </section>
 
@@ -31,7 +32,7 @@ import { ImpresoraService } from './impresora.service';
           <app-dashboard-breakdown title="Impresoras por subdependencia" subtitle="Detalle por oficina o unidad" unit="impresoras" [items]="subdependencias(d)" [colors]="suborganizationColors" />
           <app-dashboard-breakdown title="Distribución por sede" subtitle="Presencia territorial de la flota" unit="impresoras" [items]="sedes(d)" [colors]="siteColors" />
           <app-dashboard-breakdown title="Distribución por marca" subtitle="Fabricantes presentes en la flota" unit="impresoras" [items]="marcas(d)" [colors]="brandColors" />
-          <app-dashboard-breakdown title="Estado de la flota" subtitle="Operativas, mantenimiento y baja" unit="impresoras" [items]="estados(d)" [colors]="statusColors" />
+          <app-dashboard-breakdown title="Estado de la flota" subtitle="Operativas, mantenimiento, inoperativas y baja" unit="impresoras" [items]="estados(d)" [colors]="statusColors" />
         </section>
 
         <section class="module-dash-operations">
@@ -41,6 +42,7 @@ import { ImpresoraService } from './impresora.service';
             <div class="module-dash-progress">
               <div class="module-dash-progress-row"><span>Activas</span><strong>{{ percent(d.activas, d.total) }}%</strong><div class="module-dash-track"><i [style.width.%]="percent(d.activas, d.total)"></i></div></div>
               <div class="module-dash-progress-row"><span>Mantenimiento</span><strong>{{ percent(d.enMantenimiento, d.total) }}%</strong><div class="module-dash-track"><i [style.width.%]="percent(d.enMantenimiento, d.total)"></i></div></div>
+              <div class="module-dash-progress-row"><span>Inoperativas</span><strong>{{ percent(d.inoperativas, d.total) }}%</strong><div class="module-dash-track"><i [style.width.%]="percent(d.inoperativas, d.total)"></i></div></div>
               <div class="module-dash-progress-row"><span>De baja</span><strong>{{ percent(d.deBaja, d.total) }}%</strong><div class="module-dash-track"><i [style.width.%]="percent(d.deBaja, d.total)"></i></div></div>
             </div>
           </article>
@@ -70,7 +72,7 @@ export class ImpresorasDashboardComponent implements OnInit {
   readonly suborganizationColors = ['#315d8a', '#5a8fb8', '#77afc7', '#2f766d', '#6b9b71', '#90b681', '#c3a44f'];
   readonly siteColors = ['#3f6a87', '#6791a9', '#8db3c2', '#3d786f', '#72a196'];
   readonly brandColors = ['#495b51', '#6e7f74', '#95a298', '#435f78', '#6d8da6', '#a18a56'];
-  readonly statusColors = ['#4e8b55', '#c2a049', '#bd665b'];
+  readonly statusColors = ['#4e8b55', '#c2a049', '#5a7fa6', '#bd665b'];
 
   ngOnInit(): void { this.load(); }
   load(): void {
@@ -86,6 +88,6 @@ export class ImpresorasDashboardComponent implements OnInit {
   subdependencias(d: ImpresoraDashboardCompleto): DashboardBreakdownItem[] { return d.distribucionPorSubdependencia.map((row) => ({ label: row.subdependencia, total: row.total })); }
   sedes(d: ImpresoraDashboardCompleto): DashboardBreakdownItem[] { return d.distribucionPorSede.map((row) => ({ label: row.sede, total: row.total })); }
   marcas(d: ImpresoraDashboardCompleto): DashboardBreakdownItem[] { return d.distribucionPorMarca.map((row) => ({ label: row.marca, total: row.total })); }
-  estados(d: ImpresoraDashboardCompleto): DashboardBreakdownItem[] { return [{ label: 'Activas', total: d.activas }, { label: 'Mantenimiento', total: d.enMantenimiento }, { label: 'De baja', total: d.deBaja }]; }
+  estados(d: ImpresoraDashboardCompleto): DashboardBreakdownItem[] { return [{ label: 'Activas', total: d.activas }, { label: 'Mantenimiento', total: d.enMantenimiento }, { label: 'Inoperativas', total: d.inoperativas }, { label: 'De baja', total: d.deBaja }]; }
   percent(value: number, total: number): number { return total > 0 ? Math.round((value / total) * 100) : 0; }
 }

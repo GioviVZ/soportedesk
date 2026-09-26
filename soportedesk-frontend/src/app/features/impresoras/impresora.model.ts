@@ -35,6 +35,7 @@ export interface ImpresoraRequest {
 export const IMPRESORA_ESTADOS: { value: string; tone: BadgeTone }[] = [
   { value: 'Activa', tone: 'success' },
   { value: 'En mantenimiento', tone: 'warning' },
+  { value: 'Inoperativo', tone: 'neutral' },
   { value: 'De baja', tone: 'danger' },
 ];
 
@@ -74,6 +75,7 @@ export interface ImpresoraDashboardCompleto {
   activas: number;
   enMantenimiento: number;
   deBaja: number;
+  inoperativas: number;
   distribucionPorMarca: ImpresoraMarcaCount[];
   distribucionPorSede: ImpresoraSedeCount[];
   distribucionPorDependencia: ImpresoraDependenciaCount[];

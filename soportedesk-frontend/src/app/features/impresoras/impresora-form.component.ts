@@ -48,7 +48,7 @@ export class ImpresoraFormComponent implements OnInit, OnChanges {
     codigoInventario:   [''],
     codigoPatrimonial:  [''],
     referencia:         [''],
-    tipoConexion:       ['USB', Validators.required],
+    tipoConexion:       ['', Validators.required],
     ip:                 [''],
     estado:             ['Activa', Validators.required],
   });
@@ -60,7 +60,7 @@ export class ImpresoraFormComponent implements OnInit, OnChanges {
 
   constructor() {
     this.form.get('tipoConexion')!.valueChanges.subscribe((value) => {
-      if (value === 'USB') {
+      if (value !== 'IP') {
         this.form.patchValue({ ip: '' });
       }
     });
@@ -104,7 +104,7 @@ export class ImpresoraFormComponent implements OnInit, OnChanges {
         modeloImpresoraId: null,
         tipoImpresoraId: null, serie: '', codigoInventario: '', codigoPatrimonial: '',
         referencia: '',
-        tipoConexion: 'USB', ip: '',
+        tipoConexion: '', ip: '',
         estado: 'Activa',
       });
     }

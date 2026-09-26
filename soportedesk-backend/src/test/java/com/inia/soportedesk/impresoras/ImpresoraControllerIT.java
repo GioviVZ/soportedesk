@@ -118,6 +118,44 @@ class ImpresoraControllerIT {
     }
 
     @Test
+    @WithMockUser(roles = "ADMIN")
+    void create_withoutConnectionSelection_returnsBadRequest() throws Exception {
+        ImpresoraRequest request = sampleRequest();
+        request.setTipoConexion("");
+
+        mockMvc.perform(post("/api/impresoras")
+                        .contentType("application/json")
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    void create_withSinConexion_returnsCreated() throws Exception {
+        ImpresoraRequest request = sampleRequest();
+        request.setTipoConexion("Sin conexión");
+        when(service.create(any())).thenReturn(sampleImpresora());
+
+        mockMvc.perform(post("/api/impresoras")
+                        .contentType("application/json")
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isCreated());
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    void create_withInoperativo_returnsCreated() throws Exception {
+        ImpresoraRequest request = sampleRequest();
+        request.setEstado("Inoperativo");
+        when(service.create(any())).thenReturn(sampleImpresora());
+
+        mockMvc.perform(post("/api/impresoras")
+                        .contentType("application/json")
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isCreated());
+    }
+
+    @Test
     @WithMockUser(roles = "SOPORTE")
     void create_withSoporteRole_returnsForbidden() throws Exception {
         mockMvc.perform(post("/api/impresoras")
@@ -130,7 +168,7 @@ class ImpresoraControllerIT {
     @WithMockUser(authorities = {"ROLE_SOPORTE", "WRITE_impresoras"})
     void dashboardCompleto_withWriteAuthority_returnsOk() throws Exception {
         when(service.getDashboardCompleto()).thenReturn(new ImpresoraDashboardCompleto(
-                10, 8, 1, 1, List.of(), List.of(), List.of(), List.of(), List.of(), 0));
+                10, 8, 1, 1, 0, List.of(), List.of(), List.of(), List.of(), List.of(), 0));
 
         mockMvc.perform(get("/api/impresoras/dashboard/completo"))
                 .andExpect(status().isOk())
