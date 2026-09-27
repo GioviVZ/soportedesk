@@ -37,6 +37,8 @@
     <module>soportedesk-impresoras</module>
     <module>soportedesk-licencias</module>
     <module>soportedesk-correos</module>
+    <module>soportedesk-red-directorio</module>
+    <module>soportedesk-herramientas</module>
     <module>soportedesk-app</module>
   </modules>
 
