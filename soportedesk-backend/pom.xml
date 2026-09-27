@@ -27,8 +27,11 @@
 
   <modules>
     <module>soportedesk-common</module>
+    <module>soportedesk-catalogo</module>
     <module>soportedesk-gestiontiinia</module>
     <module>soportedesk-realtime</module>
+    <module>soportedesk-auditoria</module>
+    <module>soportedesk-wifi</module>
     <module>soportedesk-app</module>
   </modules>
 

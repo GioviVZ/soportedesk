@@ -26,12 +26,27 @@
     </dependency>
     <dependency>
       <groupId>com.inia</groupId>
+      <artifactId>soportedesk-catalogo</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.inia</groupId>
       <artifactId>soportedesk-gestiontiinia</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
       <groupId>com.inia</groupId>
       <artifactId>soportedesk-realtime</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.inia</groupId>
+      <artifactId>soportedesk-auditoria</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.inia</groupId>
+      <artifactId>soportedesk-wifi</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
