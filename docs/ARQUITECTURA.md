@@ -74,34 +74,30 @@ SistemadeSoporteTecnicoINIA/
 ├── deploy/
 │   └── nginx.conf                          # reverse proxy + TLS usado en el despliegue actual
 │
-├── soportedesk-backend/                    # API REST Spring Boot
-│   └── src/main/java/com/inia/soportedesk/
-│       ├── activedirectory/  # integración LDAPS en vivo con el AD (config/, dto/)
-│       ├── auditoria/        # bitácora de movimientos + auditoría detallada de cambios en AD
-│       ├── auth/             # login, JWT, /auth/me, cambio de password, usuarios del sistema
-│       ├── catalogo/         # Sedes, Dependencias, Subdependencias, TipoContrato, TipoLicencia, TipoBien, TipoImpresora
-│       ├── common/           # FileStorageService y utilidades compartidas
-│       ├── config/           # PrimaryDataSourceConfig (datasource SQL Server explícito como @Primary)
-│       ├── correos/          # Cuentas de correo institucional (reporting, solo lectura — ver §6)
-│       ├── dashboard/        # Agregaciones para KPIs y gráficos de todos los módulos
-│       ├── equipos/          # Computadoras y equipos de cómputo (+ enrichment/, evidencia/, glpicache/ = cache local del inventario GLPI)
-│       ├── exception/        # GlobalExceptionHandler
-│       ├── gestiontiinia/    # vista de solo lectura sobre GestionTI_INIA (Google Workspace)
-│       ├── glpi/             # datasource secundario MySQL, entidades @Immutable de inventario GLPI
-│       ├── herramientas/     # Ping, inventario de red local (+ ordenes/ de servicio a proveedores)
-│       ├── impresoras/       # Impresoras (driver, consumibles) (+ intervencion/ = bitácora de reparaciones)
-│       ├── licencias/        # Licencias de software + activaciones múltiples + cifrado
-│       ├── realtime/         # hub SSE para push de cambios en vivo al frontend
-│       ├── security/         # JwtService, JwtAuthFilter, SecurityConfig
-│       ├── usuariosred/      # Usuarios de red / caché de Active Directory (+ contrato/ = historial de contratos)
-│       ├── vpn/              # Credenciales VPN, antivirus, workflow de solicitud/aprobación
-│       └── wifi/             # Redes WiFi
-│   └── src/main/resources/
-│       ├── schema.sql                # esquema base v1.0 (idempotente) — YA NO es la única fuente de verdad, ver §5
-│       ├── migration_*.sql           # 26 scripts sueltos del "Plan de Normalización" en curso, no fusionados en schema.sql
-│       ├── data.sql                  # usuarios admin/soporte por defecto
-│       ├── data_catalogos.sql        # catálogos iniciales (sedes, dependencias, etc.)
-│       └── application.yml           # configuración (perfil `dev`; todas las credenciales vía variables de entorno)
+├── soportedesk-backend/                    # reactor Maven multi-módulo (desde 2026-09-27, ver §3.1)
+│   ├── pom.xml                              # POM padre (packaging=pom), NO produce jar
+│   ├── soportedesk-common/          # kernel: common/ (FileStorageService) + exception/ (GlobalExceptionHandler)
+│   ├── soportedesk-catalogo/        # Sedes, Dependencias, Subdependencias, TipoContrato, TipoLicencia, TipoBien, TipoImpresora
+│   ├── soportedesk-gestiontiinia/   # vista de solo lectura sobre GestionTI_INIA (Google Workspace)
+│   ├── soportedesk-realtime/        # hub SSE para push de cambios en vivo al frontend
+│   ├── soportedesk-auditoria/       # bitácora de movimientos + auditoría detallada de cambios en AD
+│   ├── soportedesk-wifi/            # Redes WiFi
+│   ├── soportedesk-identity/        # auth/ (login, JWT, /auth/me, usuarios del sistema) + security/ (JwtService, JwtAuthFilter, SecurityConfig) — fusionados, ver §3.1
+│   ├── soportedesk-equipos/         # equipos/ (+ enrichment/, evidencia/, glpicache/) + glpi/ (datasource secundario MySQL) — fusionados, ver §3.1; expone equipos/api/ (EquipoConsultaApi) como unico punto de acceso externo a datos GLPI
+│   ├── soportedesk-impresoras/      # Impresoras (driver, consumibles) (+ intervencion/ = bitácora de reparaciones)
+│   ├── soportedesk-licencias/       # Licencias de software + activaciones múltiples + cifrado
+│   ├── soportedesk-correos/         # Cuentas de correo institucional (reporting, solo lectura — ver §6)
+│   ├── soportedesk-red-directorio/  # activedirectory/ (LDAPS en vivo) + usuariosred/ (+ contrato/) — fusionados, ver §3.1
+│   ├── soportedesk-herramientas/    # Ping, inventario de red local (+ ordenes/ de servicio, monitoreo/ de ping)
+│   ├── soportedesk-vpn/             # Credenciales VPN, antivirus, workflow de solicitud/aprobación
+│   ├── soportedesk-dashboard/       # Agregaciones para KPIs y gráficos de todos los módulos (depende de casi todos, nadie depende de él)
+│   └── soportedesk-app/             # ÚNICO módulo que produce jar ejecutable: SoportedeskApplication, config/PrimaryDataSourceConfig, application.yml
+│       └── src/main/resources/
+│           ├── schema.sql                # esquema base v1.0 (idempotente) — YA NO es la única fuente de verdad, ver §5
+│           ├── migration_*.sql           # 26 scripts sueltos del "Plan de Normalización" en curso, no fusionados en schema.sql
+│           ├── data.sql                  # usuarios admin/soporte por defecto
+│           ├── data_catalogos.sql        # catálogos iniciales (sedes, dependencias, etc.)
+│           └── application.yml           # configuración (perfil `dev`; todas las credenciales vía variables de entorno)
 │
 └── soportedesk-frontend/                   # SPA Angular 17
     └── src/app/
@@ -110,6 +106,39 @@ SistemadeSoporteTecnicoINIA/
         ├── layout/         # shell, header, sidebar
         └── shared/         # GenericTable, UbicacionSelect, SectionCard, StatusBadge, VencimientoBadge, ModuleViewSwitcher, etc.
 ```
+
+### 3.1 Modularización física del backend (ISO/IEC 25010 — Modularidad)
+
+Hasta el 2026-09-26 el backend era un único módulo Maven (`packaging=jar`) organizado por paquete pero sin ningún límite físico entre dominios: cualquier clase podía importar directo el interior de cualquier otro paquete. Se hizo una auditoría completa de imports entre los 20 paquetes de dominio y se migró a un reactor Maven multi-módulo (16 módulos + el POM padre) para satisfacer la característica de calidad **Modularidad** de ISO/IEC 25010 (bajo acoplamiento, alta cohesión, interfaces bien definidas, impacto mínimo de un cambio en un módulo sobre los demás).
+
+**Los 3 ciclos de dependencia bidireccionales encontrados y resueltos** (un ciclo entre módulos Maven es un error de build; dentro de un mismo módulo no afecta la métrica de modularidad porque ISO 25010 mide a nivel de componente):
+
+| Ciclo original | Resolución |
+|---|---|
+| `auth` ↔ `security` (`AuthController` usaba `JwtService`; `CustomUserDetailsService` usaba `Usuario`/`Permiso`/repositorios) | Fusionados en `soportedesk-identity` |
+| `equipos` ↔ `glpi` (`equipos` leía repositorios GLPI; `GlpiComputerService`/`GlpiTecladoService` disparaban el resync de `EquipoGlpiCacheSyncService`) | Fusionados en `soportedesk-equipos` |
+| `activedirectory` ↔ `usuariosred` (`ActiveDirectoryService` usaba `UsuarioRedContrato(Repository)`; `UsuarioRedContratoService` usaba `AdUsuarioCache(Repository)`/`ActiveDirectoryService`) | Fusionados en `soportedesk-red-directorio` |
+
+Además se corrigió un acoplamiento oculto: `herramientas`, `usuariosred` y `vpn` leían directo `glpi.VwInvComputerFullRepository` (entidad/repositorio interno de `soportedesk-equipos`), saltándose el dominio dueño de esos datos. Se expuso `com.inia.soportedesk.equipos.api` (`EquipoConsultaDto` + `EquipoConsultaApi`) como único punto de acceso permitido; los 3 consumidores se migraron a esa API.
+
+**Árbol de dependencias resultante** (generado con `mvn dependency:tree`, sin ciclos — Maven no compila un reactor con dependencias circulares):
+
+```
+Tier 0 (sin dependencias internas): common (kernel), gestiontiinia, realtime
+Tier 1: catalogo → common          auditoria → realtime          wifi → common
+Tier 2: identity → common+auditoria          equipos → common+catalogo
+        impresoras → common+catalogo          licencias → common+catalogo
+        correos → gestiontiinia
+Tier 3: red-directorio → common+catalogo+gestiontiinia+auditoria+equipos
+        herramientas → common+equipos
+Tier 4: vpn → common+catalogo+identity+red-directorio+equipos
+Tier 5: dashboard → red-directorio+equipos+gestiontiinia+herramientas+impresoras+licencias+vpn+wifi (agregador puro, nadie depende de él)
+Tier 6: soportedesk-app → depende de los 15 módulos anteriores (único que arranca Spring Boot y produce el jar ejecutable)
+```
+
+`soportedesk-app` quedó reducido a la raíz de composición: `SoportedeskApplication.java` (clase `@SpringBootApplication`, sigue con component-scan sobre `com.inia.soportedesk` — los nombres de paquete Java no cambiaron en toda la migración, solo el jar donde vive cada uno) y `config/PrimaryDataSourceConfig.java` (datasource SQL Server primario). `glpi/GlpiDataSourceConfig.java` (datasource MySQL secundario, autocontenido) vive dentro de `soportedesk-equipos`.
+
+Verificación de la migración completa (los 315 tests y el arranque real con ambos datasources se confirmaron de forma independiente en cada uno de los 7 pasos): historial completo en `docs/superpowers/historial/plans/2026-09-25-modularizacion-fisica-backend.md`; árbol de dependencias "antes" en `docs/superpowers/historial/plans/2026-09-25-dependency-tree-antes.txt`.
 
 ---
 
@@ -445,10 +474,12 @@ la configuración versionada en `deploy/nginx.conf`:
 
 ### 9.2 Backend (JAR ejecutable)
 
+Desde la migración a reactor Maven multi-módulo (2026-09-27, ver §3.1), el comando se sigue lanzando desde la raíz del reactor, pero el jar ejecutable ahora lo produce el módulo `soportedesk-app` (el único con `spring-boot-maven-plugin`):
+
 ```bash
 cd soportedesk-backend
 mvn clean package -DskipTests
-# genera target/soportedesk-backend-0.1.0.jar
+# construye los 16 modulos y genera soportedesk-app/target/soportedesk-app-0.1.0.jar
 ```
 
 Todas las credenciales y endpoints sensibles se leen exclusivamente de
@@ -468,8 +499,9 @@ Otras claves de `application.yml` sin variable de entorno (no son secretos):
 
 Ejecutar como servicio:
 - **Windows:** registrar con NSSM o una tarea programada que lance
-  `java -jar soportedesk-backend-0.1.0.jar --spring.profiles.active=dev` (o el
-  perfil que corresponda) y se reinicie ante fallos.
+  `java -jar soportedesk-app-0.1.0.jar --spring.profiles.active=dev` (o el
+  perfil que corresponda) desde `soportedesk-backend/` (para que `uploads/`
+  siga resolviendo en la raíz del reactor) y se reinicie ante fallos.
 - **Linux:** unit de `systemd` apuntando al mismo comando.
 
 ### 9.3 Frontend (build estático)
@@ -487,8 +519,8 @@ Servida por nginx (`deploy/nginx.conf`, ver arriba). En desarrollo,
 ### 9.4 Desarrollo local (resumen)
 
 ```bash
-# Backend
-cd soportedesk-backend && mvn spring-boot:run        # http://localhost:8080
+# Backend (reactor multi-modulo desde 2026-09-27: hay que indicar el modulo con el plugin)
+cd soportedesk-backend && mvn -pl soportedesk-app -am spring-boot:run   # http://localhost:8080
 
 # Frontend
 cd soportedesk-frontend && npm install && ng serve   # http://localhost:4200, proxy a /api ya configurado
