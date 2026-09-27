@@ -32,6 +32,11 @@
     <module>soportedesk-realtime</module>
     <module>soportedesk-auditoria</module>
     <module>soportedesk-wifi</module>
+    <module>soportedesk-identity</module>
+    <module>soportedesk-equipos</module>
+    <module>soportedesk-impresoras</module>
+    <module>soportedesk-licencias</module>
+    <module>soportedesk-correos</module>
     <module>soportedesk-app</module>
   </modules>
 
