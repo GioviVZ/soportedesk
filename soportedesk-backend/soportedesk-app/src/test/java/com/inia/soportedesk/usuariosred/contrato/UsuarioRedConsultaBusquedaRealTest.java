@@ -4,7 +4,7 @@ import com.inia.soportedesk.activedirectory.ActiveDirectoryService;
 import com.inia.soportedesk.activedirectory.AdUsuarioCache;
 import com.inia.soportedesk.activedirectory.AdUsuarioCacheRepository;
 import com.inia.soportedesk.catalogo.TipoContratoRepository;
-import com.inia.soportedesk.glpi.VwInvComputerFullRepository;
+import com.inia.soportedesk.equipos.api.EquipoConsultaApi;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
@@ -35,7 +35,7 @@ class UsuarioRedConsultaBusquedaRealTest {
     private UsuarioRedContratoService service() {
         return new UsuarioRedContratoService(
                 repository, tipoContratoRepository, adUsuarioCacheRepository,
-                mock(ActiveDirectoryService.class), mock(VwInvComputerFullRepository.class));
+                mock(ActiveDirectoryService.class), mock(EquipoConsultaApi.class));
     }
 
     private void seedUsuario(String sam, String displayName, String givenName, String surname) {

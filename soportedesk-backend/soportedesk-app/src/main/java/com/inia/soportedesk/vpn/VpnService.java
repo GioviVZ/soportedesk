@@ -11,9 +11,9 @@ import com.inia.soportedesk.catalogo.Sede;
 import com.inia.soportedesk.catalogo.SedeRepository;
 import com.inia.soportedesk.catalogo.Subdependencia;
 import com.inia.soportedesk.catalogo.SubdependenciaRepository;
+import com.inia.soportedesk.equipos.api.EquipoConsultaApi;
+import com.inia.soportedesk.equipos.api.EquipoConsultaDto;
 import com.inia.soportedesk.exception.ResourceNotFoundException;
-import com.inia.soportedesk.glpi.VwInvComputerFull;
-import com.inia.soportedesk.glpi.VwInvComputerFullRepository;
 import com.inia.soportedesk.usuariosred.contrato.UsuarioRedContratoRepository;
 import com.inia.soportedesk.usuariosred.contrato.UsuarioRedContrato;
 import lombok.RequiredArgsConstructor;
@@ -44,7 +44,7 @@ public class VpnService {
     private final AdUsuarioCacheRepository adUsuarioCacheRepository;
     private final ActiveDirectoryService activeDirectoryService;
     private final UsuarioRedContratoRepository contratoRepository;
-    private final VwInvComputerFullRepository glpiRepository;
+    private final EquipoConsultaApi equipoConsultaApi;
     private final UsuarioRepository usuarioRepository;
     private final VpnConfigInstitucionalService configInstitucionalService;
 
@@ -371,11 +371,11 @@ public class VpnService {
         }
 
         if (request.getGlpiComputerId() != null) {
-            VwInvComputerFull equipo = glpiRepository.findById(request.getGlpiComputerId())
+            EquipoConsultaDto equipo = equipoConsultaApi.buscarPorId(request.getGlpiComputerId())
                     .orElseThrow(() -> new ResourceNotFoundException("Equipo GLPI no encontrado: " + request.getGlpiComputerId()));
-            vpn.setGlpiComputerId(equipo.getComputerID());
-            vpn.setGlpiNombreEquipo(equipo.getNombreEquipo());
-            vpn.setGlpiIpEquipo(equipo.getIpEquipo());
+            vpn.setGlpiComputerId(equipo.computerId());
+            vpn.setGlpiNombreEquipo(equipo.nombreEquipo());
+            vpn.setGlpiIpEquipo(equipo.ipEquipo());
             vpn.setHostActualizado(request.getHostActualizado());
         } else {
             vpn.setGlpiComputerId(null);

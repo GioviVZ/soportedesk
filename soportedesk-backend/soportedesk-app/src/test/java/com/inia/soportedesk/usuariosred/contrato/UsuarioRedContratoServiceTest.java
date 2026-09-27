@@ -5,8 +5,8 @@ import com.inia.soportedesk.activedirectory.AdUsuarioCache;
 import com.inia.soportedesk.activedirectory.AdUsuarioCacheRepository;
 import com.inia.soportedesk.catalogo.TipoContrato;
 import com.inia.soportedesk.catalogo.TipoContratoRepository;
+import com.inia.soportedesk.equipos.api.EquipoConsultaApi;
 import com.inia.soportedesk.exception.ResourceNotFoundException;
-import com.inia.soportedesk.glpi.VwInvComputerFullRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -38,7 +38,7 @@ class UsuarioRedContratoServiceTest {
     private ActiveDirectoryService activeDirectoryService;
 
     @Mock
-    private VwInvComputerFullRepository equipoRepository;
+    private EquipoConsultaApi equipoConsultaApi;
 
     @InjectMocks
     private UsuarioRedContratoService service;
@@ -245,7 +245,7 @@ class UsuarioRedContratoServiceTest {
                 .thenReturn(Optional.of(usuario));
         when(repository.findByUsuarioIgnoreCaseOrderByFechaInicioDesc("jperez"))
                 .thenReturn(List.of(contrato));
-        when(equipoRepository.findFiltered(null, null, null, null, null, null)).thenReturn(List.of());
+        when(equipoConsultaApi.listarTodos()).thenReturn(List.of());
 
         List<UsuarioRedConsultaDto> result = service.searchConsultas("Juan Carlos Perez Gomez");
 

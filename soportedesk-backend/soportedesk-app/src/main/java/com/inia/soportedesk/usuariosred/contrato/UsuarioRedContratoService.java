@@ -5,9 +5,9 @@ import com.inia.soportedesk.activedirectory.AdUsuarioCacheRepository;
 import com.inia.soportedesk.activedirectory.ActiveDirectoryService;
 import com.inia.soportedesk.catalogo.TipoContrato;
 import com.inia.soportedesk.catalogo.TipoContratoRepository;
+import com.inia.soportedesk.equipos.api.EquipoConsultaApi;
+import com.inia.soportedesk.equipos.api.EquipoConsultaDto;
 import com.inia.soportedesk.exception.ResourceNotFoundException;
-import com.inia.soportedesk.glpi.VwInvComputerFull;
-import com.inia.soportedesk.glpi.VwInvComputerFullRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
@@ -35,7 +35,7 @@ public class UsuarioRedContratoService {
     private final TipoContratoRepository tipoContratoRepository;
     private final AdUsuarioCacheRepository adUsuarioCacheRepository;
     private final ActiveDirectoryService activeDirectoryService;
-    private final VwInvComputerFullRepository equipoRepository;
+    private final EquipoConsultaApi equipoConsultaApi;
 
     public List<UsuarioRedContratoDto> findByUsuario(String usuario) {
         return repository.findByUsuarioIgnoreCaseOrderByFechaInicioDesc(usuario)
@@ -166,14 +166,13 @@ public class UsuarioRedContratoService {
     }
 
     private List<UsuarioRedConsultaDto> enrichHosts(List<UsuarioRedConsultaDto> consultas) {
-        Map<String, List<String>> hostsPorUsuario = equipoRepository
-                .findFiltered(null, null, null, null, null, null).stream()
-                .filter(equipo -> equipo.getUsuarioContacto() != null && !equipo.getUsuarioContacto().isBlank()
-                        && equipo.getNombreEquipo() != null && !equipo.getNombreEquipo().isBlank())
+        Map<String, List<String>> hostsPorUsuario = equipoConsultaApi.listarTodos().stream()
+                .filter(equipo -> equipo.usuarioContacto() != null && !equipo.usuarioContacto().isBlank()
+                        && equipo.nombreEquipo() != null && !equipo.nombreEquipo().isBlank())
                 .collect(Collectors.groupingBy(
-                        equipo -> normalizeAccountSearchTerm(equipo.getUsuarioContacto()),
+                        equipo -> normalizeAccountSearchTerm(equipo.usuarioContacto()),
                         LinkedHashMap::new,
-                        Collectors.mapping(VwInvComputerFull::getNombreEquipo,
+                        Collectors.mapping(EquipoConsultaDto::nombreEquipo,
                                 Collectors.collectingAndThen(Collectors.toCollection(java.util.TreeSet::new), ArrayList::new))));
         consultas.forEach(consulta -> {
             String usuario = normalizeAccountSearchTerm(consulta.getUsuario());

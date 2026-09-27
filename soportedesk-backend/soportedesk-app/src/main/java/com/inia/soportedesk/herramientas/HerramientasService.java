@@ -1,7 +1,7 @@
 package com.inia.soportedesk.herramientas;
 
-import com.inia.soportedesk.glpi.VwInvComputerFull;
-import com.inia.soportedesk.glpi.VwInvComputerFullRepository;
+import com.inia.soportedesk.equipos.api.EquipoConsultaApi;
+import com.inia.soportedesk.equipos.api.EquipoConsultaDto;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -31,7 +31,7 @@ public class HerramientasService {
     private static final Pattern RECEIVED_SPANISH = Pattern.compile("enviados\\s*=\\s*(\\d+),\\s*recibidos\\s*=\\s*(\\d+),\\s*perdidos\\s*=\\s*(\\d+)", Pattern.CASE_INSENSITIVE);
     private static final DateTimeFormatter CAPTURE_FORMAT = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
 
-    private final VwInvComputerFullRepository glpiRepository;
+    private final EquipoConsultaApi equipoConsultaApi;
 
     public PingResult ping(String rawHost) {
         return ping(rawHost, 4);
@@ -97,9 +97,9 @@ public class HerramientasService {
         String requestIp = clientIp(request);
         String lookup = firstNonBlank(referencia, requestIp);
         String resolvedHost = resolveHost(lookup);
-        Optional<VwInvComputerFull> glpi = glpiRepository.findByHostOrIp(lookup).stream().findFirst();
+        Optional<EquipoConsultaDto> glpi = equipoConsultaApi.buscarPorHostOIp(lookup).stream().findFirst();
         if (glpi.isEmpty() && !resolvedHost.equals(lookup)) {
-            glpi = glpiRepository.findByHostOrIp(resolvedHost).stream().findFirst();
+            glpi = equipoConsultaApi.buscarPorHostOIp(resolvedHost).stream().findFirst();
         }
 
         String ip = lookup.matches("\\d{1,3}(\\.\\d{1,3}){3}") ? lookup : requestIp;
@@ -113,15 +113,15 @@ public class HerramientasService {
         String fuente = "Solicitud web";
 
         if (glpi.isPresent()) {
-            VwInvComputerFull equipo = glpi.get();
-            host = firstNonBlank(equipo.getNombreEquipo(), host);
-            ip = firstNonBlank(equipo.getIpEquipo(), ip);
-            modelo = equipo.getModeloEquipo();
-            serie = equipo.getNumeroserie();
-            fabricante = equipo.getFabricanteEquipo();
-            tipo = equipo.getTipoEquipo();
-            sede = firstNonBlank(equipo.getSedeNombreCompleto(), equipo.getSedeNombre());
-            usuarioContacto = equipo.getUsuarioContacto();
+            EquipoConsultaDto equipo = glpi.get();
+            host = firstNonBlank(equipo.nombreEquipo(), host);
+            ip = firstNonBlank(equipo.ipEquipo(), ip);
+            modelo = equipo.modeloEquipo();
+            serie = equipo.numeroSerie();
+            fabricante = equipo.fabricanteEquipo();
+            tipo = equipo.tipoEquipo();
+            sede = firstNonBlank(equipo.sedeNombreCompleto(), equipo.sedeNombre());
+            usuarioContacto = equipo.usuarioContacto();
             fuente = "GLPI";
         }
 

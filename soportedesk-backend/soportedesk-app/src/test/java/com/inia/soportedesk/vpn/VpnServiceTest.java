@@ -10,9 +10,9 @@ import com.inia.soportedesk.catalogo.Sede;
 import com.inia.soportedesk.catalogo.SedeRepository;
 import com.inia.soportedesk.catalogo.Subdependencia;
 import com.inia.soportedesk.catalogo.SubdependenciaRepository;
+import com.inia.soportedesk.equipos.api.EquipoConsultaApi;
+import com.inia.soportedesk.equipos.api.EquipoConsultaDto;
 import com.inia.soportedesk.exception.ResourceNotFoundException;
-import com.inia.soportedesk.glpi.VwInvComputerFull;
-import com.inia.soportedesk.glpi.VwInvComputerFullRepository;
 import com.inia.soportedesk.usuariosred.contrato.UsuarioRedContratoRepository;
 import com.inia.soportedesk.usuariosred.contrato.UsuarioRedContrato;
 import com.inia.soportedesk.catalogo.TipoContrato;
@@ -62,7 +62,7 @@ class VpnServiceTest {
     private AdUsuarioCacheRepository adUsuarioCacheRepository;
 
     @Mock
-    private VwInvComputerFullRepository glpiRepository;
+    private EquipoConsultaApi equipoConsultaApi;
 
     @Mock
     private UsuarioRepository usuarioRepository;
@@ -277,9 +277,9 @@ class VpnServiceTest {
     void crearSolicitud_whenGlpiComputerAlreadyHasVpn_rejectsDuplicate() {
         when(activeDirectoryService.buscarUsuarioCacheadoORefrescar("jruiz")).thenReturn(Optional.of(cacheUser()));
         when(usuarioRepository.findByUsername("jasistente")).thenReturn(Optional.empty());
-        VwInvComputerFull equipo = new VwInvComputerFull();
-        equipo.setComputerID(42L);
-        when(glpiRepository.findById(42L)).thenReturn(Optional.of(equipo));
+        EquipoConsultaDto equipo = new EquipoConsultaDto(
+                42L, null, null, null, null, null, null, null, null, null);
+        when(equipoConsultaApi.buscarPorId(42L)).thenReturn(Optional.of(equipo));
         when(repository.countBlockingByGlpiComputer(eq(42L), any(), eq(null))).thenReturn(1L);
 
         VpnRequest request = sampleRequest();
@@ -311,11 +311,10 @@ class VpnServiceTest {
         when(activeDirectoryService.buscarUsuarioCacheadoORefrescar("jruiz")).thenReturn(Optional.of(cacheUser()));
         when(usuarioRepository.findByUsername(any())).thenReturn(Optional.empty());
 
-        VwInvComputerFull equipo = new VwInvComputerFull();
-        equipo.setComputerID(42L);
-        equipo.setNombreEquipo("PC-CONTABILIDAD-01");
-        equipo.setIpEquipo("172.16.10.5");
-        when(glpiRepository.findById(42L)).thenReturn(Optional.of(equipo));
+        EquipoConsultaDto equipo = new EquipoConsultaDto(
+                42L, "PC-CONTABILIDAD-01", "172.16.10.5", null, null,
+                null, null, null, null, null);
+        when(equipoConsultaApi.buscarPorId(42L)).thenReturn(Optional.of(equipo));
         when(contratoRepository.findByUsuarioIgnoreCaseOrderByFechaInicioDesc("jruiz")).thenReturn(List.of());
         when(repository.save(any(Vpn.class))).thenAnswer(inv -> inv.getArgument(0));
 
@@ -381,10 +380,9 @@ class VpnServiceTest {
     @Test
     void crearSolicitud_forEquipoIniaWhoseGlpiRecordHasNoIp_rejectsIncompleteRequest() {
         when(activeDirectoryService.buscarUsuarioCacheadoORefrescar("jruiz")).thenReturn(Optional.of(cacheUser()));
-        VwInvComputerFull equipo = new VwInvComputerFull();
-        equipo.setComputerID(42L);
-        equipo.setNombreEquipo("PC-SIN-IP");
-        when(glpiRepository.findById(42L)).thenReturn(Optional.of(equipo));
+        EquipoConsultaDto equipo = new EquipoConsultaDto(
+                42L, "PC-SIN-IP", null, null, null, null, null, null, null, null);
+        when(equipoConsultaApi.buscarPorId(42L)).thenReturn(Optional.of(equipo));
         VpnRequest request = sampleRequest();
         request.setTipoEquipo("INIA");
         request.setGlpiComputerId(42L);
@@ -398,7 +396,7 @@ class VpnServiceTest {
     @Test
     void crearSolicitud_withUnknownGlpiId_throwsResourceNotFoundException() {
         when(activeDirectoryService.buscarUsuarioCacheadoORefrescar("jruiz")).thenReturn(Optional.of(cacheUser()));
-        when(glpiRepository.findById(999L)).thenReturn(Optional.empty());
+        when(equipoConsultaApi.buscarPorId(999L)).thenReturn(Optional.empty());
 
         VpnRequest request = sampleRequest();
         request.setGlpiComputerId(999L);
