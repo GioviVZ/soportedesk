@@ -212,7 +212,7 @@ export const routes: Routes = [
         path: 'catalogos',
         canActivate: [moduloGuard('catalogos')],
         loadComponent: () =>
-          import('./features/catalogos/catalogos.component').then((m) => m.CatalogosComponent),
+          import('@soportedesk/catalogos').then((m) => m.CatalogosComponent),
       },
       { path: '**', redirectTo: 'dashboard' },
     ],

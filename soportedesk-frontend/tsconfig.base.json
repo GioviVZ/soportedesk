@@ -49,6 +49,9 @@
       ],
       "@soportedesk/vpn": [
         "./libs/vpn/src/index.ts"
+      ],
+      "@soportedesk/catalogos": [
+        "./libs/catalogos/src/index.ts"
       ]
     }
   }
