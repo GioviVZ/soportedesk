@@ -28,6 +28,15 @@
       ],
       "@soportedesk/usuarios-sistema": [
         "./libs/usuarios-sistema/src/index.ts"
+      ],
+      "@soportedesk/correos": [
+        "./libs/correos/src/index.ts"
+      ],
+      "@soportedesk/licencias": [
+        "./libs/licencias/src/index.ts"
+      ],
+      "@soportedesk/impresoras": [
+        "./libs/impresoras/src/index.ts"
       ]
     }
   }

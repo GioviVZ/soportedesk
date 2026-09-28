@@ -1,13 +1,12 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { environment } from '../../../environments/environment';
 import { Correo, CorreoDashboardCompleto, CorreoFiltros, CorreoKpis } from './correo.model';
 
 @Injectable({ providedIn: 'root' })
 export class CorreoService {
   private http = inject(HttpClient);
-  private readonly apiUrl = `${environment.apiUrl}/correos`;
+  private readonly apiUrl = '/api/correos';
 
   getAll(filtros: CorreoFiltros = {}): Observable<Correo[]> {
     let params = new HttpParams();

@@ -1,13 +1,12 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { environment } from '../../../environments/environment';
 import { Licencia, LicenciaRequest } from './licencia.model';
 
 @Injectable({ providedIn: 'root' })
 export class LicenciaService {
   private http = inject(HttpClient);
-  private readonly apiUrl = `${environment.apiUrl}/licencias`;
+  private readonly apiUrl = '/api/licencias';
 
   getAll(search?: string): Observable<Licencia[]> {
     let params = new HttpParams();

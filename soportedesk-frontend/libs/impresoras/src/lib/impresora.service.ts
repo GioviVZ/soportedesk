@@ -1,13 +1,12 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { environment } from '../../../environments/environment';
 import { Impresora, ImpresoraDashboardCompleto, ImpresoraIntervencion, ImpresoraIntervencionAdjunto, ImpresoraIntervencionRequest, ImpresoraRequest } from './impresora.model';
 
 @Injectable({ providedIn: 'root' })
 export class ImpresoraService {
   private http = inject(HttpClient);
-  private readonly apiUrl = `${environment.apiUrl}/impresoras`;
+  private readonly apiUrl = '/api/impresoras';
 
   getAll(search?: string): Observable<Impresora[]> {
     let params = new HttpParams();

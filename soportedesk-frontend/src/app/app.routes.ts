@@ -29,12 +29,12 @@ export const routes: Routes = [
       {
         path: 'licencias',
         loadComponent: () =>
-          import('./features/licencias/licencias-shell.component').then((m) => m.LicenciasShellComponent),
+        import('@soportedesk/licencias').then((m) => m.LicenciasShellComponent),
         children: [
           { path: '', redirectTo: 'consultas', pathMatch: 'full' },
-          { path: 'consultas', canActivate: [moduloGuard('licencias')], data: { mode: 'consultas' }, loadComponent: () => import('./features/licencias/licencias-list.component').then((m) => m.LicenciasListComponent) },
-          { path: 'administracion', canActivate: [moduloGuard('licencias', { write: true })], data: { mode: 'administracion' }, loadComponent: () => import('./features/licencias/licencias-list.component').then((m) => m.LicenciasListComponent) },
-          { path: 'dashboard', canActivate: [moduloGuard('licencias', { write: true })], loadComponent: () => import('./features/licencias/licencias-dashboard.component').then((m) => m.LicenciasDashboardComponent) },
+          { path: 'consultas', canActivate: [moduloGuard('licencias')], data: { mode: 'consultas' }, loadComponent: () => import('@soportedesk/licencias').then((m) => m.LicenciasListComponent) },
+          { path: 'administracion', canActivate: [moduloGuard('licencias', { write: true })], data: { mode: 'administracion' }, loadComponent: () => import('@soportedesk/licencias').then((m) => m.LicenciasListComponent) },
+          { path: 'dashboard', canActivate: [moduloGuard('licencias', { write: true })], loadComponent: () => import('@soportedesk/licencias').then((m) => m.LicenciasDashboardComponent) },
         ],
       },
       {
@@ -109,20 +109,20 @@ export const routes: Routes = [
       {
         path: 'correos',
         loadComponent: () =>
-          import('./features/correos/correos-shell.component').then((m) => m.CorreosShellComponent),
+          import('@soportedesk/correos').then((m) => m.CorreosShellComponent),
         children: [
           { path: '', redirectTo: 'consultas', pathMatch: 'full' },
           {
             path: 'consultas',
             canActivate: [moduloGuard('correos')],
             loadComponent: () =>
-              import('./features/correos/correos-consultas.component').then((m) => m.CorreosConsultasComponent),
+              import('@soportedesk/correos').then((m) => m.CorreosConsultasComponent),
           },
           {
             path: 'dashboard',
             canActivate: [moduloGuard('correos')],
             loadComponent: () =>
-              import('./features/correos/correos-dashboard.component').then((m) => m.CorreosDashboardComponent),
+              import('@soportedesk/correos').then((m) => m.CorreosDashboardComponent),
           },
         ],
       },
@@ -163,26 +163,26 @@ export const routes: Routes = [
       {
         path: 'impresoras',
         loadComponent: () =>
-          import('./features/impresoras/impresoras-shell.component').then((m) => m.ImpresorasShellComponent),
+          import('@soportedesk/impresoras').then((m) => m.ImpresorasShellComponent),
         children: [
           { path: '', redirectTo: 'consultas', pathMatch: 'full' },
           {
             path: 'consultas',
             canActivate: [moduloGuard('impresoras')],
             loadComponent: () =>
-              import('./features/impresoras/impresoras-consultas.component').then((m) => m.ImpresorasConsultasComponent),
+              import('@soportedesk/impresoras').then((m) => m.ImpresorasConsultasComponent),
           },
           {
             path: 'administracion',
             canActivate: [moduloGuard('impresoras', { write: true })],
             loadComponent: () =>
-              import('./features/impresoras/impresoras-administracion.component').then((m) => m.ImpresorasAdministracionComponent),
+              import('@soportedesk/impresoras').then((m) => m.ImpresorasAdministracionComponent),
           },
           {
             path: 'dashboard',
             canActivate: [moduloGuard('impresoras', { write: true })],
             loadComponent: () =>
-              import('./features/impresoras/impresoras-dashboard.component').then((m) => m.ImpresorasDashboardComponent),
+              import('@soportedesk/impresoras').then((m) => m.ImpresorasDashboardComponent),
           },
         ],
       },
