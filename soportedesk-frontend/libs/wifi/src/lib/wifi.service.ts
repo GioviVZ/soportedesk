@@ -1,13 +1,12 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { environment } from '../../../environments/environment';
 import { Wifi, WifiRequest } from './wifi.model';
 
 @Injectable({ providedIn: 'root' })
 export class WifiService {
   private http = inject(HttpClient);
-  private readonly apiUrl = `${environment.apiUrl}/wifi`;
+  private readonly apiUrl = '/api/wifi';
 
   getAll(search?: string): Observable<Wifi[]> {
     let params = new HttpParams();

@@ -16,6 +16,18 @@
       ],
       "@soportedesk/ui": [
         "./libs/ui/src/index.ts"
+      ],
+      "@soportedesk/auditoria": [
+        "./libs/auditoria/src/index.ts"
+      ],
+      "@soportedesk/auth": [
+        "./libs/auth/src/index.ts"
+      ],
+      "@soportedesk/wifi": [
+        "./libs/wifi/src/index.ts"
+      ],
+      "@soportedesk/usuarios-sistema": [
+        "./libs/usuarios-sistema/src/index.ts"
       ]
     }
   }

@@ -9,7 +9,7 @@ export const routes: Routes = [
   {
     path: 'login',
     loadComponent: () =>
-      import('./features/auth/login/login.component').then((m) => m.LoginComponent),
+      import('@soportedesk/auth').then((m) => m.LoginComponent),
   },
   {
     path: '',
@@ -40,12 +40,12 @@ export const routes: Routes = [
       {
         path: 'wifi',
         loadComponent: () =>
-          import('./features/wifi/wifi-shell.component').then((m) => m.WifiShellComponent),
+          import('@soportedesk/wifi').then((m) => m.WifiShellComponent),
         children: [
           { path: '', redirectTo: 'consultas', pathMatch: 'full' },
-          { path: 'consultas', canActivate: [moduloGuard('wifi')], data: { mode: 'consultas' }, loadComponent: () => import('./features/wifi/wifi-list.component').then((m) => m.WifiListComponent) },
-          { path: 'administracion', canActivate: [moduloGuard('wifi', { write: true })], data: { mode: 'administracion' }, loadComponent: () => import('./features/wifi/wifi-list.component').then((m) => m.WifiListComponent) },
-          { path: 'dashboard', canActivate: [moduloGuard('wifi', { write: true })], loadComponent: () => import('./features/wifi/wifi-dashboard.component').then((m) => m.WifiDashboardComponent) },
+          { path: 'consultas', canActivate: [moduloGuard('wifi')], data: { mode: 'consultas' }, loadComponent: () => import('@soportedesk/wifi').then((m) => m.WifiListComponent) },
+          { path: 'administracion', canActivate: [moduloGuard('wifi', { write: true })], data: { mode: 'administracion' }, loadComponent: () => import('@soportedesk/wifi').then((m) => m.WifiListComponent) },
+          { path: 'dashboard', canActivate: [moduloGuard('wifi', { write: true })], loadComponent: () => import('@soportedesk/wifi').then((m) => m.WifiDashboardComponent) },
         ],
       },
       {
@@ -190,7 +190,7 @@ export const routes: Routes = [
         path: 'usuarios-sistema',
         canActivate: [adminGuard],
         loadComponent: () =>
-          import('./features/usuarios-sistema/usuarios-sistema.component').then(
+          import('@soportedesk/usuarios-sistema').then(
             (m) => m.UsuariosSistemaComponent,
           ),
       },
@@ -198,7 +198,7 @@ export const routes: Routes = [
         path: 'auditoria',
         canActivate: [moduloGuard('auditoria')],
         loadComponent: () =>
-          import('./features/auditoria/auditoria.component').then((m) => m.AuditoriaComponent),
+          import('@soportedesk/auditoria').then((m) => m.AuditoriaComponent),
       },
       {
         path: 'herramientas',

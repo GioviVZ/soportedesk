@@ -1,0 +1,10 @@
+{
+  "name": "wifi",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/wifi/src",
+  "prefix": "lib",
+  "tags": [],
+  "projectType": "library",
+  "// targets": "to see all targets run: nx show project wifi --web",
+  "targets": {}
+}
