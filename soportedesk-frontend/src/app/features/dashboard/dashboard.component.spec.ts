@@ -6,7 +6,7 @@ import { provideCharts, withDefaultRegisterables } from 'ng2-charts';
 import { DashboardComponent } from './dashboard.component';
 import { DashboardCounts } from './dashboard-counts.model';
 import { provideHttpClient, withInterceptorsFromDi, withXhr } from '@angular/common/http';
-import { OrdenServicio } from '../herramientas/herramientas.model';
+import { OrdenServicio } from '../../core/models/orden-servicio.model';
 
 describe('DashboardComponent', () => {
   let fixture: ComponentFixture<DashboardComponent>;

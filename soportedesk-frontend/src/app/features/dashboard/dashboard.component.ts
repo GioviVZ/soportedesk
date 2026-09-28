@@ -8,7 +8,7 @@ import { DashboardService } from './dashboard.service';
 import { DashboardCounts } from './dashboard-counts.model';
 import { UsuariosRedPorUbicacionChartComponent } from './usuarios-red-por-ubicacion-chart.component';
 import { LicenciasPorTipoChartComponent } from './licencias-por-tipo-chart.component';
-import { OrdenServicio, OrdenServicioHito } from '../herramientas/herramientas.model';
+import { OrdenServicio, OrdenServicioHito } from '../../core/models/orden-servicio.model';
 import { ModuloBreakdownItem, ModuloKey } from './modulo-breakdown-item.model';
 import { ClickOutsideDirective } from '../../shared/directives/click-outside.directive';
 

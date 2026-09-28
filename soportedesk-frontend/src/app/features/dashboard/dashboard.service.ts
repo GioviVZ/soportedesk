@@ -6,7 +6,7 @@ import { DashboardCounts } from './dashboard-counts.model';
 import { UbicacionUsuariosCount } from './ubicacion-usuarios-count.model';
 import { LicenciaTipoCount } from './licencia-tipo-count.model';
 import { ModuloBreakdownItem, ModuloKey } from './modulo-breakdown-item.model';
-import { OrdenServicio } from '../herramientas/herramientas.model';
+import { OrdenServicio } from '../../core/models/orden-servicio.model';
 
 const BREAKDOWN_PATH: Partial<Record<ModuloKey, string>> = {
   impresoras: 'impresoras-por-estado',
