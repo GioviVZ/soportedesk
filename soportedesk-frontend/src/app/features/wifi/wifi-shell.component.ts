@@ -1,8 +1,8 @@
 
 import { Component, inject, ChangeDetectionStrategy } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
-import { AuthService } from '../../core/auth/auth.service';
-import { ModuleViewItem, ModuleViewSwitcherComponent } from '../../shared/module-view-switcher/module-view-switcher.component';
+import { AuthService } from '@soportedesk/core';
+import { ModuleViewItem, ModuleViewSwitcherComponent } from '@soportedesk/ui';
 
 @Component({
     selector: 'app-wifi-shell',

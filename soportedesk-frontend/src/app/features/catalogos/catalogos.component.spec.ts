@@ -1,8 +1,8 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { CatalogosComponent } from './catalogos.component';
-import { AuthService } from '../../core/auth/auth.service';
-import { ThemeService } from '../../core/services/theme.service';
+import { AuthService } from '@soportedesk/core';
+import { ThemeService } from '@soportedesk/core';
 import { provideHttpClient, withInterceptorsFromDi, withXhr } from '@angular/common/http';
 
 describe('CatalogosComponent', () => {

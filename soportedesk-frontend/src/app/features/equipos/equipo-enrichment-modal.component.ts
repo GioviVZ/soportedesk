@@ -2,13 +2,13 @@
 import { DatePipe } from '@angular/common';
 import { Component, EventEmitter, Input, OnChanges, Output, SimpleChanges, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { forkJoin } from 'rxjs';
-import { ModalComponent } from '../../shared/modal/modal.component';
-import { UbicacionSelectComponent } from '../../shared/ubicacion-select/ubicacion-select.component';
+import { ModalComponent } from '@soportedesk/ui';
+import { UbicacionSelectComponent } from '@soportedesk/ui';
 import { EquipoService } from './equipo.service';
 import { EquipoDetalle, EquipoEnrichmentDto, EquipoTeclado } from './equipo.model';
-import { CatalogoService } from '../../core/catalogos/catalogo.service';
+import { CatalogoService } from '@soportedesk/core';
 import { EquipoEvidenciasComponent } from './equipo-evidencias.component';
-import { SectionCardComponent } from '../../shared/section-card/section-card.component';
+import { SectionCardComponent } from '@soportedesk/ui';
 
 @Component({
     selector: 'app-equipo-enrichment-modal',

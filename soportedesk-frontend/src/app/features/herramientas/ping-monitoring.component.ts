@@ -5,7 +5,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { ChartConfiguration, ChartData, ChartType } from 'chart.js';
 import { BaseChartDirective } from 'ng2-charts';
 import { Subscription } from 'rxjs';
-import { AuthService } from '../../core/auth/auth.service';
+import { AuthService } from '@soportedesk/core';
 import {
   MonitorPing,
   MonitorPingEstadisticas,

@@ -2,9 +2,9 @@
 import { Component, EventEmitter, Input, OnDestroy, OnInit, Output, inject, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Subject, debounceTime, distinctUntilChanged, forkJoin, interval, takeUntil } from 'rxjs';
-import { CatalogoService } from '../../core/catalogos/catalogo.service';
-import { Dependencia, Sede, Subdependencia } from '../../core/models/catalogo.model';
-import { StatusBadgeComponent } from '../../shared/status-badge/status-badge.component';
+import { CatalogoService } from '@soportedesk/core';
+import { Dependencia, Sede, Subdependencia } from '@soportedesk/core';
+import { StatusBadgeComponent } from '@soportedesk/ui';
 import { ActiveDirectoryService } from './active-directory.service';
 import { AdUserSummary } from './active-directory.model';
 

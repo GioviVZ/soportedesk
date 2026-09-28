@@ -1,6 +1,6 @@
 import { Component, OnInit, inject, ChangeDetectionStrategy } from '@angular/core';
 
-import { ModalComponent } from '../../shared/modal/modal.component';
+import { ModalComponent } from '@soportedesk/ui';
 import { ImpresoraFichaComponent } from './impresora-ficha.component';
 import { ImpresoraFormComponent } from './impresora-form.component';
 import { ImpresorasListViewComponent } from './impresoras-list-view.component';

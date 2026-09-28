@@ -1,7 +1,7 @@
 
 import { Component, EventEmitter, Input, OnDestroy, OnInit, Output, inject, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { SectionCardComponent } from '../../shared/section-card/section-card.component';
+import { SectionCardComponent } from '@soportedesk/ui';
 import { ActiveDirectoryService } from './active-directory.service';
 import { ActiveDirectoryOu, AdPanelResult } from './active-directory.model';
 import { Subject, debounceTime, distinctUntilChanged, takeUntil } from 'rxjs';

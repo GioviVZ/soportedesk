@@ -5,7 +5,7 @@ import { CARGOS_VPN, CARGOS_VPN_EXTERNO, Vpn, VpnUsuarioRedOption } from './vpn.
 import { VpnService } from './vpn.service';
 import { EquipoService } from '../equipos/equipo.service';
 import { EquipoResumen } from '../equipos/equipo.model';
-import { UbicacionSelectComponent } from '../../shared/ubicacion-select/ubicacion-select.component';
+import { UbicacionSelectComponent } from '@soportedesk/ui';
 
 type TitularModo = 'buscando' | 'ad-seleccionado' | 'externo';
 

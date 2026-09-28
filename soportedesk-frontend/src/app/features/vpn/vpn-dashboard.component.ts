@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, OnInit, inject } from '@angular/core';
 import { Router } from '@angular/router';
-import { DashboardBreakdownComponent, DashboardBreakdownItem } from '../../shared/dashboard-breakdown/dashboard-breakdown.component';
+import { DashboardBreakdownComponent, DashboardBreakdownItem } from '@soportedesk/ui';
 import { VpnDashboardCompleto } from './vpn.model';
 import { VpnService } from './vpn.service';
 

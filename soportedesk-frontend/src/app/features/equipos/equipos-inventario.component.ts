@@ -3,14 +3,14 @@ import { Component, OnDestroy, OnInit, computed, inject, signal, ChangeDetection
 import { FormsModule } from '@angular/forms';
 import { Subscription, interval } from 'rxjs';
 import { switchMap, takeWhile } from 'rxjs/operators';
-import { GenericTableComponent, TableColumn } from '../../shared/generic-table/generic-table.component';
+import { GenericTableComponent, TableColumn } from '@soportedesk/ui';
 import { EquipoKpis, EquipoResumen, EquipoSoftwareExport, GlpiSyncStatus } from './equipo.model';
 import { EquipoService } from './equipo.service';
 import { EquipoDetailComponent } from './equipo-detail.component';
-import { ModalComponent } from '../../shared/modal/modal.component';
-import { AuthService } from '../../core/auth/auth.service';
-import { CatalogoService } from '../../core/catalogos/catalogo.service';
-import { Dependencia, Sede, Subdependencia } from '../../core/models/catalogo.model';
+import { ModalComponent } from '@soportedesk/ui';
+import { AuthService } from '@soportedesk/core';
+import { CatalogoService } from '@soportedesk/core';
+import { Dependencia, Sede, Subdependencia } from '@soportedesk/core';
 import { EquipoEnrichmentModalComponent } from './equipo-enrichment-modal.component';
 import * as XLSX from 'xlsx';
 

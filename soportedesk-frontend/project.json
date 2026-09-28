@@ -109,6 +109,12 @@
           "zone.js/testing"
         ],
         "tsConfig": "tsconfig.spec.json",
+        "include": [
+          "**/*.spec.ts",
+          "../libs/**/*.spec.ts"
+        ],
+        "browsers": "ChromeHeadlessNoSandbox",
+        "watch": false,
         "inlineStyleLanguage": "scss",
         "stylePreprocessorOptions": {
           "sass": {

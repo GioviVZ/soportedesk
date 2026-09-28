@@ -1,6 +1,5 @@
 import { Injectable, NgZone, inject } from '@angular/core';
 import { Router } from '@angular/router';
-import { environment } from '../../../environments/environment';
 import { AuthService } from '../auth/auth.service';
 
 export interface RealtimeChange {
@@ -38,7 +37,7 @@ export class RealtimeService {
     if (!token) return;
     this.controller = new AbortController();
     try {
-      const response = await fetch(`${environment.apiUrl}/realtime/events`, {
+      const response = await fetch('/api/realtime/events', {
         headers: { Authorization: `Bearer ${token}`, Accept: 'text/event-stream' },
         signal: this.controller.signal,
       });

@@ -1,7 +1,7 @@
 import { SimpleChange } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { of } from 'rxjs';
-import { CatalogoService } from '../../core/catalogos/catalogo.service';
+import { CatalogoService } from '@soportedesk/core';
 import { EquipoDetalle, EquipoDetalleResponse, EquipoEnrichmentDto } from './equipo.model';
 import { EquipoService } from './equipo.service';
 import { EquipoEnrichmentModalComponent } from './equipo-enrichment-modal.component';

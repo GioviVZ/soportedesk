@@ -22,7 +22,7 @@ export interface EquipoDatosResult {
   capturadoEn: string;
 }
 
-export type { OrdenServicio, OrdenServicioHito } from '../../core/models/orden-servicio.model';
+export type { OrdenServicio, OrdenServicioHito } from '@soportedesk/core';
 
 export interface OrdenServicioHitoRequest {
   id?: number;

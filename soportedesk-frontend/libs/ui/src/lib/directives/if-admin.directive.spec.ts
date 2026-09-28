@@ -1,6 +1,6 @@
 import { Component, ChangeDetectionStrategy } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { AuthService } from '../../core/auth/auth.service';
+import { AuthService } from '@soportedesk/core';
 import { IfAdminDirective } from './if-admin.directive';
 
 @Component({

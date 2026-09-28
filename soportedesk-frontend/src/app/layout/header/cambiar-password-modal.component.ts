@@ -1,7 +1,7 @@
 import { Component, EventEmitter, Output, inject, ChangeDetectionStrategy } from '@angular/core';
 
 import { AbstractControl, FormBuilder, ReactiveFormsModule, ValidationErrors, Validators } from '@angular/forms';
-import { AuthService } from '../../core/auth/auth.service';
+import { AuthService } from '@soportedesk/core';
 
 function passwordsMatch(group: AbstractControl): ValidationErrors | null {
   const nueva = group.get('passwordNueva')?.value;

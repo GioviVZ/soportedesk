@@ -4,7 +4,7 @@ import { provideHttpClient, withInterceptors, withXhr } from '@angular/common/ht
 import { provideCharts, withDefaultRegisterables } from 'ng2-charts';
 
 import { routes } from './app.routes';
-import { jwtInterceptor } from './core/auth/jwt.interceptor';
+import { jwtInterceptor } from '@soportedesk/core';
 
 export const appConfig: ApplicationConfig = {
   providers: [

@@ -1,7 +1,7 @@
 
 import { Component, EventEmitter, Input, OnChanges, Output, SimpleChanges, inject, ChangeDetectionStrategy } from '@angular/core';
-import { StatusBadgeComponent } from '../../shared/status-badge/status-badge.component';
-import { SectionCardComponent } from '../../shared/section-card/section-card.component';
+import { StatusBadgeComponent } from '@soportedesk/ui';
+import { SectionCardComponent } from '@soportedesk/ui';
 import { ActiveDirectoryService } from './active-directory.service';
 import { ActiveDirectoryGroup, AdUser } from './active-directory.model';
 import { UsuarioRedContratosPanelComponent } from './usuario-red-contratos-panel.component';

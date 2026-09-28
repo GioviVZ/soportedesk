@@ -1,5 +1,5 @@
-@use './app/core/styles/variables';
-@use './app/core/styles/bootstrap';
+@use '../libs/core/src/lib/styles/variables';
+@use '../libs/core/src/lib/styles/bootstrap';
 @use '@fontsource-variable/manrope';
 
 *, *::before, *::after { box-sizing: border-box; }

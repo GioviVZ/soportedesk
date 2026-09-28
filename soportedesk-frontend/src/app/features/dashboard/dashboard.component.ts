@@ -3,14 +3,14 @@ import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { ChartConfiguration, ChartData } from 'chart.js';
 import { BaseChartDirective } from 'ng2-charts';
-import { AuthService } from '../../core/auth/auth.service';
+import { AuthService } from '@soportedesk/core';
 import { DashboardService } from './dashboard.service';
 import { DashboardCounts } from './dashboard-counts.model';
 import { UsuariosRedPorUbicacionChartComponent } from './usuarios-red-por-ubicacion-chart.component';
 import { LicenciasPorTipoChartComponent } from './licencias-por-tipo-chart.component';
-import { OrdenServicio, OrdenServicioHito } from '../../core/models/orden-servicio.model';
+import { OrdenServicio, OrdenServicioHito } from '@soportedesk/core';
 import { ModuloBreakdownItem, ModuloKey } from './modulo-breakdown-item.model';
-import { ClickOutsideDirective } from '../../shared/directives/click-outside.directive';
+import { ClickOutsideDirective } from '@soportedesk/ui';
 
 interface DashboardCard {
   label: string;

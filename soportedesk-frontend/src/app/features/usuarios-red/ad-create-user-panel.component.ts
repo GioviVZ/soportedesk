@@ -1,9 +1,9 @@
 
 import { Component, EventEmitter, OnInit, Output, inject, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { SectionCardComponent } from '../../shared/section-card/section-card.component';
-import { CatalogoService } from '../../core/catalogos/catalogo.service';
-import { Dependencia, Subdependencia, TipoContrato } from '../../core/models/catalogo.model';
+import { SectionCardComponent } from '@soportedesk/ui';
+import { CatalogoService } from '@soportedesk/core';
+import { Dependencia, Subdependencia, TipoContrato } from '@soportedesk/core';
 import { ActiveDirectoryService } from './active-directory.service';
 import { ActiveDirectoryOu, AdPanelResult, CorreoDisponible, CreateAdUserRequest } from './active-directory.model';
 import { UsuarioRedContratoRequest, esTipoContratoOs } from './usuario-red-contrato.model';

@@ -1,5 +1,5 @@
 import { Directive, OnInit, TemplateRef, ViewContainerRef, inject } from '@angular/core';
-import { AuthService } from '../../core/auth/auth.service';
+import { AuthService } from '@soportedesk/core';
 
 @Directive({
   selector: '[ifAdmin]',

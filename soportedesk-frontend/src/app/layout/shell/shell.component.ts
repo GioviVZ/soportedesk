@@ -2,8 +2,8 @@ import { Component, OnDestroy, OnInit, inject, ChangeDetectionStrategy } from '@
 import { RouterOutlet } from '@angular/router';
 import { SidebarComponent } from '../sidebar/sidebar.component';
 import { HeaderComponent } from '../header/header.component';
-import { LayoutService } from '../../core/services/layout.service';
-import { RealtimeService } from '../../core/services/realtime.service';
+import { LayoutService } from '@soportedesk/core';
+import { RealtimeService } from '@soportedesk/core';
 
 @Component({
     selector: 'app-shell',

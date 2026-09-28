@@ -2,7 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, OnDestroy, OnInit, inject, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import * as XLSX from 'xlsx';
-import { ModalComponent } from '../../shared/modal/modal.component';
+import { ModalComponent } from '@soportedesk/ui';
 import { AuditoriaService } from './auditoria.service';
 import { MovimientoAuditoria, MovimientoAuditoriaFilters } from './movimiento-auditoria.model';
 import { AdAuditoria, AdAuditoriaFilters } from './ad-auditoria.model';

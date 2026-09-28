@@ -1,8 +1,8 @@
 
 import { Component, EventEmitter, Input, OnChanges, OnInit, Output, inject, ChangeDetectionStrategy } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { TipoBien, TipoLicencia } from '../../core/models/catalogo.model';
-import { CatalogoService } from '../../core/catalogos/catalogo.service';
+import { TipoBien, TipoLicencia } from '@soportedesk/core';
+import { CatalogoService } from '@soportedesk/core';
 import { Licencia, LicenciaActivacion, LicenciaRequest } from './licencia.model';
 import { LicenciaService } from './licencia.service';
 

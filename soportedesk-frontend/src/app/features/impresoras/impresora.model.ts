@@ -1,5 +1,5 @@
-import { BadgeTone } from '../../shared/status-badge/status-badge.component';
-import { ModeloImpresora } from '../../core/models/catalogo.model';
+import { BadgeTone } from '@soportedesk/ui';
+import { ModeloImpresora } from '@soportedesk/core';
 
 export interface Impresora {
   id: number;

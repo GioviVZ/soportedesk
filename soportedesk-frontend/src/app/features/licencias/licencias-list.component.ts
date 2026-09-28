@@ -1,15 +1,15 @@
 
 import { Component, HostListener, OnInit, inject, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { AuthService } from '../../core/auth/auth.service';
-import { FieldComponent } from '../../shared/field/field.component';
-import { GenericTableComponent, TableColumn } from '../../shared/generic-table/generic-table.component';
-import { ModalComponent } from '../../shared/modal/modal.component';
+import { AuthService } from '@soportedesk/core';
+import { FieldComponent } from '@soportedesk/ui';
+import { GenericTableComponent, TableColumn } from '@soportedesk/ui';
+import { ModalComponent } from '@soportedesk/ui';
 import { LicenciaFormComponent } from './licencia-form.component';
 import { Licencia } from './licencia.model';
 import { LicenciaService } from './licencia.service';
 import * as XLSX from 'xlsx';
-import { RealtimeChange } from '../../core/services/realtime.service';
+import { RealtimeChange } from '@soportedesk/core';
 import { ActivatedRoute } from '@angular/router';
 
 @Component({

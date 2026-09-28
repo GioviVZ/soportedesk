@@ -1,9 +1,9 @@
 
 import { Component, EventEmitter, Input, OnInit, Output, inject, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { SectionCardComponent } from '../../shared/section-card/section-card.component';
-import { CatalogoService } from '../../core/catalogos/catalogo.service';
-import { Dependencia, Subdependencia } from '../../core/models/catalogo.model';
+import { SectionCardComponent } from '@soportedesk/ui';
+import { CatalogoService } from '@soportedesk/core';
+import { Dependencia, Subdependencia } from '@soportedesk/core';
 import { ActiveDirectoryService } from './active-directory.service';
 import { AdPanelResult, AdUser, CorreoDisponible, UpdateUserInfoRequest } from './active-directory.model';
 

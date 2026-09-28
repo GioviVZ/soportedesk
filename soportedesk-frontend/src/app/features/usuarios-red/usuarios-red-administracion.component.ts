@@ -3,7 +3,7 @@ import { Component, OnDestroy, OnInit, ViewChild, inject, ChangeDetectionStrateg
 import { ActivatedRoute } from '@angular/router';
 import { Subscription, interval } from 'rxjs';
 import { switchMap, takeWhile } from 'rxjs/operators';
-import { ModalComponent } from '../../shared/modal/modal.component';
+import { ModalComponent } from '@soportedesk/ui';
 import { ActiveDirectoryService } from './active-directory.service';
 import { ActiveDirectoryDashboard, AdPanelResult, AdSyncStatus, AdUser, AdUserSummary } from './active-directory.model';
 import { AdAdminSummaryComponent } from './ad-admin-summary.component';

@@ -1,7 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { environment } from '../../../environments/environment';
 import {
   CatalogoRequest,
   Dependencia,
@@ -23,7 +22,7 @@ import {
 @Injectable({ providedIn: 'root' })
 export class CatalogoService {
   private http = inject(HttpClient);
-  private readonly apiUrl = `${environment.apiUrl}/catalogos`;
+  private readonly apiUrl = '/api/catalogos';
 
   getSedes(): Observable<Sede[]> {
     return this.http.get<Sede[]>(`${this.apiUrl}/sedes`);

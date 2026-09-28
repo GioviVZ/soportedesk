@@ -1,6 +1,6 @@
 import { Injectable, NgZone, inject } from '@angular/core';
 import { Observable } from 'rxjs';
-import { AuthService } from '../../core/auth/auth.service';
+import { AuthService } from '@soportedesk/core';
 import { environment } from '../../../environments/environment';
 import { MonitorPingEvent } from './herramientas.model';
 

@@ -1,12 +1,12 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, inject, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { AuthService } from '../../core/auth/auth.service';
-import { CatalogoService } from '../../core/catalogos/catalogo.service';
-import { Dependencia, Sede, Subdependencia } from '../../core/models/catalogo.model';
-import { ModalComponent } from '../../shared/modal/modal.component';
-import { StatusBadgeComponent } from '../../shared/status-badge/status-badge.component';
-import { VencimientoBadgeComponent } from '../../shared/vencimiento-badge/vencimiento-badge.component';
+import { AuthService } from '@soportedesk/core';
+import { CatalogoService } from '@soportedesk/core';
+import { Dependencia, Sede, Subdependencia } from '@soportedesk/core';
+import { ModalComponent } from '@soportedesk/ui';
+import { StatusBadgeComponent } from '@soportedesk/ui';
+import { VencimientoBadgeComponent } from '@soportedesk/ui';
 import { VpnFormComponent } from './vpn-form.component';
 import { VpnDetailComponent } from './vpn-detail.component';
 import { Vpn } from './vpn.model';

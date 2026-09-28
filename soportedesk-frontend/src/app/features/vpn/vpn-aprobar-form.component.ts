@@ -4,7 +4,7 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Vpn } from './vpn.model';
 import { VpnService } from './vpn.service';
 import { VpnPasswordGeneratorComponent } from './vpn-password-generator.component';
-import { AuthService } from '../../core/auth/auth.service';
+import { AuthService } from '@soportedesk/core';
 
 @Component({
     selector: 'app-vpn-aprobar-form',

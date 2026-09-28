@@ -1,14 +1,14 @@
 import { Component, EventEmitter, Input, OnDestroy, OnInit, Output, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 
 import { FormsModule } from '@angular/forms';
-import { AuthService } from '../../core/auth/auth.service';
-import { CatalogoService } from '../../core/catalogos/catalogo.service';
+import { AuthService } from '@soportedesk/core';
+import { CatalogoService } from '@soportedesk/core';
 import { Impresora, ImpresoraIntervencion, ImpresoraIntervencionAdjunto, impresoraEstadoTone } from './impresora.model';
 import { ImpresoraService } from './impresora.service';
-import { ModeloImpresoraToner } from '../../core/models/catalogo.model';
-import { ModalComponent } from '../../shared/modal/modal.component';
-import { SectionCardComponent } from '../../shared/section-card/section-card.component';
-import { StatusBadgeComponent } from '../../shared/status-badge/status-badge.component';
+import { ModeloImpresoraToner } from '@soportedesk/core';
+import { ModalComponent } from '@soportedesk/ui';
+import { SectionCardComponent } from '@soportedesk/ui';
+import { StatusBadgeComponent } from '@soportedesk/ui';
 
 type FichaTab = 'instalacion' | 'consumibles' | 'driver' | 'intervenciones';
 

@@ -1,9 +1,9 @@
 import { ElementRef } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
-import { AuthService } from '../../core/auth/auth.service';
-import { LayoutService } from '../../core/services/layout.service';
-import { ThemeService } from '../../core/services/theme.service';
+import { AuthService } from '@soportedesk/core';
+import { LayoutService } from '@soportedesk/core';
+import { ThemeService } from '@soportedesk/core';
 import { HeaderComponent } from './header.component';
 
 describe('HeaderComponent', () => {

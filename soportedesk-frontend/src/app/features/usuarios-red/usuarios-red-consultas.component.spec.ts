@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { Router } from '@angular/router';
-import { Dependencia, Sede, Subdependencia } from '../../core/models/catalogo.model';
+import { Dependencia, Sede, Subdependencia } from '@soportedesk/core';
 import { UsuariosRedConsultasComponent } from './usuarios-red-consultas.component';
 import { UsuarioRedConsultaResultado } from './usuario-red-contrato.model';
 import { provideHttpClient, withInterceptorsFromDi, withXhr } from '@angular/common/http';

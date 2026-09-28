@@ -1,8 +1,8 @@
 import { Routes } from '@angular/router';
-import { adminGuard } from './core/auth/admin.guard';
-import { authGuard } from './core/auth/auth.guard';
-import { moduloGuard } from './core/auth/modulo.guard';
-import { vpnAdminGuard } from './core/auth/vpn-admin.guard';
+import { adminGuard } from '@soportedesk/core';
+import { authGuard } from '@soportedesk/core';
+import { moduloGuard } from '@soportedesk/core';
+import { vpnAdminGuard } from '@soportedesk/core';
 import { ShellComponent } from './layout/shell/shell.component';
 
 export const routes: Routes = [

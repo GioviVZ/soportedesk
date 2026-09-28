@@ -1,9 +1,9 @@
 import { Component, OnInit, inject, ChangeDetectionStrategy } from '@angular/core';
 
-import { AuthService } from '../../core/auth/auth.service';
-import { GenericTableComponent, TableColumn } from '../../shared/generic-table/generic-table.component';
-import { ModalComponent } from '../../shared/modal/modal.component';
-import { FieldComponent } from '../../shared/field/field.component';
+import { AuthService } from '@soportedesk/core';
+import { GenericTableComponent, TableColumn } from '@soportedesk/ui';
+import { ModalComponent } from '@soportedesk/ui';
+import { FieldComponent } from '@soportedesk/ui';
 import { WifiFormComponent } from './wifi-form.component';
 import { Wifi } from './wifi.model';
 import { WifiService } from './wifi.service';

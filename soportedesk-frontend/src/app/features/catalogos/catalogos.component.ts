@@ -1,11 +1,11 @@
 import { Component, OnInit, inject, ChangeDetectionStrategy } from '@angular/core';
 
 import { FormsModule } from '@angular/forms';
-import { CatalogoService } from '../../core/catalogos/catalogo.service';
-import { AuthService } from '../../core/auth/auth.service';
-import { ThemeMode, ThemeService } from '../../core/services/theme.service';
+import { CatalogoService } from '@soportedesk/core';
+import { AuthService } from '@soportedesk/core';
+import { ThemeMode, ThemeService } from '@soportedesk/core';
 import { ModeloImpresoraFormComponent } from './modelo-impresora-form.component';
-import { ModalComponent } from '../../shared/modal/modal.component';
+import { ModalComponent } from '@soportedesk/ui';
 import { VpnConfigInstitucionalFormComponent } from '../vpn/vpn-config-institucional-form.component';
 import { VpnService } from '../vpn/vpn.service';
 import {
@@ -19,7 +19,7 @@ import {
   TipoEquipoCatalogo,
   TipoLicencia,
   TipoImpresora,
-} from '../../core/models/catalogo.model';
+} from '@soportedesk/core';
 
 type CatalogoTab =
   | 'sedes'

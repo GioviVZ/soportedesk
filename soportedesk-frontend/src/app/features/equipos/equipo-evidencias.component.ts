@@ -1,8 +1,8 @@
 import { Component, Input, OnChanges, OnDestroy, SimpleChanges, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { forkJoin } from 'rxjs';
-import { AuthService } from '../../core/auth/auth.service';
-import { ModalComponent } from '../../shared/modal/modal.component';
+import { AuthService } from '@soportedesk/core';
+import { ModalComponent } from '@soportedesk/ui';
 import { EquipoEvidencia } from './equipo.model';
 import { EquipoService } from './equipo.service';
 

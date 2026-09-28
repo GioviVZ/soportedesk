@@ -1,8 +1,8 @@
 
 import { Component, EventEmitter, Input, Output, ChangeDetectionStrategy } from '@angular/core';
-import { StatusBadgeComponent } from '../../shared/status-badge/status-badge.component';
-import { VencimientoBadgeComponent } from '../../shared/vencimiento-badge/vencimiento-badge.component';
-import { SectionCardComponent } from '../../shared/section-card/section-card.component';
+import { StatusBadgeComponent } from '@soportedesk/ui';
+import { VencimientoBadgeComponent } from '@soportedesk/ui';
+import { SectionCardComponent } from '@soportedesk/ui';
 import { Vpn } from './vpn.model';
 
 @Component({

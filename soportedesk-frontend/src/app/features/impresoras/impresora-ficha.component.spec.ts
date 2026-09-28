@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ImpresoraFichaComponent } from './impresora-ficha.component';
-import { AuthService } from '../../core/auth/auth.service';
+import { AuthService } from '@soportedesk/core';
 import { Impresora, ImpresoraIntervencion } from './impresora.model';
 import { provideHttpClient, withInterceptorsFromDi, withXhr } from '@angular/common/http';
 

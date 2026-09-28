@@ -1,7 +1,7 @@
 import { SimpleChange } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { of } from 'rxjs';
-import { AuthService } from '../../core/auth/auth.service';
+import { AuthService } from '@soportedesk/core';
 import { EquipoEvidencia } from './equipo.model';
 import { EquipoService } from './equipo.service';
 import { EquipoEvidenciasComponent } from './equipo-evidencias.component';

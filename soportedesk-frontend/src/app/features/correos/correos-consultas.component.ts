@@ -1,7 +1,7 @@
 import { Component, OnDestroy, OnInit, inject, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ModalComponent } from '../../shared/modal/modal.component';
+import { ModalComponent } from '@soportedesk/ui';
 import { Correo, CorreoFiltros } from './correo.model';
 import { CorreoService } from './correo.service';
 import * as XLSX from 'xlsx';

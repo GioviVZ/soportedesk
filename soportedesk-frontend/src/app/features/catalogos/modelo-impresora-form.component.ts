@@ -1,13 +1,13 @@
 
 import { Component, EventEmitter, Input, OnChanges, Output, inject, ChangeDetectionStrategy } from '@angular/core';
 import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
-import { CatalogoService } from '../../core/catalogos/catalogo.service';
+import { CatalogoService } from '@soportedesk/core';
 import {
   MarcaImpresora,
   ModeloImpresora,
   ModeloImpresoraRequest,
   ModeloImpresoraToner,
-} from '../../core/models/catalogo.model';
+} from '@soportedesk/core';
 
 const TONER_COLORES = ['Negro', 'Cyan', 'Magenta', 'Amarillo'];
 

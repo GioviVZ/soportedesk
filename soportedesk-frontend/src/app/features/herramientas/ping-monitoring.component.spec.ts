@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { of, Subject } from 'rxjs';
-import { AuthService } from '../../core/auth/auth.service';
+import { AuthService } from '@soportedesk/core';
 import { MonitorPing, MonitorPingEvent, MonitorPingHistorial } from './herramientas.model';
 import { HerramientasService } from './herramientas.service';
 import { MonitorPingStreamService } from './monitor-ping-stream.service';

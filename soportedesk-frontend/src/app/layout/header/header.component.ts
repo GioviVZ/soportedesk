@@ -1,10 +1,10 @@
 import { Component, ElementRef, HostListener, inject, ChangeDetectionStrategy } from '@angular/core';
 
 import { Router } from '@angular/router';
-import { AuthService } from '../../core/auth/auth.service';
-import { LayoutService } from '../../core/services/layout.service';
-import { ThemeService } from '../../core/services/theme.service';
-import { ModalComponent } from '../../shared/modal/modal.component';
+import { AuthService } from '@soportedesk/core';
+import { LayoutService } from '@soportedesk/core';
+import { ThemeService } from '@soportedesk/core';
+import { ModalComponent } from '@soportedesk/ui';
 import { CambiarPasswordModalComponent } from './cambiar-password-modal.component';
 
 @Component({

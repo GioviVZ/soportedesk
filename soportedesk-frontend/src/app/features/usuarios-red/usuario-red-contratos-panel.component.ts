@@ -1,11 +1,11 @@
 import { CommonModule } from '@angular/common';
 import { Component, Input, OnChanges, SimpleChanges, inject, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { SectionCardComponent } from '../../shared/section-card/section-card.component';
-import { ModalComponent } from '../../shared/modal/modal.component';
-import { VencimientoBadgeComponent } from '../../shared/vencimiento-badge/vencimiento-badge.component';
-import { CatalogoService } from '../../core/catalogos/catalogo.service';
-import { TipoContrato } from '../../core/models/catalogo.model';
+import { SectionCardComponent } from '@soportedesk/ui';
+import { ModalComponent } from '@soportedesk/ui';
+import { VencimientoBadgeComponent } from '@soportedesk/ui';
+import { CatalogoService } from '@soportedesk/core';
+import { TipoContrato } from '@soportedesk/core';
 import { UsuarioRedContratoService } from './usuario-red-contrato.service';
 import { UsuarioRedContrato, UsuarioRedContratoRequest, esTipoContratoOs } from './usuario-red-contrato.model';
 

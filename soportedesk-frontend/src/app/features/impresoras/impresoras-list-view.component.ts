@@ -1,10 +1,10 @@
 import { ChangeDetectionStrategy, Component, EventEmitter, inject, Input, OnInit, Output } from '@angular/core';
 
 import { FormsModule } from '@angular/forms';
-import { CatalogoService } from '../../core/catalogos/catalogo.service';
-import { Dependencia, Sede, Subdependencia } from '../../core/models/catalogo.model';
-import { GenericTableComponent, TableColumn } from '../../shared/generic-table/generic-table.component';
-import { StatusBadgeComponent } from '../../shared/status-badge/status-badge.component';
+import { CatalogoService } from '@soportedesk/core';
+import { Dependencia, Sede, Subdependencia } from '@soportedesk/core';
+import { GenericTableComponent, TableColumn } from '@soportedesk/ui';
+import { StatusBadgeComponent } from '@soportedesk/ui';
 import { ImpresoraResumenComponent } from './impresora-resumen.component';
 import { Impresora, impresoraEstadoTone } from './impresora.model';
 import * as XLSX from 'xlsx';

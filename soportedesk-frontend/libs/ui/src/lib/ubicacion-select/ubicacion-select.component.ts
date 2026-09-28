@@ -1,8 +1,8 @@
 import { Component, EventEmitter, Input, OnChanges, OnInit, Output, SimpleChanges, inject, ChangeDetectionStrategy } from '@angular/core';
 
 import { FormsModule } from '@angular/forms';
-import { CatalogoService } from '../../core/catalogos/catalogo.service';
-import { Dependencia, Sede, Subdependencia, TipoContrato } from '../../core/models/catalogo.model';
+import { CatalogoService } from '@soportedesk/core';
+import { Dependencia, Sede, Subdependencia, TipoContrato } from '@soportedesk/core';
 
 @Component({
     selector: 'app-ubicacion-select',

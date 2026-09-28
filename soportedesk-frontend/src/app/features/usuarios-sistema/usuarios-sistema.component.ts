@@ -1,7 +1,7 @@
 import { Component, OnInit, inject, ChangeDetectionStrategy } from '@angular/core';
 
 import { FormsModule } from '@angular/forms';
-import { ModalComponent } from '../../shared/modal/modal.component';
+import { ModalComponent } from '@soportedesk/ui';
 import { MODULOS, ModuloPermiso, NivelPermiso, UsuarioSistema, UsuarioSistemaRequest } from './usuario-sistema.model';
 import { UsuarioSistemaService } from './usuario-sistema.service';
 

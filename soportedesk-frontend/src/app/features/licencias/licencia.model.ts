@@ -1,4 +1,4 @@
-import { TipoBien, TipoLicencia } from '../../core/models/catalogo.model';
+import { TipoBien, TipoLicencia } from '@soportedesk/core';
 
 export interface Licencia {
   id: number;

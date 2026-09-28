@@ -3,11 +3,11 @@ import { Component, EventEmitter, Input, OnChanges, OnInit, Output, inject, Chan
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { IMPRESORA_ESTADOS, Impresora, ImpresoraRequest } from './impresora.model';
 import { ImpresoraService } from './impresora.service';
-import { UbicacionSelectComponent } from '../../shared/ubicacion-select/ubicacion-select.component';
-import { CatalogoService } from '../../core/catalogos/catalogo.service';
-import { MarcaImpresora, ModeloImpresora, TipoImpresora } from '../../core/models/catalogo.model';
-import { SectionCardComponent } from '../../shared/section-card/section-card.component';
-import { StatusBadgeComponent } from '../../shared/status-badge/status-badge.component';
+import { UbicacionSelectComponent } from '@soportedesk/ui';
+import { CatalogoService } from '@soportedesk/core';
+import { MarcaImpresora, ModeloImpresora, TipoImpresora } from '@soportedesk/core';
+import { SectionCardComponent } from '@soportedesk/ui';
+import { StatusBadgeComponent } from '@soportedesk/ui';
 
 @Component({
     selector: 'app-impresora-form',

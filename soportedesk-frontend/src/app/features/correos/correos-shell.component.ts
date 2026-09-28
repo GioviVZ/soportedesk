@@ -1,7 +1,7 @@
 
 import { Component, ChangeDetectionStrategy } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
-import { ModuleViewItem, ModuleViewSwitcherComponent } from '../../shared/module-view-switcher/module-view-switcher.component';
+import { ModuleViewItem, ModuleViewSwitcherComponent } from '@soportedesk/ui';
 
 @Component({
     selector: 'app-correos-shell',

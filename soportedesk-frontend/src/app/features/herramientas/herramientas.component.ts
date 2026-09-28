@@ -17,7 +17,7 @@ import * as THREE from 'three';
 import QRCode from 'qrcode';
 import SpeedTest, { Results as CloudflareSpeedResults } from '@cloudflare/speedtest';
 import { ActivatedRoute } from '@angular/router';
-import { AuthService } from '../../core/auth/auth.service';
+import { AuthService } from '@soportedesk/core';
 import {
   EquipoDatosResult,
   OrdenServicio,
