@@ -3,8 +3,18 @@
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
   "sourceRoot": "libs/auditoria/src",
   "prefix": "lib",
-  "tags": [],
   "projectType": "library",
-  "// targets": "to see all targets run: nx show project auditoria --web",
-  "targets": {}
+  "tags": [
+    "scope:auditoria",
+    "type:feature"
+  ],
+  "targets": {
+    "lint": {
+      "options": {
+        "args": [
+          "**/*.ts"
+        ]
+      }
+    }
+  }
 }

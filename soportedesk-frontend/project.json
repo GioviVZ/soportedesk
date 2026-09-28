@@ -1,17 +1,32 @@
 {
-  "$schema": "node_modules/nx/schemas/project-schema.json",
   "name": "soportedesk-frontend",
+  "$schema": "node_modules/nx/schemas/project-schema.json",
   "projectType": "application",
+  "sourceRoot": "src",
+  "prefix": "app",
+  "tags": [
+    "scope:soportedesk-frontend",
+    "type:app"
+  ],
   "generators": {
     "@schematics/angular:component": {
       "style": "scss"
     }
   },
-  "sourceRoot": "src",
-  "prefix": "app",
   "targets": {
+    "lint": {
+      "options": {
+        "args": [
+          "src/**/*.ts"
+        ]
+      }
+    },
     "build": {
       "executor": "@angular/build:application",
+      "defaultConfiguration": "production",
+      "outputs": [
+        "{options.outputPath}"
+      ],
       "options": {
         "outputPath": "dist/soportedesk-frontend",
         "index": "src/index.html",
@@ -74,14 +89,11 @@
           "extractLicenses": false,
           "sourceMap": true
         }
-      },
-      "defaultConfiguration": "production",
-      "outputs": [
-        "{options.outputPath}"
-      ]
+      }
     },
     "serve": {
       "executor": "@angular/build:dev-server",
+      "defaultConfiguration": "development",
       "options": {
         "proxyConfig": "proxy.conf.json"
       },
@@ -92,8 +104,7 @@
         "development": {
           "buildTarget": "soportedesk-frontend:build:development"
         }
-      },
-      "defaultConfiguration": "development"
+      }
     },
     "extract-i18n": {
       "executor": "@angular/build:extract-i18n",

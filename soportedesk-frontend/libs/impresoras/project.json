@@ -3,8 +3,18 @@
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
   "sourceRoot": "libs/impresoras/src",
   "prefix": "lib",
-  "tags": [],
   "projectType": "library",
-  "// targets": "to see all targets run: nx show project impresoras --web",
-  "targets": {}
+  "tags": [
+    "scope:impresoras",
+    "type:feature"
+  ],
+  "targets": {
+    "lint": {
+      "options": {
+        "args": [
+          "**/*.ts"
+        ]
+      }
+    }
+  }
 }

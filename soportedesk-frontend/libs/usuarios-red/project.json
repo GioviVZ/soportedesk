@@ -3,8 +3,18 @@
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
   "sourceRoot": "libs/usuarios-red/src",
   "prefix": "lib",
-  "tags": [],
   "projectType": "library",
-  "// targets": "to see all targets run: nx show project usuarios-red --web",
-  "targets": {}
+  "tags": [
+    "scope:usuarios-red",
+    "type:feature"
+  ],
+  "targets": {
+    "lint": {
+      "options": {
+        "args": [
+          "**/*.ts"
+        ]
+      }
+    }
+  }
 }

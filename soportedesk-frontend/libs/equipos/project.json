@@ -3,8 +3,18 @@
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
   "sourceRoot": "libs/equipos/src",
   "prefix": "lib",
-  "tags": [],
   "projectType": "library",
-  "// targets": "to see all targets run: nx show project equipos --web",
-  "targets": {}
+  "tags": [
+    "scope:equipos",
+    "type:feature"
+  ],
+  "targets": {
+    "lint": {
+      "options": {
+        "args": [
+          "**/*.ts"
+        ]
+      }
+    }
+  }
 }

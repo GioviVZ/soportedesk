@@ -3,8 +3,18 @@
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
   "sourceRoot": "libs/ui/src",
   "prefix": "lib",
-  "tags": [],
   "projectType": "library",
-  "// targets": "to see all targets run: nx show project ui --web",
-  "targets": {}
+  "tags": [
+    "scope:ui",
+    "type:ui"
+  ],
+  "targets": {
+    "lint": {
+      "options": {
+        "args": [
+          "**/*.ts"
+        ]
+      }
+    }
+  }
 }
