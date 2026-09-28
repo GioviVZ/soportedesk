@@ -1,9 +1,41 @@
 import { TestBed } from '@angular/core/testing';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { Router } from '@angular/router';
+import { Dependencia, Sede, Subdependencia } from '../../core/models/catalogo.model';
 import { UsuariosRedConsultasComponent } from './usuarios-red-consultas.component';
 import { UsuarioRedConsultaResultado } from './usuario-red-contrato.model';
 import { provideHttpClient, withInterceptorsFromDi, withXhr } from '@angular/common/http';
+
+interface CatalogoPrueba {
+  sedes: Sede[];
+  dependencias: Dependencia[];
+  subdependencias: Subdependencia[];
+}
+
+const CATALOGO_VACIO: CatalogoPrueba = {
+  sedes: [],
+  dependencias: [],
+  subdependencias: [],
+};
+
+const SEDE_CENTRAL: Sede = { id: 1, nombre: 'Sede Central' };
+const DEPENDENCIA_TI: Dependencia = {
+  id: 10,
+  nombre: 'Tecnologías de la Información',
+  sede: SEDE_CENTRAL,
+  orgUnitPath: null,
+};
+const SUBDEPENDENCIA_MESA_AYUDA: Subdependencia = {
+  id: 100,
+  nombre: 'Mesa de Ayuda',
+  dependencia: DEPENDENCIA_TI,
+  orgUnitPath: null,
+};
+const CATALOGO_UBICACION: CatalogoPrueba = {
+  sedes: [SEDE_CENTRAL],
+  dependencias: [DEPENDENCIA_TI],
+  subdependencias: [SUBDEPENDENCIA_MESA_AYUDA],
+};
 
 function consulta(overrides: Partial<UsuarioRedConsultaResultado> = {}): UsuarioRedConsultaResultado {
   return {
@@ -11,6 +43,8 @@ function consulta(overrides: Partial<UsuarioRedConsultaResultado> = {}): Usuario
     displayName: 'Juan Perez',
     mail: null,
     office: 'Informatica',
+    department: null,
+    company: null,
     organizationalUnit: null,
     enabled: true,
     locked: false,
@@ -34,9 +68,19 @@ describe('UsuariosRedConsultasComponent', () => {
     return TestBed.runInInjectionContext(() => new UsuariosRedConsultasComponent());
   }
 
-  function initComponent(directorio: UsuarioRedConsultaResultado[] = [consulta()]): UsuariosRedConsultasComponent {
+  function flushCatalogos(catalogo: CatalogoPrueba = CATALOGO_VACIO): void {
+    httpMock.expectOne('/api/catalogos/sedes').flush(catalogo.sedes);
+    httpMock.expectOne('/api/catalogos/dependencias').flush(catalogo.dependencias);
+    httpMock.expectOne('/api/catalogos/subdependencias').flush(catalogo.subdependencias);
+  }
+
+  function initComponent(
+    directorio: UsuarioRedConsultaResultado[] = [consulta()],
+    catalogo: CatalogoPrueba = CATALOGO_VACIO,
+  ): UsuariosRedConsultasComponent {
     const component = createComponent();
     component.ngOnInit();
+    flushCatalogos(catalogo);
     const req = httpMock.expectOne((r) => r.url === '/api/usuarios-red/contratos/consultas');
     expect(req.request.params.has('termino')).toBe(false);
     req.flush(directorio);
@@ -60,6 +104,7 @@ describe('UsuariosRedConsultasComponent', () => {
     it('marca error si falla la carga y no rompe el buscador', () => {
       const component = createComponent();
       component.ngOnInit();
+      flushCatalogos();
       const req = httpMock.expectOne((r) => r.url === '/api/usuarios-red/contratos/consultas');
       req.flush('error', { status: 500, statusText: 'Server Error' });
 
@@ -76,18 +121,25 @@ describe('UsuariosRedConsultasComponent', () => {
   });
 
   describe('filtros', () => {
-    it('filtra por oficina, incluyendo el bucket "Sin oficina"', () => {
+    it('filtra por sede, dependencia y subdependencia, incluyendo el bucket "Pendiente de clasificar"', () => {
       const component = initComponent([
-        consulta({ usuario: 'a', office: 'Informatica' }),
-        consulta({ usuario: 'b', office: null }),
-        consulta({ usuario: 'c', office: 'Informatica' }),
-      ]);
+        consulta({ usuario: 'dependencia', department: 'tecnologias-de la informacion' }),
+        consulta({ usuario: 'subdependencia', company: 'TECNOLOGIAS DE LA INFORMACION', department: 'MESA-DE AYUDA' }),
+        consulta({ usuario: 'pendiente', company: 'Recursos Humanos', department: 'Talento' }),
+      ], CATALOGO_UBICACION);
 
-      component.filters.oficina = 'Sin oficina';
-      expect(component.directorioFiltrado.map((i) => i.usuario)).toEqual(['b']);
+      component.filters.sedeId = SEDE_CENTRAL.id.toString();
+      expect(component.directorioFiltrado.map((i) => i.usuario).sort()).toEqual(['dependencia', 'subdependencia']);
 
-      component.filters.oficina = 'Informatica';
-      expect(component.directorioFiltrado.map((i) => i.usuario).sort()).toEqual(['a', 'c']);
+      component.filters.dependenciaId = DEPENDENCIA_TI.id.toString();
+      expect(component.directorioFiltrado.map((i) => i.usuario).sort()).toEqual(['dependencia', 'subdependencia']);
+
+      component.filters.subdependenciaId = SUBDEPENDENCIA_MESA_AYUDA.id.toString();
+      expect(component.directorioFiltrado.map((i) => i.usuario)).toEqual(['subdependencia']);
+
+      component.filters.subdependenciaId = '';
+      component.filters.dependenciaId = component.PENDIENTE;
+      expect(component.directorioFiltrado.map((i) => i.usuario)).toEqual(['pendiente']);
     });
 
     it('filtra por estado: habilitado, deshabilitado, bloqueado y sin ficha AD', () => {
@@ -123,14 +175,20 @@ describe('UsuariosRedConsultasComponent', () => {
       expect(component.directorioFiltrado.map((i) => i.usuario)).toEqual(['venc']);
     });
 
-    it('combina filtros de oficina, estado y vencimiento', () => {
+    it('combina filtros de dependencia, estado y vencimiento', () => {
       const component = initComponent([
-        consulta({ usuario: 'match', office: 'Informatica', enabled: true, estadoVencimientoUsuarioRed: 'VIGENTE' }),
-        consulta({ usuario: 'otraOficina', office: 'RRHH', enabled: true, estadoVencimientoUsuarioRed: 'VIGENTE' }),
-        consulta({ usuario: 'deshabilitado', office: 'Informatica', enabled: false, estadoVencimientoUsuarioRed: 'VIGENTE' }),
-      ]);
+        consulta({ usuario: 'match', company: 'Tecnologias de la Informacion', enabled: true, estadoVencimientoUsuarioRed: 'VIGENTE' }),
+        consulta({ usuario: 'otraDependencia', company: 'Recursos Humanos', enabled: true, estadoVencimientoUsuarioRed: 'VIGENTE' }),
+        consulta({ usuario: 'deshabilitado', company: 'Tecnologias de la Informacion', enabled: false, estadoVencimientoUsuarioRed: 'VIGENTE' }),
+      ], CATALOGO_UBICACION);
 
-      component.filters = { oficina: 'Informatica', estado: 'HABILITADO', vencimiento: 'VIGENTE' };
+      component.filters = {
+        sedeId: SEDE_CENTRAL.id.toString(),
+        dependenciaId: DEPENDENCIA_TI.id.toString(),
+        subdependenciaId: '',
+        estado: 'HABILITADO',
+        vencimiento: 'VIGENTE',
+      };
 
       expect(component.directorioFiltrado.map((i) => i.usuario)).toEqual(['match']);
     });
@@ -139,23 +197,18 @@ describe('UsuariosRedConsultasComponent', () => {
       const component = initComponent([consulta()]);
       expect(component.hasActiveFilters).toBe(false);
 
-      component.filters.oficina = 'Informatica';
+      component.filters.dependenciaId = DEPENDENCIA_TI.id.toString();
       expect(component.hasActiveFilters).toBe(true);
 
       component.clearFilters();
       expect(component.hasActiveFilters).toBe(false);
-      expect(component.filters).toEqual({ oficina: '', estado: '', vencimiento: '' });
-    });
-
-    it('oficinas deduplica, agrega "Sin oficina" y ordena alfabeticamente', () => {
-      const component = initComponent([
-        consulta({ usuario: 'a', office: 'Zoologia' }),
-        consulta({ usuario: 'b', office: 'Informatica' }),
-        consulta({ usuario: 'c', office: 'Informatica' }),
-        consulta({ usuario: 'd', office: null }),
-      ]);
-
-      expect(component.oficinas).toEqual(['Informatica', 'Sin oficina', 'Zoologia']);
+      expect(component.filters).toEqual({
+        sedeId: '',
+        dependenciaId: '',
+        subdependenciaId: '',
+        estado: '',
+        vencimiento: '',
+      });
     });
   });
 
