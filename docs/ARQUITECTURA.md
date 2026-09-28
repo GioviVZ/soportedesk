@@ -3,7 +3,7 @@
 Documento único y vigente con la arquitectura completa del sistema. Reemplaza la
 lectura dispersa de los specs/plans históricos de `docs/superpowers/historial/`
 (esos quedan como bitácora de decisiones de diseño, no como referencia técnica
-actual — para eso está este documento). Última revisión a fondo: 2026-08-11.
+actual — para eso está este documento). Última revisión a fondo: 2026-09-27.
 
 ---
 
@@ -19,14 +19,15 @@ Arquitectura: SPA Angular que consume una API REST (Spring Boot + JWT,
 mayormente stateless salvo el canal de eventos en vivo) respaldada por SQL
 Server como base propia, más dos integraciones de solo lectura contra sistemas
 externos: **Active Directory** (LDAPS, en vivo) y **GLPI** (MySQL, inventario
-de hardware). Sin colas ni microservicios — un monolito backend y un monolito
-frontend — pero sí un job `@Scheduled` (sincronización de equipos desde GLPI)
-y un canal SSE para push de cambios al
-frontend.
+de hardware). Sin colas ni microservicios — un único despliegue backend
+(reactor Maven multi-módulo, ver §3.1) y una única SPA frontend (workspace
+Nx con librerías independientes por feature, ver §8.1) — pero sí un job
+`@Scheduled` (sincronización de equipos desde GLPI) y un canal SSE para push
+de cambios al frontend.
 
 ```
 ┌─────────────────────┐   HTTPS / JSON + SSE   ┌──────────────────────┐   JDBC   ┌───────────────┐
-│  Angular 17 SPA      │ ──────────────────────▶│  Spring Boot 3 API   │─────────▶│ SQL Server    │
+│  Angular 22 SPA      │ ──────────────────────▶│  Spring Boot 3 API   │─────────▶│ SQL Server    │
 │  (soportedesk-       │◀────────────────────── │  (soportedesk-       │           │ (BD: ssti)    │
 │   frontend)          │     JWT en cada request │   backend)           │           └───────────────┘
 └─────────────────────┘                          │                      │──JDBC (RO)┌───────────────┐
@@ -57,9 +58,9 @@ frontend.
 | Tiempo real | SSE nativo (`SseEmitter`, sin librería extra) | `/api/realtime/events`, emisores en memoria, sin persistencia |
 | Jobs programados | `@Scheduled` (`@EnableScheduling`) | sync GLPI→`equipo_asignacion` (diario 3am) |
 | Cifrado de credenciales | AES/GCM (`LicenciaCredentialConverter`) | aplica a claves de licencias |
-| Frontend | Angular 17.3 · TypeScript 5.4 · SCSS | standalone components, sin NgModules |
+| Frontend | Angular 22.2 · TypeScript 6.0 · SCSS | standalone components, sin NgModules; workspace Nx (ver §8.1) |
 | Gráficos | Chart.js (vía `ng2-charts` o uso directo) | dashboard |
-| Build | Maven (backend) · Angular CLI / npm (frontend) | sin Docker/CI configurado hoy |
+| Build | Maven reactor multi-módulo (backend) · Nx (frontend) | sin Docker/CI configurado hoy |
 | Reverse proxy | nginx (config en `deploy/nginx.conf`) | TLS terminado en nginx, sirve el build estático y proxya `/api/*` (incluye SSE con `proxy_buffering off`) |
 
 ---
@@ -99,12 +100,16 @@ SistemadeSoporteTecnicoINIA/
 │           ├── data_catalogos.sql        # catálogos iniciales (sedes, dependencias, etc.)
 │           └── application.yml           # configuración (perfil `dev`; todas las credenciales vía variables de entorno)
 │
-└── soportedesk-frontend/                   # SPA Angular 17
+└── soportedesk-frontend/                   # workspace Nx (desde 2026-09-27, ver §8.1)
+    ├── libs/
+    │   ├── core/           # AuthService, guards (authGuard/adminGuard/moduloGuard/vpnAdminGuard), interceptor JWT, CatalogoService, modelos compartidos
+    │   ├── ui/             # GenericTable, UbicacionSelect, SectionCard, StatusBadge, VencimientoBadge, ModuleViewSwitcher, etc. (sin dependencias de negocio)
+    │   ├── auditoria/ auth/ wifi/ usuarios-sistema/ correos/ licencias/ impresoras/
+    │   ├── equipos/ herramientas/ usuarios-red/ vpn/ catalogos/ dashboard/   # 13 librerías de negocio, cada una con su <nombre>.routes.ts (ver §8.1)
+    │   └── (cada libs/<x>/src/index.ts es el único punto de entrada público permitido hacia esa librería)
     └── src/app/
-        ├── core/           # AuthService, guards (authGuard/adminGuard/moduloGuard/vpnAdminGuard), interceptor JWT, CatalogoService
-        ├── features/       # un folder por módulo de negocio (ver tabla de rutas más abajo)
-        ├── layout/         # shell, header, sidebar
-        └── shared/         # GenericTable, UbicacionSelect, SectionCard, StatusBadge, VencimientoBadge, ModuleViewSwitcher, etc.
+        ├── app.routes.ts   # árbol de rutas raíz: loadChildren hacia cada librería de negocio
+        └── layout/         # shell, header, sidebar
 ```
 
 ### 3.1 Modularización física del backend (ISO/IEC 25010 — Modularidad)
@@ -422,6 +427,55 @@ vista dentro de un shell de módulo), `SectionCardComponent`/`StatusBadgeCompone
 (alerta de vencimiento), `VpnPasswordGeneratorComponent` (generador de
 contraseñas embebido en el formulario VPN), `IfAdminDirective`.
 
+### 8.1 Modularización física del frontend (ISO/IEC 25010 — Modularidad)
+
+Hasta el 2026-09-27 el frontend era una única app Angular CLI organizada por
+carpeta (`core`/`features`/`shared`) pero sin ningún límite físico entre
+features — cualquier componente podía importar directo el interior de
+cualquier otro. Se auditaron los imports entre los 13 features de negocio
+(solo 3 cruces encontrados en todo el código) y se migró a un **workspace
+Nx** con 15 librerías (`core`, `ui`, + 13 features de negocio), cada una con
+su propio `project.json`, barrel público (`src/index.ts`) y alias de import
+(`@soportedesk/<nombre>`).
+
+**Únicas 2 dependencias feature-a-feature, ambas legítimas y preservadas
+explícitamente** (el tercer cruce encontrado en la auditoría original,
+`OrdenServicio`/`OrdenServicioHito` importado por `herramientas` desde
+adentro de otro feature, era acoplamiento accidental — se resolvió moviendo
+esos modelos a `core/models` antes de tocar Nx, no se conservó como
+dependencia):
+
+| Dependencia | Motivo |
+|---|---|
+| `vpn → equipos` | `vpn-form.component.ts` busca un equipo existente al crear una solicitud VPN |
+| `catalogos → vpn` | `catalogos.component.ts` embebe el formulario de configuración institucional de VPN |
+
+**Regla de límites de módulo (equivalente frontend de ArchUnit):**
+`@nx/enforce-module-boundaries` con tags `scope:<nombre>` + `type:feature` /
+`type:ui` / `type:data-access` / `type:app` por proyecto. Los `depConstraints`
+bloquean cualquier dependencia feature-a-feature que no sea una de las 2 de
+la tabla anterior; se confirmó con una prueba deliberada (import prohibido
+agregado y revertido) que el lint realmente falla ante una violación nueva.
+
+**Regresión detectada y corregida en la verificación final (code-splitting):**
+la primera versión de la migración hacía que `app.routes.ts` importara el
+*barrel* de cada librería (`import('@soportedesk/equipos').then(m => m.X)`)
+para cada ruta. Como todas las rutas de una misma librería resuelven al
+mismo especificador de módulo, el bundler las colapsaba en un solo chunk
+grande por librería (18 chunks lazy en total, el mayor de 744 kB, en vez de
+un chunk pequeño por componente como antes de la migración). Se corrigió
+haciendo que cada librería exponga su propio `<nombre>.routes.ts` (con
+lazy-imports relativos internos a la librería) y que `app.routes.ts` use
+`loadChildren` apuntando a esas rutas en vez de `loadComponent` apuntando al
+barrel — restaurando ~55 chunks lazy con nombres descriptivos por
+componente, igual que antes de la migración (los pocos chunks grandes que
+persisten son librerías de terceros cargadas bajo demanda — `xlsx`, `three`,
+`chart.js` —, no código propio).
+
+Verificación de la migración completa (225 tests y build de producción
+confirmados de forma independiente en cada fase F0–F5): historial completo
+en `docs/superpowers/historial/plans/2026-09-25-modularizacion-fisica-frontend.md`.
+
 ### Sistema visual
 
 Rediseño "Panel Operativo INIA" aplicado a login, header, sidebar y todos los
@@ -506,15 +560,19 @@ Ejecutar como servicio:
 
 ### 9.3 Frontend (build estático)
 
+Desde la migración a workspace Nx (2026-09-27, ver §8.1), el build ya no se
+invoca con `ng`, sino a través de Nx (que orquesta el mismo builder de
+Angular sobre las 15 librerías + la app):
+
 ```bash
 cd soportedesk-frontend
 npm install
-ng build --configuration production
+npm run build   # = nx build soportedesk-frontend --configuration production
 # genera dist/soportedesk-frontend/browser/
 ```
 
 Servida por nginx (`deploy/nginx.conf`, ver arriba). En desarrollo,
-`proxy.conf.json` vía `ng serve` cumple el mismo rol de proxy a `/api`.
+`proxy.conf.json` vía `nx serve` cumple el mismo rol de proxy a `/api`.
 
 ### 9.4 Desarrollo local (resumen)
 
@@ -522,13 +580,13 @@ Servida por nginx (`deploy/nginx.conf`, ver arriba). En desarrollo,
 # Backend (reactor multi-modulo desde 2026-09-27: hay que indicar el modulo con el plugin)
 cd soportedesk-backend && mvn -pl soportedesk-app -am spring-boot:run   # http://localhost:8080
 
-# Frontend
-cd soportedesk-frontend && npm install && ng serve   # http://localhost:4200, proxy a /api ya configurado
+# Frontend (workspace Nx desde 2026-09-27)
+cd soportedesk-frontend && npm install && npm start   # = nx serve, http://localhost:4200, proxy a /api ya configurado
 ```
 
 En este entorno también hay un nginx corriendo en `:80`/`:443` sirviendo el
 build de producción (`https://localhost/`, certificado autofirmado) en
-paralelo al `ng serve` de desarrollo (`:4200`) y al backend directo (`:8080`).
+paralelo al `nx serve` de desarrollo (`:4200`) y al backend directo (`:8080`).
 
 ---
 
@@ -540,6 +598,8 @@ cd soportedesk-backend && mvn test
 # Backend — incluye los *ControllerIT (Testcontainers/integración real)
 cd soportedesk-backend && mvn verify
 
-# Frontend — suite Karma/Jasmine
-cd soportedesk-frontend && npx ng test --watch=false
+# Frontend — suite Karma/Jasmine (workspace Nx desde 2026-09-27)
+cd soportedesk-frontend && npm test -- --watch=false   # = nx test soportedesk-frontend
+# Frontend — reglas de límites de módulo entre librerías (equivalente Nx de ArchUnit, ver §8.1)
+cd soportedesk-frontend && npx nx run-many -t lint
 ```
