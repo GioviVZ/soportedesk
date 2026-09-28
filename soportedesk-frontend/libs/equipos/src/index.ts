@@ -4,4 +4,5 @@ export * from './lib/equipo.service';
 export * from './lib/equipos-dashboard.component';
 export * from './lib/equipos-inventario.component';
 export * from './lib/equipos-mantenimiento.component';
+export * from './lib/equipos.routes';
 export * from './lib/equipos-shell.component';

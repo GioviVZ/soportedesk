@@ -1,15 +1,12 @@
 import { Routes } from '@angular/router';
-import { adminGuard } from '@soportedesk/core';
-import { authGuard } from '@soportedesk/core';
-import { moduloGuard } from '@soportedesk/core';
-import { vpnAdminGuard } from '@soportedesk/core';
+import { adminGuard, authGuard, moduloGuard } from '@soportedesk/core';
 import { ShellComponent } from './layout/shell/shell.component';
 
 export const routes: Routes = [
   {
     path: 'login',
-    loadComponent: () =>
-      import('@soportedesk/auth').then((m) => m.LoginComponent),
+    loadChildren: () =>
+      import('@soportedesk/auth').then((m) => m.authRoutes),
   },
   {
     path: '',
@@ -23,196 +20,73 @@ export const routes: Routes = [
       },
       {
         path: 'dashboard',
-        loadComponent: () =>
-          import('@soportedesk/dashboard').then((m) => m.DashboardComponent),
+        loadChildren: () =>
+          import('@soportedesk/dashboard').then((m) => m.dashboardRoutes),
       },
       {
         path: 'licencias',
-        loadComponent: () =>
-        import('@soportedesk/licencias').then((m) => m.LicenciasShellComponent),
-        children: [
-          { path: '', redirectTo: 'consultas', pathMatch: 'full' },
-          { path: 'consultas', canActivate: [moduloGuard('licencias')], data: { mode: 'consultas' }, loadComponent: () => import('@soportedesk/licencias').then((m) => m.LicenciasListComponent) },
-          { path: 'administracion', canActivate: [moduloGuard('licencias', { write: true })], data: { mode: 'administracion' }, loadComponent: () => import('@soportedesk/licencias').then((m) => m.LicenciasListComponent) },
-          { path: 'dashboard', canActivate: [moduloGuard('licencias', { write: true })], loadComponent: () => import('@soportedesk/licencias').then((m) => m.LicenciasDashboardComponent) },
-        ],
+        loadChildren: () =>
+          import('@soportedesk/licencias').then((m) => m.licenciasRoutes),
       },
       {
         path: 'wifi',
-        loadComponent: () =>
-          import('@soportedesk/wifi').then((m) => m.WifiShellComponent),
-        children: [
-          { path: '', redirectTo: 'consultas', pathMatch: 'full' },
-          { path: 'consultas', canActivate: [moduloGuard('wifi')], data: { mode: 'consultas' }, loadComponent: () => import('@soportedesk/wifi').then((m) => m.WifiListComponent) },
-          { path: 'administracion', canActivate: [moduloGuard('wifi', { write: true })], data: { mode: 'administracion' }, loadComponent: () => import('@soportedesk/wifi').then((m) => m.WifiListComponent) },
-          { path: 'dashboard', canActivate: [moduloGuard('wifi', { write: true })], loadComponent: () => import('@soportedesk/wifi').then((m) => m.WifiDashboardComponent) },
-        ],
+        loadChildren: () =>
+          import('@soportedesk/wifi').then((m) => m.wifiRoutes),
       },
       {
         path: 'equipos',
-        loadComponent: () =>
-          import('@soportedesk/equipos').then((m) => m.EquiposShellComponent),
-        children: [
-          { path: '', redirectTo: 'inventario', pathMatch: 'full' },
-          {
-            path: 'inventario',
-            canActivate: [moduloGuard('equipos')],
-            loadComponent: () =>
-              import('@soportedesk/equipos').then((m) => m.EquiposInventarioComponent),
-          },
-          {
-            path: 'mantenimiento',
-            canActivate: [moduloGuard('equipos', { write: true })],
-            loadComponent: () =>
-              import('@soportedesk/equipos').then((m) => m.EquiposMantenimientoComponent),
-          },
-          {
-            path: 'dashboard',
-            canActivate: [moduloGuard('equipos', { write: true })],
-            loadComponent: () =>
-              import('@soportedesk/equipos').then((m) => m.EquiposDashboardComponent),
-          },
-        ],
-      },
-      {
-        path: 'equipos/:id',
-        canActivate: [moduloGuard('equipos')],
-        loadComponent: () =>
-          import('@soportedesk/equipos').then((m) => m.EquipoDetailComponent),
+        loadChildren: () =>
+          import('@soportedesk/equipos').then((m) => m.equiposRoutes),
       },
       {
         path: 'vpn',
-        loadComponent: () =>
-          import('@soportedesk/vpn').then((m) => m.VpnShellComponent),
-        children: [
-          { path: '', redirectTo: 'registros', pathMatch: 'full' },
-          {
-            path: 'registros',
-            canActivate: [moduloGuard('vpn')],
-            loadComponent: () =>
-              import('@soportedesk/vpn').then((m) => m.VpnRegistrosComponent),
-          },
-          {
-            path: 'administracion',
-            canActivate: [vpnAdminGuard],
-            loadComponent: () =>
-              import('@soportedesk/vpn').then((m) => m.VpnAdministracionComponent),
-          },
-          {
-            path: 'dashboard',
-            canActivate: [moduloGuard('aprobar-vpn', { write: true })],
-            loadComponent: () =>
-              import('@soportedesk/vpn').then((m) => m.VpnDashboardComponent),
-          },
-        ],
+        loadChildren: () =>
+          import('@soportedesk/vpn').then((m) => m.vpnRoutes),
       },
       {
         path: 'correos',
-        loadComponent: () =>
-          import('@soportedesk/correos').then((m) => m.CorreosShellComponent),
-        children: [
-          { path: '', redirectTo: 'consultas', pathMatch: 'full' },
-          {
-            path: 'consultas',
-            canActivate: [moduloGuard('correos')],
-            loadComponent: () =>
-              import('@soportedesk/correos').then((m) => m.CorreosConsultasComponent),
-          },
-          {
-            path: 'dashboard',
-            canActivate: [moduloGuard('correos')],
-            loadComponent: () =>
-              import('@soportedesk/correos').then((m) => m.CorreosDashboardComponent),
-          },
-        ],
+        loadChildren: () =>
+          import('@soportedesk/correos').then((m) => m.correosRoutes),
       },
       {
         path: 'usuarios-red',
-        loadComponent: () =>
+        loadChildren: () =>
           import('@soportedesk/usuarios-red').then(
-            (m) => m.UsuariosRedShellComponent,
+            (m) => m.usuariosRedRoutes,
           ),
-        children: [
-          { path: '', redirectTo: 'consultas', pathMatch: 'full' },
-          {
-            path: 'consultas',
-            canActivate: [moduloGuard('usuarios-red')],
-            loadComponent: () =>
-              import('@soportedesk/usuarios-red').then(
-                (m) => m.UsuariosRedConsultasComponent,
-              ),
-          },
-          {
-            path: 'administracion',
-            canActivate: [moduloGuard('usuarios-red', { write: true })],
-            loadComponent: () =>
-              import('@soportedesk/usuarios-red').then(
-                (m) => m.UsuariosRedAdministracionComponent,
-              ),
-          },
-          {
-            path: 'dashboard',
-            canActivate: [moduloGuard('usuarios-red', { write: true })],
-            loadComponent: () =>
-              import('@soportedesk/usuarios-red').then(
-                (m) => m.UsuariosRedDashboardComponent,
-              ),
-          },
-        ],
       },
       {
         path: 'impresoras',
-        loadComponent: () =>
-          import('@soportedesk/impresoras').then((m) => m.ImpresorasShellComponent),
-        children: [
-          { path: '', redirectTo: 'consultas', pathMatch: 'full' },
-          {
-            path: 'consultas',
-            canActivate: [moduloGuard('impresoras')],
-            loadComponent: () =>
-              import('@soportedesk/impresoras').then((m) => m.ImpresorasConsultasComponent),
-          },
-          {
-            path: 'administracion',
-            canActivate: [moduloGuard('impresoras', { write: true })],
-            loadComponent: () =>
-              import('@soportedesk/impresoras').then((m) => m.ImpresorasAdministracionComponent),
-          },
-          {
-            path: 'dashboard',
-            canActivate: [moduloGuard('impresoras', { write: true })],
-            loadComponent: () =>
-              import('@soportedesk/impresoras').then((m) => m.ImpresorasDashboardComponent),
-          },
-        ],
+        loadChildren: () =>
+          import('@soportedesk/impresoras').then((m) => m.impresorasRoutes),
       },
       {
         path: 'usuarios-sistema',
         canActivate: [adminGuard],
-        loadComponent: () =>
+        loadChildren: () =>
           import('@soportedesk/usuarios-sistema').then(
-            (m) => m.UsuariosSistemaComponent,
+            (m) => m.usuariosSistemaRoutes,
           ),
       },
       {
         path: 'auditoria',
         canActivate: [moduloGuard('auditoria')],
-        loadComponent: () =>
-          import('@soportedesk/auditoria').then((m) => m.AuditoriaComponent),
+        loadChildren: () =>
+          import('@soportedesk/auditoria').then((m) => m.auditoriaRoutes),
       },
       {
         path: 'herramientas',
         canActivate: [moduloGuard('herramientas')],
-        loadComponent: () =>
+        loadChildren: () =>
           import('@soportedesk/herramientas').then(
-            (m) => m.HerramientasComponent,
+            (m) => m.herramientasRoutes,
           ),
       },
       {
         path: 'catalogos',
         canActivate: [moduloGuard('catalogos')],
-        loadComponent: () =>
-          import('@soportedesk/catalogos').then((m) => m.CatalogosComponent),
+        loadChildren: () =>
+          import('@soportedesk/catalogos').then((m) => m.catalogosRoutes),
       },
       { path: '**', redirectTo: 'dashboard' },
     ],
