@@ -42,8 +42,32 @@ reduzca contraste o convierta el producto en una colección de degradados.
 - Fondo claro `#edf2f8`: lienzo frío que contrasta con blanco y azul oscuro.
 - Colores semánticos verde, ámbar y rojo: únicamente para éxito, advertencia y peligro.
 
-Todos los módulos utilizan variaciones de azul. Ningún módulo introduce una nueva
-familia cromática como identidad principal.
+Cada módulo de negocio tiene un color de identidad propio, tomado de una familia
+fría acotada entre azul, azul-acero e índigo azulado (aprox. 190°–250° del círculo
+cromático). Sigue siendo una sola paleta institucional coordinada, no un arcoíris:
+ningún módulo introduce verdes, naranjas ni tonos cálidos como identidad.
+
+### Colores de módulo
+
+| Módulo | Color base (claro) |
+|---|---|
+| Equipos | `#0b2f6b` |
+| VPN | `#4a4f8c` |
+| Usuarios de Red | `#1f6fc4` |
+| WiFi | `#1f8fa3` |
+| Licencias | `#173f73` |
+| Correos | `#4d5e99` |
+| Impresoras | `#5c6b8c` |
+| Auditoría | `#6a6f9c` |
+| Herramientas | `#2a5d8f` |
+| Catálogos | `#576b8f` |
+| Usuarios del Sistema | `#334b7a` |
+| Dashboard | usa `--color-accent` (es el agregador, no tiene identidad propia) |
+
+Las variables CSS viven en `libs/core/src/lib/styles/_variables.scss`
+(`--color-<módulo>`, con variantes `-hover` y `-light`, y sus equivalentes
+recalculados para modo oscuro). Se aplican al estado activo del sidebar y al
+selector de vistas (tabs) de cada shell de módulo.
 
 ## Regla de color sólido
 
@@ -155,7 +179,9 @@ contraste.
 ## No hacer
 
 - No usar gradientes decorativos.
-- No introducir verdes, púrpuras o naranjas como identidad de módulo.
+- No introducir verdes, naranjas ni púrpura/magenta cálido como identidad de
+  módulo — la familia fría de módulo se limita a azul, azul-acero e índigo
+  azulado (ver "Colores de módulo").
 - No poner texto tenue encima de vidrio sin contraste suficiente.
 - No usar glass en cada elemento de una tabla.
 - No mezclar SVG heredados, emojis y Tabler dentro de la misma navegación.

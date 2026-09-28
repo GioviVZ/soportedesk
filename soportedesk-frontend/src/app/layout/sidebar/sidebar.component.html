@@ -25,6 +25,7 @@
           #rla="routerLinkActive"
           class="nav-item"
           [class.admin-item]="item.adminOnly"
+          [style.--item-accent]="'var(--color-' + item.icon + ')'"
           [title]="collapsed ? item.label : ''"
           (click)="layout.close()"
           (mouseenter)="hoveredPath = item.path"

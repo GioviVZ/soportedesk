@@ -1,4 +1,6 @@
 :host {
+  --color-accent: var(--color-catalogos);
+  --color-accent-hover: var(--color-catalogos-hover);
   display: block;
   width: min(100%, var(--content-max));
   max-width: 100%;

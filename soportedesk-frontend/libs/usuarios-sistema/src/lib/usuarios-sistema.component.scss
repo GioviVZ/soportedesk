@@ -1,5 +1,7 @@
 .usuarios-sistema-page,
 :host {
+  --color-accent: var(--color-usuarios-sistema);
+  --color-accent-hover: var(--color-usuarios-sistema-hover);
   width: 100%;
   max-width: 100%;
   min-width: 0;
