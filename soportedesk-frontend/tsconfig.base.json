@@ -46,6 +46,9 @@
       ],
       "@soportedesk/usuarios-red": [
         "./libs/usuarios-red/src/index.ts"
+      ],
+      "@soportedesk/vpn": [
+        "./libs/vpn/src/index.ts"
       ]
     }
   }

@@ -6,8 +6,7 @@ import { AuthService } from '@soportedesk/core';
 import { ThemeMode, ThemeService } from '@soportedesk/core';
 import { ModeloImpresoraFormComponent } from './modelo-impresora-form.component';
 import { ModalComponent } from '@soportedesk/ui';
-import { VpnConfigInstitucionalFormComponent } from '../vpn/vpn-config-institucional-form.component';
-import { VpnService } from '../vpn/vpn.service';
+import { VpnConfigInstitucionalFormComponent, VpnService } from '@soportedesk/vpn';
 import {
   Dependencia,
   MarcaImpresora,

@@ -83,26 +83,26 @@ export const routes: Routes = [
       {
         path: 'vpn',
         loadComponent: () =>
-          import('./features/vpn/vpn-shell.component').then((m) => m.VpnShellComponent),
+          import('@soportedesk/vpn').then((m) => m.VpnShellComponent),
         children: [
           { path: '', redirectTo: 'registros', pathMatch: 'full' },
           {
             path: 'registros',
             canActivate: [moduloGuard('vpn')],
             loadComponent: () =>
-              import('./features/vpn/vpn-registros.component').then((m) => m.VpnRegistrosComponent),
+              import('@soportedesk/vpn').then((m) => m.VpnRegistrosComponent),
           },
           {
             path: 'administracion',
             canActivate: [vpnAdminGuard],
             loadComponent: () =>
-              import('./features/vpn/vpn-administracion.component').then((m) => m.VpnAdministracionComponent),
+              import('@soportedesk/vpn').then((m) => m.VpnAdministracionComponent),
           },
           {
             path: 'dashboard',
             canActivate: [moduloGuard('aprobar-vpn', { write: true })],
             loadComponent: () =>
-              import('./features/vpn/vpn-dashboard.component').then((m) => m.VpnDashboardComponent),
+              import('@soportedesk/vpn').then((m) => m.VpnDashboardComponent),
           },
         ],
       },

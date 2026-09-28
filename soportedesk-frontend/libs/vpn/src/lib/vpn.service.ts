@@ -1,7 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { environment } from '../../../environments/environment';
 import {
   Vpn,
   VpnAntivirusRequest,
@@ -18,7 +17,7 @@ import {
 @Injectable({ providedIn: 'root' })
 export class VpnService {
   private http = inject(HttpClient);
-  private readonly apiUrl = `${environment.apiUrl}/vpn`;
+  private readonly apiUrl = '/api/vpn';
 
   getAll(search?: string): Observable<Vpn[]> {
     let params = new HttpParams();
