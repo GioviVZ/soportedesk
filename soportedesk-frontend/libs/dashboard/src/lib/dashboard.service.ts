@@ -1,7 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, map } from 'rxjs';
-import { environment } from '../../../environments/environment';
 import { DashboardCounts } from './dashboard-counts.model';
 import { UbicacionUsuariosCount } from './ubicacion-usuarios-count.model';
 import { LicenciaTipoCount } from './licencia-tipo-count.model';
@@ -19,7 +18,7 @@ const BREAKDOWN_PATH: Partial<Record<ModuloKey, string>> = {
 @Injectable({ providedIn: 'root' })
 export class DashboardService {
   private http = inject(HttpClient);
-  private readonly apiUrl = `${environment.apiUrl}/dashboard`;
+  private readonly apiUrl = '/api/dashboard';
 
   getCounts(): Observable<DashboardCounts> {
     return this.http.get<DashboardCounts>(`${this.apiUrl}/counts`);

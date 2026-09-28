@@ -52,6 +52,9 @@
       ],
       "@soportedesk/catalogos": [
         "./libs/catalogos/src/index.ts"
+      ],
+      "@soportedesk/dashboard": [
+        "./libs/dashboard/src/index.ts"
       ]
     }
   }
