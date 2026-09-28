@@ -3,8 +3,7 @@ import { Component, EventEmitter, Input, OnChanges, Output, inject, ChangeDetect
 import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { CARGOS_VPN, CARGOS_VPN_EXTERNO, Vpn, VpnUsuarioRedOption } from './vpn.model';
 import { VpnService } from './vpn.service';
-import { EquipoService } from '../equipos/equipo.service';
-import { EquipoResumen } from '../equipos/equipo.model';
+import { EquipoResumen, EquipoService } from '@soportedesk/equipos';
 import { UbicacionSelectComponent } from '@soportedesk/ui';
 
 type TitularModo = 'buscando' | 'ad-seleccionado' | 'externo';

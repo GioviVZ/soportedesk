@@ -1,7 +1,6 @@
 import { Injectable, NgZone, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { AuthService } from '@soportedesk/core';
-import { environment } from '../../../environments/environment';
 import { MonitorPingEvent } from './herramientas.model';
 
 @Injectable({ providedIn: 'root' })
@@ -58,7 +57,7 @@ export class MonitorPingStreamService {
         if (!token || closed) return;
         controller = new AbortController();
         try {
-          const response = await fetch(`${environment.apiUrl}/herramientas/monitores-ping/events`, {
+      const response = await fetch('/api/herramientas/monitores-ping/events', {
             headers: { Authorization: `Bearer ${token}`, Accept: 'text/event-stream' },
             signal: controller.signal,
           });

@@ -37,6 +37,15 @@
       ],
       "@soportedesk/impresoras": [
         "./libs/impresoras/src/index.ts"
+      ],
+      "@soportedesk/equipos": [
+        "./libs/equipos/src/index.ts"
+      ],
+      "@soportedesk/herramientas": [
+        "./libs/herramientas/src/index.ts"
+      ],
+      "@soportedesk/usuarios-red": [
+        "./libs/usuarios-red/src/index.ts"
       ]
     }
   }

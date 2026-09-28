@@ -51,26 +51,26 @@ export const routes: Routes = [
       {
         path: 'equipos',
         loadComponent: () =>
-          import('./features/equipos/equipos-shell.component').then((m) => m.EquiposShellComponent),
+          import('@soportedesk/equipos').then((m) => m.EquiposShellComponent),
         children: [
           { path: '', redirectTo: 'inventario', pathMatch: 'full' },
           {
             path: 'inventario',
             canActivate: [moduloGuard('equipos')],
             loadComponent: () =>
-              import('./features/equipos/equipos-inventario.component').then((m) => m.EquiposInventarioComponent),
+              import('@soportedesk/equipos').then((m) => m.EquiposInventarioComponent),
           },
           {
             path: 'mantenimiento',
             canActivate: [moduloGuard('equipos', { write: true })],
             loadComponent: () =>
-              import('./features/equipos/equipos-mantenimiento.component').then((m) => m.EquiposMantenimientoComponent),
+              import('@soportedesk/equipos').then((m) => m.EquiposMantenimientoComponent),
           },
           {
             path: 'dashboard',
             canActivate: [moduloGuard('equipos', { write: true })],
             loadComponent: () =>
-              import('./features/equipos/equipos-dashboard.component').then((m) => m.EquiposDashboardComponent),
+              import('@soportedesk/equipos').then((m) => m.EquiposDashboardComponent),
           },
         ],
       },
@@ -78,7 +78,7 @@ export const routes: Routes = [
         path: 'equipos/:id',
         canActivate: [moduloGuard('equipos')],
         loadComponent: () =>
-          import('./features/equipos/equipo-detail.component').then((m) => m.EquipoDetailComponent),
+          import('@soportedesk/equipos').then((m) => m.EquipoDetailComponent),
       },
       {
         path: 'vpn',
@@ -129,7 +129,7 @@ export const routes: Routes = [
       {
         path: 'usuarios-red',
         loadComponent: () =>
-          import('./features/usuarios-red/usuarios-red-shell.component').then(
+          import('@soportedesk/usuarios-red').then(
             (m) => m.UsuariosRedShellComponent,
           ),
         children: [
@@ -138,7 +138,7 @@ export const routes: Routes = [
             path: 'consultas',
             canActivate: [moduloGuard('usuarios-red')],
             loadComponent: () =>
-              import('./features/usuarios-red/usuarios-red-consultas.component').then(
+              import('@soportedesk/usuarios-red').then(
                 (m) => m.UsuariosRedConsultasComponent,
               ),
           },
@@ -146,7 +146,7 @@ export const routes: Routes = [
             path: 'administracion',
             canActivate: [moduloGuard('usuarios-red', { write: true })],
             loadComponent: () =>
-              import('./features/usuarios-red/usuarios-red-administracion.component').then(
+              import('@soportedesk/usuarios-red').then(
                 (m) => m.UsuariosRedAdministracionComponent,
               ),
           },
@@ -154,7 +154,7 @@ export const routes: Routes = [
             path: 'dashboard',
             canActivate: [moduloGuard('usuarios-red', { write: true })],
             loadComponent: () =>
-              import('./features/usuarios-red/usuarios-red-dashboard.component').then(
+              import('@soportedesk/usuarios-red').then(
                 (m) => m.UsuariosRedDashboardComponent,
               ),
           },
@@ -204,7 +204,7 @@ export const routes: Routes = [
         path: 'herramientas',
         canActivate: [moduloGuard('herramientas')],
         loadComponent: () =>
-          import('./features/herramientas/herramientas.component').then(
+          import('@soportedesk/herramientas').then(
             (m) => m.HerramientasComponent,
           ),
       },

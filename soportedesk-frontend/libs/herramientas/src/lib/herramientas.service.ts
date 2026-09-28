@@ -1,7 +1,6 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
-import { environment } from '../../../environments/environment';
 import {
   EquipoDatosResult,
   MonitorPing,
@@ -15,7 +14,7 @@ import {
 @Injectable({ providedIn: 'root' })
 export class HerramientasService {
   private http = inject(HttpClient);
-  private readonly apiUrl = `${environment.apiUrl}/herramientas`;
+  private readonly apiUrl = '/api/herramientas';
 
   ping(host: string): Observable<PingResult> {
     return this.http.post<PingResult>(`${this.apiUrl}/ping`, { host });

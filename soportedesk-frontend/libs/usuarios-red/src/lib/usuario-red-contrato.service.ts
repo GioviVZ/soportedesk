@@ -1,13 +1,12 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { environment } from '../../../environments/environment';
 import { UsuarioRedConsultaResultado, UsuarioRedContrato, UsuarioRedContratoRequest } from './usuario-red-contrato.model';
 
 @Injectable({ providedIn: 'root' })
 export class UsuarioRedContratoService {
   private http = inject(HttpClient);
-  private readonly apiUrl = `${environment.apiUrl}/usuarios-red/contratos`;
+  private readonly apiUrl = '/api/usuarios-red/contratos';
 
   getByUsuario(usuario: string): Observable<UsuarioRedContrato[]> {
     return this.http.get<UsuarioRedContrato[]>(this.apiUrl, { params: { usuario } });

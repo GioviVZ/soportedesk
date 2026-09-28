@@ -1,13 +1,12 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { environment } from '../../../environments/environment';
 import { EquipoDashboardCompleto, EquipoDetalleResponse, EquipoEnrichmentDto, EquipoEvidencia, EquipoKpis, EquipoResumen, EquipoSaludItem, EquipoSoftwareExport, GlpiSyncStatus, HistorialItem, TecladoInput } from './equipo.model';
 
 @Injectable({ providedIn: 'root' })
 export class EquipoService {
   private http = inject(HttpClient);
-  private readonly apiUrl = `${environment.apiUrl}/equipos`;
+  private readonly apiUrl = '/api/equipos';
 
 getAll(filters: {
     search?: string;

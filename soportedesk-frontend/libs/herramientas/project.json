@@ -1,0 +1,10 @@
+{
+  "name": "herramientas",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/herramientas/src",
+  "prefix": "lib",
+  "tags": [],
+  "projectType": "library",
+  "// targets": "to see all targets run: nx show project herramientas --web",
+  "targets": {}
+}
