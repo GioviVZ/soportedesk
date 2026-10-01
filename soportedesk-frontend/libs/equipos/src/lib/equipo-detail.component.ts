@@ -71,7 +71,7 @@ export class EquipoDetailComponent implements OnInit {
       this.closeRequested.emit();
       return;
     }
-    this.router.navigate(['/equipos']);
+    this.router.navigate(['/equipos/computadoras']);
   }
 
   requestEdit(): void {

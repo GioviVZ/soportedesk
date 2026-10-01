@@ -651,7 +651,7 @@ export class DashboardComponent implements OnInit {
       vpn: '/vpn/administracion',
       wifi: '/wifi/administracion',
       impresoras: '/impresoras/administracion',
-      equipos: '/equipos/mantenimiento',
+      equipos: '/equipos/computadoras/mantenimiento',
     };
 
     const hasAccess = card.modulo === 'vpn'
@@ -671,7 +671,7 @@ export class DashboardComponent implements OnInit {
       vpn: '/vpn/dashboard',
       wifi: '/wifi/dashboard',
       impresoras: '/impresoras/dashboard',
-      equipos: '/equipos/dashboard',
+      equipos: '/equipos/computadoras/dashboard',
     };
 
     const hasAccess = card.modulo === 'correos'

@@ -61,6 +61,18 @@ export default [
               onlyDependOnLibsWithTags: ['scope:core', 'scope:ui'],
             },
             {
+              sourceTag: 'scope:equipos-red',
+              onlyDependOnLibsWithTags: ['scope:core', 'scope:ui'],
+            },
+            {
+              sourceTag: 'scope:equipos-moviles',
+              onlyDependOnLibsWithTags: ['scope:core', 'scope:ui'],
+            },
+            {
+              sourceTag: 'scope:telefonia-fija',
+              onlyDependOnLibsWithTags: ['scope:core', 'scope:ui'],
+            },
+            {
               sourceTag: 'scope:herramientas',
               onlyDependOnLibsWithTags: ['scope:core', 'scope:ui'],
             },

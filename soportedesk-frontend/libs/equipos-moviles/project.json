@@ -1,0 +1,20 @@
+{
+  "name": "equipos-moviles",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/equipos-moviles/src",
+  "prefix": "lib",
+  "projectType": "library",
+  "tags": [
+    "scope:equipos-moviles",
+    "type:feature"
+  ],
+  "targets": {
+    "lint": {
+      "options": {
+        "args": [
+          "**/*.ts"
+        ]
+      }
+    }
+  }
+}

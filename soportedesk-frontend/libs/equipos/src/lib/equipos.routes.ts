@@ -2,8 +2,12 @@ import { Routes } from '@angular/router';
 import { moduloGuard } from '@soportedesk/core';
 
 export const equiposRoutes: Routes = [
+  { path: '', pathMatch: 'full', redirectTo: 'computadoras' },
+  { path: 'inventario', pathMatch: 'full', redirectTo: 'computadoras/inventario' },
+  { path: 'mantenimiento', pathMatch: 'full', redirectTo: 'computadoras/mantenimiento' },
+  { path: 'dashboard', pathMatch: 'full', redirectTo: 'computadoras/dashboard' },
   {
-    path: '',
+    path: 'computadoras',
     loadComponent: () =>
       import('./equipos-shell.component').then((m) => m.EquiposShellComponent),
     children: [

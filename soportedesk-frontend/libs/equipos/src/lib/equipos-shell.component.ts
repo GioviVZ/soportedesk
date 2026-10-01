@@ -11,9 +11,9 @@ import { ModuleViewItem, ModuleViewSwitcherComponent } from '@soportedesk/ui';
     <div class="module-page equipos-page">
       <div class="module-header">
         <div>
-          <span class="module-eyebrow">Inventario</span>
-          <h2>Inventario de Equipos</h2>
-          <p>Inventario GLPI, usuarios responsables, ubicacion y hardware detectado.</p>
+          <span class="module-eyebrow">Inventario de Equipos · Computadoras</span>
+          <h2>Equipos de cómputo (GLPI)</h2>
+          <p>Inventario GLPI, usuarios responsables, ubicación y hardware detectado.</p>
         </div>
       </div>
     

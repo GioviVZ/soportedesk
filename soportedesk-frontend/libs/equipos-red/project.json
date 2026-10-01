@@ -1,0 +1,20 @@
+{
+  "name": "equipos-red",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/equipos-red/src",
+  "prefix": "lib",
+  "projectType": "library",
+  "tags": [
+    "scope:equipos-red",
+    "type:feature"
+  ],
+  "targets": {
+    "lint": {
+      "options": {
+        "args": [
+          "**/*.ts"
+        ]
+      }
+    }
+  }
+}

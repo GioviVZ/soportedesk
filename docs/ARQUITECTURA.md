@@ -408,8 +408,11 @@ Cada módulo de negocio se sirve bajo un *shell* propio con sub-rutas por modo
 | `/licencias` | `consultas` · `administracion` · `dashboard` | moduloGuard(`licencias`[, write]) | todos (escritura condicionada) |
 | `/wifi` | `consultas` · `administracion` · `dashboard` | moduloGuard(`wifi`[, write]) | ídem |
 | `/correos` | `consultas` · `dashboard` | moduloGuard(`correos`) | ídem (sin `administracion` — es solo lectura) |
-| `/equipos` | `inventario` · `mantenimiento` · `dashboard` | moduloGuard(`equipos`[, write]) | ídem |
+| `/equipos/computadoras` | `inventario` · `mantenimiento` · `dashboard` | moduloGuard(`equipos`[, write]) | ídem (librería `equipos`, GLPI). `/equipos`, `/equipos/inventario`, `/equipos/mantenimiento` y `/equipos/dashboard` redirigen aquí |
 | `/equipos/:id` | — | moduloGuard(`equipos`) | detalle de equipo |
+| `/equipos/red` | `switches` · `routers` · `access-points` · `radioenlaces` | moduloGuard(`equipos`) | librería `equipos-red` (en preparación) |
+| `/equipos/moviles` | `inventario` · `asignacion-numero` · `actas` | moduloGuard(`equipos`) | librería `equipos-moviles` (en preparación) |
+| `/equipos/telefonia-fija` | `inventario` · `asignacion-anexos` | moduloGuard(`equipos`) | librería `telefonia-fija` (en preparación) |
 | `/impresoras` | `consultas` · `administracion` · `dashboard` | moduloGuard(`impresoras`[, write]) | ídem |
 | `/usuarios-red` | `consultas` · `administracion` · `dashboard` | moduloGuard(`usuarios-red`[, write]) | ídem |
 | `/vpn` | `registros` · `administracion` · `dashboard` | vpnAdminGuard (administracion/dashboard) | ídem |
@@ -475,6 +478,29 @@ persisten son librerías de terceros cargadas bajo demanda — `xlsx`, `three`,
 Verificación de la migración completa (225 tests y build de producción
 confirmados de forma independiente en cada fase F0–F5): historial completo
 en `docs/superpowers/historial/plans/2026-09-25-modularizacion-fisica-frontend.md`.
+
+**Reestructuración de Inventario de Equipos (2026-10-01):** el menú
+"Inventario de Equipos" se dividió en 4 grupos (Computadoras · Equipos de
+Conexión de Red · Equipos Móviles · Equipos de Telefonía Fija). Cada grupo
+nuevo es un dominio de negocio propio y vive en su propia librería, no dentro
+de `equipos` (que queda dedicada a computadoras GLPI):
+
+| Librería | Alias | Tags | Montada en |
+|---|---|---|---|
+| `libs/equipos-red` | `@soportedesk/equipos-red` | `scope:equipos-red`, `type:feature` | `/equipos/red` |
+| `libs/equipos-moviles` | `@soportedesk/equipos-moviles` | `scope:equipos-moviles`, `type:feature` | `/equipos/moviles` |
+| `libs/telefonia-fija` | `@soportedesk/telefonia-fija` | `scope:telefonia-fija`, `type:feature` | `/equipos/telefonia-fija` |
+
+Las tres solo pueden depender de `scope:core` y `scope:ui` (confirmado con un
+import prohibido deliberado hacia `@soportedesk/equipos`, que el lint
+rechazó). Mientras no tengan backend, sus rutas muestran
+`ModulePlaceholderComponent` (en `libs/ui`, genérico y reutilizable). Las
+rutas se montan en `app.routes.ts` **antes** de `equipos`, para que Angular
+no las confunda con `/equipos/:id`. El sidebar admite submenús de 3 niveles
+(`NavItem.groups`) para representar esta jerarquía. Cuando cada grupo tenga
+backend real, tendrá su propio módulo Maven (`soportedesk-equipos-red`,
+`soportedesk-equipos-moviles`, `soportedesk-telefonia-fija`, Tier 2:
+`common` + `catalogo`), nunca dentro de `soportedesk-equipos`.
 
 ### Sistema visual
 

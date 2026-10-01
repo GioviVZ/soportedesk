@@ -34,6 +34,25 @@ export const routes: Routes = [
           import('@soportedesk/wifi').then((m) => m.wifiRoutes),
       },
       {
+        path: 'equipos/red',
+        loadChildren: () =>
+          import('@soportedesk/equipos-red').then((m) => m.equiposRedRoutes),
+      },
+      {
+        path: 'equipos/moviles',
+        loadChildren: () =>
+          import('@soportedesk/equipos-moviles').then(
+            (m) => m.equiposMovilesRoutes,
+          ),
+      },
+      {
+        path: 'equipos/telefonia-fija',
+        loadChildren: () =>
+          import('@soportedesk/telefonia-fija').then(
+            (m) => m.telefoniaFijaRoutes,
+          ),
+      },
+      {
         path: 'equipos',
         loadChildren: () =>
           import('@soportedesk/equipos').then((m) => m.equiposRoutes),

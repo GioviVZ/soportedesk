@@ -41,6 +41,15 @@
       "@soportedesk/equipos": [
         "./libs/equipos/src/index.ts"
       ],
+      "@soportedesk/equipos-red": [
+        "./libs/equipos-red/src/index.ts"
+      ],
+      "@soportedesk/equipos-moviles": [
+        "./libs/equipos-moviles/src/index.ts"
+      ],
+      "@soportedesk/telefonia-fija": [
+        "./libs/telefonia-fija/src/index.ts"
+      ],
       "@soportedesk/herramientas": [
         "./libs/herramientas/src/index.ts"
       ],

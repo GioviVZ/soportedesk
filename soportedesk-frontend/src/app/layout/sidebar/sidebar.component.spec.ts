@@ -1,4 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
 import { SidebarComponent } from './sidebar.component';
 import { AuthService } from '@soportedesk/core';
 import { ICON_NAMES } from './animated-nav-icon/icon-name';
@@ -13,7 +14,10 @@ describe('SidebarComponent', () => {
 
     TestBed.configureTestingModule({
       imports: [SidebarComponent],
-      providers: [{ provide: AuthService, useValue: authService }],
+      providers: [
+        provideRouter([]),
+        { provide: AuthService, useValue: authService },
+      ],
     });
 
     fixture = TestBed.createComponent(SidebarComponent);
@@ -93,5 +97,40 @@ describe('SidebarComponent', () => {
     component.hoveredPath = '/dashboard';
 
     expect(component.iconActive(impresoras, true)).toBe(true);
+  });
+
+  it('defines the four inventory groups for equipos', () => {
+    const equipos = component.navItems.find((item) => item.path === '/equipos')!;
+
+    expect(equipos.groups?.map((group) => group.label)).toEqual([
+      'Computadoras',
+      'Equipos de Conexión de Red',
+      'Equipos Móviles',
+      'Equipos de Telefonía Fija',
+    ]);
+  });
+
+  it('expands the equipos tree and active group for the current URL', () => {
+    component.expandForUrl('/equipos/red/routers');
+
+    expect(component.isExpanded('/equipos')).toBe(true);
+    expect(component.isExpanded('/equipos:red')).toBe(true);
+    expect(component.isExpanded('/equipos:moviles')).toBe(false);
+  });
+
+  it('matches route boundaries while ignoring query strings', () => {
+    component.expandForUrl('/equipos/moviles/actas?x=1');
+
+    expect(component.isWithin('/equipos')).toBe(true);
+    expect(component.isWithin('/equiposx')).toBe(false);
+  });
+
+  it('returns an expansion to its original state after toggling twice', () => {
+    const wasExpanded = component.isExpanded('/equipos');
+
+    component.toggle('/equipos');
+    component.toggle('/equipos');
+
+    expect(component.isExpanded('/equipos')).toBe(wasExpanded);
   });
 });

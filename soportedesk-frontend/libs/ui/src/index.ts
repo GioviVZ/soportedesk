@@ -5,6 +5,7 @@ export * from './lib/directives/if-admin.directive';
 export * from './lib/field/field.component';
 export * from './lib/generic-table/generic-table.component';
 export * from './lib/modal/modal.component';
+export * from './lib/module-placeholder/module-placeholder.component';
 export * from './lib/module-view-switcher/module-view-switcher.component';
 export * from './lib/section-card/section-card.component';
 export * from './lib/status-badge/status-badge.component';

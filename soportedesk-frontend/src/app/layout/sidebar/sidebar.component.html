@@ -19,25 +19,93 @@
   <nav>
     @for (item of navItems; track item) {
       @if (canShow(item)) {
-        <a
-          [routerLink]="item.path"
-          routerLinkActive="active"
-          #rla="routerLinkActive"
-          class="nav-item"
-          [class.admin-item]="item.adminOnly"
-          [style.--item-accent]="'var(--color-' + item.icon + ')'"
-          [title]="collapsed ? item.label : ''"
-          (click)="layout.close()"
-          (mouseenter)="hoveredPath = item.path"
-          (mouseleave)="hoveredPath = null"
-          >
-          <span class="nav-icon">
-            <app-animated-nav-icon [name]="item.icon" [active]="iconActive(item, rla.isActive)" />
-          </span>
-          @if (!collapsed) {
-            <span class="nav-label">{{ item.label }}</span>
-          }
-        </a>
+        @if (!item.groups || collapsed) {
+          <a
+            [routerLink]="item.path"
+            routerLinkActive="active"
+            #rla="routerLinkActive"
+            class="nav-item"
+            [class.admin-item]="item.adminOnly"
+            [style.--item-accent]="'var(--color-' + item.icon + ')'"
+            [title]="collapsed ? item.label : ''"
+            (click)="layout.close()"
+            (mouseenter)="hoveredPath = item.path"
+            (mouseleave)="hoveredPath = null"
+            >
+            <span class="nav-icon">
+              <app-animated-nav-icon [name]="item.icon" [active]="iconActive(item, rla.isActive)" />
+            </span>
+            @if (!collapsed) {
+              <span class="nav-label">{{ item.label }}</span>
+            }
+          </a>
+        } @else {
+          <div class="nav-tree">
+            <button
+              type="button"
+              class="nav-item nav-parent"
+              [class.active]="isWithin(item.path)"
+              [style.--item-accent]="'var(--color-' + item.icon + ')'"
+              [attr.aria-expanded]="isExpanded(item.path)"
+              [attr.aria-controls]="'nav-sub-' + item.icon"
+              (click)="toggle(item.path)"
+              (mouseenter)="hoveredPath = item.path"
+              (mouseleave)="hoveredPath = null"
+            >
+              <span class="nav-icon">
+                <app-animated-nav-icon [name]="item.icon" [active]="iconActive(item, isWithin(item.path))" />
+              </span>
+              <span class="nav-label">{{ item.label }}</span>
+              <i
+                class="ti nav-chevron"
+                [class.ti-chevron-down]="isExpanded(item.path)"
+                [class.ti-chevron-right]="!isExpanded(item.path)"
+                aria-hidden="true"
+              ></i>
+            </button>
+            @if (isExpanded(item.path)) {
+              <div
+                class="nav-sub"
+                [id]="'nav-sub-' + item.icon"
+                [style.--item-accent]="'var(--color-' + item.icon + ')'"
+              >
+                @for (group of item.groups; track group.key) {
+                  <button
+                    type="button"
+                    class="nav-group"
+                    [class.has-active]="groupIsActive(group)"
+                    [attr.aria-expanded]="isExpanded(item.path + ':' + group.key)"
+                    (click)="toggle(item.path + ':' + group.key)"
+                  >
+                    <i class="ti {{ group.icon }}" aria-hidden="true"></i>
+                    <span class="nav-group-label">{{ group.label }}</span>
+                    <i
+                      class="ti nav-chevron"
+                      [class.ti-chevron-down]="isExpanded(item.path + ':' + group.key)"
+                      [class.ti-chevron-right]="!isExpanded(item.path + ':' + group.key)"
+                      aria-hidden="true"
+                    ></i>
+                  </button>
+                  @if (isExpanded(item.path + ':' + group.key)) {
+                    <div class="nav-leaves">
+                      @for (leaf of group.children; track leaf.path) {
+                        <a
+                          class="nav-leaf"
+                          [routerLink]="leaf.path"
+                          routerLinkActive="active"
+                          (click)="layout.close()"
+                        >
+                          <i class="ti {{ leaf.icon }}" aria-hidden="true"></i>
+                          <span>{{ leaf.label }}</span>
+                        </a>
+                      }
+                    </div>
+                  }
+                }
+              </div>
+            }
+          </div>
+        }
       }
     }
   </nav>

@@ -1,0 +1,20 @@
+{
+  "name": "telefonia-fija",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/telefonia-fija/src",
+  "prefix": "lib",
+  "projectType": "library",
+  "tags": [
+    "scope:telefonia-fija",
+    "type:feature"
+  ],
+  "targets": {
+    "lint": {
+      "options": {
+        "args": [
+          "**/*.ts"
+        ]
+      }
+    }
+  }
+}
