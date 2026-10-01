@@ -21,7 +21,7 @@
       @if (canShow(item)) {
         @if (!item.groups || collapsed) {
           <a
-            [routerLink]="item.path"
+            [routerLink]="item.groups ? firstVisiblePath(item) : item.path"
             routerLinkActive="active"
             #rla="routerLinkActive"
             class="nav-item"
@@ -70,36 +70,38 @@
                 [style.--item-accent]="'var(--color-' + item.icon + ')'"
               >
                 @for (group of item.groups; track group.key) {
-                  <button
-                    type="button"
-                    class="nav-group"
-                    [class.has-active]="groupIsActive(group)"
-                    [attr.aria-expanded]="isExpanded(item.path + ':' + group.key)"
-                    (click)="toggle(item.path + ':' + group.key)"
-                  >
-                    <i class="ti {{ group.icon }}" aria-hidden="true"></i>
-                    <span class="nav-group-label">{{ group.label }}</span>
-                    <i
-                      class="ti nav-chevron"
-                      [class.ti-chevron-down]="isExpanded(item.path + ':' + group.key)"
-                      [class.ti-chevron-right]="!isExpanded(item.path + ':' + group.key)"
-                      aria-hidden="true"
-                    ></i>
-                  </button>
-                  @if (isExpanded(item.path + ':' + group.key)) {
-                    <div class="nav-leaves">
-                      @for (leaf of group.children; track leaf.path) {
-                        <a
-                          class="nav-leaf"
-                          [routerLink]="leaf.path"
-                          routerLinkActive="active"
-                          (click)="layout.close()"
-                        >
-                          <i class="ti {{ leaf.icon }}" aria-hidden="true"></i>
-                          <span>{{ leaf.label }}</span>
-                        </a>
-                      }
-                    </div>
+                  @if (canShowGroup(group)) {
+                    <button
+                      type="button"
+                      class="nav-group"
+                      [class.has-active]="groupIsActive(group)"
+                      [attr.aria-expanded]="isExpanded(item.path + ':' + group.key)"
+                      (click)="toggle(item.path + ':' + group.key)"
+                    >
+                      <i class="ti {{ group.icon }}" aria-hidden="true"></i>
+                      <span class="nav-group-label">{{ group.label }}</span>
+                      <i
+                        class="ti nav-chevron"
+                        [class.ti-chevron-down]="isExpanded(item.path + ':' + group.key)"
+                        [class.ti-chevron-right]="!isExpanded(item.path + ':' + group.key)"
+                        aria-hidden="true"
+                      ></i>
+                    </button>
+                    @if (isExpanded(item.path + ':' + group.key)) {
+                      <div class="nav-leaves">
+                        @for (leaf of group.children; track leaf.path) {
+                          <a
+                            class="nav-leaf"
+                            [routerLink]="leaf.path"
+                            routerLinkActive="active"
+                            (click)="layout.close()"
+                          >
+                            <i class="ti {{ leaf.icon }}" aria-hidden="true"></i>
+                            <span>{{ leaf.label }}</span>
+                          </a>
+                        }
+                      </div>
+                    }
                   }
                 }
               </div>

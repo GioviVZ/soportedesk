@@ -62,6 +62,7 @@ public class PrimaryDataSourceConfig {
                         "com.inia.soportedesk.vpn",
                         "com.inia.soportedesk.correos",
                         "com.inia.soportedesk.impresoras",
+                        "com.inia.soportedesk.equiposred",
                         "com.inia.soportedesk.auditoria",
                         "com.inia.soportedesk.activedirectory",
                         "com.inia.soportedesk.wifi",

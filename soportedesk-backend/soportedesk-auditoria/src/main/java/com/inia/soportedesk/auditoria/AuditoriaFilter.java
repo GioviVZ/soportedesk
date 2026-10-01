@@ -47,6 +47,7 @@ public class AuditoriaFilter extends OncePerRequestFilter {
             Map.entry("equipos", "equipos"),
             Map.entry("vpn", "VPN"),
             Map.entry("impresoras", "impresoras"),
+            Map.entry("equipos-red", "equipos de red"),
             Map.entry("wifi", "WiFi"),
             Map.entry("licencias", "licencias"),
             Map.entry("usuarios-sistema", "usuarios del sistema"),

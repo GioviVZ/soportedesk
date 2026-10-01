@@ -32,6 +32,7 @@ class ArchitectureTest {
             Map.entry("equipos", "equipos"),
             Map.entry("glpi", "equipos"),
             Map.entry("impresoras", "impresoras"),
+            Map.entry("equiposred", "equipos-red"),
             Map.entry("licencias", "licencias"),
             Map.entry("correos", "correos"),
             Map.entry("activedirectory", "red-directorio"),

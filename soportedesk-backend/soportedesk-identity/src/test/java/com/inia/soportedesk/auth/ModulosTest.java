@@ -11,7 +11,7 @@ class ModulosTest {
         assertThat(Modulos.VALIDOS).containsExactlyInAnyOrder(
                 "usuarios-red", "correos", "equipos", "vpn", "credenciales-vpn",
                 "solicitar-vpn", "aprobar-vpn",
-                "impresoras", "wifi", "licencias", "catalogos",
+                "impresoras", "equipos-red", "wifi", "licencias", "catalogos",
                 "auditoria", "herramientas");
     }
 

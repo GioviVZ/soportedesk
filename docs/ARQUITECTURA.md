@@ -133,12 +133,13 @@ Tier 0 (sin dependencias internas): common (kernel), gestiontiinia, realtime
 Tier 1: catalogo → common          auditoria → realtime          wifi → common
 Tier 2: identity → common+auditoria          equipos → common+catalogo
         impresoras → common+catalogo          licencias → common+catalogo
+        equipos-red → common+catalogo (desde 2026-10-01)
         correos → gestiontiinia
 Tier 3: red-directorio → common+catalogo+gestiontiinia+auditoria+equipos
         herramientas → common+equipos
 Tier 4: vpn → common+catalogo+identity+red-directorio+equipos
 Tier 5: dashboard → red-directorio+equipos+gestiontiinia+herramientas+impresoras+licencias+vpn+wifi (agregador puro, nadie depende de él)
-Tier 6: soportedesk-app → depende de los 15 módulos anteriores (único que arranca Spring Boot y produce el jar ejecutable)
+Tier 6: soportedesk-app → depende de los 16 módulos anteriores (único que arranca Spring Boot y produce el jar ejecutable)
 ```
 
 `soportedesk-app` quedó reducido a la raíz de composición: `SoportedeskApplication.java` (clase `@SpringBootApplication`, sigue con component-scan sobre `com.inia.soportedesk` — los nombres de paquete Java no cambiaron en toda la migración, solo el jar donde vive cada uno) y `config/PrimaryDataSourceConfig.java` (datasource SQL Server primario). `glpi/GlpiDataSourceConfig.java` (datasource MySQL secundario, autocontenido) vive dentro de `soportedesk-equipos`.
@@ -559,7 +560,7 @@ Desde la migración a reactor Maven multi-módulo (2026-09-27, ver §3.1), el co
 ```bash
 cd soportedesk-backend
 mvn clean package -DskipTests
-# construye los 16 modulos y genera soportedesk-app/target/soportedesk-app-0.1.0.jar
+# construye los 17 modulos y genera soportedesk-app/target/soportedesk-app-0.1.0.jar
 ```
 
 Todas las credenciales y endpoints sensibles se leen exclusivamente de

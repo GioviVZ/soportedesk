@@ -1,0 +1,208 @@
+<div class="module-page equipos-red-page">
+  <header class="module-header">
+    <div>
+      <span class="module-eyebrow">Inventario de Equipos · Equipos de Conexión de Red</span>
+      <h2><i class="ti {{ meta.icon }}" aria-hidden="true"></i> {{ meta.plural }}</h2>
+      <p>{{ descripcion }}</p>
+    </div>
+  </header>
+
+  <section class="module-stats" aria-label="Resumen de {{ meta.plural }}">
+    <div class="stat-pill"><strong>{{ resumen.total }}</strong><span>Total de {{ meta.plural.toLowerCase() }}</span></div>
+    <div class="stat-pill tone-success"><strong>{{ resumen.operativos }}</strong><span>Operativos</span></div>
+    <div class="stat-pill tone-warning"><strong>{{ resumen.enRevision }}</strong><span>En revisión</span></div>
+    <div class="stat-pill"><strong>{{ resumen.sedes }}</strong><span>Sedes registradas</span></div>
+  </section>
+
+  @if (loadError) {
+    <section class="load-state load-state--error" role="alert">
+      <i class="ti ti-alert-circle" aria-hidden="true"></i>
+      <strong>No fue posible cargar el inventario</strong>
+      <span>{{ loadError }}</span>
+      <button type="button" class="refresh-btn" (click)="load()">Reintentar</button>
+    </section>
+  } @else {
+    <section class="equipment-filter-panel">
+      <div class="filter-header">
+        <div>
+          <span>Filtros</span>
+          <strong>{{ filteredItems.length }} de {{ items.length }} {{ meta.plural.toLowerCase() }}</strong>
+        </div>
+        <div class="filter-actions">
+          <button type="button" class="ghost-action" (click)="clearFilters()" [disabled]="!hasActiveFilters">Limpiar</button>
+          <button type="button" class="primary-action excel-export-btn" (click)="exportExcel()" [disabled]="filteredItems.length === 0">
+            <i class="ti ti-file-spreadsheet excel-export-icon" aria-hidden="true"></i>
+            <span>Exportar Excel</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="filter-grid">
+        <label class="search-filter">
+          Buscar
+          <input
+            type="text"
+            [(ngModel)]="searchTerm"
+            placeholder="Código, marca, modelo, IP, MAC..."
+            aria-label="Buscar equipos de red"
+          />
+        </label>
+        <label>
+          Sede
+          <select [(ngModel)]="sedeFilter">
+            <option value="">Todas</option>
+            @for (sede of sedesDisponibles; track sede.id) {
+              <option [value]="sede.id.toString()">{{ sede.nombre }}</option>
+            }
+          </select>
+        </label>
+        <label>
+          Estado
+          <select [(ngModel)]="estadoFilter">
+            <option value="">Todos</option>
+            @for (estado of estados; track estado.value) {
+              <option [value]="estado.value">{{ estado.value }}</option>
+            }
+          </select>
+        </label>
+      </div>
+    </section>
+
+    @if (loading) {
+      <div class="load-state" aria-live="polite">Cargando {{ meta.plural.toLowerCase() }}...</div>
+    } @else {
+      <div class="table-area">
+        <app-generic-table
+          [columns]="columns"
+          [data]="tableRows"
+          [canAdd]="canWrite"
+          [canEdit]="canWrite"
+          [showSearch]="false"
+          [emptyMessage]="'Sin ' + meta.plural.toLowerCase() + ' registrados'"
+          extraColumnLabel="Estado / mapa"
+          (add)="onAdd()"
+          (view)="onView($event)"
+          (edit)="onEdit($event)"
+          (delete)="onDelete($event)"
+        >
+          <ng-template #extraCell let-row>
+            <div class="status-map-cell">
+              <app-status-badge [label]="row.estado" [tone]="equipoRedEstadoTone(row.estado)" />
+              @if (row.latitud !== null && row.longitud !== null) {
+                <a
+                  class="map-link"
+                  [href]="mapUrl(row)"
+                  target="_blank"
+                  rel="noopener"
+                  [attr.aria-label]="mapAriaLabel(row)"
+                >
+                  <i class="ti ti-map-pin" aria-hidden="true"></i>
+                  Ver en mapa
+                </a>
+              }
+            </div>
+          </ng-template>
+        </app-generic-table>
+      </div>
+    }
+  }
+</div>
+
+<app-modal [title]="'Ficha técnica · ' + meta.label" [open]="viewing !== null" size="wide" (closed)="closeView()">
+  @if (viewing; as item) {
+    <div class="detail-toolbar">
+      <div>
+        <span>{{ meta.label }}</span>
+        <strong>{{ identifier(item) }}</strong>
+      </div>
+      @if (canWrite) { <button type="button" class="edit-btn" (click)="onEdit(item)">Editar</button> }
+    </div>
+    <div class="detail-sections">
+      <app-section-card title="Ubicación">
+        <i icon class="ti ti-map-pin" aria-hidden="true"></i>
+        <dl class="detail-grid">
+          <div><dt>Sede</dt><dd>{{ item.sede?.nombre || '—' }}</dd></div>
+          <div><dt>Dependencia</dt><dd>{{ item.dependencia?.nombre || '—' }}</dd></div>
+          <div><dt>Subdependencia</dt><dd>{{ item.subdependencia?.nombre || '—' }}</dd></div>
+          <div><dt>Referencia</dt><dd>{{ item.referencia || '—' }}</dd></div>
+          <div><dt>Edificio / piso</dt><dd>{{ item.edificio || '—' }} / {{ item.piso || '—' }}</dd></div>
+          <div><dt>Gabinete</dt><dd>{{ item.gabinete || '—' }}</dd></div>
+          @if (item.latitud !== null && item.longitud !== null) {
+            <div><dt>Coordenadas</dt><dd><a [href]="mapUrl(item)" target="_blank" rel="noopener">{{ item.latitud }}, {{ item.longitud }}</a></dd></div>
+          }
+        </dl>
+      </app-section-card>
+
+      <app-section-card title="Identificación">
+        <i icon class="ti {{ meta.icon }}" aria-hidden="true"></i>
+        <dl class="detail-grid">
+          <div><dt>Marca / modelo</dt><dd>{{ item.marca }} {{ item.modelo }}</dd></div>
+          <div><dt>Serie</dt><dd>{{ item.serie || '—' }}</dd></div>
+          <div><dt>Código patrimonial</dt><dd>{{ item.codigoPatrimonial || '—' }}</dd></div>
+          <div><dt>Inventario 2025</dt><dd>{{ item.codigoInventario || '—' }}</dd></div>
+          <div><dt>Etiqueta</dt><dd>{{ item.etiqueta || '—' }}</dd></div>
+          <div><dt>Estado</dt><dd><app-status-badge [label]="item.estado" [tone]="equipoRedEstadoTone(item.estado)" /></dd></div>
+        </dl>
+      </app-section-card>
+
+      <app-section-card title="Red">
+        <i icon class="ti ti-network" aria-hidden="true"></i>
+        <dl class="detail-grid">
+          <div><dt>MAC</dt><dd><code>{{ item.mac || '—' }}</code></dd></div>
+          <div><dt>IP</dt><dd><code>{{ item.ip || '—' }}</code></dd></div>
+          <div><dt>IP por defecto</dt><dd><code>{{ item.ipPorDefecto || '—' }}</code></dd></div>
+          <div><dt>Host</dt><dd>{{ item.host || '—' }}</dd></div>
+        </dl>
+      </app-section-card>
+
+      @if (tipo === 'RADIOENLACE') {
+        <app-section-card title="Enlace">
+          <i icon class="ti ti-antenna" aria-hidden="true"></i>
+          <dl class="detail-grid">
+            <div><dt>Sede remota</dt><dd>{{ item.remotoSede?.nombre || '—' }}</dd></div>
+            <div><dt>Referencia remota</dt><dd>{{ item.remotoReferencia || '—' }}</dd></div>
+            <div><dt>Frecuencia</dt><dd>{{ item.frecuenciaGhz !== null ? item.frecuenciaGhz + ' GHz' : '—' }}</dd></div>
+            <div><dt>Ancho de canal</dt><dd>{{ item.anchoCanalMhz !== null ? item.anchoCanalMhz + ' MHz' : '—' }}</dd></div>
+            <div><dt>SSID</dt><dd>{{ item.ssidEnlace || '—' }}</dd></div>
+          </dl>
+        </app-section-card>
+      }
+
+      <app-section-card title="Observaciones">
+        <i icon class="ti ti-notes" aria-hidden="true"></i>
+        <p class="observations">{{ item.observaciones || 'Sin observaciones.' }}</p>
+      </app-section-card>
+    </div>
+  }
+</app-modal>
+
+<app-modal
+  [title]="editing ? 'Editar ' + meta.label.toLowerCase() : meta.nuevo"
+  [open]="formOpen"
+  size="wide"
+  [hideDefaultFooter]="true"
+  (closed)="closeForm()"
+>
+  @if (formOpen) {
+    <app-equipo-red-form [tipo]="tipo" [equipo]="editing" (saved)="onSaved()" (cancelled)="closeForm()" />
+  }
+</app-modal>
+
+<app-modal title="Confirmar eliminación" [open]="deleting !== null" (closed)="closeDelete()">
+  @if (deleting; as item) {
+    <div class="delete-confirm">
+      <div>
+        <strong>{{ item.marca }} {{ item.modelo }}</strong>
+        <span>{{ identifier(item) }}</span>
+      </div>
+      <p>Esta acción eliminará el registro del equipo. Confirma solo si estás seguro.</p>
+      @if (actionError) { <p class="action-error" role="alert">{{ actionError }}</p> }
+      <div class="delete-actions">
+        <button type="button" class="secondary" [disabled]="deletingNow" (click)="closeDelete()">Cancelar</button>
+        <button type="button" class="danger" [disabled]="deletingNow" (click)="confirmDelete()">
+          {{ deletingNow ? 'Eliminando...' : 'Sí, eliminar' }}
+        </button>
+      </div>
+    </div>
+  }
+</app-modal>

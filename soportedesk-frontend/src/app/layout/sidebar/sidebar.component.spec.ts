@@ -110,6 +110,17 @@ describe('SidebarComponent', () => {
     ]);
   });
 
+  it('muestra solo el grupo de red y dirige a switches con acceso a equipos-red', () => {
+    authService.isAdmin.and.returnValue(false);
+    authService.canRead.and.callFake((permission) => permission === 'equipos-red');
+    const equipos = component.navItems.find((item) => item.path === '/equipos')!;
+
+    expect(component.canShow(equipos)).toBe(true);
+    expect(equipos.groups!.filter((group) => component.canShowGroup(group)).map((group) => group.key))
+      .toEqual(['red']);
+    expect(component.firstVisiblePath(equipos)).toBe('/equipos/red/switches');
+  });
+
   it('expands the equipos tree and active group for the current URL', () => {
     component.expandForUrl('/equipos/red/routers');
 

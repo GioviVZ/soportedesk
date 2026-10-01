@@ -17,6 +17,7 @@ interface NavGroup {
   key: string;
   label: string;
   icon: string;
+  permission?: string;
   children: NavLeaf[];
 }
 
@@ -60,6 +61,7 @@ export class SidebarComponent {
           key: 'computadoras',
           label: 'Computadoras',
           icon: 'ti-device-desktop',
+          permission: 'equipos',
           children: [
             {
               label: 'Equipos de cómputo (GLPI)',
@@ -72,6 +74,7 @@ export class SidebarComponent {
           key: 'red',
           label: 'Equipos de Conexión de Red',
           icon: 'ti-network',
+          permission: 'equipos-red',
           children: [
             { label: 'Switches', path: '/equipos/red/switches', icon: 'ti-server-2' },
             { label: 'Routers', path: '/equipos/red/routers', icon: 'ti-router' },
@@ -83,6 +86,7 @@ export class SidebarComponent {
           key: 'moviles',
           label: 'Equipos Móviles',
           icon: 'ti-device-mobile',
+          permission: 'equipos',
           children: [
             { label: 'Inventario', path: '/equipos/moviles/inventario', icon: 'ti-list-details' },
             { label: 'Asignación de número', path: '/equipos/moviles/asignacion-numero', icon: 'ti-device-sim' },
@@ -93,6 +97,7 @@ export class SidebarComponent {
           key: 'telefonia-fija',
           label: 'Equipos de Telefonía Fija',
           icon: 'ti-phone',
+          permission: 'equipos',
           children: [
             { label: 'Inventario', path: '/equipos/telefonia-fija/inventario', icon: 'ti-list-details' },
             { label: 'Asignación de anexos', path: '/equipos/telefonia-fija/asignacion-anexos', icon: 'ti-phone-call' },
@@ -126,6 +131,9 @@ export class SidebarComponent {
     if (item.adminOnly) {
       return this.authService.isAdmin();
     }
+    if (item.groups) {
+      return this.authService.isAdmin() || item.groups.some((group) => this.canShowGroup(group));
+    }
     if (item.permission) {
       if (item.permission === 'vpn') {
         return this.authService.isAdmin()
@@ -136,6 +144,18 @@ export class SidebarComponent {
       return this.authService.isAdmin() || this.authService.canRead(item.permission);
     }
     return true;
+  }
+
+  canShowGroup(group: NavGroup): boolean {
+    return !group.permission
+      || this.authService.isAdmin()
+      || this.authService.canRead(group.permission);
+  }
+
+  firstVisiblePath(item: NavItem): string {
+    return item.groups
+      ?.find((group) => this.canShowGroup(group))
+      ?.children[0]?.path ?? item.path;
   }
 
   isExpanded(key: string): boolean {
