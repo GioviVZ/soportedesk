@@ -1,0 +1,89 @@
+<form (submit)="onSubmit($event)" class="mobile-resource-form" id="acta-movil-form">
+  @if (errorMessage) { <div class="form-error" role="alert">{{ errorMessage }}</div> }
+
+  <app-section-card title="Datos del acta">
+    <i icon class="ti ti-file-text" aria-hidden="true"></i>
+    <div class="form-grid" [formGroup]="form">
+      <label class="field">
+        <span>N.º de acta *</span><input type="text" formControlName="numeroActa" />
+        @if (isInvalid('numeroActa')) { <small class="field-error">El número de acta es obligatorio.</small> }
+      </label>
+      <label class="field">
+        <span>Tipo *</span>
+        <select formControlName="tipo">@for (tipo of tipos; track tipo) { <option [value]="tipo">{{ tipo }}</option> }</select>
+      </label>
+      <label class="field">
+        <span>Fecha *</span><input type="date" formControlName="fecha" />
+        @if (isInvalid('fecha')) { <small class="field-error">La fecha es obligatoria.</small> }
+      </label>
+    </div>
+  </app-section-card>
+
+  <app-section-card title="Responsable">
+    <i icon class="ti ti-user" aria-hidden="true"></i>
+    <div class="form-grid" [formGroup]="form">
+      <label class="field">
+        <span>Persona responsable *</span><input type="text" formControlName="personaNombre" />
+        @if (isInvalid('personaNombre')) { <small class="field-error">La persona responsable es obligatoria.</small> }
+      </label>
+      <label class="field">
+        <span>DNI</span><input type="text" inputmode="numeric" maxlength="8" formControlName="personaDni" />
+        @if (isInvalid('personaDni')) { <small class="field-error">Ingresa un DNI de 8 dígitos.</small> }
+      </label>
+      <label class="field field--full">
+        <span>Dependencia</span>
+        <select formControlName="dependenciaId">
+          <option [ngValue]="null">Seleccione...</option>
+          @for (dependencia of dependencias; track dependencia.id) { <option [ngValue]="dependencia.id">{{ dependencia.nombre }}</option> }
+        </select>
+      </label>
+    </div>
+  </app-section-card>
+
+  <app-section-card title="Equipos *">
+    <i icon class="ti ti-devices" aria-hidden="true"></i>
+    <div class="equipment-picker" [formGroup]="form">
+      <div class="equipment-picker-header">
+        <label class="field">
+          <span>Buscar equipo</span>
+          <input type="search" [value]="equipoSearch" (input)="equipoSearch = $any($event.target).value" placeholder="Código, marca, modelo o IMEI" />
+        </label>
+        <strong>{{ selectedCount }} seleccionados</strong>
+      </div>
+      <div class="equipment-options" role="group" aria-label="Equipos del acta">
+        @for (equipo of filteredEquipos; track equipo.id) {
+          <label class="equipment-option">
+            <input type="checkbox" [checked]="isSelected(equipo.id)" (change)="toggleEquipo(equipo.id, $any($event.target).checked)" />
+            <span>{{ equipoOption(equipo) }}</span>
+          </label>
+        } @empty { <p class="empty-picker">No se encontraron equipos.</p> }
+      </div>
+      @if (isInvalid('equipoMovilIds')) { <small class="field-error">Selecciona al menos un equipo.</small> }
+    </div>
+  </app-section-card>
+
+  <app-section-card title="Archivo y observaciones">
+    <i icon class="ti ti-paperclip" aria-hidden="true"></i>
+    <div class="file-field">
+      <label class="file-picker">
+        <span>Archivo</span>
+        <input type="file" accept=".pdf,.jpg,.jpeg,.png" (change)="onFileSelected($event)" />
+        <small>PDF, JPG o PNG. Máximo 10 MB.</small>
+      </label>
+      @if (selectedFile) {
+        <div class="current-file"><i class="ti ti-file" aria-hidden="true"></i><span>{{ selectedFile.name }}</span><button type="button" (click)="clearSelectedFile()">Quitar archivo</button></div>
+      } @else if (acta?.tieneArchivo && !removeExistingFile) {
+        <div class="current-file"><i class="ti ti-file-check" aria-hidden="true"></i><span>{{ acta?.archivoNombre }}</span><button type="button" (click)="removeCurrentFile()">Quitar archivo</button></div>
+      } @else if (removeExistingFile) {
+        <div class="current-file current-file--removed"><span>El archivo actual se quitará al guardar.</span><button type="button" (click)="undoRemoveCurrentFile()">Deshacer</button></div>
+      }
+      @if (fileError) { <small class="field-error" role="alert">{{ fileError }}</small> }
+    </div>
+    <div [formGroup]="form" class="observations-field"><label class="field"><span>Observaciones</span><textarea rows="4" formControlName="observaciones"></textarea></label></div>
+  </app-section-card>
+
+  <div class="form-actions">
+    <button type="button" class="secondary" (click)="cancelled.emit()">Cancelar</button>
+    <button type="submit" [disabled]="form.invalid || saving || !!fileError">{{ saving ? 'Guardando...' : (acta ? 'Guardar cambios' : 'Registrar acta') }}</button>
+  </div>
+</form>

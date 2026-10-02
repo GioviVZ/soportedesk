@@ -133,13 +133,13 @@ Tier 0 (sin dependencias internas): common (kernel), gestiontiinia, realtime
 Tier 1: catalogo → common          auditoria → realtime          wifi → common
 Tier 2: identity → common+auditoria          equipos → common+catalogo
         impresoras → common+catalogo          licencias → common+catalogo
-        equipos-red → common+catalogo (desde 2026-10-01)
+        equipos-red → common+catalogo (desde 2026-10-01)          equipos-moviles → common+catalogo (desde 2026-10-02)
         correos → gestiontiinia
 Tier 3: red-directorio → common+catalogo+gestiontiinia+auditoria+equipos
         herramientas → common+equipos
 Tier 4: vpn → common+catalogo+identity+red-directorio+equipos
 Tier 5: dashboard → red-directorio+equipos+gestiontiinia+herramientas+impresoras+licencias+vpn+wifi (agregador puro, nadie depende de él)
-Tier 6: soportedesk-app → depende de los 16 módulos anteriores (único que arranca Spring Boot y produce el jar ejecutable)
+Tier 6: soportedesk-app → depende de los 17 módulos anteriores (único que arranca Spring Boot y produce el jar ejecutable)
 ```
 
 `soportedesk-app` quedó reducido a la raíz de composición: `SoportedeskApplication.java` (clase `@SpringBootApplication`, sigue con component-scan sobre `com.inia.soportedesk` — los nombres de paquete Java no cambiaron en toda la migración, solo el jar donde vive cada uno) y `config/PrimaryDataSourceConfig.java` (datasource SQL Server primario). `glpi/GlpiDataSourceConfig.java` (datasource MySQL secundario, autocontenido) vive dentro de `soportedesk-equipos`.
@@ -411,8 +411,8 @@ Cada módulo de negocio se sirve bajo un *shell* propio con sub-rutas por modo
 | `/correos` | `consultas` · `dashboard` | moduloGuard(`correos`) | ídem (sin `administracion` — es solo lectura) |
 | `/equipos/computadoras` | `inventario` · `mantenimiento` · `dashboard` | moduloGuard(`equipos`[, write]) | ídem (librería `equipos`, GLPI). `/equipos`, `/equipos/inventario`, `/equipos/mantenimiento` y `/equipos/dashboard` redirigen aquí |
 | `/equipos/:id` | — | moduloGuard(`equipos`) | detalle de equipo |
-| `/equipos/red` | `switches` · `routers` · `access-points` · `radioenlaces` | moduloGuard(`equipos`) | librería `equipos-red` (en preparación) |
-| `/equipos/moviles` | `inventario` · `asignacion-numero` · `actas` | moduloGuard(`equipos`) | librería `equipos-moviles` (en preparación) |
+| `/equipos/red` | `switches` · `routers` · `access-points` · `radioenlaces` | moduloGuard(`equipos-red`) | librería `equipos-red`; API `/api/equipos-red` |
+| `/equipos/moviles` | `inventario` · `asignacion-numero` · `actas` | moduloGuard(`equipos-moviles`) | librería `equipos-moviles`; API `/api/equipos-moviles` (+ `/asignaciones`, `/actas` con archivo adjunto) |
 | `/equipos/telefonia-fija` | `inventario` · `asignacion-anexos` | moduloGuard(`equipos`) | librería `telefonia-fija` (en preparación) |
 | `/impresoras` | `consultas` · `administracion` · `dashboard` | moduloGuard(`impresoras`[, write]) | ídem |
 | `/usuarios-red` | `consultas` · `administracion` · `dashboard` | moduloGuard(`usuarios-red`[, write]) | ídem |
@@ -560,7 +560,7 @@ Desde la migración a reactor Maven multi-módulo (2026-09-27, ver §3.1), el co
 ```bash
 cd soportedesk-backend
 mvn clean package -DskipTests
-# construye los 17 modulos y genera soportedesk-app/target/soportedesk-app-0.1.0.jar
+# construye los 18 modulos y genera soportedesk-app/target/soportedesk-app-0.1.0.jar
 ```
 
 Todas las credenciales y endpoints sensibles se leen exclusivamente de

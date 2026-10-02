@@ -1,0 +1,105 @@
+<div class="module-page mobile-module-page">
+  <header class="module-header">
+    <div>
+      <span class="module-eyebrow">Inventario de Equipos · Equipos Móviles</span>
+      <h2><i class="ti ti-file-text" aria-hidden="true"></i> Actas</h2>
+      <p>Actas de entrega, devolución y transferencia de equipos móviles.</p>
+    </div>
+  </header>
+  <section class="module-stats" aria-label="Resumen de actas">
+    <div class="stat-pill"><strong>{{ resumen.total }}</strong><span>Total</span></div>
+    <div class="stat-pill"><strong>{{ resumen.entregas }}</strong><span>Entregas</span></div>
+    <div class="stat-pill"><strong>{{ resumen.devoluciones }}</strong><span>Devoluciones</span></div>
+    <div class="stat-pill"><strong>{{ resumen.transferencias }}</strong><span>Transferencias</span></div>
+  </section>
+
+  @if (actionError && !deleting) { <div class="action-error" role="alert">{{ actionError }}</div> }
+  @if (loadError) {
+    <section class="load-state load-state--error" role="alert">
+      <i class="ti ti-alert-circle" aria-hidden="true"></i><strong>No fue posible cargar las actas</strong><span>{{ loadError }}</span>
+      <button type="button" class="refresh-btn" (click)="load()">Reintentar</button>
+    </section>
+  } @else {
+    <section class="equipment-filter-panel">
+      <div class="filter-header">
+        <div><span>Filtros</span><strong>{{ filteredItems.length }} de {{ items.length }} actas</strong></div>
+        <div class="filter-actions">
+          <button type="button" class="ghost-action" (click)="clearFilters()" [disabled]="!hasActiveFilters">Limpiar</button>
+          <button type="button" class="primary-action excel-export-btn" (click)="exportExcel()" [disabled]="filteredItems.length === 0">
+            <i class="ti ti-file-spreadsheet excel-export-icon" aria-hidden="true"></i> <span>Exportar Excel</span>
+          </button>
+        </div>
+      </div>
+      <div class="filter-grid">
+        <label>Buscar<input type="text" [(ngModel)]="searchTerm" placeholder="Acta, persona, DNI, dependencia, equipo..." /></label>
+        <label>Tipo<select [(ngModel)]="tipoFilter"><option value="">Todos</option>@for (tipo of tipos; track tipo) { <option [value]="tipo">{{ tipo }}</option> }</select></label>
+        <label>Desde<input type="date" [(ngModel)]="desdeFilter" /></label>
+        <label>Hasta<input type="date" [(ngModel)]="hastaFilter" /></label>
+      </div>
+    </section>
+
+    @if (loading) { <div class="load-state" aria-live="polite">Cargando actas...</div> }
+    @else {
+      <div class="table-area">
+        <app-generic-table
+          [columns]="columns" [data]="tableRows" [canAdd]="canWrite" [canEdit]="canWrite" [showSearch]="false"
+          emptyMessage="Sin actas registradas" extraColumnLabel="Archivo"
+          (add)="onAdd()" (view)="onView($event)" (edit)="onEdit($event)" (delete)="onDelete($event)"
+        >
+          <ng-template #extraCell let-row>
+            @if (row.tieneArchivo) {
+              <button type="button" class="download-action" (click)="download(row)" [attr.aria-label]="'Descargar archivo del acta ' + row.numeroActa" title="Descargar archivo">
+                <i class="ti ti-download" aria-hidden="true"></i>
+              </button>
+            } @else { <span class="muted-value">Sin archivo</span> }
+          </ng-template>
+        </app-generic-table>
+      </div>
+    }
+  }
+</div>
+
+<app-modal title="Ficha · Acta de equipo móvil" [open]="viewing !== null" size="wide" (closed)="closeView()">
+  @if (viewing; as item) {
+    <div class="detail-toolbar">
+      <div><span>{{ item.tipo }}</span><strong>{{ item.numeroActa }}</strong></div>
+      <div class="detail-toolbar-actions">
+        @if (item.tieneArchivo) { <button type="button" class="secondary" (click)="download(item)"><i class="ti ti-download" aria-hidden="true"></i> Descargar</button> }
+        @if (canWrite) { <button type="button" class="edit-btn" (click)="onEdit(item)">Editar</button> }
+      </div>
+    </div>
+    <div class="detail-sections">
+      <app-section-card title="Acta"><i icon class="ti ti-file-text" aria-hidden="true"></i>
+        <dl class="detail-grid">
+          <div><dt>N.º de acta</dt><dd>{{ item.numeroActa }}</dd></div><div><dt>Tipo</dt><dd>{{ item.tipo }}</dd></div>
+          <div><dt>Fecha</dt><dd>{{ formatDate(item.fecha) }}</dd></div><div><dt>Archivo</dt><dd>{{ item.archivoNombre || 'Sin archivo' }}</dd></div>
+        </dl>
+      </app-section-card>
+      <app-section-card title="Responsable"><i icon class="ti ti-user" aria-hidden="true"></i>
+        <dl class="detail-grid"><div><dt>Persona</dt><dd>{{ item.personaNombre }}</dd></div><div><dt>DNI</dt><dd>{{ item.personaDni || '—' }}</dd></div><div><dt>Dependencia</dt><dd>{{ item.dependencia?.nombre || '—' }}</dd></div></dl>
+      </app-section-card>
+      <app-section-card title="Equipos"><i icon class="ti ti-devices" aria-hidden="true"></i>
+        <div class="acta-equipment-list">@for (equipo of item.equipos; track equipo.id) { <div><strong>{{ equipoIdentifier(equipo) }}</strong><span>{{ equipo.marca }} {{ equipo.modelo }} · {{ equipo.imei1 || 'Sin IMEI' }}</span></div> }</div>
+      </app-section-card>
+      <app-section-card title="Observaciones"><i icon class="ti ti-notes" aria-hidden="true"></i><p class="observations">{{ item.observaciones || 'Sin observaciones.' }}</p></app-section-card>
+    </div>
+  }
+</app-modal>
+
+<app-modal [title]="editing ? 'Editar acta' : 'Nueva acta'" [open]="formOpen" size="wide" [hideDefaultFooter]="true" (closed)="closeForm()">
+  @if (formOpen) { <app-acta-movil-form [acta]="editing" [equipos]="equipos" (saved)="onSaved()" (cancelled)="closeForm()" /> }
+</app-modal>
+
+<app-modal title="Confirmar eliminación" [open]="deleting !== null" (closed)="closeDelete()">
+  @if (deleting; as item) {
+    <div class="delete-confirm">
+      <div><strong>{{ item.numeroActa }}</strong><span>{{ item.tipo }} · {{ formatDate(item.fecha) }}</span></div>
+      <p>Esta acción eliminará el acta y su archivo asociado.</p>
+      @if (actionError) { <p class="action-error" role="alert">{{ actionError }}</p> }
+      <div class="delete-actions">
+        <button type="button" class="secondary" [disabled]="deletingNow" (click)="closeDelete()">Cancelar</button>
+        <button type="button" class="danger" [disabled]="deletingNow" (click)="confirmDelete()">{{ deletingNow ? 'Eliminando...' : 'Sí, eliminar' }}</button>
+      </div>
+    </div>
+  }
+</app-modal>

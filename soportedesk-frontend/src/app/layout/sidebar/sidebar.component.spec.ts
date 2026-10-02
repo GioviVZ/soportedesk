@@ -121,6 +121,17 @@ describe('SidebarComponent', () => {
     expect(component.firstVisiblePath(equipos)).toBe('/equipos/red/switches');
   });
 
+  it('muestra solo equipos móviles y dirige a su inventario con el permiso específico', () => {
+    authService.isAdmin.and.returnValue(false);
+    authService.canRead.and.callFake((permission) => permission === 'equipos-moviles');
+    const equipos = component.navItems.find((item) => item.path === '/equipos')!;
+
+    expect(component.canShow(equipos)).toBe(true);
+    expect(equipos.groups!.filter((group) => component.canShowGroup(group)).map((group) => group.key))
+      .toEqual(['moviles']);
+    expect(component.firstVisiblePath(equipos)).toBe('/equipos/moviles/inventario');
+  });
+
   it('expands the equipos tree and active group for the current URL', () => {
     component.expandForUrl('/equipos/red/routers');
 

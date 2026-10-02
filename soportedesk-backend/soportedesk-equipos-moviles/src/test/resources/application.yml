@@ -1,0 +1,3 @@
+uploads:
+  drivers-dir: target/test-uploads/drivers
+  actas-moviles-dir: target/test-uploads/actas-moviles

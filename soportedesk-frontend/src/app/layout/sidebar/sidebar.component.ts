@@ -86,7 +86,7 @@ export class SidebarComponent {
           key: 'moviles',
           label: 'Equipos Móviles',
           icon: 'ti-device-mobile',
-          permission: 'equipos',
+          permission: 'equipos-moviles',
           children: [
             { label: 'Inventario', path: '/equipos/moviles/inventario', icon: 'ti-list-details' },
             { label: 'Asignación de número', path: '/equipos/moviles/asignacion-numero', icon: 'ti-device-sim' },

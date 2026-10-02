@@ -36,6 +36,7 @@
     <module>soportedesk-equipos</module>
     <module>soportedesk-impresoras</module>
     <module>soportedesk-equipos-red</module>
+    <module>soportedesk-equipos-moviles</module>
     <module>soportedesk-licencias</module>
     <module>soportedesk-correos</module>
     <module>soportedesk-red-directorio</module>

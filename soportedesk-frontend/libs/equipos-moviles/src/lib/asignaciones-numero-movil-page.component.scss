@@ -1,0 +1,17 @@
+@use './moviles-page.shared';
+
+.finish-date {
+  display: grid;
+  gap: 6px;
+  color: var(--color-text-secondary);
+  font-size: 12px;
+  font-weight: 750;
+
+  input {
+    min-height: 42px;
+    border: 1px solid var(--color-border-strong);
+    border-radius: var(--radius-sm);
+    background: var(--color-surface);
+    color: var(--color-text);
+  }
+}

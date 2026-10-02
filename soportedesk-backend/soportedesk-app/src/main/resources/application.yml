@@ -36,6 +36,7 @@ uploads:
   drivers-dir: uploads/drivers
   evidencias-dir: uploads/evidencias
   intervenciones-dir: uploads/impresoras-intervenciones
+  actas-moviles-dir: uploads/actas-moviles
 
 equipos:
   # Job que mantiene dbo.equipo_asignacion al dia con glpi_computers.
