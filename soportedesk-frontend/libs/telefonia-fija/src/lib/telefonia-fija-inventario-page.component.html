@@ -1,0 +1,165 @@
+<div class="module-page fixed-telephony-module-page">
+  <header class="module-header">
+    <div>
+      <span class="module-eyebrow">Inventario de Equipos · Equipos de Telefonía Fija</span>
+      <h2><i class="ti ti-phone" aria-hidden="true"></i> Inventario</h2>
+      <p>Teléfonos IP, analógicos e inalámbricos por sede.</p>
+    </div>
+  </header>
+
+  <section class="module-stats" aria-label="Resumen de teléfonos fijos">
+    <div class="stat-pill"><strong>{{ resumen.total }}</strong><span>Total</span></div>
+    <div class="stat-pill tone-success"><strong>{{ resumen.operativos }}</strong><span>Operativos</span></div>
+    <div class="stat-pill tone-warning"><strong>{{ resumen.enRevision }}</strong><span>En revisión</span></div>
+    <div class="stat-pill"><strong>{{ resumen.sinAsignar }}</strong><span>Sin asignar</span></div>
+  </section>
+
+  @if (loadError) {
+    <section class="load-state load-state--error" role="alert">
+      <i class="ti ti-alert-circle" aria-hidden="true"></i>
+      <strong>No fue posible cargar el inventario</strong>
+      <span>{{ loadError }}</span>
+      <button type="button" class="refresh-btn" (click)="load()">Reintentar</button>
+    </section>
+  } @else {
+    <section class="equipment-filter-panel">
+      <div class="filter-header">
+        <div><span>Filtros</span><strong>{{ filteredItems.length }} de {{ items.length }} teléfonos</strong></div>
+        <div class="filter-actions">
+          <button type="button" class="ghost-action" (click)="clearFilters()" [disabled]="!hasActiveFilters">Limpiar</button>
+          <button type="button" class="primary-action excel-export-btn" (click)="exportExcel()" [disabled]="filteredItems.length === 0">
+            <i class="ti ti-file-spreadsheet excel-export-icon" aria-hidden="true"></i> <span>Exportar Excel</span>
+          </button>
+        </div>
+      </div>
+      <div class="filter-grid">
+        <label>Buscar<input type="text" [(ngModel)]="searchTerm" placeholder="Código, serie, IP, anexo, persona..." /></label>
+        <label>Sede
+          <select [(ngModel)]="sedeFilter">
+            <option value="">Todas</option>
+            @for (sede of sedesDisponibles; track sede.id) { <option [value]="sede.id.toString()">{{ sede.nombre }}</option> }
+          </select>
+        </label>
+        <label>Tipo
+          <select [(ngModel)]="tipoFilter">
+            <option value="">Todos</option>
+            @for (tipo of tipos; track tipo.value) { <option [value]="tipo.value">{{ tipo.label }}</option> }
+          </select>
+        </label>
+        <label>Estado
+          <select [(ngModel)]="estadoFilter">
+            <option value="">Todos</option>
+            @for (estado of estados; track estado.value) { <option [value]="estado.value">{{ estado.value }}</option> }
+          </select>
+        </label>
+      </div>
+    </section>
+
+    @if (loading) {
+      <div class="load-state" aria-live="polite">Cargando teléfonos fijos...</div>
+    } @else {
+      <div class="table-area">
+        <app-generic-table
+          [columns]="columns"
+          [data]="tableRows"
+          [canAdd]="canWrite"
+          [canEdit]="canWrite"
+          [showSearch]="false"
+          emptyMessage="Sin teléfonos fijos registrados"
+          extraColumnLabel="Estado / mapa"
+          (add)="onAdd()"
+          (view)="onView($event)"
+          (edit)="onEdit($event)"
+          (delete)="onDelete($event)"
+        >
+          <ng-template #extraCell let-row>
+            <div class="status-map-cell">
+              <app-status-badge [label]="row.estado" [tone]="telefonoFijoEstadoTone(row.estado)" />
+              @if (row.latitud !== null && row.longitud !== null) {
+                <a class="map-link" [href]="mapUrl(row)" target="_blank" rel="noopener" [attr.aria-label]="'Ver ' + identifier(row) + ' en el mapa'">
+                  <i class="ti ti-map-pin" aria-hidden="true"></i> Ver en mapa
+                </a>
+              }
+            </div>
+          </ng-template>
+        </app-generic-table>
+      </div>
+    }
+  }
+</div>
+
+<app-modal title="Ficha técnica · Teléfono fijo" [open]="viewing !== null" size="wide" (closed)="closeView()">
+  @if (viewing; as item) {
+    <div class="detail-toolbar">
+      <div><span>{{ tipoLabel[item.tipo] }}</span><strong>{{ identifier(item) }}</strong></div>
+      @if (canWrite) { <button type="button" class="edit-btn" (click)="onEdit(item)">Editar</button> }
+    </div>
+    <div class="detail-sections">
+      <app-section-card title="Ubicación">
+        <i icon class="ti ti-map-pin" aria-hidden="true"></i>
+        <dl class="detail-grid">
+          <div><dt>Sede</dt><dd>{{ item.sede?.nombre || '—' }}</dd></div>
+          <div><dt>Dependencia</dt><dd>{{ item.dependencia?.nombre || '—' }}</dd></div>
+          <div><dt>Subdependencia</dt><dd>{{ item.subdependencia?.nombre || '—' }}</dd></div>
+          <div><dt>Referencia</dt><dd>{{ item.referencia || '—' }}</dd></div>
+          <div><dt>Edificio / piso</dt><dd>{{ item.edificio || '—' }} / {{ item.piso || '—' }}</dd></div>
+          @if (item.latitud !== null && item.longitud !== null) {
+            <div><dt>Coordenadas</dt><dd><a [href]="mapUrl(item)" target="_blank" rel="noopener">{{ item.latitud }}, {{ item.longitud }}</a></dd></div>
+          }
+        </dl>
+      </app-section-card>
+      <app-section-card title="Identificación">
+        <i icon class="ti ti-phone" aria-hidden="true"></i>
+        <dl class="detail-grid">
+          <div><dt>Tipo</dt><dd>{{ tipoLabel[item.tipo] }}</dd></div>
+          <div><dt>Marca / modelo</dt><dd>{{ item.marca }} {{ item.modelo }}</dd></div>
+          <div><dt>Serie</dt><dd>{{ item.serie || '—' }}</dd></div>
+          <div><dt>Código patrimonial</dt><dd>{{ item.codigoPatrimonial || '—' }}</dd></div>
+          <div><dt>Inventario 2025</dt><dd>{{ item.codigoInventario || '—' }}</dd></div>
+          <div><dt>Estado</dt><dd><app-status-badge [label]="item.estado" [tone]="telefonoFijoEstadoTone(item.estado)" /></dd></div>
+        </dl>
+      </app-section-card>
+      <app-section-card title="Red">
+        <i icon class="ti ti-network" aria-hidden="true"></i>
+        <dl class="detail-grid">
+          <div><dt>IP</dt><dd><code>{{ item.ip || '—' }}</code></dd></div>
+          <div><dt>MAC</dt><dd><code>{{ item.mac || '—' }}</code></dd></div>
+          <div><dt>Host</dt><dd>{{ item.host || '—' }}</dd></div>
+        </dl>
+      </app-section-card>
+      <app-section-card title="Anexo asignado">
+        <i icon class="ti ti-phone-call" aria-hidden="true"></i>
+        @if (assignmentFor(item); as assignment) {
+          <dl class="detail-grid">
+            <div><dt>Anexo</dt><dd>{{ assignment.anexo }}</dd></div>
+            <div><dt>Número directo</dt><dd>{{ assignment.numeroDirecto || '—' }}</dd></div>
+            <div><dt>Persona</dt><dd>{{ assignment.personaNombre }}</dd></div>
+            <div><dt>Dependencia</dt><dd>{{ assignment.dependencia?.nombre || '—' }}</dd></div>
+          </dl>
+        } @else { <p class="observations">Sin asignar.</p> }
+      </app-section-card>
+      <app-section-card title="Observaciones">
+        <i icon class="ti ti-notes" aria-hidden="true"></i>
+        <p class="observations">{{ item.observaciones || 'Sin observaciones.' }}</p>
+      </app-section-card>
+    </div>
+  }
+</app-modal>
+
+<app-modal [title]="editing ? 'Editar teléfono fijo' : 'Nuevo teléfono fijo'" [open]="formOpen" size="wide" [hideDefaultFooter]="true" (closed)="closeForm()">
+  @if (formOpen) { <app-telefono-fijo-form [telefono]="editing" (saved)="onSaved()" (cancelled)="closeForm()" /> }
+</app-modal>
+
+<app-modal title="Confirmar eliminación" [open]="deleting !== null" (closed)="closeDelete()">
+  @if (deleting; as item) {
+    <div class="delete-confirm">
+      <div><strong>{{ item.marca }} {{ item.modelo }}</strong><span>{{ identifier(item) }}</span></div>
+      <p>Esta acción eliminará el registro del teléfono. Confirma solo si estás seguro.</p>
+      @if (actionError) { <p class="action-error" role="alert">{{ actionError }}</p> }
+      <div class="delete-actions">
+        <button type="button" class="secondary" [disabled]="deletingNow" (click)="closeDelete()">Cancelar</button>
+        <button type="button" class="danger" [disabled]="deletingNow" (click)="confirmDelete()">{{ deletingNow ? 'Eliminando...' : 'Sí, eliminar' }}</button>
+      </div>
+    </div>
+  }
+</app-modal>

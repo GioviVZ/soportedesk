@@ -76,6 +76,11 @@
     </dependency>
     <dependency>
       <groupId>com.inia</groupId>
+      <artifactId>soportedesk-telefonia-fija</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.inia</groupId>
       <artifactId>soportedesk-licencias</artifactId>
       <version>${project.version}</version>
     </dependency>

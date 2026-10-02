@@ -1,0 +1,30 @@
+@use './telefonia-fija-page.shared';
+
+.finish-date {
+  display: grid;
+  gap: 6px;
+  color: var(--color-text-secondary);
+  font-size: 12px;
+  font-weight: 750;
+
+  input {
+    min-height: 42px;
+    border: 1px solid var(--color-border-strong);
+    border-radius: var(--radius-sm);
+    background: var(--color-surface);
+    color: var(--color-text);
+  }
+}
+
+:host ::ng-deep app-generic-table tbody td:first-child {
+  white-space: pre-line;
+  color: var(--color-text-secondary);
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+:host ::ng-deep app-generic-table tbody td:first-child::first-line {
+  color: var(--color-text);
+  font-size: 13px;
+  font-weight: 800;
+}

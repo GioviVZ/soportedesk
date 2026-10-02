@@ -1,0 +1,82 @@
+<form (submit)="onSubmit($event)" class="fixed-telephony-resource-form" id="asignacion-anexo-form">
+  @if (errorMessage) { <div class="form-error" role="alert">{{ errorMessage }}</div> }
+
+  <app-section-card title="Equipo y anexo">
+    <i icon class="ti ti-phone-call" aria-hidden="true"></i>
+    <div class="form-grid" [formGroup]="form">
+      <label class="field field--full">
+        <span>Teléfono *</span>
+        <select formControlName="telefonoFijoId">
+          <option [ngValue]="null">Seleccione...</option>
+          @for (telefono of telefonos; track telefono.id) { <option [ngValue]="telefono.id">{{ telefonoOption(telefono) }}</option> }
+        </select>
+        @if (telefonos.length === 0) { <small class="inventory-link-hint">Registra primero el teléfono en Inventario.</small> }
+        @if (isInvalid('telefonoFijoId')) { <small class="field-error">Selecciona un teléfono.</small> }
+      </label>
+      <label class="field">
+        <span>Anexo *</span><input type="text" inputmode="numeric" maxlength="6" formControlName="anexo" placeholder="1234" />
+        @if (isInvalid('anexo')) { <small class="field-error">Ingresa entre 3 y 6 dígitos.</small> }
+      </label>
+      <label class="field">
+        <span>Número directo</span><input type="text" inputmode="numeric" maxlength="9" formControlName="numeroDirecto" />
+        @if (isInvalid('numeroDirecto')) { <small class="field-error">Ingresa entre 6 y 9 dígitos.</small> }
+      </label>
+    </div>
+  </app-section-card>
+
+  <app-section-card title="Responsable">
+    <i icon class="ti ti-user" aria-hidden="true"></i>
+    <div class="form-grid" [formGroup]="form">
+      <label class="field">
+        <span>Persona asignada *</span><input type="text" formControlName="personaNombre" />
+        @if (isInvalid('personaNombre')) { <small class="field-error">La persona asignada es obligatoria.</small> }
+      </label>
+      <label class="field">
+        <span>DNI</span><input type="text" inputmode="numeric" maxlength="8" formControlName="personaDni" />
+        @if (isInvalid('personaDni')) { <small class="field-error">Ingresa un DNI de 8 dígitos.</small> }
+      </label>
+      <label class="field field--full">
+        <span>Dependencia</span>
+        <select formControlName="dependenciaId">
+          <option [ngValue]="null">Seleccione...</option>
+          @for (dependencia of dependencias; track dependencia.id) { <option [ngValue]="dependencia.id">{{ dependencia.nombre }}</option> }
+        </select>
+      </label>
+    </div>
+  </app-section-card>
+
+  <app-section-card title="Vigencia">
+    <i icon class="ti ti-calendar" aria-hidden="true"></i>
+    <div class="form-grid" [formGroup]="form">
+      <label class="field">
+        <span>Fecha de inicio *</span><input type="date" formControlName="fechaInicio" />
+        @if (isInvalid('fechaInicio')) { <small class="field-error">La fecha de inicio es obligatoria.</small> }
+      </label>
+      <label class="field">
+        <span>Fecha de fin</span><input type="date" formControlName="fechaFin" />
+        @if (form.hasError('fechaFinRequerida') && (form.touched || form.get('fechaFin')?.touched)) {
+          <small class="field-error">La fecha de fin es obligatoria cuando la asignación está finalizada.</small>
+        }
+        @if (form.hasError('fechaFinAnterior') && (form.touched || form.get('fechaFin')?.touched)) {
+          <small class="field-error">La fecha de fin debe ser igual o posterior a la fecha de inicio.</small>
+        }
+      </label>
+      <label class="field">
+        <span>Estado *</span>
+        <select formControlName="estado">
+          @for (estado of estados; track estado) { <option [value]="estado">{{ estado }}</option> }
+        </select>
+      </label>
+    </div>
+  </app-section-card>
+
+  <app-section-card title="Observaciones">
+    <i icon class="ti ti-notes" aria-hidden="true"></i>
+    <div [formGroup]="form"><label class="field"><span>Observaciones</span><textarea rows="4" formControlName="observaciones"></textarea></label></div>
+  </app-section-card>
+
+  <div class="form-actions">
+    <button type="button" class="secondary" (click)="cancelled.emit()">Cancelar</button>
+    <button type="submit" [disabled]="form.invalid || saving">{{ saving ? 'Guardando...' : (asignacion ? 'Guardar cambios' : 'Registrar asignación') }}</button>
+  </div>
+</form>

@@ -134,12 +134,13 @@ Tier 1: catalogo → common          auditoria → realtime          wifi → co
 Tier 2: identity → common+auditoria          equipos → common+catalogo
         impresoras → common+catalogo          licencias → common+catalogo
         equipos-red → common+catalogo (desde 2026-10-01)          equipos-moviles → common+catalogo (desde 2026-10-02)
+        telefonia-fija → common+catalogo (desde 2026-10-02)
         correos → gestiontiinia
 Tier 3: red-directorio → common+catalogo+gestiontiinia+auditoria+equipos
         herramientas → common+equipos
 Tier 4: vpn → common+catalogo+identity+red-directorio+equipos
 Tier 5: dashboard → red-directorio+equipos+gestiontiinia+herramientas+impresoras+licencias+vpn+wifi (agregador puro, nadie depende de él)
-Tier 6: soportedesk-app → depende de los 17 módulos anteriores (único que arranca Spring Boot y produce el jar ejecutable)
+Tier 6: soportedesk-app → depende de los 18 módulos anteriores (único que arranca Spring Boot y produce el jar ejecutable)
 ```
 
 `soportedesk-app` quedó reducido a la raíz de composición: `SoportedeskApplication.java` (clase `@SpringBootApplication`, sigue con component-scan sobre `com.inia.soportedesk` — los nombres de paquete Java no cambiaron en toda la migración, solo el jar donde vive cada uno) y `config/PrimaryDataSourceConfig.java` (datasource SQL Server primario). `glpi/GlpiDataSourceConfig.java` (datasource MySQL secundario, autocontenido) vive dentro de `soportedesk-equipos`.
@@ -413,7 +414,7 @@ Cada módulo de negocio se sirve bajo un *shell* propio con sub-rutas por modo
 | `/equipos/:id` | — | moduloGuard(`equipos`) | detalle de equipo |
 | `/equipos/red` | `switches` · `routers` · `access-points` · `radioenlaces` | moduloGuard(`equipos-red`) | librería `equipos-red`; API `/api/equipos-red` |
 | `/equipos/moviles` | `inventario` · `asignacion-numero` · `actas` | moduloGuard(`equipos-moviles`) | librería `equipos-moviles`; API `/api/equipos-moviles` (+ `/asignaciones`, `/actas` con archivo adjunto) |
-| `/equipos/telefonia-fija` | `inventario` · `asignacion-anexos` | moduloGuard(`equipos`) | librería `telefonia-fija` (en preparación) |
+| `/equipos/telefonia-fija` | `inventario` · `asignacion-anexos` | moduloGuard(`telefonia-fija`) | librería `telefonia-fija`; API `/api/telefonia-fija/telefonos` y `/api/telefonia-fija/asignaciones` |
 | `/impresoras` | `consultas` · `administracion` · `dashboard` | moduloGuard(`impresoras`[, write]) | ídem |
 | `/usuarios-red` | `consultas` · `administracion` · `dashboard` | moduloGuard(`usuarios-red`[, write]) | ídem |
 | `/vpn` | `registros` · `administracion` · `dashboard` | vpnAdminGuard (administracion/dashboard) | ídem |
@@ -494,14 +495,27 @@ de `equipos` (que queda dedicada a computadoras GLPI):
 
 Las tres solo pueden depender de `scope:core` y `scope:ui` (confirmado con un
 import prohibido deliberado hacia `@soportedesk/equipos`, que el lint
-rechazó). Mientras no tengan backend, sus rutas muestran
-`ModulePlaceholderComponent` (en `libs/ui`, genérico y reutilizable). Las
-rutas se montan en `app.routes.ts` **antes** de `equipos`, para que Angular
-no las confunda con `/equipos/:id`. El sidebar admite submenús de 3 niveles
-(`NavItem.groups`) para representar esta jerarquía. Cuando cada grupo tenga
-backend real, tendrá su propio módulo Maven (`soportedesk-equipos-red`,
-`soportedesk-equipos-moviles`, `soportedesk-telefonia-fija`, Tier 2:
-`common` + `catalogo`), nunca dentro de `soportedesk-equipos`.
+rechazó). Las rutas se montan en `app.routes.ts` **antes** de `equipos`,
+para que Angular no las confunda con `/equipos/:id`. El sidebar admite
+submenús de 3 niveles (`NavItem.groups`) y cada grupo tiene su propio
+permiso (`equipos`, `equipos-red`, `equipos-moviles`, `telefonia-fija`): el
+padre "Inventario de Equipos" se muestra si el usuario puede leer al menos
+un grupo. `ModulePlaceholderComponent` (en `libs/ui`) queda disponible para
+futuros submódulos en preparación.
+
+Cada grupo tiene su propio módulo Maven (Tier 2: `common` + `catalogo`),
+nunca dentro de `soportedesk-equipos`:
+
+| Módulo Maven | Tablas (`migration_*.sql`) | Permiso |
+|---|---|---|
+| `soportedesk-equipos-red` | `equipos_red` | `equipos-red` |
+| `soportedesk-equipos-moviles` | `equipos_moviles`, `asignaciones_numero_movil`, `actas_moviles`, `actas_moviles_equipos` (+ archivos en `uploads/actas-moviles`) | `equipos-moviles` |
+| `soportedesk-telefonia-fija` | `telefonos_fijos`, `asignaciones_anexo` | `telefonia-fija` |
+
+**Rendimiento:** `GenericTableComponent` rastrea filas y columnas por
+identidad (`track row`), así que las páginas que la usan declaran `columns`
+como campo y memorizan las filas (`rowsCache`) en vez de construirlas en un
+getter en cada detección de cambios.
 
 ### Sistema visual
 
@@ -560,7 +574,7 @@ Desde la migración a reactor Maven multi-módulo (2026-09-27, ver §3.1), el co
 ```bash
 cd soportedesk-backend
 mvn clean package -DskipTests
-# construye los 18 modulos y genera soportedesk-app/target/soportedesk-app-0.1.0.jar
+# construye los 19 modulos y genera soportedesk-app/target/soportedesk-app-0.1.0.jar
 ```
 
 Todas las credenciales y endpoints sensibles se leen exclusivamente de

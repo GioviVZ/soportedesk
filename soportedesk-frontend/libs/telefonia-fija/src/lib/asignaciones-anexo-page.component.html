@@ -1,0 +1,131 @@
+<div class="module-page fixed-telephony-module-page">
+  <header class="module-header">
+    <div>
+      <span class="module-eyebrow">Inventario de Equipos · Equipos de Telefonía Fija</span>
+      <h2><i class="ti ti-phone-call" aria-hidden="true"></i> Asignación de anexos</h2>
+      <p>Anexos y números asignados a cada equipo y responsable.</p>
+    </div>
+  </header>
+  <section class="module-stats" aria-label="Resumen de asignaciones de anexos">
+    <div class="stat-pill"><strong>{{ resumen.total }}</strong><span>Anexos totales</span></div>
+    <div class="stat-pill tone-success"><strong>{{ resumen.activas }}</strong><span>Activos</span></div>
+    <div class="stat-pill"><strong>{{ resumen.finalizadas }}</strong><span>Finalizados</span></div>
+    <div class="stat-pill"><strong>{{ resumen.sedes }}</strong><span>Sedes</span></div>
+  </section>
+
+  @if (loadError) {
+    <section class="load-state load-state--error" role="alert">
+      <i class="ti ti-alert-circle" aria-hidden="true"></i><strong>No fue posible cargar las asignaciones</strong><span>{{ loadError }}</span>
+      <button type="button" class="refresh-btn" (click)="load()">Reintentar</button>
+    </section>
+  } @else {
+    <section class="equipment-filter-panel">
+      <div class="filter-header">
+        <div><span>Filtros</span><strong>{{ filteredItems.length }} de {{ items.length }} asignaciones</strong></div>
+        <div class="filter-actions">
+          <button type="button" class="ghost-action" (click)="clearFilters()" [disabled]="!hasActiveFilters">Limpiar</button>
+          <button type="button" class="primary-action excel-export-btn" (click)="exportExcel()" [disabled]="filteredItems.length === 0">
+            <i class="ti ti-file-spreadsheet excel-export-icon" aria-hidden="true"></i> <span>Exportar Excel</span>
+          </button>
+        </div>
+      </div>
+      <div class="filter-grid filter-grid--three">
+        <label>Buscar<input type="text" [(ngModel)]="searchTerm" placeholder="Anexo, número, persona, DNI, teléfono..." /></label>
+        <label>Sede
+          <select [ngModel]="sedeFilter" (ngModelChange)="onSedeFilterChange($event)">
+            <option value="">Todas</option>
+            @for (sede of sedes; track sede.id) { <option [value]="sede.id.toString()">{{ sede.nombre }}</option> }
+          </select>
+        </label>
+        <label>Estado
+          <select [(ngModel)]="estadoFilter"><option value="">Todos</option>@for (estado of estados; track estado) { <option [value]="estado">{{ estado }}</option> }</select>
+        </label>
+      </div>
+    </section>
+
+    @if (loading) { <div class="load-state" aria-live="polite">Cargando asignaciones...</div> }
+    @else {
+      <div class="table-area">
+        <app-generic-table
+          [columns]="columns" [data]="tableRows" [canAdd]="canWrite" [canEdit]="canWrite" [showSearch]="false"
+          emptyMessage="Sin asignaciones de anexos registradas" extraColumnLabel="Estado"
+          (add)="onAdd()" (view)="onView($event)" (edit)="onEdit($event)" (delete)="onDelete($event)"
+        >
+          <ng-template #extraCell let-row>
+            <div class="extra-cell">
+              <app-status-badge [label]="row.estado" [tone]="asignacionEstadoTone(row.estado)" />
+              @if (canWrite && row.estado === 'Activa') {
+                <button type="button" class="inline-action" (click)="openFinish(row)"><i class="ti ti-check" aria-hidden="true"></i> Finalizar</button>
+              }
+            </div>
+          </ng-template>
+        </app-generic-table>
+      </div>
+    }
+  }
+</div>
+
+<app-modal title="Ficha · Asignación de anexo" [open]="viewing !== null" size="wide" (closed)="closeView()">
+  @if (viewing; as item) {
+    <div class="detail-toolbar">
+      <div><span>Anexo</span><strong>{{ item.anexo }}</strong></div>
+      @if (canWrite) { <button type="button" class="edit-btn" (click)="onEdit(item)">Editar</button> }
+    </div>
+    <div class="detail-sections">
+      <app-section-card title="Anexo y teléfono"><i icon class="ti ti-phone-call" aria-hidden="true"></i>
+        <dl class="detail-grid">
+          <div><dt>Anexo</dt><dd>{{ item.anexo }}</dd></div>
+          <div><dt>Número directo</dt><dd>{{ item.numeroDirecto || '—' }}</dd></div>
+          <div><dt>Teléfono</dt><dd>{{ telefonoCodigo(item) }} · {{ item.telefonoFijo.marca }} {{ item.telefonoFijo.modelo }}</dd></div>
+          <div><dt>IP</dt><dd>{{ item.telefonoFijo.ip || '—' }}</dd></div>
+          <div><dt>Sede</dt><dd>{{ item.telefonoFijo.sede?.nombre || '—' }}</dd></div>
+          <div><dt>Estado</dt><dd><app-status-badge [label]="item.estado" [tone]="asignacionEstadoTone(item.estado)" /></dd></div>
+        </dl>
+      </app-section-card>
+      <app-section-card title="Responsable"><i icon class="ti ti-user" aria-hidden="true"></i>
+        <dl class="detail-grid">
+          <div><dt>Persona</dt><dd>{{ item.personaNombre }}</dd></div>
+          <div><dt>DNI</dt><dd>{{ item.personaDni || '—' }}</dd></div>
+          <div><dt>Dependencia</dt><dd>{{ item.dependencia?.nombre || '—' }}</dd></div>
+        </dl>
+      </app-section-card>
+      <app-section-card title="Vigencia"><i icon class="ti ti-calendar" aria-hidden="true"></i>
+        <dl class="detail-grid"><div><dt>Inicio</dt><dd>{{ formatDate(item.fechaInicio) }}</dd></div><div><dt>Fin</dt><dd>{{ formatDate(item.fechaFin) }}</dd></div></dl>
+      </app-section-card>
+      <app-section-card title="Observaciones"><i icon class="ti ti-notes" aria-hidden="true"></i><p class="observations">{{ item.observaciones || 'Sin observaciones.' }}</p></app-section-card>
+    </div>
+  }
+</app-modal>
+
+<app-modal [title]="editing ? 'Editar asignación' : 'Nueva asignación'" [open]="formOpen" size="wide" [hideDefaultFooter]="true" (closed)="closeForm()">
+  @if (formOpen) { <app-asignacion-anexo-form [asignacion]="editing" [telefonos]="telefonos" (saved)="onSaved()" (cancelled)="closeForm()" /> }
+</app-modal>
+
+<app-modal title="Finalizar asignación" [open]="finishing !== null" (closed)="closeFinish()">
+  @if (finishing; as item) {
+    <div class="finish-confirm">
+      <div><strong>Anexo {{ item.anexo }}</strong><span>{{ item.personaNombre }}</span></div>
+      <label class="finish-date">Fecha de fin<input type="date" [(ngModel)]="fechaFin" [min]="item.fechaInicio" /></label>
+      @if (fechaFin && fechaFin < item.fechaInicio) { <p class="action-error" role="alert">La fecha de fin debe ser igual o posterior al inicio.</p> }
+      @if (actionError) { <p class="action-error" role="alert">{{ actionError }}</p> }
+      <div class="delete-actions">
+        <button type="button" class="secondary" [disabled]="finishingNow" (click)="closeFinish()">Cancelar</button>
+        <button type="button" [disabled]="finishingNow || !fechaFin || fechaFin < item.fechaInicio" (click)="confirmFinish()">{{ finishingNow ? 'Finalizando...' : 'Finalizar' }}</button>
+      </div>
+    </div>
+  }
+</app-modal>
+
+<app-modal title="Confirmar eliminación" [open]="deleting !== null" (closed)="closeDelete()">
+  @if (deleting; as item) {
+    <div class="delete-confirm">
+      <div><strong>Anexo {{ item.anexo }}</strong><span>{{ item.personaNombre }}</span></div>
+      <p>Esta acción eliminará la asignación registrada.</p>
+      @if (actionError) { <p class="action-error" role="alert">{{ actionError }}</p> }
+      <div class="delete-actions">
+        <button type="button" class="secondary" [disabled]="deletingNow" (click)="closeDelete()">Cancelar</button>
+        <button type="button" class="danger" [disabled]="deletingNow" (click)="confirmDelete()">{{ deletingNow ? 'Eliminando...' : 'Sí, eliminar' }}</button>
+      </div>
+    </div>
+  }
+</app-modal>

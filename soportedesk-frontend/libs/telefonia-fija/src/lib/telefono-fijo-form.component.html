@@ -1,0 +1,113 @@
+<form (submit)="onSubmit($event)" class="fixed-telephony-resource-form" id="telefono-fijo-form">
+  @if (errorMessage) { <div class="form-error" role="alert">{{ errorMessage }}</div> }
+
+  <app-section-card title="1. Ubicación">
+    <i icon class="ti ti-map-pin" aria-hidden="true"></i>
+    <app-ubicacion-select
+      [showTipoContrato]="false"
+      [(sedeId)]="sedeId"
+      [(dependenciaId)]="dependenciaId"
+      [(subdependenciaId)]="subdependenciaId"
+    />
+    <div class="form-grid location-details" [formGroup]="form">
+      <label class="field field--full">
+        <span>Referencia</span>
+        <input type="text" formControlName="referencia" placeholder="Ej. oficina de soporte" />
+      </label>
+      <div class="coordinates field--full">
+        <div class="coordinates-title">
+          <strong>Coordenadas</strong>
+          <span>Ubicación geográfica exacta del equipo.</span>
+        </div>
+        <div class="coordinates-grid">
+          <label class="field">
+            <span>Latitud</span>
+            <input type="number" step="0.000001" formControlName="latitud" />
+            @if (isInvalid('latitud')) { <small class="field-error">Ingresa una latitud entre −90 y 90.</small> }
+          </label>
+          <label class="field">
+            <span>Longitud</span>
+            <input type="number" step="0.000001" formControlName="longitud" />
+            @if (isInvalid('longitud')) { <small class="field-error">Ingresa una longitud entre −180 y 180.</small> }
+          </label>
+          <div class="coordinate-actions">
+            <button type="button" class="secondary" (click)="useCurrentLocation()">
+              <i class="ti ti-current-location" aria-hidden="true"></i> Usar mi ubicación actual
+            </button>
+            <button type="button" class="map-button" [disabled]="!hasCoordinates" (click)="openMap()">
+              <i class="ti ti-map" aria-hidden="true"></i> Ver en mapa
+            </button>
+          </div>
+        </div>
+        @if (geolocationStatus) { <p class="geolocation-status" aria-live="polite">{{ geolocationStatus }}</p> }
+      </div>
+      <label class="field"><span>Edificio</span><input type="text" formControlName="edificio" /></label>
+      <label class="field"><span>Piso</span><input type="text" formControlName="piso" /></label>
+    </div>
+  </app-section-card>
+
+  <app-section-card title="2. Identificación">
+    <i icon class="ti ti-phone" aria-hidden="true"></i>
+    <div class="form-grid" [formGroup]="form">
+      <label class="field">
+        <span>Tipo *</span>
+        <select formControlName="tipo">
+          @for (tipo of tipos; track tipo.value) { <option [value]="tipo.value">{{ tipo.label }}</option> }
+        </select>
+      </label>
+      <label class="field">
+        <span>Marca *</span>
+        <input type="text" formControlName="marca" list="telefono-fijo-marcas" autocomplete="off" />
+        <datalist id="telefono-fijo-marcas">
+          @for (marca of marcas; track marca) { <option [value]="marca"></option> }
+        </datalist>
+        @if (isInvalid('marca')) { <small class="field-error">La marca es obligatoria.</small> }
+      </label>
+      <label class="field">
+        <span>Modelo *</span><input type="text" formControlName="modelo" />
+        @if (isInvalid('modelo')) { <small class="field-error">El modelo es obligatorio.</small> }
+      </label>
+      <label class="field"><span>Serie</span><input type="text" formControlName="serie" /></label>
+      <label class="field"><span>Código patrimonial</span><input type="text" formControlName="codigoPatrimonial" /></label>
+      <label class="field"><span>Código de inventario 2025</span><input type="text" formControlName="codigoInventario" /></label>
+      <label class="field">
+        <span>Estado *</span>
+        <select formControlName="estado">
+          @for (estado of estados; track estado.value) { <option [value]="estado.value">{{ estado.value }}</option> }
+        </select>
+      </label>
+    </div>
+  </app-section-card>
+
+  <app-section-card title="3. Red">
+    <i icon class="ti ti-network" aria-hidden="true"></i>
+    <div class="form-grid" [formGroup]="form">
+      @if (form.controls.tipo.value !== 'IP') {
+        <small class="field-hint field--full">Solo aplica a teléfonos IP.</small>
+      }
+      <label class="field">
+        <span>MAC</span><input type="text" formControlName="mac" placeholder="AA:BB:CC:DD:EE:FF" />
+        @if (isInvalid('mac')) { <small class="field-error">Ingresa una dirección MAC válida.</small> }
+      </label>
+      <label class="field">
+        <span>IP</span><input type="text" formControlName="ip" placeholder="192.168.1.10" />
+        @if (isInvalid('ip')) { <small class="field-error">Ingresa una dirección IPv4 válida.</small> }
+      </label>
+      <label class="field field--full"><span>Host</span><input type="text" formControlName="host" /></label>
+    </div>
+  </app-section-card>
+
+  <app-section-card title="4. Observaciones">
+    <i icon class="ti ti-notes" aria-hidden="true"></i>
+    <div [formGroup]="form">
+      <label class="field"><span>Observaciones</span><textarea rows="4" formControlName="observaciones"></textarea></label>
+    </div>
+  </app-section-card>
+
+  <div class="form-actions">
+    <button type="button" class="secondary" (click)="cancelled.emit()">Cancelar</button>
+    <button type="submit" [disabled]="form.invalid || saving">
+      {{ saving ? 'Guardando...' : (telefono ? 'Guardar cambios' : 'Registrar teléfono') }}
+    </button>
+  </div>
+</form>

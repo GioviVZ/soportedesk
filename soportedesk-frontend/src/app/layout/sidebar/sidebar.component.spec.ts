@@ -132,6 +132,17 @@ describe('SidebarComponent', () => {
     expect(component.firstVisiblePath(equipos)).toBe('/equipos/moviles/inventario');
   });
 
+  it('muestra solo telefonía fija y dirige a su inventario con el permiso específico', () => {
+    authService.isAdmin.and.returnValue(false);
+    authService.canRead.and.callFake((permission) => permission === 'telefonia-fija');
+    const equipos = component.navItems.find((item) => item.path === '/equipos')!;
+
+    expect(component.canShow(equipos)).toBe(true);
+    expect(equipos.groups!.filter((group) => component.canShowGroup(group)).map((group) => group.key))
+      .toEqual(['telefonia-fija']);
+    expect(component.firstVisiblePath(equipos)).toBe('/equipos/telefonia-fija/inventario');
+  });
+
   it('expands the equipos tree and active group for the current URL', () => {
     component.expandForUrl('/equipos/red/routers');
 

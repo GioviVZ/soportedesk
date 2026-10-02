@@ -69,6 +69,7 @@ export const MODULOS: ModuloPermiso[] = [
   { key: 'impresoras', label: 'Impresoras', kind: 'write', group: 'Inventario' },
   { key: 'equipos-red', label: 'Equipos de Red', kind: 'write', group: 'Inventario', description: 'Switches, routers, access points y radioenlaces.' },
   { key: 'equipos-moviles', label: 'Equipos Móviles', kind: 'write', group: 'Inventario', description: 'Inventario, asignación de números y actas de equipos móviles.' },
+  { key: 'telefonia-fija', label: 'Telefonía Fija', kind: 'write', group: 'Inventario', description: 'Inventario de teléfonos fijos y asignación de anexos.' },
   { key: 'licencias', label: 'Licencias', kind: 'write', group: 'Inventario' },
   { key: 'catalogos', label: 'Configuración', kind: 'write', group: 'Administracion' },
   {

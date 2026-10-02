@@ -97,7 +97,7 @@ export class SidebarComponent {
           key: 'telefonia-fija',
           label: 'Equipos de Telefonía Fija',
           icon: 'ti-phone',
-          permission: 'equipos',
+          permission: 'telefonia-fija',
           children: [
             { label: 'Inventario', path: '/equipos/telefonia-fija/inventario', icon: 'ti-list-details' },
             { label: 'Asignación de anexos', path: '/equipos/telefonia-fija/asignacion-anexos', icon: 'ti-phone-call' },
