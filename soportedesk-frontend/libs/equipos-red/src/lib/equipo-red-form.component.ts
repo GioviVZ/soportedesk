@@ -12,6 +12,7 @@ import {
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { CatalogoService, Sede } from '@soportedesk/core';
 import { SectionCardComponent, UbicacionSelectComponent } from '@soportedesk/ui';
+import { MapPickerComponent } from '@soportedesk/ui/map';
 import {
   EQUIPO_RED_ESTADOS,
   EquipoRed,
@@ -27,7 +28,7 @@ const MAC_PATTERN = /^([0-9A-Fa-f]{2}[:-]){5}[0-9A-Fa-f]{2}$/;
 
 @Component({
   selector: 'app-equipo-red-form',
-  imports: [ReactiveFormsModule, UbicacionSelectComponent, SectionCardComponent],
+  imports: [ReactiveFormsModule, UbicacionSelectComponent, SectionCardComponent, MapPickerComponent],
   templateUrl: './equipo-red-form.component.html',
   styleUrl: './equipo-red-form.component.scss',
   changeDetection: ChangeDetectionStrategy.Eager,
@@ -51,7 +52,6 @@ export class EquipoRedFormComponent implements OnInit, OnChanges {
   remotoSedes: Sede[] = [];
   saving = false;
   errorMessage = '';
-  geolocationStatus = '';
 
   readonly form = this.fb.nonNullable.group({
     referencia: [''],
@@ -87,11 +87,6 @@ export class EquipoRedFormComponent implements OnInit, OnChanges {
     return ({ SWITCH: 'SW', ROUTER: 'RT', ACCESS_POINT: 'AP', RADIOENLACE: 'RE' } as const)[this.tipo];
   }
 
-  get hasCoordinates(): boolean {
-    const { latitud, longitud } = this.form.getRawValue();
-    return latitud !== null && longitud !== null;
-  }
-
   ngOnInit(): void {
     this.catalogoService.getSedes().subscribe((sedes) => (this.remotoSedes = sedes));
   }
@@ -107,32 +102,10 @@ export class EquipoRedFormComponent implements OnInit, OnChanges {
     return Boolean(control?.invalid && (control.dirty || control.touched));
   }
 
-  useCurrentLocation(): void {
-    if (!navigator.geolocation) {
-      this.geolocationStatus = 'El GPS no está disponible en este dispositivo.';
-      return;
-    }
-
-    this.geolocationStatus = 'Obteniendo ubicación...';
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        this.form.patchValue({
-          latitud: Number(position.coords.latitude.toFixed(6)),
-          longitud: Number(position.coords.longitude.toFixed(6)),
-        });
-        this.geolocationStatus = 'Ubicación obtenida correctamente.';
-      },
-      () => {
-        this.geolocationStatus = 'No fue posible acceder a tu ubicación.';
-      },
-      { enableHighAccuracy: true, timeout: 10000 },
-    );
-  }
-
-  openMap(): void {
-    if (!this.hasCoordinates) return;
-    const { latitud, longitud } = this.form.getRawValue();
-    window.open(`https://www.google.com/maps?q=${latitud},${longitud}`, '_blank', 'noopener');
+  onCoordenadas(coordinates: { latitud: number; longitud: number }): void {
+    this.form.patchValue(coordinates);
+    this.form.controls.latitud.markAsDirty();
+    this.form.controls.longitud.markAsDirty();
   }
 
   onSubmit(event: Event): void {
@@ -181,7 +154,6 @@ export class EquipoRedFormComponent implements OnInit, OnChanges {
   private resetForm(): void {
     this.saving = false;
     this.errorMessage = '';
-    this.geolocationStatus = '';
     this.sedeId = this.equipo?.sede?.id ?? null;
     this.dependenciaId = this.equipo?.dependencia?.id ?? null;
     this.subdependenciaId = this.equipo?.subdependencia?.id ?? null;

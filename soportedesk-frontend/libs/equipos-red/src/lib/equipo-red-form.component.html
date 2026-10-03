@@ -26,28 +26,20 @@
         <div class="coordinates-grid">
           <label class="field">
             <span>Latitud</span>
-            <input type="number" step="0.000001" formControlName="latitud" placeholder="-34.901112" />
+            <input type="number" step="0.000001" formControlName="latitud" placeholder="-12.082000" />
             @if (isInvalid('latitud')) { <small class="field-error">Ingresa una latitud entre −90 y 90.</small> }
           </label>
           <label class="field">
             <span>Longitud</span>
-            <input type="number" step="0.000001" formControlName="longitud" placeholder="-56.164532" />
+            <input type="number" step="0.000001" formControlName="longitud" placeholder="-76.943000" />
             @if (isInvalid('longitud')) { <small class="field-error">Ingresa una longitud entre −180 y 180.</small> }
           </label>
-          <div class="coordinate-actions">
-            <button type="button" class="secondary" (click)="useCurrentLocation()">
-              <i class="ti ti-current-location" aria-hidden="true"></i>
-              Usar mi ubicación actual
-            </button>
-            <button type="button" class="map-button" [disabled]="!hasCoordinates" (click)="openMap()">
-              <i class="ti ti-map" aria-hidden="true"></i>
-              Ver en mapa
-            </button>
-          </div>
         </div>
-        @if (geolocationStatus) {
-          <p class="geolocation-status" aria-live="polite">{{ geolocationStatus }}</p>
-        }
+        <app-map-picker
+          [latitud]="form.controls.latitud.value"
+          [longitud]="form.controls.longitud.value"
+          (coordenadasChange)="onCoordenadas($event)"
+        />
       </div>
 
       <label class="field">

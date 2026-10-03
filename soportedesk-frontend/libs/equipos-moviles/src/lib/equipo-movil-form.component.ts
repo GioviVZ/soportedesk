@@ -10,6 +10,7 @@ import {
 } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { SectionCardComponent, UbicacionSelectComponent } from '@soportedesk/ui';
+import { MapPickerComponent } from '@soportedesk/ui/map';
 import { EquipoMovil, EquipoMovilRequest, EstadoEquipoMovil, TipoEquipoMovil } from './equipo-movil.model';
 import { EquipoMovilService } from './equipo-movil.service';
 import {
@@ -21,7 +22,7 @@ import {
 
 @Component({
   selector: 'app-equipo-movil-form',
-  imports: [ReactiveFormsModule, UbicacionSelectComponent, SectionCardComponent],
+  imports: [ReactiveFormsModule, UbicacionSelectComponent, SectionCardComponent, MapPickerComponent],
   templateUrl: './equipo-movil-form.component.html',
   styleUrl: './equipo-movil-form.component.scss',
   changeDetection: ChangeDetectionStrategy.Eager,
@@ -47,7 +48,6 @@ export class EquipoMovilFormComponent implements OnChanges {
   subdependenciaId: number | null = null;
   saving = false;
   errorMessage = '';
-  geolocationStatus = '';
 
   readonly form = this.fb.nonNullable.group({
     tipo: ['SMARTPHONE' as TipoEquipoMovil, Validators.required],
@@ -70,11 +70,6 @@ export class EquipoMovilFormComponent implements OnChanges {
     observaciones: [''],
   }, { validators: imeisDistintosValidator });
 
-  get hasCoordinates(): boolean {
-    const { latitud, longitud } = this.form.getRawValue();
-    return latitud !== null && longitud !== null;
-  }
-
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['equipo']) this.resetForm();
   }
@@ -84,31 +79,10 @@ export class EquipoMovilFormComponent implements OnChanges {
     return Boolean(control?.invalid && (control.dirty || control.touched));
   }
 
-  useCurrentLocation(): void {
-    if (!navigator.geolocation) {
-      this.geolocationStatus = 'El GPS no está disponible en este dispositivo.';
-      return;
-    }
-    this.geolocationStatus = 'Obteniendo ubicación...';
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        this.form.patchValue({
-          latitud: Number(position.coords.latitude.toFixed(6)),
-          longitud: Number(position.coords.longitude.toFixed(6)),
-        });
-        this.geolocationStatus = 'Ubicación obtenida correctamente.';
-      },
-      () => {
-        this.geolocationStatus = 'No fue posible acceder a tu ubicación.';
-      },
-      { enableHighAccuracy: true, timeout: 10000 },
-    );
-  }
-
-  openMap(): void {
-    if (!this.hasCoordinates) return;
-    const { latitud, longitud } = this.form.getRawValue();
-    window.open(`https://www.google.com/maps?q=${latitud},${longitud}`, '_blank', 'noopener');
+  onCoordenadas(coordinates: { latitud: number; longitud: number }): void {
+    this.form.patchValue(coordinates);
+    this.form.controls.latitud.markAsDirty();
+    this.form.controls.longitud.markAsDirty();
   }
 
   onSubmit(event: Event): void {
@@ -148,7 +122,6 @@ export class EquipoMovilFormComponent implements OnChanges {
   private resetForm(): void {
     this.saving = false;
     this.errorMessage = '';
-    this.geolocationStatus = '';
     this.sedeId = this.equipo?.sede?.id ?? null;
     this.dependenciaId = this.equipo?.dependencia?.id ?? null;
     this.subdependenciaId = this.equipo?.subdependencia?.id ?? null;

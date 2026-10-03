@@ -1,0 +1,66 @@
+<div class="sd-map-picker">
+  <div class="sd-map-picker__toolbar" aria-label="Herramientas de coordenadas">
+    <div class="sd-map-picker__paste-group">
+      <input
+        class="sd-map-picker__paste-input"
+        type="text"
+        [value]="pasteText"
+        [disabled]="disabled"
+        aria-label="Enlace o coordenadas para aplicar"
+        placeholder="Pega un enlace de Google Maps o &quot;-12.0820, -76.9430&quot;"
+        (input)="onPasteInput($event)"
+        (paste)="onPaste($event)"
+        (keydown.enter)="onPasteEnter($event)"
+      />
+      <button
+        type="button"
+        class="sd-map-picker__button sd-map-picker__button--secondary sd-map-picker__apply"
+        [disabled]="disabled"
+        aria-label="Aplicar las coordenadas ingresadas"
+        (click)="applyPastedCoordinates()"
+      >
+        Aplicar
+      </button>
+    </div>
+
+    <button
+      type="button"
+      class="sd-map-picker__button sd-map-picker__button--ghost sd-map-picker__geolocation"
+      [disabled]="disabled"
+      aria-label="Usar mi ubicación actual"
+      (click)="useCurrentLocation()"
+    >
+      <i class="ti ti-current-location" aria-hidden="true"></i>
+      Mi ubicación
+    </button>
+
+    <button
+      type="button"
+      class="sd-map-picker__button sd-map-picker__button--ghost sd-map-picker__google-maps"
+      [disabled]="disabled || !hasCoordinates"
+      aria-label="Ver las coordenadas en Google Maps"
+      (click)="openGoogleMaps()"
+    >
+      <i class="ti ti-external-link" aria-hidden="true"></i>
+      Ver en Google Maps
+    </button>
+  </div>
+
+  <p class="sd-map-picker__status" role="status" aria-live="polite" aria-atomic="true">{{ statusMessage }}</p>
+
+  @if (mapLoadError) {
+    <p class="sd-map-picker__load-error" role="alert">
+      No se pudo cargar el mapa. Puedes ingresar las coordenadas manualmente.
+    </p>
+  }
+
+  <div
+    #mapContainer
+    class="sd-map-picker__map"
+    [class.sd-map-picker__map--unavailable]="mapLoadError"
+    role="application"
+    aria-label="Mapa para seleccionar la ubicación"
+  ></div>
+
+  <p class="sd-map-picker__hint">Haz clic en el mapa o arrastra el pin para marcar la ubicación exacta.</p>
+</div>
