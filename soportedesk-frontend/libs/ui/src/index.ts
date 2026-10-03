@@ -1,5 +1,4 @@
 export * from './lib/badge/badge.component';
-export * from './lib/dashboard-breakdown/dashboard-breakdown.component';
 export * from './lib/directives/click-outside.directive';
 export * from './lib/directives/if-admin.directive';
 export * from './lib/field/field.component';

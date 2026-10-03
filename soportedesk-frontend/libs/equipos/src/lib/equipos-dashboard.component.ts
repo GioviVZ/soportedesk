@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, OnInit, inject } from '@angular/core';
-import { DashboardBreakdownComponent, DashboardBreakdownItem } from '@soportedesk/ui';
+import { DashboardBreakdownComponent, DashboardBreakdownItem } from '@soportedesk/ui/charts';
 import { EquipoDashboardCompleto } from './equipo.model';
 import { EquipoService } from './equipo.service';
 

@@ -1,9 +1,11 @@
 import { Routes } from '@angular/router';
 import { moduloGuard } from '@soportedesk/core';
+import { provideCharts, withDefaultRegisterables } from 'ng2-charts';
 
 export const impresorasRoutes: Routes = [
   {
     path: '',
+    providers: [provideCharts(withDefaultRegisterables())],
     loadComponent: () =>
       import('./impresoras-shell.component').then(
         (m) => m.ImpresorasShellComponent,

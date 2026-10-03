@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, OnInit, inject } from '@angular/core';
-import { DashboardBreakdownComponent, DashboardBreakdownItem } from '@soportedesk/ui';
+import { DashboardBreakdownComponent, DashboardBreakdownItem } from '@soportedesk/ui/charts';
 import { Licencia } from './licencia.model';
 import { LicenciaService } from './licencia.service';
 

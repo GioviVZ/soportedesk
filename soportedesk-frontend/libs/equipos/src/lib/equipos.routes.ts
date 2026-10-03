@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 import { moduloGuard } from '@soportedesk/core';
+import { provideCharts, withDefaultRegisterables } from 'ng2-charts';
 
 export const equiposRoutes: Routes = [
   { path: '', pathMatch: 'full', redirectTo: 'computadoras' },
@@ -8,6 +9,7 @@ export const equiposRoutes: Routes = [
   { path: 'dashboard', pathMatch: 'full', redirectTo: 'computadoras/dashboard' },
   {
     path: 'computadoras',
+    providers: [provideCharts(withDefaultRegisterables())],
     loadComponent: () =>
       import('./equipos-shell.component').then((m) => m.EquiposShellComponent),
     children: [

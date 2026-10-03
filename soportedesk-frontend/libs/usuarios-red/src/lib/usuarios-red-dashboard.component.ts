@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, OnInit, inject } from '@angular/core';
 import { Router } from '@angular/router';
-import { DashboardBreakdownComponent, DashboardBreakdownItem } from '@soportedesk/ui';
+import { DashboardBreakdownComponent, DashboardBreakdownItem } from '@soportedesk/ui/charts';
 import { ActiveDirectoryDashboardCompleto } from './active-directory.model';
 import { ActiveDirectoryService } from './active-directory.service';
 

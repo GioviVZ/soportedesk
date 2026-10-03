@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, OnInit, inject } from '@angular/core';
-import { DashboardBreakdownComponent, DashboardBreakdownItem } from '@soportedesk/ui';
+import { DashboardBreakdownComponent, DashboardBreakdownItem } from '@soportedesk/ui/charts';
 import { Wifi } from './wifi.model';
 import { WifiService } from './wifi.service';
 

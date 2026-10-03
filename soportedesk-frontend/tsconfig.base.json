@@ -17,6 +17,9 @@
       "@soportedesk/ui": [
         "./libs/ui/src/index.ts"
       ],
+      "@soportedesk/ui/charts": [
+        "./libs/ui/src/charts.ts"
+      ],
       "@soportedesk/auditoria": [
         "./libs/auditoria/src/index.ts"
       ],

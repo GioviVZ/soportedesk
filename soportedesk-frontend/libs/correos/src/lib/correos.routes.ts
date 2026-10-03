@@ -1,9 +1,11 @@
 import { Routes } from '@angular/router';
 import { moduloGuard } from '@soportedesk/core';
+import { provideCharts, withDefaultRegisterables } from 'ng2-charts';
 
 export const correosRoutes: Routes = [
   {
     path: '',
+    providers: [provideCharts(withDefaultRegisterables())],
     loadComponent: () =>
       import('./correos-shell.component').then(
         (m) => m.CorreosShellComponent,

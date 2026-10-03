@@ -1,9 +1,11 @@
 import { Routes } from '@angular/router';
 import { moduloGuard, vpnAdminGuard } from '@soportedesk/core';
+import { provideCharts, withDefaultRegisterables } from 'ng2-charts';
 
 export const vpnRoutes: Routes = [
   {
     path: '',
+    providers: [provideCharts(withDefaultRegisterables())],
     loadComponent: () =>
       import('./vpn-shell.component').then((m) => m.VpnShellComponent),
     children: [
