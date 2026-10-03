@@ -34,7 +34,16 @@ describe('EquiposMantenimientoComponent', () => {
   });
 
   beforeEach(async () => {
-    service = jasmine.createSpyObj<EquipoService>('EquipoService', ['getSalud']);
+    service = jasmine.createSpyObj<EquipoService>('EquipoService', ['getSalud', 'getSyncStatus']);
+    service.getSyncStatus.and.returnValue(of({
+      running: false,
+      procesados: 0,
+      total: 0,
+      iniciadoEn: null,
+      finalizadoEn: null,
+      ultimoResultado: null,
+      error: null,
+    }));
     service.getSalud.and.returnValue(of([
       item({ computerID: 1, nombreEquipo: 'PC-001' }),
       item({
