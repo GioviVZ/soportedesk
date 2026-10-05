@@ -1,1 +1,25 @@
 @use './moviles-page.shared';
+
+.map-link {
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.map-link--disabled {
+  background: var(--color-muted);
+  color: var(--color-text-muted);
+  cursor: not-allowed;
+}
+
+.map-context {
+  margin: 0 0 10px;
+  color: var(--color-text-muted);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.45;
+}
+
+.detail-grid .detail-map {
+  display: block;
+  grid-column: 1 / -1;
+}

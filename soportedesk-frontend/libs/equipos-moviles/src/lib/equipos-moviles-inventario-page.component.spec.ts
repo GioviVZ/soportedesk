@@ -47,6 +47,11 @@ describe('EquiposMovilesInventarioPageComponent', () => {
   let asignacionService: jasmine.SpyObj<AsignacionNumeroMovilService>;
   let auth: jasmine.SpyObj<AuthService>;
   const equipo = equipoMock(1);
+  const mappedEquipo = equipoMock(2, {
+    codigoInventario: 'INV-MAP-2',
+    latitud: -12.0817,
+    longitud: -76.9431,
+  });
   const assignment: AsignacionNumeroMovil = {
     id: 8,
     equipoMovil: equipo,
@@ -65,7 +70,7 @@ describe('EquiposMovilesInventarioPageComponent', () => {
 
   beforeEach(async () => {
     equipoService = jasmine.createSpyObj<EquipoMovilService>('EquipoMovilService', ['getAll', 'getResumen', 'delete']);
-    equipoService.getAll.and.returnValue(of([equipo]));
+    equipoService.getAll.and.returnValue(of([equipo, mappedEquipo]));
     equipoService.getResumen.and.returnValue(of({ total: 1, operativos: 1, enRevision: 0, sinAsignar: 0 }));
     asignacionService = jasmine.createSpyObj<AsignacionNumeroMovilService>('AsignacionNumeroMovilService', ['getAll']);
     asignacionService.getAll.and.returnValue(of([assignment]));
@@ -109,5 +114,21 @@ describe('EquiposMovilesInventarioPageComponent', () => {
     expect(fixture.nativeElement.querySelector('.add-btn')).toBeNull();
     expect(fixture.nativeElement.querySelector('.edit-btn')).toBeNull();
     expect(auth.canWrite).toHaveBeenCalledWith('equipos-moviles');
+  });
+
+  it('muestra Sin ubicación deshabilitado para una fila sin coordenadas', () => {
+    const disabledButton: HTMLButtonElement = fixture.nativeElement.querySelector('.map-link:disabled');
+
+    expect(disabledButton).not.toBeNull();
+    expect(disabledButton.textContent).toContain('Sin ubicación');
+    expect(disabledButton.getAttribute('aria-disabled')).toBe('true');
+  });
+
+  it('abre el modal de mapa desde una fila con coordenadas', () => {
+    const mapButton: HTMLButtonElement = fixture.nativeElement.querySelector('.map-link:not(:disabled)');
+
+    mapButton.click();
+
+    expect(component.mapItem?.id).toBe(2);
   });
 });

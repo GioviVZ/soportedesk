@@ -89,16 +89,20 @@
             <div class="status-map-cell">
               <app-status-badge [label]="row.estado" [tone]="equipoRedEstadoTone(row.estado)" />
               @if (row.latitud !== null && row.longitud !== null) {
-                <a
+                <button
+                  type="button"
                   class="map-link"
-                  [href]="mapUrl(row)"
-                  target="_blank"
-                  rel="noopener"
                   [attr.aria-label]="mapAriaLabel(row)"
+                  (click)="openMap(row)"
                 >
                   <i class="ti ti-map-pin" aria-hidden="true"></i>
-                  Ver en mapa
-                </a>
+                  Ver mapa
+                </button>
+              } @else {
+                <button type="button" class="map-link map-link--disabled" disabled aria-disabled="true">
+                  <i class="ti ti-map-pin-off" aria-hidden="true"></i>
+                  Sin ubicación
+                </button>
               }
             </div>
           </ng-template>
@@ -127,9 +131,14 @@
           <div><dt>Referencia</dt><dd>{{ item.referencia || '—' }}</dd></div>
           <div><dt>Edificio / piso</dt><dd>{{ item.edificio || '—' }} / {{ item.piso || '—' }}</dd></div>
           <div><dt>Gabinete</dt><dd>{{ item.gabinete || '—' }}</dd></div>
-          @if (item.latitud !== null && item.longitud !== null) {
-            <div><dt>Coordenadas</dt><dd><a [href]="mapUrl(item)" target="_blank" rel="noopener">{{ item.latitud }}, {{ item.longitud }}</a></dd></div>
-          }
+          <div class="detail-map">
+            <app-map-preview
+              [latitud]="item.latitud"
+              [longitud]="item.longitud"
+              [titulo]="identifier(item)"
+              [height]="240"
+            />
+          </div>
         </dl>
       </app-section-card>
 
@@ -173,6 +182,17 @@
         <p class="observations">{{ item.observaciones || 'Sin observaciones.' }}</p>
       </app-section-card>
     </div>
+  }
+</app-modal>
+
+<app-modal
+  [title]="mapItem ? 'Ubicación · ' + identifier(mapItem) : 'Ubicación'"
+  [open]="mapItem !== null"
+  (closed)="closeMap()"
+>
+  @if (mapItem; as item) {
+    <p class="map-context">{{ locationSummary(item) }}</p>
+    <app-map-preview [latitud]="item.latitud" [longitud]="item.longitud" [titulo]="identifier(item)" />
   }
 </app-modal>
 

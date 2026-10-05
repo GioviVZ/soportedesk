@@ -1,3 +1,4 @@
+@use './leaflet-theme';
 @import 'leaflet/dist/leaflet.css';
 
 .sd-map-picker {
@@ -151,62 +152,7 @@
   line-height: 1.4;
 }
 
-.sd-map-picker .leaflet-control-zoom,
-.sd-map-picker .leaflet-control-layers {
-  overflow: hidden;
-  border: 1px solid var(--glass-stroke);
-  border-radius: var(--radius-sm);
-  background: var(--glass-bg-strong);
-  box-shadow: var(--shadow-sm);
-  color: var(--color-heading);
-  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
-}
-
-.sd-map-picker .leaflet-control-zoom a,
-.sd-map-picker .leaflet-control-layers-expanded,
-.sd-map-picker .leaflet-control-layers label {
-  background: var(--glass-bg-strong);
-  color: var(--color-heading);
-  font-family: inherit;
-}
-
-.sd-map-picker .leaflet-control-zoom a {
-  border-color: var(--glass-stroke);
-}
-
-.sd-map-picker .leaflet-control-zoom a:hover,
-.sd-map-picker .leaflet-control-zoom a:focus-visible {
-  background: var(--color-accent-light);
-  color: var(--color-accent);
-}
-
-.sd-map-picker .leaflet-control-layers-separator {
-  border-color: var(--glass-stroke);
-}
-
-.sd-map-picker .leaflet-control-attribution {
-  border: 1px solid var(--glass-stroke);
-  background: var(--glass-bg-strong);
-  color: var(--color-text-secondary);
-  font-family: inherit;
-}
-
-.sd-map-picker .leaflet-control-attribution a {
-  color: var(--color-accent);
-}
-
-.sd-map-pin {
-  width: 34px !important;
-  height: 44px !important;
-  border: 0;
-  background: transparent;
-  color: var(--color-primary);
-  filter: drop-shadow(0 4px 5px rgba(2, 12, 30, .28));
-}
-
-.sd-map-pin svg {
-  display: block;
-}
+@include leaflet-theme.apply('.sd-map-picker');
 
 @media (max-width: 600px) {
   .sd-map-picker .sd-map-picker__toolbar {

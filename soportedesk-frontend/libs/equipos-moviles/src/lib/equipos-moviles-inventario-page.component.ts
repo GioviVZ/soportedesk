@@ -8,6 +8,7 @@ import {
   StatusBadgeComponent,
   TableColumn,
 } from '@soportedesk/ui';
+import { MapPreviewComponent } from '@soportedesk/ui/map';
 import { forkJoin } from 'rxjs';
 import * as XLSX from 'xlsx';
 import { AsignacionNumeroMovil } from './asignacion-numero-movil.model';
@@ -46,6 +47,7 @@ const EMPTY_RESUMEN: EquipoMovilResumen = { total: 0, operativos: 0, enRevision:
     ModalComponent,
     SectionCardComponent,
     StatusBadgeComponent,
+    MapPreviewComponent,
     EquipoMovilFormComponent,
   ],
   templateUrl: './equipos-moviles-inventario-page.component.html',
@@ -86,6 +88,7 @@ export class EquiposMovilesInventarioPageComponent implements OnInit {
   actionError = '';
   deletingNow = false;
   viewing: EquipoMovil | null = null;
+  mapItem: EquipoMovil | null = null;
   editing: EquipoMovil | null = null;
   deleting: EquipoMovil | null = null;
   formOpen = false;
@@ -206,6 +209,11 @@ export class EquiposMovilesInventarioPageComponent implements OnInit {
 
   onView(item: EquipoMovil): void { this.viewing = item; }
   closeView(): void { this.viewing = null; }
+  openMap(item: EquipoMovil): void {
+    if (item.latitud === null || item.longitud === null) return;
+    this.mapItem = item;
+  }
+  closeMap(): void { this.mapItem = null; }
   onAdd(): void {
     if (!this.canWrite) return;
     this.editing = null;
@@ -261,6 +269,15 @@ export class EquiposMovilesInventarioPageComponent implements OnInit {
     return assignment ? `${assignment.numero} · ${assignment.personaNombre}` : 'Sin asignar';
   }
   mapUrl(item: EquipoMovil): string { return `https://www.google.com/maps?q=${item.latitud},${item.longitud}`; }
+  locationSummary(item: EquipoMovil): string {
+    return [
+      item.sede?.nombre,
+      item.dependencia?.nombre,
+      item.referencia,
+      item.edificio ? `Edificio ${item.edificio}` : null,
+      item.piso ? `Piso ${item.piso}` : null,
+    ].filter(Boolean).join(' · ') || 'Sin detalles adicionales de ubicación';
+  }
 
   exportExcel(): void {
     const rows = this.filteredItems.map((item) => ({

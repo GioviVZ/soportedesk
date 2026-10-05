@@ -97,15 +97,33 @@
 .map-link {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 4px;
   min-height: 30px;
   padding: 4px 8px;
+  border: 0;
   border-radius: 999px;
   background: var(--color-primary-light);
   color: var(--color-accent);
+  font-family: inherit;
   font-size: 11px;
   font-weight: 750;
   white-space: nowrap;
+  cursor: pointer;
+}
+
+.map-link--disabled {
+  background: var(--color-muted);
+  color: var(--color-text-muted);
+  cursor: not-allowed;
+}
+
+.map-context {
+  margin: 0 0 10px;
+  color: var(--color-text-muted);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.45;
 }
 
 .load-state {
@@ -179,6 +197,11 @@
     font-weight: 600;
     overflow-wrap: anywhere;
   }
+}
+
+.detail-grid .detail-map {
+  display: block;
+  grid-column: 1 / -1;
 }
 
 .observations {

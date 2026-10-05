@@ -9,6 +9,7 @@ import {
   StatusBadgeComponent,
   TableColumn,
 } from '@soportedesk/ui';
+import { MapPreviewComponent } from '@soportedesk/ui/map';
 import { forkJoin } from 'rxjs';
 import * as XLSX from 'xlsx';
 import { EquipoRedFormComponent } from './equipo-red-form.component';
@@ -52,6 +53,7 @@ const DESCRIPCIONES: Record<TipoEquipoRed, string> = {
     ModalComponent,
     SectionCardComponent,
     StatusBadgeComponent,
+    MapPreviewComponent,
     EquipoRedFormComponent,
   ],
   templateUrl: './equipos-red-page.component.html',
@@ -80,6 +82,7 @@ export class EquiposRedPageComponent implements OnInit {
   deletingNow = false;
 
   viewing: EquipoRed | null = null;
+  mapItem: EquipoRed | null = null;
   editing: EquipoRed | null = null;
   deleting: EquipoRed | null = null;
   formOpen = false;
@@ -212,6 +215,15 @@ export class EquiposRedPageComponent implements OnInit {
     this.viewing = null;
   }
 
+  openMap(item: EquipoRed): void {
+    if (item.latitud === null || item.longitud === null) return;
+    this.mapItem = item;
+  }
+
+  closeMap(): void {
+    this.mapItem = null;
+  }
+
   onAdd(): void {
     if (!this.canWrite) return;
     this.editing = null;
@@ -281,6 +293,17 @@ export class EquiposRedPageComponent implements OnInit {
 
   mapAriaLabel(item: EquipoRed): string {
     return `Ver ${item.etiqueta || this.identifier(item)} en el mapa`;
+  }
+
+  locationSummary(item: EquipoRed): string {
+    return [
+      item.sede?.nombre,
+      item.dependencia?.nombre,
+      item.referencia,
+      item.edificio ? `Edificio ${item.edificio}` : null,
+      item.piso ? `Piso ${item.piso}` : null,
+      item.gabinete ? `Gabinete ${item.gabinete}` : null,
+    ].filter(Boolean).join(' · ') || 'Sin detalles adicionales de ubicación';
   }
 
   exportExcel(): void {

@@ -1,0 +1,37 @@
+<div class="sd-map-preview">
+  @if (hasCoordinates) {
+    <div
+      #mapContainer
+      class="sd-map-preview__map"
+      [class.sd-map-preview__map--unavailable]="mapLoadError"
+      [style.height.px]="height"
+      role="region"
+      [attr.aria-label]="mapAriaLabel"
+    ></div>
+
+    @if (mapLoadError) {
+      <p class="sd-map-preview__load-error" role="alert">
+        No se pudo cargar el mapa. Puedes abrir la ubicación en Google Maps.
+      </p>
+    }
+
+    <div class="sd-map-preview__coordinates">
+      <code>{{ coordinatesText }}</code>
+      <a
+        class="sd-map-preview__external-link"
+        [href]="googleMapsUrl"
+        target="_blank"
+        rel="noopener"
+      >
+        <i class="ti ti-external-link" aria-hidden="true"></i>
+        Abrir en Google Maps
+      </a>
+    </div>
+  } @else {
+    <div class="sd-map-preview__empty" [style.height.px]="height" role="status">
+      <i class="ti ti-map-pin-off" aria-hidden="true"></i>
+      <strong>Sin ubicación registrada</strong>
+      <span>Edita el equipo para marcar su ubicación en el mapa.</span>
+    </div>
+  }
+</div>

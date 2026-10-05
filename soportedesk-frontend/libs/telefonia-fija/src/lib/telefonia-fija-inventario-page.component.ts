@@ -8,6 +8,7 @@ import {
   StatusBadgeComponent,
   TableColumn,
 } from '@soportedesk/ui';
+import { MapPreviewComponent } from '@soportedesk/ui/map';
 import { forkJoin } from 'rxjs';
 import * as XLSX from 'xlsx';
 import { AsignacionAnexo } from './asignacion-anexo.model';
@@ -47,6 +48,7 @@ const EMPTY_RESUMEN: TelefonoFijoResumen = { total: 0, operativos: 0, enRevision
     ModalComponent,
     SectionCardComponent,
     StatusBadgeComponent,
+    MapPreviewComponent,
     TelefonoFijoFormComponent,
   ],
   templateUrl: './telefonia-fija-inventario-page.component.html',
@@ -87,6 +89,7 @@ export class TelefoniaFijaInventarioPageComponent implements OnInit {
   actionError = '';
   deletingNow = false;
   viewing: TelefonoFijo | null = null;
+  mapItem: TelefonoFijo | null = null;
   editing: TelefonoFijo | null = null;
   deleting: TelefonoFijo | null = null;
   formOpen = false;
@@ -209,6 +212,11 @@ export class TelefoniaFijaInventarioPageComponent implements OnInit {
 
   onView(item: TelefonoFijo): void { this.viewing = item; }
   closeView(): void { this.viewing = null; }
+  openMap(item: TelefonoFijo): void {
+    if (item.latitud === null || item.longitud === null) return;
+    this.mapItem = item;
+  }
+  closeMap(): void { this.mapItem = null; }
   onAdd(): void {
     if (!this.canWrite) return;
     this.editing = null;
@@ -266,6 +274,15 @@ export class TelefoniaFijaInventarioPageComponent implements OnInit {
     return `${numero} · ${assignment.personaNombre}`;
   }
   mapUrl(item: TelefonoFijo): string { return `https://www.google.com/maps?q=${item.latitud},${item.longitud}`; }
+  locationSummary(item: TelefonoFijo): string {
+    return [
+      item.sede?.nombre,
+      item.dependencia?.nombre,
+      item.referencia,
+      item.edificio ? `Edificio ${item.edificio}` : null,
+      item.piso ? `Piso ${item.piso}` : null,
+    ].filter(Boolean).join(' · ') || 'Sin detalles adicionales de ubicación';
+  }
 
   exportExcel(): void {
     const rows = this.filteredItems.map((item) => ({

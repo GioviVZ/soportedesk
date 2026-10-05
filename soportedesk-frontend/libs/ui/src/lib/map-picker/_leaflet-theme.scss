@@ -1,0 +1,58 @@
+@mixin apply($root) {
+  #{$root} .leaflet-control-zoom,
+  #{$root} .leaflet-control-layers {
+    overflow: hidden;
+    border: 1px solid var(--glass-stroke);
+    border-radius: var(--radius-sm);
+    background: var(--glass-bg-strong);
+    box-shadow: var(--shadow-sm);
+    color: var(--color-heading);
+    backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  }
+
+  #{$root} .leaflet-control-zoom a,
+  #{$root} .leaflet-control-layers-expanded,
+  #{$root} .leaflet-control-layers label {
+    background: var(--glass-bg-strong);
+    color: var(--color-heading);
+    font-family: inherit;
+  }
+
+  #{$root} .leaflet-control-zoom a {
+    border-color: var(--glass-stroke);
+  }
+
+  #{$root} .leaflet-control-zoom a:hover,
+  #{$root} .leaflet-control-zoom a:focus-visible {
+    background: var(--color-accent-light);
+    color: var(--color-accent);
+  }
+
+  #{$root} .leaflet-control-layers-separator {
+    border-color: var(--glass-stroke);
+  }
+
+  #{$root} .leaflet-control-attribution {
+    border: 1px solid var(--glass-stroke);
+    background: var(--glass-bg-strong);
+    color: var(--color-text-secondary);
+    font-family: inherit;
+  }
+
+  #{$root} .leaflet-control-attribution a {
+    color: var(--color-accent);
+  }
+
+  #{$root} .sd-map-pin {
+    width: 34px !important;
+    height: 44px !important;
+    border: 0;
+    background: transparent;
+    color: var(--color-primary);
+    filter: drop-shadow(0 4px 5px rgba(2, 12, 30, .28));
+  }
+
+  #{$root} .sd-map-pin svg {
+    display: block;
+  }
+}

@@ -60,7 +60,12 @@ describe('EquiposRedPageComponent', () => {
   let service: jasmine.SpyObj<EquipoRedService>;
   let auth: jasmine.SpyObj<AuthService>;
   const items = [
-    equipoMock(5, { ip: '172.16.20.5', etiqueta: 'RT-NORTE-01' }),
+    equipoMock(5, {
+      ip: '172.16.20.5',
+      etiqueta: 'RT-NORTE-01',
+      latitud: -12.0817,
+      longitud: -76.9431,
+    }),
     equipoMock(6, { ip: '10.10.0.6', etiqueta: 'rt-sur-02', marca: 'MikroTik' }),
   ];
 
@@ -107,5 +112,21 @@ describe('EquiposRedPageComponent', () => {
 
     component.searchTerm = 'RT-SUR-02';
     expect(component.filteredItems.map((item) => item.id)).toEqual([6]);
+  });
+
+  it('muestra Sin ubicación deshabilitado para una fila sin coordenadas', () => {
+    const disabledButton: HTMLButtonElement = fixture.nativeElement.querySelector('.map-link:disabled');
+
+    expect(disabledButton).not.toBeNull();
+    expect(disabledButton.textContent).toContain('Sin ubicación');
+    expect(disabledButton.getAttribute('aria-disabled')).toBe('true');
+  });
+
+  it('abre el modal de mapa desde una fila con coordenadas', () => {
+    const mapButton: HTMLButtonElement = fixture.nativeElement.querySelector('.map-link:not(:disabled)');
+
+    mapButton.click();
+
+    expect(component.mapItem?.id).toBe(5);
   });
 });
