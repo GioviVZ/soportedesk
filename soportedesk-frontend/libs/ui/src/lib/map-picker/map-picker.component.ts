@@ -73,7 +73,12 @@ export class MapPickerComponent implements AfterViewInit, OnChanges, OnDestroy {
     this.selectedCoordinates = this.inputCoordinates();
 
     try {
-      const L = await import('leaflet');
+      // Leaflet es CommonJS: el build de producción (esbuild) lo entrega como
+      // `{ default: L }`, mientras que el servidor de desarrollo expone los
+      // exports con nombre. Se normaliza para que funcione en ambos.
+      const leafletModule = await import('leaflet');
+      const L = ((leafletModule as unknown as { default?: typeof leafletModule }).default
+        ?? leafletModule) as typeof leafletModule;
       if (this.destroyed) return;
 
       this.leaflet = L;
@@ -112,7 +117,8 @@ export class MapPickerComponent implements AfterViewInit, OnChanges, OnDestroy {
       this.map.invalidateSize();
       requestAnimationFrame(() => this.map?.invalidateSize());
       this.observeContainerSize();
-    } catch {
+    } catch (error) {
+      console.error('No se pudo inicializar el mapa', error);
       this.showMapLoadError();
     }
   }
