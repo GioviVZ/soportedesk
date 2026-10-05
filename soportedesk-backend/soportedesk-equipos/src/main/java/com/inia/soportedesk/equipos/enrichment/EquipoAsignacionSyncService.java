@@ -50,10 +50,10 @@ public class EquipoAsignacionSyncService {
         for (Long glpiComputerId : faltantes) {
             jdbc.update("""
                     INSERT INTO dbo.equipo_asignacion
-                        (equipo_asignacion_id, glpi_computer_id, persona_id, sede_id,
+                        (equipo_asignacion_id, glpi_computer_id, sede_id,
                          dependencia_id, subdependencia_id, codigo_patrimonial,
                          codigo_inventario, fecha_asignacion, estado)
-                    VALUES (NEXT VALUE FOR dbo.seq_equipo_asignacion_id, ?, NULL, NULL,
+                    VALUES (NEXT VALUE FOR dbo.seq_equipo_asignacion_id, ?, NULL,
                             NULL, NULL, NULL, NULL, NULL, 'PENDIENTE')
                     """, glpiComputerId);
         }
@@ -61,7 +61,6 @@ public class EquipoAsignacionSyncService {
     }
 
     public void sync(EquipoEnrichment enrichment) {
-        Long personaId = null;
         Long sedeId = enrichment.getSede() == null ? null : enrichment.getSede().getId();
         Long dependenciaId = enrichment.getDependencia() == null
                 ? null : enrichment.getDependencia().getId();
@@ -71,12 +70,12 @@ public class EquipoAsignacionSyncService {
 
         int updated = jdbc.update("""
                 UPDATE dbo.equipo_asignacion SET
-                    persona_id = ?, sede_id = ?, dependencia_id = ?,
+                    sede_id = ?, dependencia_id = ?,
                     subdependencia_id = ?, codigo_patrimonial = ?,
                     codigo_inventario = ?, estado = ?
                 WHERE glpi_computer_id = ?
                 """,
-                personaId, sedeId, dependenciaId, subdependenciaId,
+                sedeId, dependenciaId, subdependenciaId,
                 blankToNull(enrichment.getCodigoPatrimonial()),
                 blankToNull(enrichment.getCodigoInternoOverride()), estado,
                 enrichment.getComputerId());
@@ -84,33 +83,17 @@ public class EquipoAsignacionSyncService {
         if (updated == 0) {
             jdbc.update("""
                     INSERT INTO dbo.equipo_asignacion
-                        (equipo_asignacion_id, glpi_computer_id, persona_id,
-                         sede_id, dependencia_id, subdependencia_id,
+                        (equipo_asignacion_id, glpi_computer_id, sede_id,
+                         dependencia_id, subdependencia_id,
                          codigo_patrimonial, codigo_inventario,
                          fecha_asignacion, estado)
-                    VALUES (NEXT VALUE FOR dbo.seq_equipo_asignacion_id, ?, ?, ?,
+                    VALUES (NEXT VALUE FOR dbo.seq_equipo_asignacion_id, ?, ?,
                             ?, ?, ?, ?, CAST(GETDATE() AS DATE), ?)
                     """,
-                    enrichment.getComputerId(), personaId, sedeId, dependenciaId,
+                    enrichment.getComputerId(), sedeId, dependenciaId,
                     subdependenciaId, blankToNull(enrichment.getCodigoPatrimonial()),
                     blankToNull(enrichment.getCodigoInternoOverride()), estado);
         }
-    }
-
-    private String normalizeAccountName(String value) {
-        String normalized = blankToNull(value);
-        if (normalized == null) {
-            return null;
-        }
-        int slash = Math.max(normalized.lastIndexOf('\\'), normalized.lastIndexOf('/'));
-        if (slash >= 0) {
-            normalized = normalized.substring(slash + 1);
-        }
-        int at = normalized.indexOf('@');
-        if (at > 0) {
-            normalized = normalized.substring(0, at);
-        }
-        return blankToNull(normalized);
     }
 
     private String blankToNull(String value) {
