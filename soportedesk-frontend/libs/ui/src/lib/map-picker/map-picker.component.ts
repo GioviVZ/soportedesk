@@ -220,6 +220,7 @@ export class MapPickerComponent implements AfterViewInit, OnChanges, OnDestroy {
     this.selectedCoordinates = coordinates;
     this.ensureMarker(coordinates);
     if (zoom) this.map?.setView([coordinates.latitud, coordinates.longitud], SELECTED_ZOOM);
+    else this.statusMessage = '';
     this.coordenadasChange.emit(coordinates);
     this.changeDetectorRef.markForCheck();
   }

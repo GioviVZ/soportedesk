@@ -31,4 +31,23 @@ describe('MapPickerComponent', () => {
     const googleMapsButton: HTMLButtonElement = fixture.nativeElement.querySelector('.sd-map-picker__google-maps');
     expect(googleMapsButton.disabled).toBeTrue();
   });
+
+  it('no renderiza la línea de estado cuando no hay un mensaje', () => {
+    const statusRegion: HTMLElement = fixture.nativeElement.querySelector('.sd-map-picker__status-region');
+    const statusLine: HTMLElement | null = fixture.nativeElement.querySelector('.sd-map-picker__status');
+
+    expect(statusRegion).not.toBeNull();
+    expect(statusRegion.textContent?.trim()).toBe('');
+    expect(statusLine).toBeNull();
+  });
+
+  it('limpia el estado al seleccionar coordenadas desde el mapa', () => {
+    component.statusMessage = 'Coordenadas aplicadas.';
+
+    component['selectCoordinates'](-12.082, -76.943, false);
+    fixture.detectChanges();
+
+    expect(component.statusMessage).toBe('');
+    expect(fixture.nativeElement.querySelector('.sd-map-picker__status')).toBeNull();
+  });
 });
