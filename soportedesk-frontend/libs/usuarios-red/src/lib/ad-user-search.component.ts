@@ -202,6 +202,7 @@ export class AdUserSearchComponent implements OnInit, OnDestroy {
   dependencias: Dependencia[] = [];
   subdependencias: Subdependencia[] = [];
   estado: EstadoFiltro = 'all';
+  private estadoTocado = false;
   showAdvanced = false;
   results: AdUserSummary[] = [];
   searched = false;
@@ -238,6 +239,9 @@ export class AdUserSearchComponent implements OnInit, OnDestroy {
     interval(60000)
       .pipe(takeUntil(this.destroy$))
       .subscribe(() => this.silentRefresh());
+
+    this.estadoTocado = true;
+    this.search();
   }
 
   get dependenciasDisponibles(): Dependencia[] {
@@ -248,6 +252,7 @@ export class AdUserSearchComponent implements OnInit, OnDestroy {
   get canSearch(): boolean {
     return [this.q, this.usuario, this.nombre].some((value) => value.trim().length >= 2)
       || this.estado !== 'all'
+      || this.estadoTocado
       || this.sedeId != null
       || this.dependenciaId != null
       || this.subdependenciaId != null;
@@ -256,6 +261,7 @@ export class AdUserSearchComponent implements OnInit, OnDestroy {
   get hasAnyFilter(): boolean {
     return [this.q, this.usuario, this.nombre].some((value) => value.trim().length > 0)
       || this.estado !== 'all'
+      || this.estadoTocado
       || this.sedeId != null
       || this.dependenciaId != null
       || this.subdependenciaId != null;
@@ -289,6 +295,7 @@ export class AdUserSearchComponent implements OnInit, OnDestroy {
 
   setEstado(estado: EstadoFiltro): void {
     this.estado = estado;
+    this.estadoTocado = true;
     this.queueSearch();
   }
 
@@ -329,6 +336,7 @@ export class AdUserSearchComponent implements OnInit, OnDestroy {
     this.subdependenciaId = null;
     this.subdependencias = [];
     this.estado = 'all';
+    this.estadoTocado = false;
     this.resetSearchState();
   }
 
