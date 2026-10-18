@@ -1,7 +1,9 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, computed, inject, signal, ChangeDetectionStrategy } from '@angular/core';
+import { Component, OnDestroy, OnInit, computed, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { EquipoSaludItem } from './equipo.model';
+import { Subscription, interval } from 'rxjs';
+import { switchMap, takeWhile } from 'rxjs/operators';
+import { EquipoSaludItem, GlpiSyncStatus } from './equipo.model';
 import { EquipoService } from './equipo.service';
 import { EquipoEnrichmentModalComponent } from './equipo-enrichment-modal.component';
 import * as XLSX from 'xlsx';
@@ -13,10 +15,12 @@ import * as XLSX from 'xlsx';
     changeDetection: ChangeDetectionStrategy.Eager,
     styleUrl: './equipos.shared.scss'
 })
-export class EquiposMantenimientoComponent implements OnInit {
+export class EquiposMantenimientoComponent implements OnInit, OnDestroy {
   private service = inject(EquipoService);
   readonly missingFilter = '__missing__';
   items = signal<EquipoSaludItem[]>([]);
+  syncStatus = signal<GlpiSyncStatus | null>(null);
+  private syncPollSub?: Subscription;
   query = signal('');
   onlyRecent = signal(false);
   soloPendientes = signal(false);
@@ -78,8 +82,67 @@ export class EquiposMantenimientoComponent implements OnInit {
     return items.sort((a, b) => this.compareItems(a, b));
   });
 
-  ngOnInit(): void { this.load(); }
+  ngOnInit(): void {
+    this.service.getSyncStatus().subscribe({
+      next: (status) => {
+        this.syncStatus.set(status);
+        if (status.running) {
+          this.pollSyncStatus();
+        }
+      },
+      error: () => {},
+    });
+    this.load();
+  }
+
+  ngOnDestroy(): void {
+    this.syncPollSub?.unsubscribe();
+  }
+
   load(): void { this.service.getSalud().subscribe((data) => this.items.set(data)); }
+
+  startGlpiSync(): void {
+    this.service.startSync().subscribe({
+      next: (status) => {
+        this.syncStatus.set(status);
+        this.pollSyncStatus();
+      },
+      error: () => {},
+    });
+  }
+
+  syncPercent(): number {
+    const status = this.syncStatus();
+    const total = status?.total ?? 0;
+    const procesados = status?.procesados ?? 0;
+    return total > 0 ? Math.min(100, Math.round((procesados / total) * 100)) : 0;
+  }
+
+  syncProgressLabel(): string {
+    const status = this.syncStatus();
+    const total = status?.total ?? 0;
+    const procesados = status?.procesados ?? 0;
+    return total > 0 ? `${procesados} de ${total} equipos` : 'Calculando el total de equipos...';
+  }
+
+  private pollSyncStatus(): void {
+    this.syncPollSub?.unsubscribe();
+    this.syncPollSub = interval(1500)
+      .pipe(
+        switchMap(() => this.service.getSyncStatus()),
+        takeWhile((status) => status.running, true),
+      )
+      .subscribe({
+        next: (status) => {
+          this.syncStatus.set(status);
+          if (!status.running) {
+            this.load();
+          }
+        },
+        error: () => {},
+      });
+  }
+
   edit(item: EquipoSaludItem): void { this.selected.set(item); }
   close(): void { this.selected.set(null); }
   saved(): void { this.close(); this.load(); }

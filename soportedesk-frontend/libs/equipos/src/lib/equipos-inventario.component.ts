@@ -1,10 +1,8 @@
-import { Component, OnDestroy, OnInit, computed, inject, signal, ChangeDetectionStrategy } from '@angular/core';
+import { Component, OnInit, computed, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 
 import { FormsModule } from '@angular/forms';
-import { Subscription, interval } from 'rxjs';
-import { switchMap, takeWhile } from 'rxjs/operators';
 import { GenericTableComponent, TableColumn } from '@soportedesk/ui';
-import { EquipoKpis, EquipoResumen, EquipoSoftwareExport, GlpiSyncStatus } from './equipo.model';
+import { EquipoKpis, EquipoResumen, EquipoSoftwareExport } from './equipo.model';
 import { EquipoService } from './equipo.service';
 import { EquipoDetailComponent } from './equipo-detail.component';
 import { ModalComponent } from '@soportedesk/ui';
@@ -31,7 +29,7 @@ interface EquipoTableRow extends EquipoResumen {
     changeDetection: ChangeDetectionStrategy.Eager,
     styleUrl: './equipos.shared.scss'
 })
-export class EquiposInventarioComponent implements OnInit, OnDestroy {
+export class EquiposInventarioComponent implements OnInit {
   private service = inject(EquipoService);
   private authService = inject(AuthService);
   private catalogo = inject(CatalogoService);
@@ -58,8 +56,6 @@ export class EquiposInventarioComponent implements OnInit, OnDestroy {
   editingId = signal<number | null>(null);
   editingName = signal('');
   exporting = signal(false);
-  syncStatus = signal<GlpiSyncStatus | null>(null);
-  private syncPollSub?: Subscription;
 
   kpiCards = computed(() => {
     const k = this.kpis();
@@ -233,15 +229,6 @@ export class EquiposInventarioComponent implements OnInit, OnDestroy {
   ));
 
   ngOnInit(): void {
-    this.service.getSyncStatus().subscribe({
-      next: (status) => {
-        this.syncStatus.set(status);
-        if (status.running) {
-          this.pollSyncStatus();
-        }
-      },
-      error: () => {},
-    });
     this.loadKpis();
     this.catalogo.getSedes().subscribe((data) => this.catalogoSedes.set(data));
     this.catalogo.getDependencias().subscribe((data) => this.catalogoDependencias.set(data));
@@ -251,54 +238,8 @@ export class EquiposInventarioComponent implements OnInit, OnDestroy {
     this.load();
   }
 
-  ngOnDestroy(): void {
-    this.syncPollSub?.unsubscribe();
-  }
-
   load(): void {
     this.service.getAll().subscribe((data) => this.items.set(data.map((item) => this.toTableRow(item))));
-  }
-
-  startGlpiSync(): void {
-    this.service.startSync().subscribe({
-      next: (status) => {
-        this.syncStatus.set(status);
-        this.pollSyncStatus();
-      },
-      error: () => {},
-    });
-  }
-
-  syncPercent(): number {
-    const status = this.syncStatus();
-    const total = status?.total ?? 0;
-    const procesados = status?.procesados ?? 0;
-    return total > 0 ? Math.min(100, Math.round((procesados / total) * 100)) : 0;
-  }
-
-  syncProgressLabel(): string {
-    const status = this.syncStatus();
-    const total = status?.total ?? 0;
-    const procesados = status?.procesados ?? 0;
-    return total > 0 ? `${procesados} de ${total} equipos` : 'Calculando el total de equipos...';
-  }
-
-  private pollSyncStatus(): void {
-    this.syncPollSub?.unsubscribe();
-    this.syncPollSub = interval(1500)
-      .pipe(
-        switchMap(() => this.service.getSyncStatus()),
-        takeWhile((status) => status.running, true),
-      )
-      .subscribe({
-        next: (status) => {
-          this.syncStatus.set(status);
-          if (!status.running) {
-            this.load();
-          }
-        },
-        error: () => {},
-      });
   }
 
   private compareConNullsAlFinal(a: string | null | undefined, b: string | null | undefined): number {
