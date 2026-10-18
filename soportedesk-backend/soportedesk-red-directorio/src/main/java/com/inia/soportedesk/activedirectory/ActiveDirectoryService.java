@@ -39,8 +39,12 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import javax.naming.CommunicationException;
+import javax.naming.ContextNotEmptyException;
 import javax.naming.NamingEnumeration;
+import javax.naming.NoPermissionException;
 import javax.naming.PartialResultException;
+import javax.naming.ServiceUnavailableException;
 import javax.naming.directory.AttributeInUseException;
 import javax.naming.directory.Attribute;
 import javax.naming.directory.Attributes;
@@ -70,6 +74,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -94,7 +99,7 @@ public class ActiveDirectoryService {
             "sAMAccountName", "displayName", "givenName", "sn", "mail", "department", "company", "title",
             "telephoneNumber", "mobile", "physicalDeliveryOfficeName", "description", "distinguishedName",
             "userPrincipalName", "userAccountControl", "memberOf", "whenCreated", "whenChanged", "pwdLastSet",
-            "lastLogonTimestamp", "accountExpires", "badPwdCount", "lockoutTime"
+            "lastLogonTimestamp", "accountExpires", "badPwdCount", "lockoutTime", "adminCount"
     };
 
     private final LdapContextFactory contextFactory;
@@ -125,10 +130,6 @@ public class ActiveDirectoryService {
     public AdUserSearchResult buscarUsuarios(String q, String usuario, String nombre, String oficina, String ou, String estado,
                                              Long sedeId, Long dependenciaId, Long subdependenciaId) {
         SearchStateFilter state = SearchStateFilter.from(estado);
-        if (!hasSearchTerm(q) && !hasSearchTerm(usuario) && !hasSearchTerm(nombre) && !hasSearchTerm(oficina) && !hasSearchTerm(ou)
-                && state.isAll() && sedeId == null && dependenciaId == null && subdependenciaId == null) {
-            return new AdUserSearchResult(List.of(), false);
-        }
 
         boolean filtroOrganizacional = sedeId != null || dependenciaId != null || subdependenciaId != null;
         FiltroUbicacion filtroUbicacion = filtroOrganizacional
@@ -463,16 +464,18 @@ public class ActiveDirectoryService {
         Instant inicio = Instant.now();
         UUID idTransaccion = UUID.randomUUID();
         String userDn = null;
+        boolean cuentaProtegida = false;
         DirContext context = null;
         try {
             context = contextFactory.openDirContext();
-            SearchResult result = findUser(context, samAccountName, new String[]{"distinguishedName"});
+            SearchResult result = findUser(context, samAccountName, new String[]{"distinguishedName", "adminCount"});
             if (result == null) {
                 audit("ELIMINAR_USUARIO", samAccountName, null, 404, "Usuario no encontrado.");
                 auditAd("ELIMINAR_USUARIO", samAccountName, null, "FALLIDO", "Usuario no encontrado.",
                         null, null, null, idTransaccion, inicio);
                 return ActiveDirectoryResponse.error("Usuario no encontrado.");
             }
+            cuentaProtegida = "1".equals(attr(result.getAttributes(), "adminCount"));
 
             userDn = result.getNameInNamespace();
             context.destroySubcontext(userDn);
@@ -488,8 +491,8 @@ public class ActiveDirectoryService {
             audit("ELIMINAR_USUARIO", samAccountName, userDn, 500, e.getMessage());
             auditAd("ELIMINAR_USUARIO", samAccountName, userDn, "FALLIDO", e.getMessage(), null, null,
                     e.getMessage(), idTransaccion, inicio);
-            return ActiveDirectoryResponse.error(
-                    "No se pudo eliminar el usuario de Active Directory. Verifique sus dependencias e intente nuevamente.");
+            return ActiveDirectoryResponse.error(mensajeErrorAd(e, samAccountName, cuentaProtegida,
+                    "No se pudo eliminar el usuario de Active Directory. Intente nuevamente."));
         } finally {
             closeQuietly(context);
         }
@@ -630,6 +633,16 @@ public class ActiveDirectoryService {
                     "No existia", "Usuario creado y habilitado", detalleCreacion, idTransaccion, inicio);
             eventPublisher.publishEvent(new AdCambioEvent(sam, "CREAR_USUARIO"));
             AdUser refreshed = refreshCachedUserFromAd(sam, userDn);
+            if (refreshed == null) {
+                // El usuario ya fue creado en AD (arriba); si el refresco de cache falla
+                // (p.ej. demora de replicacion o BD momentaneamente inaccesible), igual
+                // debemos devolver datos utilizables para que el llamador no trate esto
+                // como un fallo de creacion.
+                refreshed = new AdUser(sam, displayName, givenName, surname, body.mail(),
+                        department, null, body.title(), body.telephoneNumber(), body.mobile(),
+                        office, body.description(), userDn, upn, body.enabled(), false,
+                        extractOus(targetOu), null, null, null, null, null, null, null, List.of());
+            }
             return ActiveDirectoryResponse.ok("Usuario creado correctamente.", refreshed);
         } catch (IllegalArgumentException e) {
             audit("CREAR_USUARIO", sam, userDn, 400, e.getMessage());
@@ -641,8 +654,8 @@ public class ActiveDirectoryService {
             audit("CREAR_USUARIO", sam, userDn, 500, e.getMessage());
             auditAd("CREAR_USUARIO", sam, userDn, "FALLIDO", e.getMessage(), "No existia", "Error de creacion",
                     e.getMessage(), idTransaccion, inicio);
-            return ActiveDirectoryResponse.error(
-                    "No se pudo crear el usuario en Active Directory. Verifique la conexion e intente nuevamente.");
+            return ActiveDirectoryResponse.error(mensajeErrorAd(e, sam, false,
+                    "No se pudo crear el usuario en Active Directory. Intente nuevamente."));
         } finally {
             closeQuietly(context);
         }
@@ -832,6 +845,7 @@ public class ActiveDirectoryService {
         Instant inicio = Instant.now();
         UUID idTransaccion = UUID.randomUUID();
         String userDn = null;
+        boolean cuentaProtegida = false;
         DirContext context = null;
         try {
             context = contextFactory.openDirContext();
@@ -842,6 +856,7 @@ public class ActiveDirectoryService {
                         idTransaccion, inicio);
                 return ActiveDirectoryResponse.error("Usuario no encontrado.");
             }
+            cuentaProtegida = "1".equals(attr(result.getAttributes(), "adminCount"));
             userDn = result.getNameInNamespace();
             AdAuditoriaDetalle detalle = operation.apply(context, userDn, result);
             audit(action, samAccountName, userDn, 200, successMessage);
@@ -860,8 +875,8 @@ public class ActiveDirectoryService {
             audit(action, samAccountName, userDn, 500, e.getMessage());
             auditAd(action, samAccountName, userDn, "FALLIDO", e.getMessage(), null, null, e.getMessage(),
                     idTransaccion, inicio);
-            return ActiveDirectoryResponse.error(
-                    "No se pudo completar la accion en Active Directory. Verifique la conexion e intente nuevamente.");
+            return ActiveDirectoryResponse.error(mensajeErrorAd(e, samAccountName, cuentaProtegida,
+                    "No se pudo completar la accion en Active Directory. Intente nuevamente."));
         } finally {
             closeQuietly(context);
         }
@@ -1466,6 +1481,44 @@ public class ActiveDirectoryService {
         } catch (Exception cleanupError) {
             log.warn("No se pudo revertir usuario AD creado parcialmente: {}", userDn, cleanupError);
         }
+    }
+
+    static String mensajeErrorAd(Exception e, String samAccountName, boolean cuentaProtegida,
+                                 String mensajeGenerico) {
+        boolean permisoDenegado = false;
+        boolean errorComunicacion = false;
+        boolean tieneDependencias = false;
+        Throwable causa = e;
+        while (causa != null) {
+            String mensaje = causa.getMessage();
+            String mensajeNormalizado = mensaje == null ? "" : mensaje.toUpperCase(Locale.ROOT);
+            permisoDenegado |= causa instanceof NoPermissionException
+                    || mensajeNormalizado.contains("INSUFF_ACCESS_RIGHTS")
+                    || mensajeNormalizado.contains("ERROR CODE 50");
+            errorComunicacion |= causa instanceof CommunicationException
+                    || causa instanceof ServiceUnavailableException;
+            tieneDependencias |= causa instanceof ContextNotEmptyException;
+            causa = causa.getCause();
+        }
+
+        if (permisoDenegado) {
+            if (cuentaProtegida) {
+                return "Active Directory no permite modificar la cuenta " + samAccountName
+                        + ": está marcada como cuenta protegida (adminCount=1) y no hereda los permisos de su OU. "
+                        + "Un administrador del dominio debe restablecer la herencia de permisos de esta cuenta.";
+            }
+            return "Active Directory denegó el permiso para modificar la cuenta " + samAccountName
+                    + ". La cuenta de servicio de SoporteDesk no tiene permisos sobre este usuario o su OU; "
+                    + "solicite a un administrador del dominio que revise la delegación.";
+        }
+        if (errorComunicacion) {
+            return "No se pudo conectar con Active Directory. Verifique la conexion e intente nuevamente.";
+        }
+        if (tieneDependencias) {
+            return "No se puede eliminar la cuenta " + samAccountName
+                    + " porque tiene objetos dependientes en Active Directory.";
+        }
+        return mensajeGenerico;
     }
 
     private String attr(Attributes attrs, String name) throws Exception {
